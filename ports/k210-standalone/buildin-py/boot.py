@@ -4,6 +4,7 @@ import uos
 import os
 import machine
 import common
+import app
 
 # init pin map
 pin_init=common.pin_init()
@@ -14,10 +15,10 @@ file_list = os.ls()
 for i in range(len(file_list)):
     if file_list[i] == '/init.py':
         import init
-ov=machine.ov2640()
-ov.init()
-st=machine.st7789()
-st.init()
-demo=machine.demo_face_detect()
-demo.init()
-buf=bytearray(320*240*2)
+# machine.ov2640()
+# init()
+# machine.st7789()
+# init()
+# o=machine.demo_face_detect()
+# o.init()
+# =bytearray(320*240*2)

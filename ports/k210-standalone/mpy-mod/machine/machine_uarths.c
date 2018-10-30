@@ -68,7 +68,7 @@ STATIC void machine_uarths_init_helper(machine_uarths_obj_t *self, size_t n_args
     if (args[ARG_baudrate].u_int > 0) {
         uarths_init();
         self->baudrate=args[ARG_baudrate].u_int;
-	    uarths_config(args[ARG_baudrate].u_int,args[ARG_stop].u_int==1?UART_STOP_1:UART_STOP_2);
+	    uarths_config(args[ARG_baudrate].u_int,args[ARG_stop].u_int==1?UARTHS_STOP_1:UARTHS_STOP_2);
     }else{
         mp_raise_ValueError("Please enter the correct baudrate");
     }

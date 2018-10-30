@@ -65,7 +65,7 @@ int main()
 		sysctl->power_sel.power_mode_sel6 = 1;
 		sysctl->power_sel.power_mode_sel7 = 1;
 		uarths_set_irq(UARTHS_RECEIVE,on_irq_uarths_recv,NULL,1);
-		uarths_config(115200,UART_STOP_1);
+		uarths_config(115200,UARTHS_STOP_1);
 		uarths_init();
         uint8_t manuf_id, device_id;
 		while (1) {
