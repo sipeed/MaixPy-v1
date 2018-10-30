@@ -26,6 +26,7 @@ INC += -I$(TOP)/lib/timeutils
 # mpy mod header
 INC += -I$(MPY_MOD_PATH)/machine/include
 INC += -I$(MPY_MOD_PATH)/uos/include
+INC += -I$(MPY_MOD_PATH)/app/include
 
 # board drivers header
 INC += -I$(BOARD_DRIVERS_PATH)/include
@@ -123,19 +124,23 @@ LIBS =
 MODULES_SRC_C= \
 		$(MPY_MOD_PATH)/uos/moduos.c \
 		$(MPY_MOD_PATH)/machine/modmachine.c \
-		$(MPY_MOD_PATH)/machine/machine_uarths.c\
+		$(MPY_MOD_PATH)/machine/machine_uarths.c \
 		$(MPY_MOD_PATH)/machine/machine_uart.c \
 		$(MPY_MOD_PATH)/machine/machine_pin.c \
 		$(MPY_MOD_PATH)/machine/machine_pwm.c \
-		$(MPY_MOD_PATH)/machine/machine_timer.c\
-		$(MPY_MOD_PATH)/machine/machine_st7789.c\
-		$(MPY_MOD_PATH)/machine/machine_ov2640.c\
-		$(MPY_MOD_PATH)/machine/machine_burner.c\
-		$(MPY_MOD_PATH)/machine/machine_face_detect.c\
-		$(MPY_MOD_PATH)/machine/machine_spiflash.c\
-		$(MPY_MOD_PATH)/machine/machine_zmodem.c\
-		$(MPY_MOD_PATH)/machine/machine_fpioa.c\
-		$(MPY_MOD_PATH)/machine/machine_ws2812.c
+		$(MPY_MOD_PATH)/machine/machine_timer.c \
+		$(MPY_MOD_PATH)/machine/machine_st7789.c \
+		$(MPY_MOD_PATH)/machine/machine_ov2640.c \
+		$(MPY_MOD_PATH)/machine/machine_burner.c \
+		$(MPY_MOD_PATH)/machine/machine_face_detect.c \
+		$(MPY_MOD_PATH)/machine/machine_spiflash.c \
+		$(MPY_MOD_PATH)/machine/machine_zmodem.c \
+		$(MPY_MOD_PATH)/machine/machine_fpioa.c \
+		$(MPY_MOD_PATH)/machine/machine_ws2812.c \
+		$(MPY_MOD_PATH)/app/modapp.c \
+		$(MPY_MOD_PATH)/app/vi.c \
+		$(MPY_MOD_PATH)/app/app_vi.c
+
 
 LIB_SRC_C ?=
 MICROPY_FATFS=1
