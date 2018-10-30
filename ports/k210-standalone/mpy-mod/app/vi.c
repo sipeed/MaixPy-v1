@@ -63,13 +63,6 @@ static const char vi_Version[] =
 #include <errno.h>
 #include <stdarg.h>
 
-#define UART1 1
-#if UART1 == 1
-#include "uart.h"
-#include "fpioa.h"
-#define UART_STR(str) uart_send_data(UART_DEVICE_1,str,sizeof(str));
-#endif 
-
 #if 1
 #define O_RDONLY        00000000
 #define O_WRONLY        00000001
@@ -397,11 +390,6 @@ extern int vi_main(unsigned char * fn)
 	vi_init();
 	optinit();
 	status_buffer = (Byte *) malloc(STATUS_LEN);	// hold messages to user
-	fpioa_set_function(12,FUNC_UART1_TX);
-	fpioa_set_function(14,FUNC_UART1_RX);
-	uart_init(UART_DEVICE_1);
-	uart_config(UART_DEVICE_1,115200,UART_BITWIDTH_8BIT,UART_STOP_1,UART_PARITY_NONE);
-	UART_STR("enter vi_main\r\n");
 	// The argv array can be used by the ":next"  and ":rewind" commands
 	// save optind.
 	fn_start = optind;	// remember first file name for :next and :rew
@@ -429,7 +417,6 @@ static void edit_file(Byte * fn)
 	rows = ROWS;
 	columns = COLUMNS;
 	ch= -1;
-	UART_STR("enter edit_file\r\n");
 	new_screen(rows, columns);	// get memory for virtual screen
 
 	cnt = file_size(fn);	// file size
@@ -461,9 +448,7 @@ static void edit_file(Byte * fn)
 
 	//------This is the main Vi cmd handling loop -----------------------
 	while (editing > 0) {
-		UART_STR("editing > 0\r\n");
 		last_input_char = c = get_one_char();	// get a cmd from user
-		UART_STR(c);
 		do_cmd(c);		// execute the user command
 		//
 		// poll to see if there is input already waiting. if we are
@@ -862,7 +847,6 @@ key_cmd_mode:
 	case 'i':			// i- insert before current char
 	case VI_K_INSERT:	// Cursor Key Insert
 	  dc_i:
-	  	UART_STR("enter 'i'\r\n");
 		cmd_mode = 1;	// start insrting
 		psb("-- Insert --");
 		break;

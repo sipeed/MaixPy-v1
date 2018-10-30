@@ -83,10 +83,6 @@ static int _open(char* fn, int flag)
     //return (int)fopen(fn, (char*)mode);
     
     fd =SPIFFS_open(&fs,fn, SPIFFS_RDWR, 0);//SPIFFS_CREAT | SPIFFS_O_TRUNC| 
-    uint8_t temp_str[70];
-    UART_STR("enter _open\r\n");
-    sprintf(temp_str,"fd : %d\r\n",fd);
-    UART_STR(temp_str);
     if(fd == -1){
         mp_raise_OSError(MP_EIO);
         return 0;
@@ -96,14 +92,7 @@ static int _open(char* fn, int flag)
         return (int)fd;
       }
     //return open(fn,flag);
-} 
-
-#define UART1 1
-#if UART1 == 1
-#include "uart.h"
-#include "fpioa.h"
-#define UART_STR(str) uart_send_data(UART_DEVICE_1,str,sizeof(str));
-#endif 
+}
 
 int c_read(Byte* p, int size)	//console read
 {
@@ -118,12 +107,7 @@ int c_read(Byte* p, int size)	//console read
 }
 int _read(int fd, Byte* p, int size)
 {   int tmp=size;
-    uint8_t temp_str[70];
-    UART_STR("enter _read\r\n");
-    sprintf(temp_str,"fd : %d\r\n",fd);
-    UART_STR(temp_str);
     if(fd > 10) {
-        UART_STR("enter SPIFFS_read\r\n");
         SPIFFS_read(&fs,(spiffs_file)(fd-10), p, size);
     }
     else tmp = c_read(p, size);
@@ -139,12 +123,7 @@ int c_write(Byte* p, int size)	//console write
 }
 int _write(int fd, Byte* p, int size)
 {   int tmp=size;
-    uint8_t temp_str[70];
-    UART_STR("enter _write\r\n");
-    sprintf(temp_str,"fd : %d\r\n",fd);
-    UART_STR(temp_str);
     if(fd > 10){
-        UART_STR("enter SPIFFS_write\r\n");
         SPIFFS_write(&fs,(spiffs_file)(fd-10), p, size);
 
     }
