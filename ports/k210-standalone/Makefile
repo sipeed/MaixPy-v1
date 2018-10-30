@@ -134,7 +134,8 @@ MODULES_SRC_C= \
 		$(MPY_MOD_PATH)/machine/machine_face_detect.c\
 		$(MPY_MOD_PATH)/machine/machine_spiflash.c\
 		$(MPY_MOD_PATH)/machine/machine_zmodem.c\
-		$(MPY_MOD_PATH)/machine/machine_fpioa.c
+		$(MPY_MOD_PATH)/machine/machine_fpioa.c\
+		$(MPY_MOD_PATH)/machine/machine_ws2812.c
 
 LIB_SRC_C ?=
 MICROPY_FATFS=1
@@ -159,7 +160,8 @@ BOARD_DRIVERS = $(BOARD_DRIVERS_PATH)/lcd.c\
 				$(BOARD_DRIVERS_PATH)/w25qxx.c\
 				$(BOARD_DRIVERS_PATH)/face_detect.c\
 				$(BOARD_DRIVERS_PATH)/region_layer.c\
-				$(BOARD_DRIVERS_PATH)/uart_core.c
+				$(BOARD_DRIVERS_PATH)/uart_core.c\
+				$(BOARD_DRIVERS_PATH)/ws2812b.c
 
 MPY_LIB_SRC = lib/timeutils/timeutils.c \
 			  lib/utils/sys_stdio_mphal.c

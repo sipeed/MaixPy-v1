@@ -100,6 +100,7 @@ int ai_dma_irq(void *ctx)
 		}
 	}
 	dmac->channel[AI_DMA_CHANNEL].intclear = 0xFFFFFFFF;
+	ndelay(1000);
 	debug_print("quit ai_dma_irq\n");
 	return 0;
 }
