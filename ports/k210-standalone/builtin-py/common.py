@@ -10,7 +10,7 @@ class pin_init:
 	self.fpioa.set_function(42,133)#FUNC_CMOS_RST               
 	self.fpioa.set_function(41,146)#FUNC_SCCB_SCLK
 	self.fpioa.set_function(40,147)#FUNC_SCCB_SDA
-        self.fpioa.set_function(37, 34)#FUNC_GPIOHS10 init_rst
+        self.fpioa.set_function(37, 25)#FUNC_GPIOHS1 init_rst
 	self.fpioa.set_function(38, 26)#FUNC_GPIOHS2 tft_hard_init
 	self.fpioa.set_function(36, 15)#FUNC_SPI0_SS3 tft_hard_init
 	self.fpioa.set_function(39, 17)#FUNC_SPI0_SCLK tft_hard_init

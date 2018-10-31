@@ -76,7 +76,7 @@ STATIC mp_obj_t machine_pin_obj_init_helper(const machine_pin_obj_t *self, size_
     enum { ARG_mode, ARG_value };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_mode, MP_ARG_OBJ, {.u_obj = mp_const_none}},
-        { MP_QSTR_value, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
+        { MP_QSTR_value,  MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
     };
 
     // parse args
@@ -87,19 +87,23 @@ STATIC mp_obj_t machine_pin_obj_init_helper(const machine_pin_obj_t *self, size_
     //gpio_pin_init(size_t pin_num, size_t gpio_pin);
 
     // set initial value (do this before configuring mode/pull)
-    if (args[ARG_value].u_obj != MP_OBJ_NULL) {
-        gpio_set_pin(self->id, mp_obj_is_true(args[ARG_value].u_obj)==0?GPIO_PV_LOW:GPIO_PV_HIGH);
-    }
-
     // configure mode
+    mp_int_t pin_io_mode = 0;
     if (args[ARG_mode].u_obj != mp_const_none) {
-        mp_int_t pin_io_mode = mp_obj_get_int(args[ARG_mode].u_obj);
+		pin_io_mode = mp_obj_get_int(args[ARG_mode].u_obj);
         if (self->id >= GPIO_MAX_PINNO && (pin_io_mode >GPIO_DM_OUTPUT) && (pin_io_mode <GPIO_DM_INPUT) ) {
             mp_raise_ValueError("pin can only be input");
         } else {
-		gpio_set_drive_mode(self->id, pin_io_mode);
+			gpio_set_drive_mode(self->id, pin_io_mode);
         }
     }
+	
+	if(pin_io_mode ==GPIO_DM_OUTPUT ){
+	    if (args[ARG_value].u_obj != MP_OBJ_NULL) {
+	        gpio_set_pin(self->id, mp_obj_is_true(args[ARG_value].u_obj)==0?GPIO_PV_LOW:GPIO_PV_HIGH);
+	    }
+	}
+
 
     return mp_const_none;
 }

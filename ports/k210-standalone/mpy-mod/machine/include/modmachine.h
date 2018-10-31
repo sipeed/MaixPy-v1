@@ -16,6 +16,8 @@ extern const mp_obj_type_t machine_zmodem_type;
 extern const mp_obj_type_t machine_spiflash_type;
 extern const mp_obj_type_t machine_fpioa_type;
 extern const mp_obj_type_t machine_ws2812_type;
+extern const mp_obj_type_t machine_test_type;
+
 
 void machine_pins_init(void);
 void machine_pins_deinit(void);
