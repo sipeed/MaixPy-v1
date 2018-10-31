@@ -137,6 +137,7 @@ MODULES_SRC_C= \
 		$(MPY_MOD_PATH)/machine/machine_zmodem.c \
 		$(MPY_MOD_PATH)/machine/machine_fpioa.c \
 		$(MPY_MOD_PATH)/machine/machine_ws2812.c \
+		$(MPY_MOD_PATH)/machine/machine_test.c \
 		$(MPY_MOD_PATH)/app/modapp.c \
 		$(MPY_MOD_PATH)/app/vi.c \
 		$(MPY_MOD_PATH)/app/app_vi.c
@@ -162,6 +163,7 @@ FS_SRC_C = \
 BOARD_DRIVERS = $(BOARD_DRIVERS_PATH)/lcd.c\
 				$(BOARD_DRIVERS_PATH)/st7789.c\
 				$(BOARD_DRIVERS_PATH)/ov2640.c\
+				$(BOARD_DRIVERS_PATH)/ov5640.c\
 				$(BOARD_DRIVERS_PATH)/w25qxx.c\
 				$(BOARD_DRIVERS_PATH)/face_detect.c\
 				$(BOARD_DRIVERS_PATH)/region_layer.c\

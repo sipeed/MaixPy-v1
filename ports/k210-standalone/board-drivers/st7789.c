@@ -42,17 +42,17 @@ static volatile uint8_t tft_status;
 
 static void init_rst(void)
 {
-    //fpioa_set_function(37, FUNC_GPIOHS0 + 10);//rst
-    gpiohs_set_drive_mode(10, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(10, GPIO_PV_LOW);
+    //fpioa_set_function(37, FUNC_GPIOHS0 + 1);//rst
+    gpiohs_set_drive_mode(1, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(1, GPIO_PV_LOW);
 }
 
 void set_rst_value(uint8_t val)
 {
     if(val)
-        gpiohs_set_pin(10, 1);  //rst high
+        gpiohs_set_pin(1, 1);  //rst high
     else
-        gpiohs_set_pin(10, 0);  //rst low
+        gpiohs_set_pin(1, 0);  //rst low
 }
 
 // init hardware
