@@ -332,9 +332,13 @@ void ai_draw_label(uint32_t *ptr)
 		if (ai_param.class > 1) {
 			uint8_t class = object_info.object[i].class;
 
-			lcd_draw_rectangle(object_info.object[i].x1, object_info.object[i].y1,
-				object_info.object[i].x2, object_info.object[i].y2, 2, ai_param.label_param[class].color);
-		
+			lcd_draw_rectangle_cpu(ptr,object_info.object[i].x1,
+									   object_info.object[i].y1,
+									   object_info.object[i].x2, 
+									   object_info.object[i].y2, 
+									   ai_param.label_param[class].color);
+			
+			
 			if ((object_info.object[i].x1 + 1 + ai_param.label_param[class].width < 320) &&
 				(object_info.object[i].y1 + 1 + ai_param.label_param[class].height < 240))
 				lcd_draw_picture(object_info.object[i].x1 + 1, 
@@ -342,6 +346,7 @@ void ai_draw_label(uint32_t *ptr)
 								 ai_param.label_param[class].width, 
 								 ai_param.label_param[class].height, 
 								 ai_param.label_param[class].ptr);
+			
 		} else{
 				// lcd_draw_rectangle(object_info.object[i].x1, object_info.object[i].y1,
 				// 	object_info.object[i].x2, object_info.object[i].y2, 2, RED);
