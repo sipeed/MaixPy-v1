@@ -52,7 +52,6 @@ STATIC void machine_ws2812_print(const mp_print_t *print, mp_obj_t self_in, mp_p
 }
 
 STATIC mp_obj_t machine_ws2812_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
-    mp_arg_check_num(n_args, n_kw, 1, MP_OBJ_FUN_ARGS_MAX, true);
     machine_ws2812_obj_t *self = m_new_obj(machine_ws2812_obj_t);
     self->base.type = &machine_ws2812_type;
     return self;
@@ -83,7 +82,7 @@ STATIC mp_obj_t machine_ws2812_init(mp_uint_t n_args, const mp_obj_t *pos_args, 
 	self->gpio_num = args[ARG_gpio_num].u_int;
 	self->pin_num = args[ARG_pin_num].u_int;
 	init_nop_cnt();
-	gpiohs_set_drive_mode(self->gpio_num,GPIO_DM_INPUT);
+	gpiohs_set_drive_mode(self->gpio_num,GPIO_DM_OUTPUT);
 	gpiohs_set_pin(self->gpio_num,GPIO_PV_LOW);
 	return mp_const_none;
 }

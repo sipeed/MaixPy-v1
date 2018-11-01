@@ -10,7 +10,7 @@ BOARD_DRIVERS_PATH ?= board-drivers
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h
 
-FROZEN_MPY_DIR ?= buildin-py
+FROZEN_MPY_DIR ?= builtin-py
 
 # include py core make definitionsvers/uarths.c
 include $(TOP)/py/py.mk
