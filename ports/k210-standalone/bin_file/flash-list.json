@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "files": [
+    {
+      "address": 0,
+      "bin": "micropython.bin",
+      "sha256Prefix": true
+    },
+    {
+      "address": 0x00600000,
+      "bin": "fs.bin",
+      "sha256Prefix": false
+    }
+  ]
+}
