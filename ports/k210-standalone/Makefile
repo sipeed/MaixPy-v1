@@ -138,6 +138,7 @@ MODULES_SRC_C= \
 		$(MPY_MOD_PATH)/machine/machine_fpioa.c \
 		$(MPY_MOD_PATH)/machine/machine_ws2812.c \
 		$(MPY_MOD_PATH)/machine/machine_test.c \
+		$(MPY_MOD_PATH)/machine/machine_devmem.c\
 		$(MPY_MOD_PATH)/app/modapp.c \
 		$(MPY_MOD_PATH)/app/vi.c \
 		$(MPY_MOD_PATH)/app/app_vi.c
@@ -245,8 +246,9 @@ micropython.bin: micropython
 
 clean_all:  clean
 			rm -rf micropython micropython.bin
-			rm ./bin_flie/micropython.bin
 			make -C ../../mpy-cross clean
+			rm -rf ./bin_file/micropython.bin
+			rm -rf ./bin_file/fs.bin
 build:
 	rm -rf kendryte-standalone-sdk kendryte-standalone-sdk-0.4.1 v0.4.1.zip
 	wget https://github.com/kendryte/kendryte-standalone-sdk/archive/v0.4.1.zip
