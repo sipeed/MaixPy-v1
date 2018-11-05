@@ -162,6 +162,7 @@ int machine_test_gpio(void)
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(machine_test_gpio_obj, machine_test_gpio);
 */
+const mp_obj_type_t machine_test_type;
 #define OV2640
 	
 uint8_t buf_sel;

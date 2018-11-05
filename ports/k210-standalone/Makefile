@@ -1,4 +1,4 @@
-.PHONY: clean_all build
+.PHONY: clean_all build packfs pack
 include ../../py/mkenv.mk
 
 CROSS_COMPILE ?= 
@@ -160,15 +160,15 @@ FS_SRC_C = \
 		spiffs/src/spiffs_nucleus.c \
 		file_io.c
 
-BOARD_DRIVERS = $(BOARD_DRIVERS_PATH)/lcd.c\
-				$(BOARD_DRIVERS_PATH)/st7789.c\
-				$(BOARD_DRIVERS_PATH)/ov2640.c\
-				$(BOARD_DRIVERS_PATH)/ov5640.c\
-				$(BOARD_DRIVERS_PATH)/w25qxx.c\
-				$(BOARD_DRIVERS_PATH)/face_detect.c\
-				$(BOARD_DRIVERS_PATH)/region_layer.c\
-				$(BOARD_DRIVERS_PATH)/uart_core.c\
-				$(BOARD_DRIVERS_PATH)/ws2812b.c
+BOARD_DRIVERS = $(BOARD_DRIVERS_PATH)/lcd.c \
+				$(BOARD_DRIVERS_PATH)/st7789.c \
+				$(BOARD_DRIVERS_PATH)/ov2640.c \
+				$(BOARD_DRIVERS_PATH)/w25qxx.c \
+				$(BOARD_DRIVERS_PATH)/face_detect.c \
+				$(BOARD_DRIVERS_PATH)/region_layer.c \
+				$(BOARD_DRIVERS_PATH)/uart_core.c \
+				$(BOARD_DRIVERS_PATH)/ws2812b.c \
+				$(BOARD_DRIVERS_PATH)/esp8285.c
 
 MPY_LIB_SRC = lib/timeutils/timeutils.c \
 			  lib/utils/sys_stdio_mphal.c
@@ -184,27 +184,27 @@ SRC_C = \
 		$(SDK_PATH)/lib/bsp/syscalls.c \
 		$(SDK_PATH)/lib/drivers/uarths.c \
 		$(SDK_PATH)/lib/math/fastexp.c \
-		$(SDK_PATH)/lib/drivers/aes.c\
-		$(SDK_PATH)/lib/drivers/clint.c\
-		$(SDK_PATH)/lib/drivers/common.c\
-		$(SDK_PATH)/lib/drivers/dmac.c\
-		$(SDK_PATH)/lib/drivers/dvp.c\
-		$(SDK_PATH)/lib/drivers/fft.c\
-		$(SDK_PATH)/lib/drivers/fpioa.c\
-		$(SDK_PATH)/lib/drivers/gpio.c\
-		$(SDK_PATH)/lib/drivers/gpiohs.c\
-		$(SDK_PATH)/lib/drivers/i2c.c\
-		$(SDK_PATH)/lib/drivers/i2s.c\
-		$(SDK_PATH)/lib/drivers/plic.c\
-		$(SDK_PATH)/lib/drivers/pwm.c\
-		$(SDK_PATH)/lib/drivers/rtc.c\
-		$(SDK_PATH)/lib/drivers/sha256.c\
-		$(SDK_PATH)/lib/drivers/spi.c\
-		$(SDK_PATH)/lib/drivers/sysclock.c\
-		$(SDK_PATH)/lib/drivers/sysctl.c\
-		$(SDK_PATH)/lib/drivers/timer.c\
-		$(SDK_PATH)/lib/drivers/uart.c\
-		$(SDK_PATH)/lib/drivers/wdt.c\
+		$(SDK_PATH)/lib/drivers/aes.c \
+		$(SDK_PATH)/lib/drivers/clint.c \
+		$(SDK_PATH)/lib/drivers/common.c \
+		$(SDK_PATH)/lib/drivers/dmac.c \
+		$(SDK_PATH)/lib/drivers/dvp.c \
+		$(SDK_PATH)/lib/drivers/fft.c \
+		$(SDK_PATH)/lib/drivers/fpioa.c \
+		$(SDK_PATH)/lib/drivers/gpio.c \
+		$(SDK_PATH)/lib/drivers/gpiohs.c \
+		$(SDK_PATH)/lib/drivers/i2c.c \
+		$(SDK_PATH)/lib/drivers/i2s.c \
+		$(SDK_PATH)/lib/drivers/plic.c \
+		$(SDK_PATH)/lib/drivers/pwm.c \
+		$(SDK_PATH)/lib/drivers/rtc.c \
+		$(SDK_PATH)/lib/drivers/sha256.c \
+		$(SDK_PATH)/lib/drivers/spi.c \
+		$(SDK_PATH)/lib/drivers/sysclock.c \
+		$(SDK_PATH)/lib/drivers/sysctl.c \
+		$(SDK_PATH)/lib/drivers/timer.c \
+		$(SDK_PATH)/lib/drivers/uart.c \
+		$(SDK_PATH)/lib/drivers/wdt.c \
 		$(BOARD_DRIVERS) \
 		$(MPY_LIB_SRC) \
 		$(FS_SRC_C)
@@ -241,9 +241,11 @@ micropython: $(OBJ)
 
 micropython.bin: micropython
 	$(OBJCOPY) --output-format=binary micropython micropython.bin
+	cp micropython.bin bin_file
 
 clean_all:  clean
 			rm -rf micropython micropython.bin
+			rm ./bin_flie/micropython.bin
 			make -C ../../mpy-cross clean
 build:
 	rm -rf kendryte-standalone-sdk kendryte-standalone-sdk-0.4.1 v0.4.1.zip
@@ -253,6 +255,16 @@ build:
 	mv kendryte-standalone-sdk-0.4.1 kendryte-standalone-sdk
 	cd kendryte-standalone-sdk && patch -p1 -u < ../sdk.patch && cd -
 
+packfs:
+	rm -rf fs.bin
+	make -C pack/mkfs/mkspiffs/ clean && make -C pack/mkfs/mkspiffs/ all
+	pack/mkfs/mkspiffs/mkspiffs -c fs_path/ fs.bin
+	mv fs.bin bin_file
+
+pack:   packfs	
+	rm -rf sipeed.bin
+	#python3 pack/pack_finware_model_fs.py
+	pack/pack.sh
 
 include $(TOP)/py/mkrules.mk
 
