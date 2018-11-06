@@ -109,12 +109,12 @@ static int ai_param_init(uint8_t mode)
 	LAYER_CFG layer_cfg;
 	LABEL_CFG label_cfg;
 	w25qxx_read_data(AI_CFG_ADDRESS + AI_CFG_SIZE * mode, (uint8_t *)&model_cfg, sizeof(MODEL_CFG), W25QXX_QUAD_FAST);
+	printf("addr = %x,model_cfg.magic = %x\n",AI_CFG_ADDRESS + AI_CFG_SIZE * mode,model_cfg.magic);
 	if (model_cfg.magic != 0x12345678)
 	{
 		printf("ai param magic is error\n");
 		return 1;
 	}
-	// region layer init
 	region_cfg.class = model_cfg.class;
 	region_cfg.threshold = model_cfg.threshold;
 	region_cfg.nms = model_cfg.nms;

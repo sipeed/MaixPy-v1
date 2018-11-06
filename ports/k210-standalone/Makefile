@@ -249,6 +249,8 @@ clean_all:  clean
 			make -C ../../mpy-cross clean
 			rm -rf ./bin_file/micropython.bin
 			rm -rf ./bin_file/fs.bin
+			rm -rf ./bin_file/firmware.bin
+			rm -rf ./sipeedm1.kfpkg
 build:
 	rm -rf kendryte-standalone-sdk kendryte-standalone-sdk-0.4.1 v0.4.1.zip
 	wget https://github.com/kendryte/kendryte-standalone-sdk/archive/v0.4.1.zip
@@ -263,10 +265,11 @@ packfs:
 	pack/mkfs/mkspiffs/mkspiffs -c fs_path/ fs.bin
 	mv fs.bin bin_file
 
-pack:   packfs	
-	rm -rf sipeed.bin
-	#python3 pack/pack_finware_model_fs.py
+pack_bin:   packfs	
 	pack/pack.sh
+
+pack_kfpkg: packfs
+	pack/pack_zip.sh
 
 include $(TOP)/py/mkrules.mk
 
