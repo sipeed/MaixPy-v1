@@ -6,7 +6,7 @@
       "bin": "micropython.bin",
       "sha256Prefix": true
     },
-	{
+    {
       "address": 0x00080000,
       "bin": "cfg.bin",
       "sha256Prefix": false
@@ -16,7 +16,7 @@
       "bin": "model.bin",
       "sha256Prefix": false
     },
-    {
+	{
       "address": 0x00600000,
       "bin": "fs.bin",
       "sha256Prefix": false
