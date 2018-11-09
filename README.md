@@ -2,7 +2,7 @@ Micropython based on the Sipeed Maix one platform
 ===============================================
 
 <p align="center">
-  <img src="http://i1.bvimg.com/666569/516250f0d8a0716d.jpg" alt="Sipeed Maix one"/>
+  <img src="http://pgeza64pd.bkt.clouddn.com/dan-board.jpg" alt="Sipeed Maix one"/>
 </p>
 
 
