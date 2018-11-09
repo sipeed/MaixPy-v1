@@ -1,0 +1,13 @@
+Only in ../../../MaixPy/ports/k210-standalone: py.patch
+diff -r -u py/vm.c "py/vm.c"
+--- py/vm.c	2018-11-09 10:44:52.747283258 +0800
++++ "py/vm.c"	2018-11-09 10:49:20.414652684 +0800
+@@ -63,7 +63,7 @@
+     ip += 2;
+ #define DECODE_PTR \
+     DECODE_UINT; \
+-    void *ptr = (void*)(uintptr_t)code_state->fun_bc->const_table[unum]
++    void *ptr = (void*)*((uint64_t *)(code_state->fun_bc->const_table)+unum)
+ #define DECODE_OBJ \
+     DECODE_UINT; \
+     mp_obj_t obj = (mp_obj_t)code_state->fun_bc->const_table[unum]
