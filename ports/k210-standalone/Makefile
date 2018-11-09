@@ -1,4 +1,4 @@
-.PHONY: clean_all build packfs pack
+.PHONY: clean_all build packfs pack patch_py recover_py
 include ../../py/mkenv.mk
 
 CROSS_COMPILE ?= 
@@ -233,7 +233,20 @@ $(BUILD)/_frozen_mpy.c: frozentest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
 	$(ECHO) "MISC freezing bytecode"
 	$(Q)$(TOP)/tools/mpy-tool.py -f -q $(BUILD)/genhdr/qstrdefs.preprocessed.h -mlongint-impl=none $< > $@
 
-all: micropython.bin
+all: 
+	make patch_py 
+	make micropython.bin 
+	make recover_py
+
+patch_py:
+	rm -rf ../../py/vm.c.orig
+	rm -rf ../../py/vm.c.rej
+	cd ../../py/ && patch -u -p1 < ../ports/k210-standalone/py.patch && cd -
+
+recover_py:
+	cd ../../py/ && patch -u -p1 -R < ../ports/k210-standalone/py.patch && cd -
+	rm -rf ../../py/vm.c.orig
+	rm -rf ../../py/vm.c.rej
 
 micropython: $(OBJ)
 	$(ECHO) "LINK $@"

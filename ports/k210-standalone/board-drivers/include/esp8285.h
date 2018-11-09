@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+uint16_t esp8285_rev_buflen(uint8_t *str);
 uint8_t esp8285_wifista_config(uint8_t *ssid,uint8_t *password);
 void esp8285_at_response(uint8_t mode);
 uint8_t *esp8285_check_cmd(uint8_t *str);

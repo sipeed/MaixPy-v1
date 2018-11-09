@@ -1,6 +1,6 @@
-diff -r -u kendryte-standalone-sdk-0.4.1/lib/drivers/dvp.c kendryte-standalone-sdk/lib/drivers/dvp.c
---- kendryte-standalone-sdk-0.4.1/lib/drivers/dvp.c	2018-10-23 10:38:28.000000000 +0800
-+++ kendryte-standalone-sdk/lib/drivers/dvp.c	2018-10-30 21:18:27.601293000 +0800
+diff -r -u kendryte-standalone-sdk/lib/drivers/dvp.c kendryte-standalone-sdk-dst/lib/drivers/dvp.c
+--- kendryte-standalone-sdk/lib/drivers/dvp.c	2018-10-23 10:38:28.000000000 +0800
++++ kendryte-standalone-sdk-dst/lib/drivers/dvp.c	2018-11-07 14:19:58.810791000 +0800
 @@ -103,7 +103,7 @@
      return (uint8_t) DVP_SCCB_RDATA_BYTE(dvp->sccb_cfg);
  }
@@ -10,9 +10,9 @@ diff -r -u kendryte-standalone-sdk-0.4.1/lib/drivers/dvp.c kendryte-standalone-s
  {
      /* First power down */
      dvp->cmos_cfg |= DVP_CMOS_POWER_DOWN;
-diff -r -u kendryte-standalone-sdk-0.4.1/lib/drivers/include/dvp.h kendryte-standalone-sdk/lib/drivers/include/dvp.h
---- kendryte-standalone-sdk-0.4.1/lib/drivers/include/dvp.h	2018-10-23 10:38:28.000000000 +0800
-+++ kendryte-standalone-sdk/lib/drivers/include/dvp.h	2018-10-30 21:18:27.601293000 +0800
+diff -r -u kendryte-standalone-sdk/lib/drivers/include/dvp.h kendryte-standalone-sdk-dst/lib/drivers/include/dvp.h
+--- kendryte-standalone-sdk/lib/drivers/include/dvp.h	2018-10-23 10:38:28.000000000 +0800
++++ kendryte-standalone-sdk-dst/lib/drivers/include/dvp.h	2018-11-07 14:19:58.810791000 +0800
 @@ -244,6 +244,9 @@
   */
  void dvp_set_output_enable(dvp_output_mode_t index, int enable);
@@ -23,9 +23,9 @@ diff -r -u kendryte-standalone-sdk-0.4.1/lib/drivers/include/dvp.h kendryte-stan
  #ifdef __cplusplus
  }
  #endif
-diff -r -u kendryte-standalone-sdk-0.4.1/lib/drivers/include/timer.h kendryte-standalone-sdk/lib/drivers/include/timer.h
---- kendryte-standalone-sdk-0.4.1/lib/drivers/include/timer.h	2018-10-23 10:38:28.000000000 +0800
-+++ kendryte-standalone-sdk/lib/drivers/include/timer.h	2018-10-30 21:18:27.601293000 +0800
+diff -r -u kendryte-standalone-sdk/lib/drivers/include/timer.h kendryte-standalone-sdk-dst/lib/drivers/include/timer.h
+--- kendryte-standalone-sdk/lib/drivers/include/timer.h	2018-10-23 10:38:28.000000000 +0800
++++ kendryte-standalone-sdk-dst/lib/drivers/include/timer.h	2018-11-07 14:19:58.810791000 +0800
 @@ -120,7 +120,26 @@
   * @param[in]   enable      Enable or disable
   *
@@ -53,9 +53,9 @@ diff -r -u kendryte-standalone-sdk-0.4.1/lib/drivers/include/timer.h kendryte-st
  
  #ifdef __cplusplus
  }
-diff -r -u kendryte-standalone-sdk-0.4.1/lib/drivers/include/uart.h kendryte-standalone-sdk/lib/drivers/include/uart.h
---- kendryte-standalone-sdk-0.4.1/lib/drivers/include/uart.h	2018-10-23 10:38:28.000000000 +0800
-+++ kendryte-standalone-sdk/lib/drivers/include/uart.h	2018-10-30 21:27:36.047332000 +0800
+diff -r -u kendryte-standalone-sdk/lib/drivers/include/uart.h kendryte-standalone-sdk-dst/lib/drivers/include/uart.h
+--- kendryte-standalone-sdk/lib/drivers/include/uart.h	2018-10-23 10:38:28.000000000 +0800
++++ kendryte-standalone-sdk-dst/lib/drivers/include/uart.h	2018-11-07 14:19:58.814791000 +0800
 @@ -120,7 +120,7 @@
  
  typedef enum _uart_bitwidth
@@ -74,9 +74,9 @@ diff -r -u kendryte-standalone-sdk-0.4.1/lib/drivers/include/uart.h kendryte-sta
      UART_STOP_1_5,
      UART_STOP_2
  } uart_stopbit_t;
-diff -r -u kendryte-standalone-sdk-0.4.1/lib/drivers/include/uarths.h kendryte-standalone-sdk/lib/drivers/include/uarths.h
---- kendryte-standalone-sdk-0.4.1/lib/drivers/include/uarths.h	2018-10-23 10:38:28.000000000 +0800
-+++ kendryte-standalone-sdk/lib/drivers/include/uarths.h	2018-10-30 21:27:09.135244000 +0800
+diff -r -u kendryte-standalone-sdk/lib/drivers/include/uarths.h kendryte-standalone-sdk-dst/lib/drivers/include/uarths.h
+--- kendryte-standalone-sdk/lib/drivers/include/uarths.h	2018-10-23 10:38:28.000000000 +0800
++++ kendryte-standalone-sdk-dst/lib/drivers/include/uarths.h	2018-11-07 14:19:58.814791000 +0800
 @@ -78,7 +78,15 @@
  #define UARTHS_IP_TXWM    (0x01)
  #define UARTHS_IP_RXWM    (0x02)
@@ -118,9 +118,21 @@ diff -r -u kendryte-standalone-sdk-0.4.1/lib/drivers/include/uarths.h kendryte-s
  #ifdef __cplusplus
  }
  #endif
-diff -r -u kendryte-standalone-sdk-0.4.1/lib/drivers/uarths.c kendryte-standalone-sdk/lib/drivers/uarths.c
---- kendryte-standalone-sdk-0.4.1/lib/drivers/uarths.c	2018-10-23 10:38:28.000000000 +0800
-+++ kendryte-standalone-sdk/lib/drivers/uarths.c	2018-10-30 21:19:54.329662000 +0800
+diff -r -u kendryte-standalone-sdk/lib/drivers/uart.c kendryte-standalone-sdk-dst/lib/drivers/uart.c
+--- kendryte-standalone-sdk/lib/drivers/uart.c	2018-10-23 10:38:28.000000000 +0800
++++ kendryte-standalone-sdk-dst/lib/drivers/uart.c	2018-11-07 14:20:35.528289472 +0800
+@@ -29,7 +29,7 @@
+     (volatile uart_t*)UART3_BASE_ADDR
+ };
+ 
+-#define RING_BUFF_LEN 64U
++#define RING_BUFF_LEN 1024U
+ 
+ typedef struct _ring_buff_t
+ {
+diff -r -u kendryte-standalone-sdk/lib/drivers/uarths.c kendryte-standalone-sdk-dst/lib/drivers/uarths.c
+--- kendryte-standalone-sdk/lib/drivers/uarths.c	2018-10-23 10:38:28.000000000 +0800
++++ kendryte-standalone-sdk-dst/lib/drivers/uarths.c	2018-11-07 14:19:58.814791000 +0800
 @@ -18,8 +18,53 @@
  #include "uarths.h"
  #include "sysctl.h"
