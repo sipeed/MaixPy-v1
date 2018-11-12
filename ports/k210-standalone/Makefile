@@ -139,9 +139,11 @@ MODULES_SRC_C= \
 		$(MPY_MOD_PATH)/machine/machine_ws2812.c \
 		$(MPY_MOD_PATH)/machine/machine_test.c \
 		$(MPY_MOD_PATH)/machine/machine_devmem.c\
+		$(MPY_MOD_PATH)/machine/machine_esp8285.c\
 		$(MPY_MOD_PATH)/app/modapp.c \
 		$(MPY_MOD_PATH)/app/vi.c \
-		$(MPY_MOD_PATH)/app/app_vi.c
+		$(MPY_MOD_PATH)/app/app_vi.c\
+		$(MPY_MOD_PATH)/socket/modsocket.c
 
 
 LIB_SRC_C ?=
@@ -218,7 +220,8 @@ PY_SRC_C = \
 		lib/utils/interrupt_char.c \
 		lib/utils/pyexec.c \
 		lib/libc/string0.c \
-		lib/mp-readline/readline.c 
+		lib/mp-readline/readline.c \
+		lib/netutils/netutils.c
 	
 ASM_SRCS = $(SDK_PATH)/lib/bsp/crt.S
 
