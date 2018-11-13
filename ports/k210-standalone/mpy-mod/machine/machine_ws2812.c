@@ -45,10 +45,10 @@ void start_irq_all(void)
 STATIC void machine_ws2812_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     machine_ws2812_obj_t *self = self_in;
 
-    mp_printf(print, "ws2812(%p) ", self);
+    mp_printf(print, "[MAIXPY]WS2812:(%p) ", self);
 
-    mp_printf(print, "ws2812 gpio_hs: %d ", self->gpio_num);
-    mp_printf(print, "ws2812 pin: %d ", self->pin_num);
+    mp_printf(print, "[MAIXPY]WS2812:gpio_hs: %d ", self->gpio_num);
+    mp_printf(print, "[MAIXPY]WS2812:pin: %d ", self->pin_num);
 }
 
 STATIC mp_obj_t machine_ws2812_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
@@ -105,17 +105,17 @@ STATIC mp_obj_t machine_ws2812_set_RGB(mp_uint_t n_args, const mp_obj_t *pos_arg
 
 	if(args[ARG_red].u_int >255)
 	{
-		printf("Error:red value > 255");
+		printf("[MAIXPY]WS2812:Error:red value > 255");
 		return mp_const_false;
 	}
 	if(args[ARG_green].u_int >255)
 	{
-		printf("Error:green value > 255");
+		printf("[MAIXPY]WS2812:Error:green value > 255");
 		return mp_const_false;
 	}
 	if(args[ARG_blue].u_int >255)
 	{
-		printf("Error:blue value > 255");
+		printf("[MAIXPY]WS2812:Error:blue value > 255");
 		return mp_const_false;
 	}
 	stop_irq_all();
@@ -145,22 +145,22 @@ STATIC mp_obj_t machine_ws2812_set_RGB_num(mp_uint_t n_args, const mp_obj_t *pos
 
 	if(args[ARG_red].u_int >255)
 	{
-		printf("Error:red value > 255");
+		printf("[MAIXPY]WS2812:red value > 255");
 		return mp_const_false;
 	}
 	if(args[ARG_green].u_int >255)
 	{
-		printf("Error:green value > 255");
+		printf("[MAIXPY]WS2812:green value > 255");
 		return mp_const_false;
 	}
 	if(args[ARG_blue].u_int >255)
 	{
-		printf("Error:blue value > 255");
+		printf("[MAIXPY]WS2812:blue value > 255");
 		return mp_const_false;
 	}
 	if(args[ARG_num].u_int <= 0)
 	{
-		printf("Error:num value <= 0");
+		printf("[MAIXPY]WS2812:num value <= 0");
 		return mp_const_false;
 	}
 	stop_irq_all();

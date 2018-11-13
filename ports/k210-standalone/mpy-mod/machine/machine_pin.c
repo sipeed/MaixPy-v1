@@ -60,7 +60,7 @@ void machine_pins_deinit(void) {
 
 gpio_num_t machine_pin_get_id(mp_obj_t pin_in) {
     if (mp_obj_get_type(pin_in) != &machine_pin_type) {
-        mp_raise_ValueError("expecting a pin");
+        mp_raise_ValueError("[MAIXPY]pin:expecting a pin");
     }
     machine_pin_obj_t *self = pin_in;
     return self->id;
@@ -73,10 +73,11 @@ STATIC void machine_pin_print(const mp_print_t *print, mp_obj_t self_in, mp_prin
 
 // pin.init(mode, pull=None, *, value)
 STATIC mp_obj_t machine_pin_obj_init_helper(const machine_pin_obj_t *self, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum { ARG_mode, ARG_value };
+    enum { ARG_mode, ARG_value, ARG_printf_en };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_mode, MP_ARG_OBJ, {.u_obj = mp_const_none}},
         { MP_QSTR_value,  MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
+        { MP_QSTR_print_en,  MP_ARG_BOOL, {.u_bool = 1}},
     };
 
     // parse args
@@ -92,7 +93,11 @@ STATIC mp_obj_t machine_pin_obj_init_helper(const machine_pin_obj_t *self, size_
     if (args[ARG_mode].u_obj != mp_const_none) {
 		pin_io_mode = mp_obj_get_int(args[ARG_mode].u_obj);
         if (self->id >= GPIO_MAX_PINNO && (pin_io_mode >GPIO_DM_OUTPUT) && (pin_io_mode <GPIO_DM_INPUT) ) {
-            mp_raise_ValueError("pin can only be input");
+            if(args[ARG_printf_en].u_bool)
+            {
+                mp_raise_ValueError("[MAIXPY]pin:pin can only be input");
+            }
+            return mp_obj_new_bool(0);
         } else {
 			gpio_set_drive_mode(self->id, pin_io_mode);
         }
@@ -101,6 +106,7 @@ STATIC mp_obj_t machine_pin_obj_init_helper(const machine_pin_obj_t *self, size_
 	if(pin_io_mode ==GPIO_DM_OUTPUT ){
 	    if (args[ARG_value].u_obj != MP_OBJ_NULL) {
 	        gpio_set_pin(self->id, mp_obj_is_true(args[ARG_value].u_obj)==0?GPIO_PV_LOW:GPIO_PV_HIGH);
+            return mp_obj_new_bool(1);
 	    }
 	}
 
@@ -119,7 +125,8 @@ mp_obj_t mp_pin_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, 
         self = (machine_pin_obj_t*)&machine_pin_obj[wanted_pin];
     }
     if (self == NULL || self->base.type == NULL) {
-        mp_raise_ValueError("invalid pin");
+        mp_raise_ValueError("[MAIXPY]pin:invalid pin");
+        return mp_const_false;
     }
 
     if (n_args > 1 || n_kw > 0) {
@@ -142,7 +149,7 @@ STATIC mp_obj_t machine_pin_call(mp_obj_t self_in, size_t n_args, size_t n_kw, c
     } else {
         // set pin
         gpio_set_pin(self->id, mp_obj_is_true(args[0])==0?GPIO_PV_LOW:GPIO_PV_HIGH);
-        return mp_const_none;
+        return mp_obj_new_bool(1);
     }
 }
 
@@ -160,22 +167,52 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pin_value_obj, 1, 2, machine_
 
 // pin.toggle(pinnum)
 STATIC mp_obj_t machine_pin_toggle(size_t n_args, const mp_obj_t *args) {
-    if (n_args == 0) {
-        // err
-        mp_raise_ValueError("please input pin num");
-    } else {
-        // set pin
-        gpio_set_pin(mp_obj_get_int(args[0]), !gpio_get_pin(mp_obj_get_int(args[0])));
-        return MP_OBJ_NEW_SMALL_INT(gpio_get_pin(mp_obj_get_int(args[0])));
-    }
+    // set pin
+    gpio_set_pin(mp_obj_get_int(args[0]), !gpio_get_pin(mp_obj_get_int(args[0])));
+    return MP_OBJ_NEW_SMALL_INT(gpio_get_pin(mp_obj_get_int(args[0])));
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pin_toggle_obj, 1, 1, machine_pin_toggle);
+
+STATIC mp_obj_t machine_pin_help(machine_pin_obj_t self) {
+printf("pin - Provide gpio operation\n\
+pin(gpio_num,gpio_mode,init_value)\n\
+    gpio_num:Explain which gpio to use\n\
+    gpio_mode:\n\
+        DM_INPUT,DM_INPUT_PULL_DOWN,DM_INPUT_PULL_UP,DM_OUTPUT\n\
+    init_value:\n\
+        HIGH_LEVEL:High level\n\
+        LOW_LEVEL:Low level\n\
+Method:\n\
+    init(gpio_num,gpio_mode,init_value)\n\
+        gpio_mode:\n\
+        DM_INPUT,DM_INPUT_PULL_DOWN,DM_INPUT_PULL_UP,DM_OUTPUT\n\
+        init_value:\n\
+            HIGH_LEVEL:High level\n\
+            LOW_LEVEL:Low level\n\
+    value(arg)\n\
+        arg:\n\
+            If you want to read the level status of gpio, it is empty.\n\
+            If you want to set the level state of gpio, fill in the specific level state.\n\
+            HIGH_LEVEL:High level\n\
+            LOW_LEVEL:Low level\n\
+    toggle()\n\
+         Flip gpio level status\n\
+");
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(machine_pin_help_obj, machine_pin_help);
 
 STATIC const mp_rom_map_elem_t machine_pin_locals_dict_table[] = {
     // instance methods
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&machine_pin_init_obj) },
     { MP_ROM_QSTR(MP_QSTR_value), MP_ROM_PTR(&machine_pin_value_obj) },
     { MP_ROM_QSTR(MP_QSTR_toggle), MP_ROM_PTR(&machine_pin_toggle_obj) },
+    { MP_ROM_QSTR(MP_QSTR_help), MP_ROM_PTR(&machine_pin_help_obj) },
+    { MP_ROM_QSTR(MP_QSTR_DM_INPUT), MP_ROM_INT(0) },
+    { MP_ROM_QSTR(MP_QSTR_DM_INPUT_PULL_DOWN), MP_ROM_INT(1) },
+    { MP_ROM_QSTR(MP_QSTR_DM_INPUT_PULL_UP), MP_ROM_INT(2) },
+    { MP_ROM_QSTR(MP_QSTR_DM_OUTPUT), MP_ROM_INT(3) },
+    { MP_ROM_QSTR(MP_QSTR_HIGH_LEVEL), MP_ROM_INT(1) },
+    { MP_ROM_QSTR(MP_QSTR_LOW_LEVEL), MP_ROM_INT(0) },
 };
 
 STATIC mp_uint_t pin_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_t arg, int *errcode) {

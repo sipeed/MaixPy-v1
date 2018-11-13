@@ -80,7 +80,7 @@ static int imge_buf_convert(machine_ai_obj_t* self)
 	        blue[i] = ((src[0] & 31) * 8);
 	        src += 2;
 		}
-		debug_print("imge_buf_convert finish\n");
+		debug_print("[MAIXPY]Face Detect:imge_buf_convert finish\n");
 }
 
 
@@ -90,18 +90,18 @@ int ai_dma_irq(void *ctx)
 	//ai_test("ai_dma_irq");
 	if (dmac->channel[AI_DMA_CHANNEL].intstatus & 0x02) {
 		if (self->buf_status == 0) { // convert completed, start ai cal
-			debug_print("I can enter dma irq self->cal_status == %d\n",self->buf_status);
+			debug_print("[MAIXPY]Face Detect:I can enter dma irq self->cal_status == %d\n",self->buf_status);
 			ai_cal_start();
 			self->buf_status = 1; // wait ai cal completed flag
 		}
 		else if(self->buf_status == 1){
-			debug_print("I can enter dma irq self->cal_status == %d\n",self->buf_status);
+			debug_print("[MAIXPY]Face Detect:I can enter dma irq self->cal_status == %d\n",self->buf_status);
 			self->buf_status = 2;
 		}
 	}
 	dmac->channel[AI_DMA_CHANNEL].intclear = 0xFFFFFFFF;
 	ndelay(1000);
-	debug_print("quit ai_dma_irq\n");
+	debug_print("[MAIXPY]Face Detect:quit ai_dma_irq\n");
 	return 0;
 }
 
@@ -128,13 +128,13 @@ STATIC mp_obj_t machine_ai_process_image(mp_obj_t self_in,mp_obj_t buf) {
 	while(2 != self->buf_status)
 	{
 		ndelay(50);
-		debug_print("whiling\n");
+		debug_print("[MAIXPY]Face Detect:whiling\n");
 	}
 	ai_draw_label((uint32_t*)bufinfo.buf);
 	//memset(bufinfo.buf, 0, bufinfo.len);
-	debug_print("finish ai_draw_label\n");
-	debug_print("finish ai_cal_first\n");
-	debug_print("finish process\n");
+	debug_print("[MAIXPY]Face Detect:finish ai_draw_label\n");
+	debug_print("[MAIXPY]Face Detect:finish ai_cal_first\n");
+	debug_print("[MAIXPY]Face Detect:finish process\n");
 	return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(machine_process_image_obj, machine_ai_process_image);
@@ -157,7 +157,7 @@ STATIC mp_obj_t machine_ai_init_helper(machine_ai_obj_t *self_in) {
 		uint8_t manuf_id, device_id;
 		w25qxx_init(3);
 		w25qxx_read_id(&manuf_id, &device_id);
-		printf("manuf_id:0x%02x,device_id:0x%02x\n", manuf_id, device_id);
+		printf("[MAIXPY]Flash:0x%02x:0x%02x\n", manuf_id, device_id);
 		if (manuf_id != 0xFF && manuf_id != 0x00 && device_id != 0xFF && device_id != 0x00)
 			break;
 	}
@@ -165,11 +165,11 @@ STATIC mp_obj_t machine_ai_init_helper(machine_ai_obj_t *self_in) {
 	self->buf_status = 0;
 	if (ai_init(0))
 	{
-		printf("[lichee_error]:ai_init error,please burn a model\n");
+		printf("[MAIXPY]Face Detect:ai_init error,please burn a model\n");
 		return mp_const_none;
 	}
 	plic_irq_register(AI_DMA_INTERRUPT, ai_dma_irq, self);
-	printf("face detect init!\n");
+	printf("MAIXPY]Face Detect:init successful!\n");
 	return mp_const_none;
 }
 

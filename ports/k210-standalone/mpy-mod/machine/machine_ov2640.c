@@ -137,13 +137,15 @@ STATIC void machine_ov2640_disable(machine_ov2640_obj_t *self) {
 
 STATIC mp_obj_t machine_ov2640_init_helper(machine_ov2640_obj_t *self) {
 	/*init dvp*/
-	do {
-		printf("init ov2640\r\n");
-		ov2640_init();
-		ov2640_read_id(&self->manuf_id, &self->device_id);
-		printf("manuf_id:0x%04x,device_id:0x%04x\r\n", self->manuf_id, self->device_id);
-	} while (self->manuf_id != 0x7FA2 || self->device_id != 0x2642);
-	
+
+	//printf("init ov2640\r\n");
+	ov2640_init();
+	ov2640_read_id(&self->manuf_id, &self->device_id);
+	//printf("manuf_id:0x%04x,device_id:0x%04x\r\n", self->manuf_id, self->device_id);
+	if(self->manuf_id != 0x7FA2 || self->device_id != 0x2642)
+	{
+		return mp_obj_new_bool(0);
+	}
 	/*buffer interrupt*/
 	void* ptr = NULL;
 	if(ptr == NULL)
@@ -152,7 +154,7 @@ STATIC mp_obj_t machine_ov2640_init_helper(machine_ov2640_obj_t *self) {
 		self->ptr = ptr;
 	}
 	if (ptr == NULL)
-		return mp_const_false;
+		return mp_obj_new_bool(1);
 	self->buf.addr[0] = (uint32_t *)(((uint32_t)ptr + 127) & 0xFFFFFF80);
 	self->buf.addr[1] = (uint32_t *)((uint32_t)self->buf.addr[0] + 320 * 240 * 2);
 	self->buf.buf_used[0] = 0;
@@ -170,7 +172,7 @@ STATIC mp_obj_t machine_ov2640_init_helper(machine_ov2640_obj_t *self) {
 	
 	self->active = 1;
 
-    return mp_const_none;
+	return mp_obj_new_bool(1);
 }
 
 
@@ -194,7 +196,7 @@ STATIC mp_obj_t machine_ov2640_get_image(mp_obj_t self_in,mp_obj_t buf) {
 	memcpy(bufinfo.buf, self->buf.addr[self->buf.buf_sel], bufinfo.len);
 	self->buf.buf_used[self->buf.buf_sel] = 0;
 	//printf("[lichee]:get image!\n");
-    return mp_const_none;
+	return mp_obj_new_bool(1);
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(machine_ov2640_get_images_obj, machine_ov2640_get_image);

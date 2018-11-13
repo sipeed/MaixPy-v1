@@ -12,7 +12,7 @@ static u8_t spiffs_work_buf[SPIFFS_CFG_LOG_PAGE_SZ(fs)*2];
 static u8_t spiffs_fds[32*4];
 static u8_t spiffs_cache_buf[(SPIFFS_CFG_LOG_PAGE_SZ(fs)+32)*4];
 
-s32_t my_spi_read(int addr, int size, char *buf)
+s32_t k210_sf_read(int addr, int size, char *buf)
 {
     int phy_addr=addr;
     enum w25qxx_status_t res = w25qxx_read_data(phy_addr, buf, size,W25QXX_QUAD);
@@ -20,12 +20,14 @@ s32_t my_spi_read(int addr, int size, char *buf)
     printf("flash read addr:%x size:%d buf_head:%x %x\n",phy_addr,size,buf[0],buf[1]);
 	#endif
     if (res != W25QXX_OK) {
+		#if open_fs_debug
         printf("spifalsh read err\n");
+		#endif
         return SPIFFS_ERR_FULL;
     }
     return SPIFFS_OK;
 }
-s32_t my_spi_write(int addr, int size, char *buf)
+s32_t k210_sf_write(int addr, int size, char *buf)
 {
     int phy_addr=addr;
     
@@ -34,12 +36,14 @@ s32_t my_spi_write(int addr, int size, char *buf)
     printf("flash write addr:%x size:%d buf_head:%x,%x\n",phy_addr,size,buf[0],buf[1]);
 	#endif
     if (res != W25QXX_OK) {
+		#if open_fs_debug
         printf("spifalsh write err\n");
+		#endif
         return SPIFFS_ERR_FULL;
     }
     return SPIFFS_OK;
 }
-s32_t my_spi_erase(int addr, int size)
+s32_t k210_sf_erase(int addr, int size)
 {
     int phy_addr=addr;
     unsigned char *temp_pool;
@@ -48,7 +52,9 @@ s32_t my_spi_erase(int addr, int size)
 	#endif
     enum w25qxx_status_t res = w25qxx_32k_block_erase(phy_addr);
     if (res != W25QXX_OK) {
+		#if open_fs_debug
         printf("spifalsh erase err\n");
+		#endif
         return SPIFFS_ERR_FULL;
     }
     return SPIFFS_OK;
@@ -92,9 +98,9 @@ void my_spiffs_init(){
 	cfg.log_block_size = SPIFFS_CFG_LOG_BLOCK_SZ(fs); // let us not complicate things
 	cfg.log_page_size = SPIFFS_CFG_LOG_PAGE_SZ(fs); // as we said
 
-	cfg.hal_read_f = my_spi_read;
-	cfg.hal_write_f = my_spi_write;
-	cfg.hal_erase_f = my_spi_erase;
+	cfg.hal_read_f = k210_sf_read;
+	cfg.hal_write_f = k210_sf_write;
+	cfg.hal_erase_f = k210_sf_erase;
 
 	int res = SPIFFS_mount(&fs,
 						   &cfg,
@@ -104,39 +110,42 @@ void my_spiffs_init(){
 					       spiffs_cache_buf,
 						   sizeof(spiffs_cache_buf),
 						   0);
-		if(foce_format_fs || res != SPIFFS_OK || res==SPIFFS_ERR_NOT_A_FS)
+	printf("[MAIXPY]:Spiffs Mount %s \n", res?"failed":"successful");
+	if(foce_format_fs || res != SPIFFS_OK || res==SPIFFS_ERR_NOT_A_FS)
+	{
+		SPIFFS_unmount(&fs);printf("[MAIXPY]:Spiffs Unmount.\n");
+		printf("[MAIXPY]:Spiffs Formating...\n");
+		s32_t format_res=SPIFFS_format(&fs);
+		printf("[MAIXPY]:Spiffs Format %s \n",format_res?"failed":"successful");
+		res = SPIFFS_mount(&fs,
+			&cfg,
+			spiffs_work_buf,
+			spiffs_fds,
+			sizeof(spiffs_fds),
+			spiffs_cache_buf,
+			sizeof(spiffs_cache_buf),
+			0);
+		printf("[MAIXPY]:Spiffs Mount %s \n", res?"failed":"successful");
+		if(!res)
 		{
-			SPIFFS_unmount(&fs);printf("spiffs unmounted...\n");
-			printf("spiffs formating...\n");
-			s32_t format_res=SPIFFS_format(&fs);
-			printf("spiffs formated res %d\n",format_res);
-			res = SPIFFS_mount(&fs,
-				&cfg,
-				spiffs_work_buf,
-				spiffs_fds,
-				sizeof(spiffs_fds),
-				spiffs_cache_buf,
-				sizeof(spiffs_cache_buf),
-				0);
-			if(!res)
-			{
-				spiffs_file fd;
-				fd=SPIFFS_open(&fs,"/init.py", SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR, 0);
-				if(fd != -1){
-					s32_t ls_res = SPIFFS_lseek(&fs, fd,0,0);
-					if(!ls_res){
-						s32_t w_res = SPIFFS_write(&fs, fd,init_py_file,sizeof(init_py_file));
-						if(w_res <= 0){
-						}else{
-							s32_t f_res = SPIFFS_fflush(&fs, fd);
-						}
+			printf("[MAIXPY]:Spiffs Write init file %s \n");
+			spiffs_file fd;
+			fd=SPIFFS_open(&fs,"/init.py", SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR, 0);
+			if(fd != -1){
+				s32_t ls_res = SPIFFS_lseek(&fs, fd,0,0);
+				if(!ls_res){
+					s32_t w_res = SPIFFS_write(&fs, fd,init_py_file,sizeof(init_py_file));
+					if(w_res <= 0){
+					}else{
+						s32_t f_res = SPIFFS_fflush(&fs, fd);
 					}
 				}
-				SPIFFS_close (&fs, fd);
 			}
-
+			SPIFFS_close (&fs, fd);
 		}
-		printf("spiffs mount %s \n", res?"failed":"successful");
+
+	}
+	
 	return;
 
 }
@@ -150,14 +159,14 @@ int format_fs(void)
 	cfg.log_block_size = SPIFFS_CFG_LOG_BLOCK_SZ(fs); // let us not complicate things
 	cfg.log_page_size = SPIFFS_CFG_LOG_PAGE_SZ(fs); // as we said
 
-	cfg.hal_read_f = my_spi_read;
-	cfg.hal_write_f = my_spi_write;
-	cfg.hal_erase_f = my_spi_erase;
+	cfg.hal_read_f = k210_sf_read;
+	cfg.hal_write_f = k210_sf_write;
+	cfg.hal_erase_f = k210_sf_erase;
 
-	SPIFFS_unmount(&fs);printf("spiffs unmounted...\n");
-	printf("spiffs formating...\n");
+	SPIFFS_unmount(&fs);SPIFFS_unmount(&fs);printf("[MAIXPY]:Spiffs Unmount.\n");
+	printf("[MAIXPY]:Spiffs Formating...\n");
 	s32_t format_res=SPIFFS_format(&fs);
-	printf("spiffs formated res %d\n",format_res);
+	printf("[MAIXPY]:Spiffs Format %s \n",format_res?"failed":"successful");
 //	printf("spiffs formated end \n");
 //	printf("w25qxx_page_program_fun addr %p\n",w25qxx_page_program_fun);
 //	printf("spiffs formated \n");
@@ -169,7 +178,7 @@ int format_fs(void)
 						spiffs_cache_buf,
 						sizeof(spiffs_cache_buf),
 						0);
-
+	printf("[MAIXPY]:Spiffs Mount %s \n", res?"failed":"successful");
 	return res;
 }
 

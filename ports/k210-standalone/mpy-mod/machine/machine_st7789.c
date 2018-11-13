@@ -88,7 +88,7 @@ STATIC mp_obj_t machine_init_helper(machine_st7789_obj_t *self) {
 	self->color[11] =  0XBC40;
 	self->color[12] =  0XFC07;
 	self->color[13] =  0X8430;
-	printf("LCD init\r\n");
+	printf("[MAIXPY]LCD:init\r\n");
 	lcd_init();
 	lcd_clear(BLUE);
     return mp_const_none;
@@ -159,7 +159,7 @@ STATIC mp_obj_t machine_draw_string(mp_uint_t n_args, const mp_obj_t *pos_args, 
 	uint16_t y = args[ARG_y].u_int;
 	if(args[ARG_str].u_obj == mp_const_none)
 	{
-		printf("[lichee error]:please enter a string");
+		printf("[MAIXPY]LCD:please enter a string");
 		return mp_const_none;
 	}
     mp_buffer_info_t bufinfo;
@@ -168,7 +168,7 @@ STATIC mp_obj_t machine_draw_string(mp_uint_t n_args, const mp_obj_t *pos_args, 
 	uint16_t color = args[ARG_color].u_int;
 	if(color > 13)
 	{
-		printf("[lichee error]:please enter a right color\n");
+		printf("[MAIXPY]LCD:please enter a right color\n");
 		return mp_const_none;
 	}
 	lcd_draw_string( x, y,ptr,self->color[color]);
@@ -183,12 +183,12 @@ STATIC mp_obj_t machine_clear(mp_obj_t self_in,mp_obj_t color) {
         color_num = MP_OBJ_SMALL_INT_VALUE(color);
 	else
 	{
-		printf("[lichee error]:type error\n");
+		printf("[MAIXPY]LCD:type error\n");
 		return mp_const_none;
 	}
 	if(color_num > 13)
 	{
-		printf("[lichee error]:please enter a right color\n");
+		printf("[MAIXPY]LCD:please enter a right color\n");
 		return mp_const_none;
 	}
 	lcd_clear(self->color[color_num]);

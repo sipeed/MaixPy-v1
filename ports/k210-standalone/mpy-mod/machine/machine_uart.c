@@ -63,7 +63,7 @@ STATIC const char *_parity_name[] = {"None", "1", "0"};
 STATIC void machine_uart_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     machine_uart_obj_t *self = MP_OBJ_TO_PTR(self_in);
     //uart_get_baudrate(self->uart_num, &baudrate);
-    mp_printf(print, "UART%d( baudrate=%u, bits=%u, parity=%s, stop=%u)",
+    mp_printf(print, "[MAIXPY]UART%d:( baudrate=%u, bits=%u, parity=%s, stop=%u)",
         self->uart_num,self->baudrate, self->bits, _parity_name[self->parity],
         self->stop);
 }
@@ -88,7 +88,7 @@ STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, co
     if (args[ARG_bits].u_int >=5 && args[ARG_bits].u_int <=8) {
             self->bits=args[ARG_bits].u_int;
     }else{
-            mp_raise_ValueError("invalid data bits");
+            mp_raise_ValueError("[MAIXPY]UART:invalid data bits");
 	    return;
     }
 
@@ -120,7 +120,7 @@ STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, co
             self->stop = UART_STOP_1_5;
             break;
         default:
-            mp_raise_ValueError("invalid stop bits");
+            mp_raise_ValueError("[MAIXPY]UART:invalid stop bits");
             break;
     }
 
@@ -134,7 +134,7 @@ STATIC mp_obj_t machine_uart_make_new(const mp_obj_type_t *type, size_t n_args, 
     // get uart id
     mp_int_t uart_num = mp_obj_get_int(args[0]);
     if (uart_num < 0 || uart_num > UART_NUM_MAX) {
-        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "UART(%d) does not exist", uart_num));
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "[MAIXPY]UART%b:does not exist", uart_num));
     }
     // create instance
     machine_uart_obj_t *self = m_new_obj(machine_uart_obj_t);
