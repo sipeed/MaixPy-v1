@@ -47,12 +47,14 @@ static char heap[MPY_HEAP_SIZE];
 #endif
 
 void do_str(const char *src, mp_parse_input_kind_t input_kind);
-const uint8_t Banner[] = {" __  __              _____  __   __  _____   __     __ \n\
+const uint8_t Banner[] = {"\n __  __              _____  __   __  _____   __     __ \n\
 |  \\/  |     /\\     |_   _| \\ \\ / / |  __ \\  \\ \\   / /\n\
 | \\  / |    /  \\      | |    \\ V /  | |__) |  \\ \\_/ / \n\
 | |\\/| |   / /\\ \\     | |     > <   |  ___/    \\   /  \n\
 | |  | |  / ____ \\   _| |_   / . \\  | |         | |   \n\
-|_|  |_| /_/    \\_\\ |_____| /_/ \\_\\ |_|         |_|\n"};
+|_|  |_| /_/    \\_\\ |_____| /_/ \\_\\ |_|         |_|\n\
+Official Site:http://www.sipeed.com/\n\
+Wiki:http://maixpy.sipeed.com/\n"};
 int main()
 {
     uint64_t core_id = current_coreid();
@@ -66,8 +68,8 @@ int main()
 		sysctl_pll_set_freq(SYSCTL_PLL1,160000000);
 		uarths_init();
         printf(Banner);
-		printf("[lichee]:pll0 freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL0));
-		printf("[lichee]:pll1 freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL1));
+		printf("[MAIXPY]Pll0:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL0));
+		printf("[MAIXPY]Pll1:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL1));
 		sysctl->power_sel.power_mode_sel6 = 1;
 		sysctl->power_sel.power_mode_sel7 = 1;
 		uarths_set_irq(UARTHS_RECEIVE,on_irq_uarths_recv,NULL,1);
@@ -81,7 +83,7 @@ int main()
 			    break;
 		}
 		w25qxx_enable_quad_mode();
-        printf("manuf_id:0x%02x,device_id:0x%02x\n", manuf_id, device_id);
+        printf("[MAIXPY]Flash:0x%02x:0x%02x\n", manuf_id, device_id);
 		my_spiffs_init();
 	    int stack_dummy;
 	    stack_top = (char*)&stack_dummy;

@@ -157,7 +157,7 @@ STATIC mp_obj_t machine_burner_init_helper(machine_burner_obj_t *self_in) {
 		uint8_t manuf_id, device_id;
 		w25qxx_init(3);
 		w25qxx_read_id(&manuf_id, &device_id);
-		printf("manuf_id:0x%02x,device_id:0x%02x\n", manuf_id, device_id);
+		printf("[MAIXPY]Flash:0x%02x:0x%02x\n", manuf_id, device_id);
 		if (manuf_id != 0xFF && manuf_id != 0x00 && device_id != 0xFF && device_id != 0x00)
 			break;
 	}

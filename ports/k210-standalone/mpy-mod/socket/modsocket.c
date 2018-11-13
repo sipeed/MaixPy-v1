@@ -125,7 +125,7 @@ int parse_ipv4_addr(mp_obj_t addr_in, uint8_t *out_ip, netutils_endian_t endian)
         } else if (i > 0 && s < s_top && *s == '.') {
             s++;
         } else {
-            printf("It is not string IP form\n");
+            printf("[MAIXPY]SOCKET:It is not string IP form\n");
 			return 0;
         }
     }
@@ -138,7 +138,7 @@ int add_escapte(char* str,char* dest)
 	int i = 0;
 	if(str == NULL)
 	{
-		printf("str == NULL\n");
+		printf("[MAIXPY]SOCKET:str == NULL\n");
 		return 0;
 	}
 	for(;i < len+1;i++)
@@ -158,12 +158,12 @@ STATIC mp_uint_t socket_stream_read(mp_obj_t self_in, const void *buf, mp_uint_t
 
 	socket_obj_t *sock = self_in;
 	int read_len = 0;
-	printf("begin stream_len = %d\n",sock->stream_len);
-	printf("begin stream_cur = %d\n",sock->stream_cur);
+	printf("[MAIXPY]SOCKET:begin stream_len = %d\n",sock->stream_len);
+	printf("[MAIXPY]SOCKET:begin stream_cur = %d\n",sock->stream_cur);
 	/*judge socket buf wether have data*/
 	if(0 != sock->stream_len)//socket buf have data
 	{
-		printf("enter if branch\n");
+		printf("[MAIXPY]SOCKET:enter if branch\n");
 		if(size > sock->stream_len)
 			read_len = sock->stream_len;
 		else
@@ -184,19 +184,19 @@ STATIC mp_uint_t socket_stream_read(mp_obj_t self_in, const void *buf, mp_uint_t
 	sock->stream_len = read_data(NULL,sock->stream);
 	if(0 == sock->stream_len)//read data failed
 	{
-		printf("read data failed!\n");
+		printf("[MAIXPY]SOCKET:read data failed!\n");
 		return 0;
 	}
 	if(read_len > sock->stream_len)//read size too big
 	{
-		printf("[warning]:size too big\n");
+		printf("[MAIXPY]SOCKET:size too big\n");
 		read_len = sock->stream_len;
 	}
 	memcpy(buf,&sock->stream[sock->stream_cur],read_len);
 	sock->stream_cur += read_len;
 	sock->stream_len -= read_len;
-	printf("end stream_len = %d\n",sock->stream_len);
-	printf("end stream_cur = %d\n",sock->stream_cur);
+	debug_print("[MAIXPY]SOCKET:end stream_len = %d\n",sock->stream_len);
+	debug_print("[MAIXPY]SOCKET:end stream_cur = %d\n",sock->stream_cur);
 	if(sock->stream_len <= 0)
 	{
 		sock->stream_len = 0;
@@ -227,13 +227,13 @@ STATIC mp_uint_t socket_stream_write(mp_obj_t self_in, const void *buf, mp_uint_
 	flag = send_cmd(tmp_data,"OK",2);
 	if(flag == 0)
 	{
-		printf("write data length failed/n");
+		printf("[MAIXPY]SOCKET:write data length failed/n");
 		return 0;
 	}
 	flag =send_data(buf,size,2);
 	if(flag == 0)
 	{
-		printf("write data failed/n");
+		printf("[MAIXPY]SOCKET:write data failed/n");
 		return 0;
 	}
 	//sock->stream_cur = 0;
@@ -256,7 +256,7 @@ STATIC mp_obj_t socket_connect(const mp_obj_t arg0, const mp_obj_t arg1) {
     elem = tuple_in->items;
     if (len != 2) 
     {
-    	mp_raise_OSError("connect addr info in not right\n");
+    	mp_raise_OSError("[MAIXPY]SOCKET:connect addr info in not right\n");
     }
     char *host = mp_obj_str_get_str(elem[0]);
 	int port = mp_obj_get_int(elem[1]);
@@ -268,10 +268,10 @@ STATIC mp_obj_t socket_connect(const mp_obj_t arg0, const mp_obj_t arg1) {
 	debug_print("cmd = %s\n",cmd);
 	if(0 == send_cmd(cmd,"OK",2))
 	{
-		printf("connect failed!\n");
+		printf("[MAIXPY]SOCKET:connect failed!\n");
 		return mp_const_false;
 	}
-	printf("connect!\n");
+	printf("[MAIXPY]SOCKET:connect!\n");
     return mp_const_true;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_connect_obj, socket_connect);
