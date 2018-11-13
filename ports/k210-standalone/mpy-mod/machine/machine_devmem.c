@@ -46,11 +46,12 @@ typedef struct _machine_devmem_obj_t {
 STATIC mp_obj_t machine_devmem_obj_init_helper(const machine_devmem_obj_t *self,size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     long long int *addr = NULL;
 	long long int value = 0;
-	enum { ARG_addr, ARG_width, ARG_value };
+	enum { ARG_addr, ARG_width, ARG_value, ARG_print_en };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_addr, MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
 		{ MP_QSTR_width, MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
         { MP_QSTR_value,  MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
+		{ MP_QSTR_print_en,  MP_ARG_BOOL, {.u_bool = 1}},
     };
     // parse args
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -75,9 +76,18 @@ STATIC mp_obj_t machine_devmem_obj_init_helper(const machine_devmem_obj_t *self,
 				*(volatile uint64_t*)addr = value;
 				break;
 			default:
-				mp_raise_ValueError("bad width");
+				if(args[ARG_print_en].u_bool)
+				{
+					mp_raise_ValueError("[MAIXPY]Devmem:Bad width");
+				}
+				return mp_obj_new_bool(0);
 			}
-			printf("wite ok\n");
+			if(args[ARG_print_en].u_bool)
+			{
+				printf("[MAIXPY]Devmem:Wite ok\n");
+			}
+			return mp_obj_new_bool(1);
+			
 		}else{
 			switch (mp_obj_get_int(args[ARG_width].u_obj)) {
 			case 8:
@@ -93,14 +103,25 @@ STATIC mp_obj_t machine_devmem_obj_init_helper(const machine_devmem_obj_t *self,
 				value = *(volatile uint64_t*)addr;
 				break;
 			default:
-				mp_raise_ValueError("bad width");
+				if(args[ARG_print_en].u_bool)
+				{
+					mp_raise_ValueError("[MAIXPY]Devmem:Bad width");
+				}
+				return mp_obj_new_bool(0);
 			}
-			printf("%x\n",value);
+			if(args[ARG_print_en].u_bool)
+			{
+				printf("[MAIXPY]Devmem:Read %x %x\n",addr,value);
+			}
+			return MP_OBJ_NEW_SMALL_INT(value);
 		}
     }else{
-		mp_raise_ValueError("addr vaild");
+		if(args[ARG_print_en].u_bool)
+		{
+			mp_raise_ValueError("[MAIXPY]Devmem:Addr vaild");
+		}
 	}
-    return mp_const_none;
+    return mp_obj_new_bool(0);
 }
 
 mp_obj_t mp_devmem_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {

@@ -64,7 +64,7 @@ const mp_obj_type_t machine_timer_type;
 
 #define K210_DEBUG 0
 #if K210_DEBUG==1
-#define debug_print(x,arg...) printf("[lichee]"x,##arg)
+#define debug_print(x,arg...) printf("[MAIXPY]"x,##arg)
 #else 
 #define debug_print(x,arg...) 
 #endif
@@ -72,11 +72,11 @@ const mp_obj_type_t machine_timer_type;
 STATIC void machine_timer_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     machine_timer_obj_t *self = self_in;
 
-    mp_printf(print, "Timer(%p) ", self);
+    mp_printf(print, "[MAIXPY]TIMER:Timer(%p) ", self);
 
-    mp_printf(print, "timer freq=%d, ", self->freq);
-    mp_printf(print, "reload=%d, ", timer_get_reload(self->timer,self->channel));
-    mp_printf(print, "counter=%d", timer_get_count(self->timer,self->channel));
+    mp_printf(print, "[MAIXPY]TIMER:timer freq=%d, ", self->freq);
+    mp_printf(print, "[MAIXPY]TIMER:reload=%d, ", timer_get_reload(self->timer,self->channel));
+    mp_printf(print, "[MAIXPY]TIMER:counter=%d", timer_get_count(self->timer,self->channel));
 }
 
 STATIC mp_obj_t machine_timer_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
@@ -104,38 +104,38 @@ STATIC int machine_timer_isr(void *self_in) {
 	int ret = 0;
 	mp_obj_t member[2] = {MP_OBJ_NULL, MP_OBJ_NULL};
     machine_timer_obj_t *self = self_in;
-	debug_print("freq = %d\n",self->freq);
-	debug_print("enter machine_timer_isr\n");
+	debug_print("[MAIXPY]TIMER:freq = %d\n",self->freq);
+	debug_print("[MAIXPY]TIMER:enter machine_timer_isr\n");
 	timer_channel_clear_interrupt(self->timer,self->channel);	
-	debug_print("self->callback = %p\n",self->callback);
+	debug_print("[MAIXPY]TIMER:self->callback = %p\n",self->callback);
 	mp_obj_type_t *type = mp_obj_get_type(self->callback);
-	debug_print("type->call = %p\n",type->call);
+	debug_print("[MAIXPY]TIMER:type->call = %p\n",type->call);
 	if(type != NULL)
 	{
-		debug_print("type != NULL\n");
+		debug_print("[MAIXPY]TIMER:type != NULL\n");
 		mp_call_function_1(self->callback,MP_OBJ_FROM_PTR(self));
 	}
 	else
 	{
-		debug_print("type == NULL\n");
+		debug_print("[MAIXPY]TIMER:type == NULL\n");
 		
 	}
-	debug_print("quit machine_timer_isr\n");
+	debug_print("[MAIXPY]TIMER:quit machine_timer_isr\n");
 	return 1;
 }
 
 STATIC void machine_timer_enable(machine_timer_obj_t *self) {
-	debug_print("[lichee]:self->timer=%d,self->channel=%d\n",self->timer,self->channel);
+	debug_print("[MAIXPY]TIMER:self->timer=%d,self->channel=%d\n",self->timer,self->channel);
 	if(self->channel == 0 || 1 == self->channel)
 	{
-		debug_print("start init plic timer channel 0 and 1\n");
+		debug_print("[MAIXPY]TIMER:start init plic timer channel 0 and 1\n");
 		plic_set_priority(IRQN_TIMER0A_INTERRUPT + self->timer*2, 1);
 		plic_irq_enable(IRQN_TIMER0A_INTERRUPT + self->timer*2);
 		plic_irq_register(IRQN_TIMER0A_INTERRUPT + self->timer*2, machine_timer_isr, (void*)self);
 	}
 	else if(self->channel == 2 || 3 == self->channel)
 	{
-		debug_print("start init plic timer channel 2 and 3\n");
+		debug_print("[MAIXPY]TIMER:start init plic timer channel 2 and 3\n");
 		plic_set_priority(IRQN_TIMER0B_INTERRUPT + self->timer*2, 1);
 		plic_irq_enable(IRQN_TIMER0B_INTERRUPT + self->timer*2);
 		plic_irq_register(IRQN_TIMER0B_INTERRUPT + self->timer*2, machine_timer_isr, (void*)self);
@@ -145,7 +145,7 @@ STATIC void machine_timer_enable(machine_timer_obj_t *self) {
 	timer_enable_interrupt(self->timer, self->channel);
 	timer_set_enable(self->timer, self->channel,1);
 	self->active = 0;
-	debug_print("[lichee]:quit %s\n",__FUNCTION__);
+	debug_print("[MAIXPY]TIMER:quit %s\n",__FUNCTION__);
 }
 
 STATIC mp_obj_t machine_timer_init_helper(machine_timer_obj_t *self, mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
@@ -198,7 +198,7 @@ STATIC mp_obj_t machine_timer_init_helper(machine_timer_obj_t *self, mp_uint_t n
 	}
 	else
 	{
-		printf("[lichee_warn]div must be bigger than 1,use default division parameter\n");
+		printf("[MAIXPY]TIMER:div must be bigger than 1,use default division parameter\n");
 		self->div = 1;
 	}
 	
@@ -211,7 +211,7 @@ STATIC mp_obj_t machine_timer_init_helper(machine_timer_obj_t *self, mp_uint_t n
     }
 	else if(args[ARG_freq].u_int < 0)
 	{
-		printf("[lichee_warn]frequency must be bigger than 1,use default frequency parameter\n");
+		printf("[MAIXPY]TIMER:frequency must be bigger than 1,use default frequency parameter\n");
 		self->freq = 1;
 		self->clk_freq = sysctl_clock_get_freq(SYSCTL_CLOCK_TIMER0 + self->timer);
 		self->period = (uint32_t)(self->clk_freq / (uint32_t)args[ARG_freq].u_int);
@@ -225,8 +225,8 @@ STATIC mp_obj_t machine_timer_init_helper(machine_timer_obj_t *self, mp_uint_t n
 		else
 		{
 			/*no set freq && no set period*/
-			printf("[lichee_error]please set freq  or period correctly\n");
-			printf("[lichee_error] freq > 0  and  period > 0\n");
+			printf("[MAIXPY]TIMER:please set freq  or period correctly\n");
+			printf("[MAIXPY]TIMER:freq > 0  and  period > 0\n");
 			return mp_const_false;
 		}
 	}
@@ -235,14 +235,14 @@ STATIC mp_obj_t machine_timer_init_helper(machine_timer_obj_t *self, mp_uint_t n
 	if (mp_obj_is_callable(args[ARG_callback].u_obj))
 	{
 		self->callback = args[ARG_callback].u_obj;
-		debug_print("callback is normal\n");
+		debug_print("[MAIXPY]TIMER:callback is normal\n");
 	}
     else
     {
-    	printf("[lichee_error]callback can't work,please give me a callback function\n");
+    	printf("[MAIXPY]TIMER:callback can't work,please give me a callback function\n");
 		return mp_const_false;
     }
-	printf("[lichee]clk_freq = %d,self->period = %d\n",self->clk_freq,self->period);
+	printf("[MAIXPY]TIMER:clk_freq = %d,self->period = %d\n",self->clk_freq,self->period);
 	timer_init(self->timer);
     machine_timer_enable(self);
 	self->clk_freq = sysctl_clock_get_freq(SYSCTL_CLOCK_TIMER0 + self->timer);
@@ -290,7 +290,7 @@ STATIC mp_obj_t machine_timer_period(mp_obj_t self_in,mp_obj_t period) {
 		self->period = MP_OBJ_SMALL_INT_VALUE(period);
 	else
 	{
-		printf("[lichee error]:type error\n");
+		printf("[MAIXPY]TIMER:type error\n");
 		return mp_const_none;
 	}
 	result = self->period;
@@ -338,7 +338,7 @@ STATIC mp_obj_t machine_timer_freq(mp_obj_t self_in,mp_obj_t freq) {
 		self->freq = MP_OBJ_SMALL_INT_VALUE(freq);
 	else
 	{
-		printf("[lichee error]:type error\n");
+		printf("[MAIXPY]TIMER:type error\n");
 		return mp_const_none;
 	}
 	timer_disable(self->timer, self->channel);

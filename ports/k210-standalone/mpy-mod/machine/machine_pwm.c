@@ -61,15 +61,16 @@ STATIC void k210_pwm_print(const mp_print_t *print, mp_obj_t self_in, mp_print_k
 
 STATIC void k210_pwm_init_helper(k210_pwm_obj_t *self,
         size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum { ARG_freq, ARG_duty, ARG_pin_num};
+    enum { ARG_freq, ARG_duty, ARG_pin_num, ARG_printf_en};
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_freq, MP_ARG_INT, {.u_int = -1} },
         { MP_QSTR_duty, MP_ARG_INT, {.u_int = -1} },
 		{ MP_QSTR_pin_num, MP_ARG_INT, {.u_int = -1} },
+        { MP_QSTR_print_en,  MP_ARG_BOOL, {.u_bool = 1}},
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args,
-        MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+    MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
     int channel;
     int avail = -1;
@@ -78,13 +79,24 @@ STATIC void k210_pwm_init_helper(k210_pwm_obj_t *self,
     //  already mentioned.
 
     if (self->tim > 2) {
+        if(args[ARG_printf_en].u_bool)
+        {
             mp_raise_ValueError("out of PWM timers");
+        }
+        return mp_obj_new_bool(0);
     }
     if (self->channel > 3) {
+        if(args[ARG_printf_en].u_bool)
+        {
            mp_raise_ValueError("out of PWM channels");
+        }
+        return mp_obj_new_bool(0);
     }
 	self->pin_num = args[ARG_pin_num].u_int;
-	printf("PWM:set pin%d to pwm output pin\n",args[ARG_pin_num].u_int);
+    if(args[ARG_printf_en].u_bool)
+    {
+	    printf("[MAIXPY]PWM:set pin%d to pwm output pin\n",args[ARG_pin_num].u_int);
+    }
 	//fpioa_set_function(args[ARG_pin_num].u_int, FUNC_TIMER0_TOGGLE1 + self->tim * 4 + self->channel);
     //Maybe change PWM timer
     int tval = args[ARG_freq].u_int;
@@ -97,16 +109,25 @@ STATIC void k210_pwm_init_helper(k210_pwm_obj_t *self,
 		  pwm_init(self->tim);
 		  double duty = self->duty/(double)100;
 		  int fre_pwm = pwm_set_frequency(self->tim,self->channel,self->freq_hz,duty);
-		  printf("PWM:frquency = %d,duty = %f\n",fre_pwm,duty);
+          if(args[ARG_printf_en].u_bool)
+          {
+		    printf("[MAIXPY]PWM:frquency = %d,duty = %f\n",fre_pwm,duty);
+          }
 		  self->freq_hz = fre_pwm;
 		  pwm_set_enable(self->tim, self->channel,1);
+          return mp_obj_new_bool(1);
           //timer_enable(self->tim,self->channel);
           // Set duty cycle?
     }
 	else
 	{
-		printf("pwm frequency is invalid!\n");
+        if(args[ARG_printf_en].u_bool)
+        {
+		    printf("[MAIXPY]pwm；frequency is invalid!\n");
+        }
+        return mp_obj_new_bool(0);
 	}
+    return mp_obj_new_bool(1);
 }
 
 STATIC mp_obj_t k210_pwm_make_new(const mp_obj_type_t *type,

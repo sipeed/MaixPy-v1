@@ -31,7 +31,7 @@ STATIC mp_obj_t machine_set_function(size_t n_args, const mp_obj_t *pos_args, mp
 	uint16_t pin_num = args[ARG_pin].u_int;
 	fpioa_function_t func_num = args[ARG_func].u_int;
 	fpioa_set_function(pin_num,(fpioa_function_t)func_num);
-    return mp_const_none;
+    return mp_obj_new_bool(1);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(machine_set_function_obj, 0,machine_set_function);
 
