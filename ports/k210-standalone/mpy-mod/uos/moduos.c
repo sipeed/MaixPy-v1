@@ -220,7 +220,7 @@ MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_vfs_ls_obj, 0, 1, mp_vfs_ls);
 mp_obj_t mp_vfs_formatfs(size_t n_args, const mp_obj_t *args) {
 
     int res = format_fs();
-    printf("spiffs mount %s \n", res?"failed":"successful");
+    printf("[MAIXPY]SPIFFS:mount %s \n", res?"failed":"successful");
     return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_vfs_formatfs_obj, 0, 1, mp_vfs_formatfs);
@@ -288,17 +288,17 @@ mp_obj_t mp_vfs_write(size_t n_args, const mp_obj_t *args) {
     }
     s32_t ls_res = SPIFFS_lseek(&fs, fd,offset,mode);
     if(ls_res != 0){
-        printf("lseek err\n");
+        printf("[MAIXPY]FS:Lseek err\n");
         mp_raise_OSError(MP_EIO);
     }
 	s32_t w_res = SPIFFS_write(&fs, fd, bufinfo.buf, bufinfo.len);
     if(w_res <= 0){
-        printf("write err\n");
+        printf("[MAIXPY]FS:Write err\n");
         mp_raise_OSError(MP_EIO);
     }
 	s32_t f_res = SPIFFS_fflush(&fs, fd);
     if(f_res != 0){
-        printf("fflush err\n");
+        printf("[MAIXPY]FS:Fflush err\n");
         mp_raise_OSError(MP_EIO);
     }
 	SPIFFS_close (&fs, fd);
@@ -325,7 +325,7 @@ mp_obj_t mp_vfs_read(size_t n_args, const mp_obj_t *args) {
     }
 	s32_t r_res = SPIFFS_read(&fs, fd, bufinfo.buf, bufinfo.len);
     if(r_res <  0){
-        printf("read err %d\n",r_res);
+        printf("[MAIXPY]FS:read err %d\n",r_res);
         mp_raise_OSError(MP_EIO);
     }
 	SPIFFS_close (&fs, fd);

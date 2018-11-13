@@ -372,12 +372,12 @@ int putsec(char *buf, register int n)zfs_enable
 					 #ifdef zfs_enable
 					 s32_t w_res = SPIFFS_write(&fs, fd, buf, n);
 					 if(w_res <= 0){
-					 	printf("write err\n");
+					 	printf("[MAIXPY]ZMODEM:write err\n");
 					 	mp_raise_OSError(MP_EIO);
 					 }
 					 s32_t f_res = SPIFFS_fflush(&fs, fd);
 					 if(f_res != 0){
-					 	printf("fflush err\n");
+					 	printf("[MAIXPY]ZMODEM:fflush err\n");
 					 	mp_raise_OSError(MP_EIO);
 					 }
 					 #endif

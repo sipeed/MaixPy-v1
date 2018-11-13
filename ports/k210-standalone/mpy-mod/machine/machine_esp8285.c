@@ -66,7 +66,7 @@ const mp_obj_type_t machine_esp8285_type;
 
 #define K210_DEBUG 0
 #if K210_DEBUG==1
-#define debug_print(x,arg...) printf("[lichee]"x,##arg)
+#define debug_print(x,arg...) printf("[MAIXPY]:"x,##arg)
 #else 
 #define debug_print(x,arg...) 
 #endif
@@ -99,7 +99,7 @@ STATIC mp_obj_t machine_esp8285_init_helper(machine_esp8285_obj_t *self, mp_uint
 	esp8285_init();
 	if(mp_const_none == args[ARG_ssid].u_obj || mp_const_none == args[ARG_passwd].u_obj)
 	{
-		mp_raise_ValueError("Please enter ssid and password\n");
+		mp_raise_ValueError("[MAIXPY]ESP8285:Please enter ssid and password\n");
 	}
 	mp_buffer_info_t buf_id;
 	mp_buffer_info_t buf_pswd;
@@ -141,7 +141,7 @@ STATIC mp_obj_t machine_esp8285_send_cmd(machine_esp8285_obj_t *self, mp_uint_t 
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 	if(mp_const_none == args[ARG_cmd].u_obj || mp_const_none == args[ARG_ack].u_obj)
 	{
-		mp_raise_ValueError("Please enter cmd and check_ack\n");
+		mp_raise_ValueError("[MAIXPY]ESP8285:Please enter cmd and check_ack\n");
 	}
 	mp_buffer_info_t buf_cmd;
 	mp_buffer_info_t buf_ack;
@@ -149,14 +149,19 @@ STATIC mp_obj_t machine_esp8285_send_cmd(machine_esp8285_obj_t *self, mp_uint_t 
 	mp_obj_str_get_buffer(args[ARG_ack].u_obj, &buf_ack, MP_BUFFER_READ);
 	unsigned char *cmd_ptr =buf_cmd.buf;
 	unsigned char *buf_ptr =buf_ack.buf;
-	printf("cmd is %s\n",cmd_ptr);
-	printf("ack is %s\n",buf_ptr);
+	debug_print("cmd is %s\n",cmd_ptr);
+	debug_print("ack is %s\n",buf_ptr);
 	if(buf_cmd.len == 0 || buf_ack.len == 0)
 	{
-		mp_raise_ValueError("parameter is empty\n");
+		mp_raise_ValueError("[MAIXPY]ESP8285:parameter is empty\n");
 	}
-	send_cmd(cmd_ptr,buf_ptr,2);
-    return mp_const_none;
+	if(send_cmd(cmd_ptr,buf_ptr,2))
+	{
+		return mp_obj_new_bool(1);
+	}else{
+		return mp_obj_new_bool(0);
+	}
+    
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(machine_esp8285_send_cmd_obj, 1, machine_esp8285_send_cmd);

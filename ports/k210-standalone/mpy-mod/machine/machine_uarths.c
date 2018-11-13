@@ -50,7 +50,7 @@ STATIC const char *_parity_name[] = {"None", "1", "0"};
 
 STATIC void machine_uarths_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     machine_uarths_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    mp_printf(print, "UART( baudrate=%u, stop=%u)",
+    mp_printf(print, "[MAIXPY]UARTHS:baudrate=%u, stop=%u)",
         self->baudrate,self->stop);
 }
 
@@ -70,7 +70,7 @@ STATIC void machine_uarths_init_helper(machine_uarths_obj_t *self, size_t n_args
         self->baudrate=args[ARG_baudrate].u_int;
 	    uarths_config(args[ARG_baudrate].u_int,args[ARG_stop].u_int==1?UARTHS_STOP_1:UARTHS_STOP_2);
     }else{
-        mp_raise_ValueError("Please enter the correct baudrate");
+        mp_raise_ValueError("[MAIXPY]UARTHS:Please enter the correct baudrate");
     }
 
 }
