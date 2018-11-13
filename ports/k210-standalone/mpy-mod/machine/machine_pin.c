@@ -120,7 +120,7 @@ mp_obj_t mp_pin_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, 
 
     // get the wanted pin object
     int wanted_pin = mp_obj_get_int(args[0]);
-    const machine_pin_obj_t *self = NULL;
+    machine_pin_obj_t* self = NULL;
     if (0 <= wanted_pin && wanted_pin < MP_ARRAY_SIZE(machine_pin_obj)) {
         self = (machine_pin_obj_t*)&machine_pin_obj[wanted_pin];
     }
