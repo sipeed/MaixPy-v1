@@ -447,6 +447,9 @@ STATIC const mp_rom_map_elem_t os_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_stat), MP_ROM_PTR(&mp_vfs_stat_obj) },
     { MP_ROM_QSTR(MP_QSTR_statvfs), MP_ROM_PTR(&mp_vfs_statvfs_obj) },
     { MP_ROM_QSTR(MP_QSTR_formatfs), MP_ROM_PTR(&mp_vfs_formatfs_obj) },
+    { MP_ROM_QSTR(MP_QSTR_SEEK_SET), MP_ROM_INT(0) },
+    { MP_ROM_QSTR(MP_QSTR_SEEK_CUR), MP_ROM_INT(1) },
+    { MP_ROM_QSTR(MP_QSTR_SEEK_END), MP_ROM_INT(2) },
     //{ MP_ROM_QSTR(MP_QSTR_mount), MP_ROM_PTR(&mp_vfs_mount_obj) },
     //{ MP_ROM_QSTR(MP_QSTR_umount), MP_ROM_PTR(&mp_vfs_umount_obj) },
     #if MICROPY_VFS_FAT

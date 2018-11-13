@@ -175,27 +175,27 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pin_toggle_obj, 1, 1, machine
 
 STATIC mp_obj_t machine_pin_help(machine_pin_obj_t self) {
 printf("pin - Provide gpio operation\n\
-pin(gpio_num,gpio_mode,init_value)\n\
-    gpio_num:Explain which gpio to use\n\
-    gpio_mode:\n\
-        DM_INPUT,DM_INPUT_PULL_DOWN,DM_INPUT_PULL_UP,DM_OUTPUT\n\
-    init_value:\n\
-        HIGH_LEVEL:High level\n\
-        LOW_LEVEL:Low level\n\
-Method:\n\
-    init(gpio_num,gpio_mode,init_value)\n\
-        gpio_mode:\n\
-        DM_INPUT,DM_INPUT_PULL_DOWN,DM_INPUT_PULL_UP,DM_OUTPUT\n\
-        init_value:\n\
-            HIGH_LEVEL:High level\n\
-            LOW_LEVEL:Low level\n\
-    value(arg)\n\
-        arg:\n\
+\e[1mpin\e[0m(\e[1mgpio_num\e[0m,\e[1mgpio_mode\e[0m,\e[1minit_value\e[0m)\n\
+    \e[1mgpio_num\e[0m:Explain which gpio to use\n\
+    \e[1mgpio_mode\e[0m:\n\
+        \e[1mDM_INPUT\e[0m,\e[1mDM_INPUT_PULL_DOWN\e[0m,\e[1mDM_INPUT_PULL_UP\e[0m,\e[1mDM_OUTPUT\e[0m\n\
+        \e[1minit_value\e[0m:\n\
+            \e[1mHIGH_LEVEL\e[0m:High level\n\
+            \e[1mLOW_LEVEL\e[0m:Low level\n\
+\e[1mMethod:\e[0m\n\
+    \e[1minit\e[0m(\e[1mgpio_num\e[0m,\e[1mgpio_mode\e[0m,\e[1minit_value\e[0m)\n\
+        \e[1mgpio_mode\e[0m:\n\
+        \e[1mDM_INPUT\e[0m,\e[1mDM_INPUT_PULL_DOWN\e[0m,\e[1mDM_INPUT_PULL_UP\e[0m,\e[1mDM_OUTPUT\e[0m\n\
+        \e[1minit_value\e[0m:\n\
+            \e[1mHIGH_LEVEL\e[0m:High level\n\
+            \e[1mLOW_LEVEL\e[0m:Low level\n\
+    \e[1mvalue\e[0m(\e[1marg\e[0m)\n\
+        \e[1marg\e[0m:\n\
             If you want to read the level status of gpio, it is empty.\n\
             If you want to set the level state of gpio, fill in the specific level state.\n\
-            HIGH_LEVEL:High level\n\
-            LOW_LEVEL:Low level\n\
-    toggle()\n\
+            \e[1mHIGH_LEVEL\e[0m:High level\n\
+            \e[1mLOW_LEVEL\e[0m:Low level\n\
+    \e[1mtoggle\e[0m()\n\
          Flip gpio level status\n\
 ");
 }
