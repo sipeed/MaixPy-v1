@@ -47,7 +47,12 @@ static char heap[MPY_HEAP_SIZE];
 #endif
 
 void do_str(const char *src, mp_parse_input_kind_t input_kind);
-
+const uint8_t Banner[] = {" __  __              _____  __   __  _____   __     __ \n\
+|  \\/  |     /\\     |_   _| \\ \\ / / |  __ \\  \\ \\   / /\n\
+| \\  / |    /  \\      | |    \\ V /  | |__) |  \\ \\_/ / \n\
+| |\\/| |   / /\\ \\     | |     > <   |  ___/    \\   /  \n\
+| |  | |  / ____ \\   _| |_   / . \\  | |         | |   \n\
+|_|  |_| /_/    \\_\\ |_____| /_/ \\_\\ |_|         |_|\n"};
 int main()
 {
     uint64_t core_id = current_coreid();
@@ -60,6 +65,7 @@ int main()
 		sysctl_pll_enable(SYSCTL_PLL1);
 		sysctl_pll_set_freq(SYSCTL_PLL1,160000000);
 		uarths_init();
+        printf(Banner);
 		printf("[lichee]:pll0 freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL0));
 		printf("[lichee]:pll1 freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL1));
 		sysctl->power_sel.power_mode_sel6 = 1;
