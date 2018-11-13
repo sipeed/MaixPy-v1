@@ -50,11 +50,10 @@ STATIC void k210_spiflash_print(const mp_print_t *print, mp_obj_t self_in, mp_pr
 
 STATIC mp_obj_t k210_flash_read(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args){
 
-    enum { ARG_offset, ARG_buf, ARG_print_en};
+    enum { ARG_offset, ARG_buf};
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_offset, MP_ARG_INT, {.u_int = -1} },
         { MP_QSTR_buf, MP_ARG_OBJ, {.u_obj = mp_const_none} },
-        { MP_QSTR_print_en,  MP_ARG_BOOL, {.u_bool = 1}},
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args-1, pos_args+1, kw_args,MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -66,25 +65,19 @@ STATIC mp_obj_t k210_flash_read(size_t n_args, const mp_obj_t *pos_args, mp_map_
     //w25qxx_status_t res = w25qxx_read_data_dma(offset, bufinfo.buf, bufinfo.len,W25QXX_QUAD);
     enum w25qxx_status_t res = w25qxx_read_data_dma(offset, bufinfo.buf, bufinfo.len);
     if (res != W25QXX_OK) {
-        if(args[ARG_print_en].u_bool)
-        {
-            mp_raise_ValueError("[MAIXPY]SPIFLASH:Read err");
-        }
-        return mp_obj_new_bool(0);
+        mp_raise_ValueError("SPIFLASH read err");
     }
-    return mp_obj_new_bool(1);
-    //printf("data %d\n",(int)bufinfo.len);
-    //return mp_const_none;
+    printf("data %d\n",(int)bufinfo.len);
+    return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(k210_flash_read_obj, 1, k210_flash_read);
 
 STATIC mp_obj_t k210_flash_write(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
 
-    enum { ARG_offset, ARG_buf, ARG_print_en};
+    enum { ARG_offset, ARG_buf};
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_offset, MP_ARG_INT, {.u_int = -1} },
         { MP_QSTR_buf, MP_ARG_OBJ, {.u_obj = mp_const_none} },
-        { MP_QSTR_print_en,  MP_ARG_BOOL, {.u_bool = 1}},
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args-1, pos_args+1, kw_args,MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -94,23 +87,17 @@ STATIC mp_obj_t k210_flash_write(size_t n_args, const mp_obj_t *pos_args, mp_map
     mp_get_buffer_raise(args[ARG_buf].u_obj, &bufinfo, MP_BUFFER_READ);
     enum w25qxx_status_t res = w25qxx_write_data(offset, bufinfo.buf, bufinfo.len);
     if (res != W25QXX_OK) {
-        if(args[ARG_print_en].u_bool)
-        {
-            mp_raise_ValueError("[MAIXPY]SPIFLASH:Write err");
-        }
-        return mp_obj_new_bool(0);
+        mp_raise_ValueError("SPIFLASH write err");
     }
-    //printf("write data len:%d\n",(int)bufinfo.len);
-    return mp_obj_new_bool(1);
-    //return mp_const_none;
+    printf("write data len:%d\n",(int)bufinfo.len);
+    return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(k210_flash_write_obj,1, k210_flash_write);
 
 STATIC mp_obj_t k210_flash_erase(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum { ARG_addr, ARG_print_en};
+    enum { ARG_addr};
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_addr, MP_ARG_INT, {.u_int = -1} },
-        { MP_QSTR_print_en,  MP_ARG_BOOL, {.u_bool = 1}},
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args-1, pos_args+1, kw_args,MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -118,14 +105,9 @@ STATIC mp_obj_t k210_flash_erase(size_t n_args, const mp_obj_t *pos_args, mp_map
     int addr = args[ARG_addr].u_int;
     enum w25qxx_status_t res = w25qxx_sector_erase(addr);
     if (res != W25QXX_OK) {
-        if(args[ARG_print_en].u_bool)
-        {
-            mp_raise_ValueError("[MAIXPY]SPIFLASH:Erase err");
-        }
-        return mp_obj_new_bool(0);
+        mp_raise_ValueError("SPIFLASH erase err");
     }
-    return mp_obj_new_bool(1);
-    //return mp_const_none;
+    return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(k210_flash_erase_obj, 1, k210_flash_erase);
 
@@ -136,13 +118,37 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(k210_flash_size_obj, k210_flash_size);
 
 STATIC void k210_spiflash_init_helper(k210_spiflash_obj_t *self,
         size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+
+    //enum { ARG_spin, ARG_ss };
+    //static const mp_arg_t allowed_args[] = {
+        //{ MP_QSTR_spin, MP_ARG_INT, {.u_int = -1} },
+        //{ MP_QSTR_ss, MP_ARG_INT, {.u_int = -1} }, /*new version not have this parameter*/
+    //};
+    //mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    //mp_arg_parse_all(n_args, pos_args, kw_args,
+    //MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+    // Find a free SPIFLASH channel, also spot if our pin is
+    //  already mentioned.
+
+    
+    //if (args[ARG_spin].u_int > 3) {
+    //        mp_raise_ValueError("out of SPIFLASH timers");
+    //        printf(" timern=%u \n",args[ARG_spin].u_int);
+    //        return;
+    //}
+	/* new version not have this parameter
+    if (args[ARG_ss].u_int !=0 && args[ARG_ss].u_int !=1 ) {
+           mp_raise_ValueError("SPIFLASH ss err");
+           printf(" ss=%u\n",args[ARG_ss].u_int);
+           return;
+    }
+	*/
     self->spin = 0;
-    w25qxx_init(0);//args[ARG_ss].u_int);
+    w25qxx_init(3);//args[ARG_ss].u_int);
 	w25qxx_enable_quad_mode();
     uint8_t status,manuf_id,device_id;
     status=w25qxx_read_id(&manuf_id,&device_id);
-    //printf("spiflash:%d m_id: %x , d_id:%x \n",status,manuf_id,device_id);
-    return mp_obj_new_bool(1);
+    printf("spiflash:%d m_id: %x , d_id:%x \n",status,manuf_id,device_id);
 }
 
 STATIC mp_obj_t k210_spiflash_make_new(const mp_obj_type_t *type,
@@ -174,7 +180,7 @@ MP_DEFINE_CONST_FUN_OBJ_KW(k210_spiflash_init_obj, 1, k210_spiflash_init);
 
 STATIC mp_obj_t k210_spiflash_deinit(mp_obj_t self_in) {
     k210_spiflash_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    //printf("DEINIT SPIFLASH(spi:%u)", self->spin);//,self->ss);
+    printf("DEINIT SPIFLASH(spi:%u)", self->spin);//,self->ss);
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(k210_spiflash_deinit_obj, k210_spiflash_deinit);
