@@ -1893,6 +1893,7 @@ STATIC mp_obj_t machine_zmodem_rz(mp_obj_t file_patch_obj) {
 	#ifdef zfs_enable
 	SPIFFS_close (&fs, fd);
 	#endif
+	free(f);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(machine_zmodem_rz_obj, machine_zmodem_rz);
 
