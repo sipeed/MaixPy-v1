@@ -81,13 +81,30 @@ static int _open(char* fn, int flag)
     default: mode = "r";break;
     }*/
     //return (int)fopen(fn, (char*)mode);
+    uint8_t found = 0;
+
+    spiffs_DIR dir;
+    if (!SPIFFS_opendir (&fs, "/", &dir))
+        mp_raise_OSError("[MAIXPY]VI:Open dir err");
+    struct spiffs_dirent de;
+    while (SPIFFS_readdir (&dir, &de))
+    {
+        if(strcmp(fn, de.name)==0)
+        {
+            found = 1;
+            fd =SPIFFS_open(&fs,fn, SPIFFS_RDWR, 0);//SPIFFS_CREAT | SPIFFS_O_TRUNC|
+            break;
+        }
+    }
+    SPIFFS_closedir (&dir);
+
+    if(found == 0)
+        fd =SPIFFS_open(&fs,fn, SPIFFS_CREAT | SPIFFS_O_TRUNC| SPIFFS_RDWR, 0);
     
-    fd =SPIFFS_open(&fs,fn, SPIFFS_RDWR, 0);//SPIFFS_CREAT | SPIFFS_O_TRUNC| 
     if(fd == -1){
         mp_raise_OSError(MP_EIO);
         return 0;
-    }
-	  else {
+    }else {
         fd = fd + 10;
         return (int)fd;
       }

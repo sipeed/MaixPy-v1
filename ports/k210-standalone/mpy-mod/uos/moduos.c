@@ -47,7 +47,7 @@
 
 extern mp_obj_t file_open(const char* file_name, const mp_obj_type_t *type, mp_arg_val_t *args);
 extern const mp_obj_type_t mp_type_vfs_spiffs_textio;
-static unsigned char current_dir[FS_PATCH_LENGTH];
+unsigned char current_dir[FS_PATCH_LENGTH];
 extern const mp_obj_type_t mp_fat_vfs_type;
 
 STATIC const qstr os_uname_info_fields[] = {
@@ -226,26 +226,26 @@ mp_obj_t mp_vfs_formatfs(size_t n_args, const mp_obj_t *args) {
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_vfs_formatfs_obj, 0, 1, mp_vfs_formatfs);
 
 
-mp_obj_t mp_vfs_mkdir(mp_obj_t path_in) {
-    const char* path = mp_obj_str_get_str(path_in);
-    if(strcmp(path,"/")==0 || strcmp(path,"/t")==0)
-    {
-        mp_raise_OSError(MP_EEXIST);
-    }
-    spiffs_stat st;
-    int status = 0;
+// mp_obj_t mp_vfs_mkdir(mp_obj_t path_in) {
+//     const char* path = mp_obj_str_get_str(path_in);
+//     if(strcmp(path,"/")==0 || strcmp(path,"/t")==0)
+//     {
+//         mp_raise_OSError(MP_EEXIST);
+//     }
+//     spiffs_stat st;
+//     int status = 0;
 
-    if (SPIFFS_stat(&fs,path, &st) != 0) {
-        /* Directory does not exist. EEXIST for race condition */
-        //if (mkdir(&fs,path, 0) != 0 && errno != EEXIST) {
-        //    mp_raise_OSError(MP_EIO);
-        //}
-    } else {
-    mp_raise_OSError(MP_EIO);
-    }
-    return mp_const_none;
-}
-MP_DEFINE_CONST_FUN_OBJ_1(mp_vfs_mkdir_obj, mp_vfs_mkdir);
+//     if (SPIFFS_stat(&fs,path, &st) != 0) {
+//         /* Directory does not exist. EEXIST for race condition */
+//         //if (mkdir(&fs,path, 0) != 0 && errno != EEXIST) {
+//         //    mp_raise_OSError(MP_EIO);
+//         //}
+//     } else {
+//     mp_raise_OSError(MP_EIO);
+//     }
+//     return mp_const_none;
+// }
+// MP_DEFINE_CONST_FUN_OBJ_1(mp_vfs_mkdir_obj, mp_vfs_mkdir);
 
 mp_obj_t mp_vfs_remove(mp_obj_t path_in) {
     const char* path = mp_obj_str_get_str(path_in);
