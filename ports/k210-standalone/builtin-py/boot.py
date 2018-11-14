@@ -1,10 +1,11 @@
 import gc
-import platform
 import uos
 import os
 import machine
-import common
+import platform
 import app
+import board
+board_info=board.board_info()
 file_list = os.ls()
 for i in range(len(file_list)):
     if file_list[i] == '/init.py':
