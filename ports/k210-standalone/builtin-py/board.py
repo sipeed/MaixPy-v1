@@ -7,8 +7,8 @@ class board_info:
         self.GPIO9 = 9;
         self.GPIO10 = 10;
         self.GPIO11 = 11;
-        self.LED_G = 12;
-        self.LED_B = 13
+        self.LED_B = 12;
+        self.LED_G = 13
         self.LED_R = 14
         self.GPIO15 = 15
         self.BOOT_KEY = 16
@@ -43,7 +43,7 @@ class board_info:
         self.DVP_HSYNC = 45
         self.DVP_XCLK = 46
         self.DVP_PCLK = 47
-        self.pin_name=['WIFI_TX ','WIFI_RX ','WIFI_EN ','GPIO9','GPIO10','GPIO11','LED_G','LED_B','LED_R','GPIO15','BOOT_KEY','GPIO17','MIC_ARRAY_BCK','MIC_ARRAY_WS ','MIC_ARRAY_DATA3','MIC_ARRAY_DATA2','MIC_ARRAY_DATA1','MIC_ARRAY_DATA0','MIC_ARRAY_LED','SPI0_CS1','SPI0_MISO','SPI0_CLK ','SPI0_MOSI','SPI0_CS0','MIC0_WS','MIC0_DATA','MIC0_BCK','I2S_WS','I2S_DA','I2S_BCK','LCD_CS','LCD_RST','LCD_DC','LCD_WR ','DVP_SDA','DVP_SCL','DVP_RST','DVP_VSYNC','DVP_PWDN','DVP_HSYNC','DVP_XCLK','DVP_PCLK']
+        self.pin_name=['WIFI_TX ','WIFI_RX ','WIFI_EN ','GPIO9','GPIO10','GPIO11','LED_B','LED_G','LED_R','GPIO15','BOOT_KEY','GPIO17','MIC_ARRAY_BCK','MIC_ARRAY_WS ','MIC_ARRAY_DATA3','MIC_ARRAY_DATA2','MIC_ARRAY_DATA1','MIC_ARRAY_DATA0','MIC_ARRAY_LED','SPI0_CS1','SPI0_MISO','SPI0_CLK ','SPI0_MOSI','SPI0_CS0','MIC0_WS','MIC0_DATA','MIC0_BCK','I2S_WS','I2S_DA','I2S_BCK','LCD_CS','LCD_RST','LCD_DC','LCD_WR ','DVP_SDA','DVP_SCL','DVP_RST','DVP_VSYNC','DVP_PWDN','DVP_HSYNC','DVP_XCLK','DVP_PCLK']
     def pin_map(self,Pin = None):
         if Pin == None:
             print("+---Pin----+----Function----------+\n\
@@ -59,9 +59,9 @@ class board_info:
 +——————————|——————————————————————+\n\
 |   11     |     Pin11            |\n\
 +——————————|——————————————————————+\n\
-|   12     |     LED_G            |\n\
+|   12     |     LED_B            |\n\
 +——————————|——————————————————————+\n\
-|   13     |     LED_B            |\n\
+|   13     |     LED_G            |\n\
 +——————————|——————————————————————+\n\
 |   14     |     LED_R            |\n\
 +——————————|——————————————————————+\n\
