@@ -12,7 +12,7 @@ STATIC const mp_map_elem_t machine_module_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_machine) },
     { MP_ROM_QSTR(MP_QSTR_uarths), MP_ROM_PTR(&machine_uarths_type) },
     { MP_ROM_QSTR(MP_QSTR_uart), MP_ROM_PTR(&machine_uart_type) },
-    { MP_ROM_QSTR(MP_QSTR_pin), MP_ROM_PTR(&machine_pin_type) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO), MP_ROM_PTR(&machine_pin_type) },
     { MP_ROM_QSTR(MP_QSTR_pwm), MP_ROM_PTR(&machine_pwm_type) },
     { MP_ROM_QSTR(MP_QSTR_timer), MP_ROM_PTR(&machine_timer_type) },
     { MP_ROM_QSTR(MP_QSTR_st7789), MP_ROM_PTR(&machine_st7789_type) },
