@@ -164,10 +164,10 @@ STATIC mp_obj_t machine_timer_init_helper(machine_timer_obj_t *self, mp_uint_t n
 #else
 #endif
 */
-		{ MP_QSTR_freq, 		MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} },
-        { MP_QSTR_period,       MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} },
-        { MP_QSTR_div,       	MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} },
-        { MP_QSTR_callback,     MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} },
+		{ MP_QSTR_freq, 		 MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_period,        MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_div,       	 MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_callback,      MP_ARG_OBJ, {.u_obj = mp_const_none} },
         //{ MP_QSTR_tick_hz,      MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 1000} },
         //{ MP_QSTR_mode,         MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 1} },
 
@@ -361,6 +361,16 @@ STATIC const mp_rom_map_elem_t machine_timer_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_restart), MP_ROM_PTR(&machine_timer_restart_obj) },
     { MP_ROM_QSTR(MP_QSTR_freq), MP_ROM_PTR(&machine_timer_freq_obj) },
     { MP_ROM_QSTR(MP_QSTR_value), MP_ROM_PTR(&machine_timer_value_obj) },
+
+	{ MP_ROM_QSTR(MP_QSTR_TIMER0), MP_ROM_INT(0) },
+	{ MP_ROM_QSTR(MP_QSTR_TIMER1), MP_ROM_INT(1) },
+	{ MP_ROM_QSTR(MP_QSTR_TIMER2), MP_ROM_INT(2) },
+	{ MP_ROM_QSTR(MP_QSTR_TIMER3), MP_ROM_INT(3) },
+	{ MP_ROM_QSTR(MP_QSTR_CHANEEL0), MP_ROM_INT(0) },
+	{ MP_ROM_QSTR(MP_QSTR_CHANEEL1), MP_ROM_INT(1) },
+	{ MP_ROM_QSTR(MP_QSTR_CHANEEL2), MP_ROM_INT(2) },
+	{ MP_ROM_QSTR(MP_QSTR_CHANEEL3), MP_ROM_INT(3) },
+	
     { MP_ROM_QSTR(MP_QSTR_ONE_SHOT), MP_ROM_INT(false) },
     { MP_ROM_QSTR(MP_QSTR_PERIODIC), MP_ROM_INT(true) },
 };

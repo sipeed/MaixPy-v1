@@ -213,6 +213,16 @@ STATIC const mp_rom_map_elem_t k210_pwm_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&k210_pwm_deinit_obj) },
     { MP_ROM_QSTR(MP_QSTR_freq), MP_ROM_PTR(&k210_pwm_freq_obj) },
     { MP_ROM_QSTR(MP_QSTR_duty), MP_ROM_PTR(&k210_pwm_duty_obj) },
+    
+	{ MP_ROM_QSTR(MP_QSTR_TIMER0), MP_ROM_INT(0) },
+	{ MP_ROM_QSTR(MP_QSTR_TIMER1), MP_ROM_INT(1) },
+	{ MP_ROM_QSTR(MP_QSTR_TIMER2), MP_ROM_INT(2) },
+	{ MP_ROM_QSTR(MP_QSTR_TIMER3), MP_ROM_INT(3) },
+	{ MP_ROM_QSTR(MP_QSTR_CHANEEL0), MP_ROM_INT(0) },
+	{ MP_ROM_QSTR(MP_QSTR_CHANEEL1), MP_ROM_INT(1) },
+	{ MP_ROM_QSTR(MP_QSTR_CHANEEL2), MP_ROM_INT(2) },
+	{ MP_ROM_QSTR(MP_QSTR_CHANEEL3), MP_ROM_INT(3) },
+	
 };
 
 STATIC MP_DEFINE_CONST_DICT(k210_pwm_locals_dict,k210_pwm_locals_dict_table);

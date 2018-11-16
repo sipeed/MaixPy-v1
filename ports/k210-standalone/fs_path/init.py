@@ -9,7 +9,7 @@ pin_init.init()
 test_gpio_pin_num=18
 fpioa=machine.fpioa()
 fpioa.set_function(test_gpio_pin_num,63)
-test_pin=machine.pin(7,2,0)
+test_pin=machine.GPIO(7,2,0)
 lcd=machine.st7789()
 lcd.init()
 lcd.draw_string(116,121,"Welcome to MaixPy")

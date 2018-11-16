@@ -218,6 +218,22 @@ STATIC const mp_rom_map_elem_t pyb_st7789_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_draw_picture_default), MP_ROM_PTR(&machine_draw_picture_default_obj) },
     { MP_ROM_QSTR(MP_QSTR_draw_string), MP_ROM_PTR(&machine_draw_string_obj) },
     { MP_ROM_QSTR(MP_QSTR_clear), MP_ROM_PTR(&machine_clear_obj) },
+
+ 	{ MP_ROM_QSTR(MP_QSTR_WHITE),   MP_ROM_INT(0) },
+ 	{ MP_ROM_QSTR(MP_QSTR_BLACK),   MP_ROM_INT(1) },
+ 	{ MP_ROM_QSTR(MP_QSTR_BLUE),    MP_ROM_INT(2) },
+ 	{ MP_ROM_QSTR(MP_QSTR_BRED),    MP_ROM_INT(3) },
+ 	{ MP_ROM_QSTR(MP_QSTR_GRED),    MP_ROM_INT(4) },
+ 	{ MP_ROM_QSTR(MP_QSTR_GBLUE),   MP_ROM_INT(5) },
+ 	{ MP_ROM_QSTR(MP_QSTR_RED),     MP_ROM_INT(6) },
+	{ MP_ROM_QSTR(MP_QSTR_MAGENTA), MP_ROM_INT(7) },
+	{ MP_ROM_QSTR(MP_QSTR_GREEN),   MP_ROM_INT(8) },
+	{ MP_ROM_QSTR(MP_QSTR_CYAN),    MP_ROM_INT(9) },
+	{ MP_ROM_QSTR(MP_QSTR_YELLOW),  MP_ROM_INT(10) },
+	{ MP_ROM_QSTR(MP_QSTR_BROWN),   MP_ROM_INT(11) },
+	{ MP_ROM_QSTR(MP_QSTR_BRRED),   MP_ROM_INT(12) },
+	{ MP_ROM_QSTR(MP_QSTR_GRAY),    MP_ROM_INT(13) },
+
 };
 
 STATIC MP_DEFINE_CONST_DICT(pyb_st7789_ocals_dict, pyb_st7789_locals_dict_table);

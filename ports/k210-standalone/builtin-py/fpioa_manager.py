@@ -45,3 +45,6 @@ class fpioa_manager:
         else:
             self.board_info.pin_map(pin)
             return self.fpioa_dict[function]
+
+global fm
+fm=fpioa_manager()

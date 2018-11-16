@@ -166,12 +166,13 @@ STATIC mp_obj_t machine_pin_value(size_t n_args, const mp_obj_t *args) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pin_value_obj, 1, 2, machine_pin_value);
 
 // pin.toggle(pinnum)
-STATIC mp_obj_t machine_pin_toggle(size_t n_args, const mp_obj_t *args) {
+STATIC mp_obj_t machine_pin_toggle(mp_obj_t self_in) {
     // set pin
-    gpio_set_pin(mp_obj_get_int(args[0]), !gpio_get_pin(mp_obj_get_int(args[0])));
-    return MP_OBJ_NEW_SMALL_INT(gpio_get_pin(mp_obj_get_int(args[0])));
+    machine_pin_obj_t *self = self_in;
+    gpio_set_pin(self->id, !gpio_get_pin(self->id));
+    return MP_OBJ_NEW_SMALL_INT(gpio_get_pin(self->id));
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pin_toggle_obj, 1, 1, machine_pin_toggle);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(machine_pin_toggle_obj,  machine_pin_toggle);
 
 STATIC mp_obj_t machine_pin_help(machine_pin_obj_t self) {
 printf("pin - Provide gpio operation\n\
@@ -211,6 +212,16 @@ STATIC const mp_rom_map_elem_t machine_pin_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_DM_INPUT_PULL_DOWN), MP_ROM_INT(1) },
     { MP_ROM_QSTR(MP_QSTR_DM_INPUT_PULL_UP), MP_ROM_INT(2) },
     { MP_ROM_QSTR(MP_QSTR_DM_OUTPUT), MP_ROM_INT(3) },
+    
+    { MP_ROM_QSTR(MP_QSTR_GPIO0), MP_ROM_INT(0) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO1), MP_ROM_INT(1) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO2), MP_ROM_INT(2) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO3), MP_ROM_INT(3) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO4), MP_ROM_INT(4) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO5), MP_ROM_INT(5) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO6), MP_ROM_INT(6) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO7), MP_ROM_INT(7) },
+    
     { MP_ROM_QSTR(MP_QSTR_HIGH_LEVEL), MP_ROM_INT(1) },
     { MP_ROM_QSTR(MP_QSTR_LOW_LEVEL), MP_ROM_INT(0) },
 };
