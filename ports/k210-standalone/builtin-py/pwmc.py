@@ -8,10 +8,10 @@ class pwm:
             print("Please enter timer and channel")
             return None
         if fm == None:
-            print("pwm neet a fpioa manager to manage ther fpioa")
+            print("pwm need a fpioa manager to manage ther fpioa")
             return None
         if pin == None:
-            print("pwm neet a output pin")
+            print("pwm need a output pin")
             return None
         if freq <= 0 :
             self.__freq = 2000000
@@ -33,7 +33,6 @@ class pwm:
         self.__pwm=machine.pwm(self.__timer,self.__channel,self.__freq,self.__duty)
     def duty(self,duty):
         self.__duty=duty
-        print("duty:",duty)
         self.__pwm.duty(duty)
     def freq(self,freq):
         self.__freq=freq

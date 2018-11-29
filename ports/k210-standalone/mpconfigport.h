@@ -64,7 +64,7 @@
 
 extern const struct _mp_print_t mp_debug_print;
 extern const struct _mp_print_t mp_debug_print;
-//#define MICROPY_DEBUG_VERBOSE       (1)
+#define MICROPY_DEBUG_VERBOSE       (0)
 #define MICROPY_DEBUG_PRINTER       (&mp_debug_print)
 
 
