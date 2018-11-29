@@ -46,7 +46,7 @@
 #define UART_NUM_MAX 3
 typedef struct _machine_uart_obj_t {
     mp_obj_base_t base;
-    uint16_t baudrate;
+    uint32_t baudrate;
     uint8_t uart_num;
     uint8_t bits;
     uart_parity_t parity;
@@ -72,9 +72,9 @@ STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, co
     enum { ARG_baudrate, ARG_bits, ARG_parity, ARG_stop};
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_baudrate, MP_ARG_INT, {.u_int = 115200} },
-        { MP_QSTR_bits, MP_ARG_INT, {.u_int = 0} },
-        { MP_QSTR_parity, MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
-        { MP_QSTR_stop, MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
+        { MP_QSTR_bits, MP_ARG_INT, {.u_int = UART_BITWIDTH_8BIT} },
+        { MP_QSTR_parity, MP_ARG_INT, {.u_int = UART_PARITY_NONE} },
+        { MP_QSTR_stop, MP_ARG_INT, {.u_int = UART_STOP_1} },
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -94,36 +94,28 @@ STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, co
 
     // set parity
     
-    if (args[ARG_parity].u_obj != MP_OBJ_NULL) {
-        if (args[ARG_parity].u_obj == mp_const_none) {
-            self->parity = UART_PARITY_NONE;
-        } else {
-            mp_int_t parity = mp_obj_get_int(args[ARG_parity].u_obj);
-            if (parity & 1) {
-                self->parity = UART_PARITY_ODD;
-            } else {
-                self->parity = UART_PARITY_EVEN;
-            }
-        }
+    if (args[ARG_parity].u_int <= UART_PARITY_EVEN) {
+		self->parity = args[ARG_parity].u_int;
     }
 
     // set stop bits
-    switch (mp_obj_get_int((mp_obj_t)args[ARG_stop].u_obj)) {
-        // FIXME: ESP32 also supports 1.5 stop bits
-        case 0:
-            self->stop = UART_STOP_1;
-            break;
-        case 1:
-            self->stop = UART_STOP_1;
-            break;
-        case 15:
-            self->stop = UART_STOP_1_5;
-            break;
-        default:
-            mp_raise_ValueError("[MAIXPY]UART:invalid stop bits");
-            break;
+    if(args[ARG_stop].u_int <= UART_STOP_2)
+    {
+	    switch (args[ARG_stop].u_int) {
+	        case UART_STOP_1:
+	            self->stop = UART_STOP_1;
+	            break;
+	        case UART_STOP_1_5:
+	            self->stop = UART_STOP_1_5;
+	            break;
+	        case UART_STOP_2:
+	            self->stop = UART_STOP_2;
+	            break;
+	        default:
+	            mp_raise_ValueError("[MAIXPY]UART:invalid stop bits");
+	            break;
+	    }
     }
-
     uart_init(self->uart_num);
     uart_config(self->uart_num, (size_t)self->baudrate, (size_t)self->bits, self->stop,  self->parity);
 }
@@ -163,6 +155,10 @@ STATIC const mp_rom_map_elem_t machine_uart_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&machine_uart_init_obj) },
     { MP_ROM_QSTR(MP_QSTR_read), MP_ROM_PTR(&mp_stream_read_obj) },
     { MP_ROM_QSTR(MP_QSTR_write), MP_ROM_PTR(&mp_stream_write_obj) },
+
+	{ MP_ROM_QSTR(MP_QSTR_UART1), MP_ROM_INT(0) },
+	{ MP_ROM_QSTR(MP_QSTR_UART2), MP_ROM_INT(1) },
+	{ MP_ROM_QSTR(MP_QSTR_UART3), MP_ROM_INT(2) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(machine_uart_locals_dict, machine_uart_locals_dict_table);
