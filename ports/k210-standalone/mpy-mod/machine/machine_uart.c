@@ -97,6 +97,9 @@ STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, co
     if (args[ARG_parity].u_int <= UART_PARITY_EVEN) {
 		self->parity = args[ARG_parity].u_int;
     }
+	else{
+		mp_raise_ValueError("[MAIXPY]UART:invalid parity");
+	}
 
     // set stop bits
     if(args[ARG_stop].u_int <= UART_STOP_2)
