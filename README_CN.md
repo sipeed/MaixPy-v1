@@ -54,8 +54,9 @@ MaixPy主要目录架构:
 
 编译代码:
 
-	$ make CROSS_COMPILE=/your_compiler_path 
+	$ make CROSS_COMPILE=/your_compiler_path/bin/riscv64-unknown-elf-
 	
+我们建议使用7.2.0版本的编译器
 
 `your_compiler_path`为编译器路径，编译器可以查看http://dan.lichee.pro/ 了解
 
