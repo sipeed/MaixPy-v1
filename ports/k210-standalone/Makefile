@@ -1,6 +1,6 @@
 .PHONY: clean_all build packfs pack patch_py recover_py
 include ../../py/mkenv.mk
-
+#ENV = $(shell export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/wipping/Sipeed/M1/kendryte-toolchain-7.2/bin/)
 CROSS_COMPILE ?= 
 SDK_PATH ?= kendryte-standalone-sdk
 MPY_MOD_PATH ?= mpy-mod
@@ -179,6 +179,8 @@ MPY_LIB_SRC = lib/timeutils/timeutils.c \
 SRC_C = \
 		$(MODULES_SRC_C)\
 		main.c \
+		mphalport.c \
+		modutime.c \
 		$(SDK_PATH)/lib/bsp/entry.c \
 		$(SDK_PATH)/lib/bsp/entry_user.c \
 		$(SDK_PATH)/lib/bsp/interrupt.c \
