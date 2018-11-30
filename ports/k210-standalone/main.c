@@ -28,6 +28,8 @@
 #include "fpioa.h"
 #include "gpio.h"
 #include "lib/mp-readline/readline.h"
+#include "lib/utils/interrupt_char.h"
+
 #include "timer.h"
 #include "sysctl.h"
 #include "w25qxx.h"
@@ -96,6 +98,7 @@ int main()
 	    pyexec_frozen_module("boot.py");
 	    #if MICROPY_REPL_EVENT_DRIVEN
             pyexec_event_repl_init();
+			mp_hal_set_interrupt_char(CHAR_CTRL_C);
             char c = 0;
             for (;;) {
                 int cnt = read_ringbuff(&c,1);
