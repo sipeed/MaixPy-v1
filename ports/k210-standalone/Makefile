@@ -1,7 +1,7 @@
 .PHONY: clean_all build packfs pack patch_py recover_py
 include ../../py/mkenv.mk
-#ENV = $(shell export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/wipping/Sipeed/M1/kendryte-toolchain-7.2/bin/)
 CROSS_COMPILE ?= 
+LIB_PATH = $(dir $(CROSS_COMPILE))
 SDK_PATH ?= kendryte-standalone-sdk
 MPY_MOD_PATH ?= mpy-mod
 FS_PORT_PATH ?= spiffs-port
@@ -238,6 +238,7 @@ $(BUILD)/_frozen_mpy.c: frozentest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
 	$(ECHO) "MISC freezing bytecode"
 	$(Q)$(TOP)/tools/mpy-tool.py -f -q $(BUILD)/genhdr/qstrdefs.preprocessed.h -mlongint-impl=none $< > $@
 
+all:export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(LIB_PATH)
 all: 
 	make micropython.bin 
 
