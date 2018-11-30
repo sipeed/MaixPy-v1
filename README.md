@@ -56,8 +56,9 @@ Build code:
 
 Compile the code:
 
-	$ make CROSS_COMPILE=/your_compiler_path
+	$ make CROSS_COMPILE=/your_compiler_path/bin/riscv64-unknown-elf-
 
+We recommend using compiler version 7.2.0
 
 `your_compiler_path` is the compiler path, about the compiler , you can see http://dan.lichee.pro/
 
