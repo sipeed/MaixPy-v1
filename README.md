@@ -51,7 +51,7 @@ Build and compile
 Build code:
 
 	$ git clone git@github.com:sipeed/MaixPy.git #Download sdk
-	$ cd port/k210-standalon/ #Enter the platform code directory
+	$ cd port/k210-standalone/ #Enter the platform code directory
 	$ make build #build platform code in case of first use
 
 Compile the code:
