@@ -326,8 +326,9 @@ void ai_cal_second(void)
 // 	// coprocessor_send_video_data(&video_info_send);
 // }
 
-void ai_draw_label(uint32_t *ptr)
+struct face_Data ai_draw_label(uint32_t *ptr)
 {
+	struct face_Data ret;
 	for (uint8_t i = 0; i < object_info.object_num; i++) {
 		if (ai_param.class > 1) {
 			uint8_t class = object_info.object[i].class;
@@ -362,7 +363,13 @@ void ai_draw_label(uint32_t *ptr)
 				lcd_draw_rectangle_cpu(ptr, object_info.object[i].x1,
 											object_info.object[i].y1,
 											object_info.object[i].x2, 
-											object_info.object[i].y2, RED);
+											object_info.object[i].y2, RED);				
+				ret.x1 = object_info.object[i].x1;
+				ret.y1 = object_info.object[i].y1;
+				ret.x2 = object_info.object[i].x2;
+				ret.y2 = object_info.object[i].y2;
 			}
 	}
+
+	return ret;
 }

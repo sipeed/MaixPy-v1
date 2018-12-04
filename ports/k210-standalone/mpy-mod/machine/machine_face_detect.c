@@ -107,6 +107,11 @@ int ai_dma_irq(void *ctx)
 
 STATIC mp_obj_t machine_ai_process_image(mp_obj_t self_in,mp_obj_t buf) {
 	machine_ai_obj_t* self = self_in;
+	struct face_Data data;
+	data.x1 = 0;
+	data.y1 = 0;
+	data.x2 = 0;
+	data.y2 = 0;
 	/*get image buf*/
 	mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(buf, &bufinfo, MP_BUFFER_READ|MP_BUFFER_WRITE);
@@ -130,12 +135,25 @@ STATIC mp_obj_t machine_ai_process_image(mp_obj_t self_in,mp_obj_t buf) {
 		ndelay(50);
 		debug_print("[MAIXPY]Face Detect:whiling\n");
 	}
-	ai_draw_label((uint32_t*)bufinfo.buf);
+	data = ai_draw_label((uint32_t*)bufinfo.buf);
+	mp_obj_list_t* list = mp_obj_new_list(4, NULL);
+	list->items[0] = MP_OBJ_NEW_SMALL_INT(data.x1);
+	list->items[1] = MP_OBJ_NEW_SMALL_INT(data.x2);
+	list->items[2] = MP_OBJ_NEW_SMALL_INT(data.y1);
+	list->items[3] = MP_OBJ_NEW_SMALL_INT(data.y2);
+	
+//	mp_obj_tuple_t *ret_tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(4, NULL));
+//	ret_tuple->items[0] = MP_OBJ_NEW_SMALL_INT(data.x1);
+//	ret_tuple->items[1] = MP_OBJ_NEW_SMALL_INT(data.x2);
+//	ret_tuple->items[2] = MP_OBJ_NEW_SMALL_INT(data.y1);
+//	ret_tuple->items[3] = MP_OBJ_NEW_SMALL_INT(data.y2);
+
 	//memset(bufinfo.buf, 0, bufinfo.len);
 	debug_print("[MAIXPY]Face Detect:finish ai_draw_label\n");
 	debug_print("[MAIXPY]Face Detect:finish ai_cal_first\n");
 	debug_print("[MAIXPY]Face Detect:finish process\n");
-	return mp_const_none;
+
+	return list;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(machine_process_image_obj, machine_ai_process_image);
 

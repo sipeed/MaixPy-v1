@@ -29,8 +29,11 @@ class pwm:
         print("timer:",self.__timer)
         print("channel:",self.__channel)
         print("pin:",self.__out_pin)
-        fm.registered(self.__out_pin,fm.fpioa.TIMER0_TOGGLE1+self.__timer+self.__channel)
-        self.__pwm=machine.pwm(self.__timer,self.__channel,self.__freq,self.__duty)
+        fm.registered(self.__out_pin,fm.fpioa.TIMER0_TOGGLE1+self.__timer*4+self.__channel)
+        print("use timer_channel = ",fm.fpioa.TIMER0_TOGGLE1+self.__timer+self.__channel)
+        print("use timer = ",self.__timer)
+        print("use channel = ",self.__channel)
+        self.__pwm=machine.pwm(self.__timer,self.__channel,self.__freq,self.__duty,self.__out_pin)
     def duty(self,duty):
         self.__duty=duty
         self.__pwm.duty(duty)

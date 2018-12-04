@@ -119,7 +119,7 @@ STATIC mp_obj_t machine_draw_picture(mp_uint_t n_args, const mp_obj_t *pos_args,
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(args[ARG_buf].u_obj, &bufinfo, MP_BUFFER_READ);
 	uint32_t *ptr = (uint32_t *)bufinfo.buf;
-	lcd_draw_picture( x,  y,  width, height, ptr);
+	lcd_draw_picture_slow( x,  y,  width, height, ptr);
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(machine_draw_picture_obj, 1,machine_draw_picture);
