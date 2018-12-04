@@ -40,74 +40,40 @@ static int dma_finish_irq(void *ctx);
 
 static volatile uint8_t tft_status;
 
-
-static inline void set_dc_low(void)
+static void init_rst(void)
 {
-	gpiohs_set_pin_value(30, GPIO_PV_Low);
+    //fpioa_set_function(37, FUNC_GPIOHS0 + 1);//rst
+    gpiohs_set_drive_mode(1, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(1, GPIO_PV_LOW);
 }
 
-static inline void set_dc_high(void)
+void set_rst_value(uint8_t val)
 {
-	gpiohs_set_pin_value(30, GPIO_PV_High);
-}
-
-static inline void set_rst_low(void)
-{
-	gpiohs_set_pin_value(31, GPIO_PV_Low);
-}
-
-static inline void set_rst_high(void)
-{
-	gpiohs_set_pin_value(31, GPIO_PV_High);
-}
-
-static void st7789_io_init(void)
-{
-	//rst
-    fpioa_set_function(37, FUNC_GPIOHS31);
-    gpiohs_set_drive_mode(31, GPIO_DM_Output);
-    gpiohs_set_pin_value(31, GPIO_PV_Low);
-	//dc
-	fpioa_set_function(38, FUNC_GPIOHS30);
-    gpiohs_set_drive_mode(30, GPIO_DM_Output);
-    gpiohs_set_pin_value(30, GPIO_PV_Low);
-}
-
-static void tft_set_spi_freq(uint32_t freq_mhz)
-{
-	//ch unused
-	uint8_t div = 0;
-
-	uint32_t pll0_freq = sysctl_clock_get_freq(SYSCTL_CLOCK_PLL0);
-
-	pll0_freq /= 1000000;
-	pll0_freq /= 2;
-
-	div = pll0_freq / freq_mhz;
-
-	div /= 2;
-	div -= 1;
-	sysctl_reset(SPI_SYSCTL(RESET));
-	sysctl_clock_set_threshold(SPI_SYSCTL(THRESHOLD), div);
-	sysctl_clock_enable(SPI_SYSCTL(CLOCK));
-
-	printf("div:%d want:%dMhz real:%d\r\n",div,freq_mhz,sysctl_clock_get_freq(SYSCTL_CLOCK_SPI0));
+    if(val)
+        gpiohs_set_pin(1, 1);  //rst high
+    else
+        gpiohs_set_pin(1, 0);  //rst low
 }
 
 // init hardware
 void tft_hard_init(void)
 {
-	tft_set_spi_freq(20);
-
-	fpioa_set_function(36, SPI_SS);
-	fpioa_set_function(39, SPI(SCLK));
-
 	sysctl->misc.spi_dvp_data_enable = 1;		//SPI_D0....D7 output
 
-	st7789_io_init();
-	set_rst_low();
+	//fpioa_set_function(38, FUNC_GPIOHS2);//dc
+	gpiohs->output_en.u32[0] |= 0x00000004;
+
+	sysctl_reset(SPI_SYSCTL(RESET));
+	sysctl_clock_set_threshold(SPI_SYSCTL(THRESHOLD), 0);		//pll0/2
+	sysctl_clock_enable(SPI_SYSCTL(CLOCK));
+
+	//fpioa_set_function(36, SPI_SS);
+	//fpioa_set_function(39, SPI(SCLK));
+
+	init_rst();
+	set_rst_value(0);
     msleep(100);
-    set_rst_high();
+    set_rst_value(1);
 
 	spi[SPI_CHANNEL]->ser = 0x00;
 	spi[SPI_CHANNEL]->ssienr = 0x00;
@@ -146,7 +112,7 @@ void tft_set_datawidth(uint8_t width)
 // command write
 void tft_write_command(uint8_t cmd)
 {
-	set_dc_low();
+	gpiohs->output_val.bits.b2 = 0;
 	spi[SPI_CHANNEL]->ssienr = 0x01;
 	spi[SPI_CHANNEL]->dr[0] = cmd;
 	spi[SPI_CHANNEL]->ser = 0x01 << SPI_SLAVE_SELECT;
@@ -161,7 +127,7 @@ void tft_write_byte(uint8_t *data_buf, uint32_t length)
 {
 	uint32_t index, fifo_len;
 
-	set_dc_high();
+	gpiohs->output_val.bits.b2 = 1;
 	spi[SPI_CHANNEL]->ssienr = 0x01;
 	fifo_len = length < 32 ? length : 32;
 	for (index = 0; index < fifo_len; index++)
@@ -186,7 +152,7 @@ void tft_write_half(uint16_t *data_buf, uint32_t length)
 {
 	uint32_t index, fifo_len;
 
-	set_dc_high();
+	gpiohs->output_val.bits.b2 = 1;
 	spi[SPI_CHANNEL]->ssienr = 0x01;
 	fifo_len = length < 32 ? length : 32;
 	for (index = 0; index < fifo_len; index++)
@@ -209,7 +175,7 @@ void tft_write_half(uint16_t *data_buf, uint32_t length)
 // data write
 void tft_write_word(uint32_t *data_buf, uint32_t length, uint32_t flag)
 {
-	set_dc_high();
+	gpiohs->output_val.bits.b2 = 1;
 	if (flag & 0x01)
 		dmac->channel[SPI_DMA_CHANNEL].ctl |= (((uint64_t)1 << 47) | ((uint64_t)15 << 48) |
 				((uint64_t)1 << 38) | ((uint64_t)15 << 39) |
