@@ -24,7 +24,7 @@ class PT:
 		self.limite_value = limited_val
 		self.cam=machine.ov2640();
 		self.lcd=machine.st7789();
-		self.demo=machine.demo_face_detect();
+		self.demo=machine.face_detect();
 		self.demo.init();
 		self.cam.init();
 		self.lcd.init();

@@ -18,7 +18,7 @@ STATIC const mp_map_elem_t machine_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_st7789), MP_ROM_PTR(&machine_st7789_type) },
     { MP_ROM_QSTR(MP_QSTR_ov2640), MP_ROM_PTR(&machine_ov2640_type) },
     { MP_ROM_QSTR(MP_QSTR_burner), MP_ROM_PTR(&machine_burner_type) },
-    { MP_ROM_QSTR(MP_QSTR_demo_face_detect), MP_ROM_PTR(&machine_demo_face_detect_type) },
+    { MP_ROM_QSTR(MP_QSTR_face_detect), MP_ROM_PTR(&machine_demo_face_detect_type) },
     { MP_ROM_QSTR(MP_QSTR_spiflash), MP_ROM_PTR(&machine_spiflash_type) },
     { MP_ROM_QSTR(MP_QSTR_zmodem), MP_ROM_PTR(&machine_zmodem_type) },
     { MP_ROM_QSTR(MP_QSTR_fpioa), MP_ROM_PTR(&machine_fpioa_type) },
