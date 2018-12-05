@@ -2,7 +2,7 @@ import machine
 from fpioa_manager import *
 global fm
 class PT:
-	def __init__(self,P_x = 0.07,P_y = -0.07,x_init_ang = 90,y_init_ang = 90,limited_val = 15,pr_en = 0):
+	def __init__(self,P_x = -0.07,P_y = -0.05,x_init_ang = 90,y_init_ang = 90,limited_val = 15,pr_en = 0):
 		global fm
 		if x_init_ang > 160 or x_init_ang<30:
 			print("x_init_ang value error")
@@ -10,8 +10,8 @@ class PT:
 		if y_init_ang > 160 or y_init_ang<30:
 			print("y_init_ang value error")
 			return None
-		if P_x < 0 :
-			print("x axis P_value(P_x) must >0")
+		if P_x > 0 :
+			print("x axis P_value(P_x) must <0")
 			return None
 		if P_y > 0 :
 			print("y axis P_value(P_y) must <0")
@@ -30,8 +30,8 @@ class PT:
 		self.lcd.init();
 		fm.registered(34,fm.fpioa.TIMER1_TOGGLE1);
 		fm.registered(35,fm.fpioa.TIMER1_TOGGLE2);
-		self.y_axis=machine.pwm(machine.pwm.TIMER1,machine.pwm.CHANEEL0,50,7.5,34);
-		self.x_axis=machine.pwm(machine.pwm.TIMER1,machine.pwm.CHANEEL1,50,7.5,35);
+		self.y_axis=machine.pwm(machine.pwm.TIMER1,machine.pwm.CHANEEL0,50,7.5,35);
+		self.x_axis=machine.pwm(machine.pwm.TIMER1,machine.pwm.CHANEEL1,50,7.5,34);
 		self.x_axis.duty(7.5)
 		self.y_axis.duty(7.5)
 	
@@ -39,8 +39,8 @@ class PT:
 		if P_y >= 0 :
 			print("y axis P_value(P_y) must <0")
 			return False
-		if P_x <= 0 :
-			print("x axis P_value(P_x) must >0")
+		if P_x >= 0 :
+			print("x axis P_value(P_x) must <0")
 			return False
 		self.Px = P_x
 		self.Py = P_y
@@ -85,7 +85,12 @@ class PT:
 
 			self.x_angle = ux_angle + self.x_angle
 			self.y_angle = uy_angle + self.y_angle
-			
+		        if self.x_angle * 0.055 >= 9.8 :
+                            self.x_angle = 180 
+                            ux_angle = 0
+                        if self.x_angle * 0.055 <= 0.5 :
+                            self.x_angle = 0
+                            ux_angle = 0 
 			x_angle_duty =  (self.x_angle) * 0.055
 			y_angle_duty =  (self.y_angle) * 0.055
 		
