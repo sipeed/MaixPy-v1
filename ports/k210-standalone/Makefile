@@ -26,7 +26,6 @@ INC += -I$(TOP)/lib/timeutils
 # mpy mod header
 INC += -I$(MPY_MOD_PATH)/machine/include
 INC += -I$(MPY_MOD_PATH)/uos/include
-INC += -I$(MPY_MOD_PATH)/app/include
 
 # board drivers header
 INC += -I$(BOARD_DRIVERS_PATH)/include
@@ -140,9 +139,6 @@ MODULES_SRC_C= \
 		$(MPY_MOD_PATH)/machine/machine_test.c \
 		$(MPY_MOD_PATH)/machine/machine_devmem.c\
 		$(MPY_MOD_PATH)/machine/machine_esp8285.c\
-		$(MPY_MOD_PATH)/app/modapp.c \
-		$(MPY_MOD_PATH)/app/vi.c \
-		$(MPY_MOD_PATH)/app/app_vi.c\
 		$(MPY_MOD_PATH)/socket/modsocket.c
 
 

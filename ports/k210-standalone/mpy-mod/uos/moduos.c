@@ -201,9 +201,9 @@ mp_obj_t mp_vfs_ls(size_t n_args, const mp_obj_t *args) {
     struct spiffs_dirent de;
     while (SPIFFS_readdir (&dir, &de))
     {
-        char name[sizeof(de.name)+1] = { 0 };
+        char name[SPIFFS_OBJ_NAME_LEN] = { 0 };
         char res_str[SPIFFS_OBJ_NAME_LEN]={0};
-        memcpy (name, de.name, sizeof(de.name));
+        memcpy (name, de.name, strlen(de.name));
         sprintf(res_str,"%s",name);
 
         // Trace(1,"dir name:%s",dirent->d_name);
