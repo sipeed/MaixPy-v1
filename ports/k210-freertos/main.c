@@ -12,9 +12,11 @@
 #include "py/stackctrl.h"
 #include "lib/utils/pyexec.h"
 #include "lib/mp-readline/readline.h"
-#include "mpthreadport.h"
 #include "gccollect.h"
+#if MICROPY_PY_THREAD
+#include "mpthreadport.h"
 #include "py/mpthread.h"
+#endif
 /*****bsp****/
 #include "sleep.h"
 #include "encoding.h"
@@ -81,8 +83,11 @@ Official Site:http://www.sipeed.com/\n\
 Wiki:http://maixpy.sipeed.com/\n"};
 
 
-void mp_task(void *pvParameter) {
-/*
+void mp_task(
+	#if MICROPY_PY_THREAD 
+	void *pvParameter
+	#endif
+	) {
 		volatile uint32_t sp = (uint32_t)get_sp();
 #if MICROPY_PY_THREAD
 		mp_thread_init(&mp_task_stack[0], MP_TASK_STACK_LEN);
@@ -103,7 +108,7 @@ soft_reset:
 			char c = 0;
    			MP_THREAD_GIL_EXIT();//given gil
 			for (;;) {
-				int cnt = uarths_read(&c,1);
+				int cnt = uarths_receive_data(&c,1);
 				if(cnt==0){continue;}
 				if(pyexec_event_repl_process_char(c)) {
 					break;
@@ -115,7 +120,7 @@ soft_reset:
 		mp_deinit();
 		// msleep(1);
 		printf("prower off\n");
-*/
+
 		return 0;
 }
 
@@ -136,7 +141,7 @@ int main()
 	//w25qxx_read_id(&manuf_id, &device_id);
 	//printf("[MAIXPY]Flash:0x%02x:0x%02x\n", manuf_id, device_id);
 	//my_spiffs_init();
-	
+	/*
 	xTaskCreateAtProcessor(0, // processor
 					     mp_task, // function entry
 					     "mp_task", //task name
@@ -144,6 +149,8 @@ int main()
 					     NULL, //function arg
 					     MP_TASK_PRIORITY, //task priority
 					     &mp_main_task_handle);//task handl
+	*/
+	mp_task();
 }
 void do_str(const char *src, mp_parse_input_kind_t input_kind) {
     nlr_buf_t nlr;
