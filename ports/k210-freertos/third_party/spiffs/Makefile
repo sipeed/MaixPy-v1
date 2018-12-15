@@ -36,7 +36,7 @@ CPATH :=
 ###############################################################################
 # IMPORT MK FILE
 sinclude spiffs/files.mk
-sinclude mk
+sinclude ../../mk
 ###############################################################################
 # IMPORT PLATFORM OPTIONS
 sinclude $(PLATFORM).mk
@@ -53,7 +53,7 @@ define sub_make
 	$(MAKE) -C $(basename $(patsubst %/,%,$(patsubst ./%,%,$(dir $(1))))) all CROSS_COMPILE=$(CROSS_COMPILE) PLATFORM=$(PLATFORM)
 endef
 
-SRC_C += $(addprefix $(CPATH)/, $(CFILES))
+SRC_C += $(addprefix $(CPATH)/, $(CFILES)) $(wildcard spiffs-port/*.c)
 SRC_C += spiffs-port/spiffs-port.c
 C_OBJ :=  $(SRC_C:.c=.o)
 
