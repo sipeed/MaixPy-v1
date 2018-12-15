@@ -9,6 +9,7 @@ CUR_DIR_ADDR := $(shell pwd)/
 LIB_NAME ?= platform
 CROSS_COMPILE ?= 
 MK_VALUE := 
+MK_VALUE +="INC += "$(CUR_DIR_ADDR)"include""\n" 
 OUTPUT_STATIC_LIB := $(LIB_NAME).a
 ###############################################################################
 # Optional options
