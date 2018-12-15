@@ -118,7 +118,7 @@ compile_frozen_mpy:$(BUILD)/_frozen_mpy.c
 	$(Q)$(CC)  -o $(BUILD)/_frozen_mpy.o -c $(BUILD)/_frozen_mpy.c -I$(INC) $(CFLAGS)
 
 $(OUTPUT_STATIC_LIB): | compile_frozen_mpy $(OBJ) $(CXX_OBJ) 
-	@$(AR) rcs -o $(OUTPUT_DIR)$@ $(CXX_OBJ) $(OBJ) $(output-file) $(LIBS) $(LDFLAGS) $(BUILD)/_frozen_mpy.o
+	@$(AR) rcs -o $(OUTPUT_DIR)$@ $(CXX_OBJ) $(OBJ) $(LIBS) $(LDFLAGS) $(BUILD)/_frozen_mpy.o
 ###############################################################################
 
 sub_compile:
