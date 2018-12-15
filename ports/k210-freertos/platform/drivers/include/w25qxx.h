@@ -103,6 +103,7 @@ w25qxx_status_t w25qxx_enable_xip_mode(void);
 w25qxx_status_t w25qxx_disable_xip_mode(void);
 w25qxx_status_t w25qxx_read_id_dma(uint8_t *manuf_id, uint8_t *device_id);
 w25qxx_status_t w25qxx_sector_erase_dma(uint32_t addr);
+w25qxx_status_t w25qxx_32k_block_erase_dma(uint32_t addr);
 w25qxx_status_t w25qxx_init_dma(uint8_t spi_index, uint8_t spi_ss);
 w25qxx_status_t w25qxx_write_data_dma(uint32_t addr, uint8_t *data_buf, uint32_t length);
 w25qxx_status_t w25qxx_write_data_direct_dma(uint32_t addr, uint8_t *data_buf, uint32_t length);

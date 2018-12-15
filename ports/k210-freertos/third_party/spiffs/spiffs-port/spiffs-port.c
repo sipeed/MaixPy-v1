@@ -1,6 +1,8 @@
 #include "spiffs-port.h"
 #include "spiffs_config.h"
+#include "spiffs_configport.h"
 #include <stdio.h>
+#include "w25qxx.h"
 
 #define foce_format_fs 0
 
@@ -10,11 +12,10 @@ static u8_t spiffs_work_buf[4 * 1024 *2];
 static u8_t spiffs_fds[32*4];
 static u8_t spiffs_cache_buf[(4 * 1024 +32)*4];
 
-s32_t k210_sf_read(int addr, int size, char *buf)
+s32_t flash_read(int addr, int size, char *buf)
 {
     int phy_addr=addr;
-/*
-    enum w25qxx_status_t res = w25qxx_read_data(phy_addr, buf, size);
+    w25qxx_status_t res = w25qxx_read_data_dma(phy_addr, buf, size, W25QXX_QUAD_FAST);
 	#if open_fs_debug
     printf("flash read addr:%x size:%d buf_head:%x %x\n",phy_addr,size,buf[0],buf[1]);
 	#endif
@@ -24,14 +25,13 @@ s32_t k210_sf_read(int addr, int size, char *buf)
 		#endif
         return SPIFFS_ERR_FULL;
     }
-*/
     return SPIFFS_OK;
 }
-s32_t k210_sf_write(int addr, int size, char *buf)
+s32_t flash_write(int addr, int size, char *buf)
 {
     int phy_addr=addr;
-/*
-    enum w25qxx_status_t res = w25qxx_write_data(phy_addr, buf, size);
+
+    w25qxx_status_t res = w25qxx_write_data_dma(phy_addr, buf, size);
 	#if open_fs_debug
     printf("flash write addr:%x size:%d buf_head:%x,%x\n",phy_addr,size,buf[0],buf[1]);
 	#endif
@@ -41,25 +41,24 @@ s32_t k210_sf_write(int addr, int size, char *buf)
 		#endif
         return SPIFFS_ERR_FULL;
     }
-*/
+
     return SPIFFS_OK;
 }
-s32_t k210_sf_erase(int addr, int size)
+s32_t flash_erase(int addr, int size)
 {
     int phy_addr=addr;
-/*
     unsigned char *temp_pool;
 	#if open_fs_debug
     printf("flash erase addr:%x size:%f\n",phy_addr,size/1024.00);
 	#endif
-    enum w25qxx_status_t res = w25qxx_32k_block_erase(phy_addr);
+    w25qxx_status_t res = w25qxx_sector_erase_dma(phy_addr);
+	while (w25qxx_is_busy_dma() == W25QXX_BUSY);
     if (res != W25QXX_OK) {
 		#if open_fs_debug
         printf("spifalsh erase err\n");
 		#endif
         return SPIFFS_ERR_FULL;
     }
-*/
     return SPIFFS_OK;
 }
 
@@ -103,9 +102,9 @@ void my_spiffs_init(){
 	cfg.log_block_size = SPIFFS_CFG_LOG_BLOCK_SZ(fs); // let us not complicate things
 	cfg.log_page_size = SPIFFS_CFG_LOG_PAGE_SZ(fs); // as we said
 
-	cfg.hal_read_f = k210_sf_read;
-	cfg.hal_write_f = k210_sf_write;
-	cfg.hal_erase_f = k210_sf_erase;
+	cfg.hal_read_f = flash_read;
+	cfg.hal_write_f = flash_write;
+	cfg.hal_erase_f = flash_erase;
 
 	int res = SPIFFS_mount(&fs,
 						   &cfg,
@@ -164,9 +163,9 @@ int format_fs(void)
 	cfg.log_block_size = SPIFFS_CFG_LOG_BLOCK_SZ(fs); // let us not complicate things
 	cfg.log_page_size = SPIFFS_CFG_LOG_PAGE_SZ(fs); // as we said
 
-	cfg.hal_read_f = k210_sf_read;
-	cfg.hal_write_f = k210_sf_write;
-	cfg.hal_erase_f = k210_sf_erase;
+	cfg.hal_read_f = flash_read;
+	cfg.hal_write_f = flash_write;
+	cfg.hal_erase_f = flash_erase;
 
 	SPIFFS_unmount(&fs);SPIFFS_unmount(&fs);printf("[MAIXPY]:Spiffs Unmount.\n");
 	printf("[MAIXPY]:Spiffs Formating...\n");

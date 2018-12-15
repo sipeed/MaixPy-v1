@@ -24,7 +24,7 @@ void sipeed_spi_send_data_standard(sipeed_spi_device_num_t spi_num, sipeed_spi_c
 {
     spi_send_data_standard( spi_num,chip_select,cmd_buff,cmd_len,tx_buff,tx_len);
 }
-void sipeed_pi_receive_data_standard(sipeed_spi_device_num_t spi_num, sipeed_spi_chip_select_t chip_select, const sipeed_uint8_t *cmd_buff,
+void sipeed_spi_receive_data_standard(sipeed_spi_device_num_t spi_num, sipeed_spi_chip_select_t chip_select, const sipeed_uint8_t *cmd_buff,
                                sipeed_size_t cmd_len, sipeed_uint8_t *rx_buff, sipeed_size_t rx_len)
 {
     spi_receive_data_standard(spi_num,chip_select,cmd_buff,cmd_len,rx_buff,rx_len);
@@ -46,7 +46,7 @@ void sipeed_spi_send_data_standard_dma(sipeed_dmac_channel_number_t channel_num,
                                 sipeed_spi_chip_select_t chip_select,
                                 const sipeed_uint8_t *cmd_buff, sipeed_size_t cmd_len, const sipeed_uint8_t *tx_buff, sipeed_size_t tx_len)
 {
-    sipeed_spi_send_data_standard_dma(channel_num, spi_num, chip_select, cmd_buff, cmd_len, tx_buff, tx_len);
+    spi_send_data_standard_dma(channel_num, spi_num, chip_select, cmd_buff, cmd_len, tx_buff, tx_len);
 }
 
 void sipeed_spi_receive_data_standard_dma(sipeed_dmac_channel_number_t dma_send_channel_num,
@@ -89,6 +89,7 @@ void sipeed_spi_send_data_normal_dma(sipeed_dmac_channel_number_t channel_num, s
                                chip_select, tx_buff, tx_len, spi_transfer_width);
 
 }
+
 sipeed_uint32_t sipeed_spi_set_clk_rate(sipeed_spi_device_num_t spi_num, sipeed_uint32_t spi_clk)
 {
     return spi_set_clk_rate( spi_num, spi_clk);

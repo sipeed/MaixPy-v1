@@ -390,4 +390,3 @@ static w25qxx_status_t w25qxx_quad_read_data_dma(uint32_t addr, uint8_t *data_bu
 {
     return w25qxx_read_data_dma(addr, data_buf, length, W25QXX_QUAD_FAST);
 }
-
