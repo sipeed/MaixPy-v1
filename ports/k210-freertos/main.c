@@ -137,7 +137,6 @@ int main()
 	w25qxx_init_dma(3, 0);
 	w25qxx_enable_quad_mode_dma();
 	w25qxx_read_id_dma(&manuf_id, &device_id);
-	w25qxx_sector_erase_dma(0x600000);
 	printf("[MAIXPY]Flash:0x%02x:0x%02x\n", manuf_id, device_id);
 	my_spiffs_init();
 	/*
