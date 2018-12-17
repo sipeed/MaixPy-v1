@@ -1,6 +1,17 @@
 {
     "files.associations": {
         "utils.h": "c",
-        "gpio.h": "c"
+        "gpio.h": "c",
+        "sipeed_spi.h": "c",
+        "stddef.h": "c",
+        "sysctl.h": "c",
+        "fpioa.h": "c",
+        "spi.h": "c",
+        "sipeed_type.h": "c",
+        "spiffs-port.h": "c",
+        "spiffs_config.h": "c",
+        "spiffs_configport.h": "c",
+        "w25qxx.h": "c",
+        "stdio.h": "c"
     }
 }

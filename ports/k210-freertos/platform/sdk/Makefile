@@ -1,5 +1,5 @@
 #
-.PHONY:all update_mk compile build_env
+.PHONY:all update_mk build_env
 ###################################
 # USER OPTION
 LIB_NAME ?= sdk

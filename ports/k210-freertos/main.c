@@ -70,7 +70,6 @@ STATIC StaticTask_t mp_task_tcb;
 STATIC StackType_t mp_task_stack[MP_TASK_STACK_LEN] __attribute__((aligned (8)));
 TaskHandle_t mp_main_task_handle;
 
-//handle_t spi3;
 void do_str(const char *src, mp_parse_input_kind_t input_kind);
 
 const uint8_t Banner[] = {"\n __  __              _____  __   __  _____   __     __ \n\
@@ -134,13 +133,13 @@ int main()
 	sysctl_set_power_mode(SYSCTL_POWER_BANK6,SYSCTL_POWER_V33);
 	sysctl_set_power_mode(SYSCTL_POWER_BANK7,SYSCTL_POWER_V33);
 	
-	//uint8_t manuf_id, device_id;
-	//spi3 = io_open("/dev/spi3");
-	//configASSERT(spi3);
-	//w25qxx_init(spi3);
-	//w25qxx_read_id(&manuf_id, &device_id);
-	//printf("[MAIXPY]Flash:0x%02x:0x%02x\n", manuf_id, device_id);
-	//my_spiffs_init();
+	uint8_t manuf_id, device_id;
+	w25qxx_init_dma(3, 0);
+	w25qxx_enable_quad_mode_dma();
+	w25qxx_read_id_dma(&manuf_id, &device_id);
+	w25qxx_sector_erase_dma(0x600000);
+	printf("[MAIXPY]Flash:0x%02x:0x%02x\n", manuf_id, device_id);
+	my_spiffs_init();
 	/*
 	xTaskCreateAtProcessor(0, // processor
 					     mp_task, // function entry
