@@ -99,6 +99,7 @@ soft_reset:
 		gc_init(heap, heap + sizeof(heap));
 #endif
 		mp_init();
+	pyexec_frozen_module("boot.py");
     #if MICROPY_REPL_EVENT_DRIVEN
 	    	readline_init0();
             readline_process_char(27);

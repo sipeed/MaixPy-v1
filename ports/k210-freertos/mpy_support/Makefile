@@ -9,6 +9,7 @@ CUR_DIR_ADDR := $(shell pwd)/
 LIB_NAME ?= mpy_support
 CROSS_COMPILE ?= 
 OUTPUT_DIR := build/
+FROZEN_MPY_DIR ?= builtin-py
 MK_VALUE :="INC += "$(CUR_DIR_ADDR)"\n"
 MK_VALUE +="INC += "$(CUR_DIR_ADDR)"standard_lib/include/""\n"
 MK_VALUE +="INC += "$(CUR_DIR_ADDR)"../../../""\n"
@@ -49,7 +50,7 @@ CXXFLAGS :=
 INC :=
 output-file :=
 ###############################################################################
-# IMPORT MK FILE
+# IMPORT MK FILE       s32_t f_res = SPIFFS_fflush(&fs, fd);
 # sinclude mk MICROPYTHON NEED OTHER MK,SO I INCLUDE THE MK WHERE IS IN ROOT DIR
 sinclude ../mk
 ###############################################################################
@@ -113,12 +114,12 @@ $(CXX_OBJ):%.o:%.cpp
 # $(HEADER_BUILD)/qstr.i.last $(HEADER_BUILD)/qstrdefs.generated.h $(BUILD)/_frozen_mpy.c
 compile: sub_compile $(OUTPUT_STATIC_LIB)
 
-compile_frozen_mpy:$(BUILD)/_frozen_mpy.c
-	$(call mod_echo_func,"compile _frozen_mpy ...")
-	$(Q)$(CC)  -o $(BUILD)/_frozen_mpy.o -c $(BUILD)/_frozen_mpy.c -I$(INC) $(CFLAGS)
+# compile_frozen_mpy:$(BUILD)/_frozen_mpy.c
+# $(call mod_echo_func,"compile _frozen_mpy ...")
+# $(Q)$(CC)  -o $(BUILD)/_frozen_mpy.o -c $(BUILD)/_frozen_mpy.c -I$(INC) $(CFLAGS)
 
-$(OUTPUT_STATIC_LIB): | compile_frozen_mpy $(OBJ) $(CXX_OBJ) 
-	@$(AR) rcs -o $(OUTPUT_DIR)$@ $(CXX_OBJ) $(OBJ) $(LIBS) $(LDFLAGS) $(BUILD)/_frozen_mpy.o
+$(OUTPUT_STATIC_LIB): $(OBJ) $(CXX_OBJ) 
+	@$(AR) rcs -o $(OUTPUT_DIR)$@ $(CXX_OBJ) $(OBJ) $(LIBS) $(LDFLAGS)
 ###############################################################################
 
 sub_compile:
