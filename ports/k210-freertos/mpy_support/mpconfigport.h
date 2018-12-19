@@ -9,7 +9,7 @@
 // object representation and NLR handling
 #define MICROPY_OBJ_REPR                    (MICROPY_OBJ_REPR_A)
 #define MICROPY_NLR_SETJMP                  (1)
-#define MICROPY_READER_VFS                  (0)
+#define MICROPY_READER_VFS                  (1)
 
 // MCU definition
 #define MP_ENDIANNESS_LITTLE                (1)
@@ -129,7 +129,7 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_PY_CMATH                    (1)
 #define MICROPY_PY_IO                       (1)
 #define MICROPY_PY_IO_IOBASE                (1)
-#define MICROPY_PY_IO_FILEIO                (0)
+#define MICROPY_PY_IO_FILEIO                (1)
 #define MICROPY_PY_IO_BYTESIO               (1)
 #define MICROPY_PY_IO_BUFFEREDWRITER        (1)
 #define MICROPY_PY_STRUCT                   (1)
@@ -148,8 +148,13 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_PY_THREAD_GIL               (0)
 #define MICROPY_PY_THREAD_GIL_VM_DIVISOR    (32)
 
-#define MICROPY_VFS                         (0)
+#define mp_type_fileio                      mp_type_vfs_spiffs_fileio
+#define mp_type_textio                      mp_type_vfs_spiffs_textio
+#define MICROPY_VFS                         (1)
+#define MICROPY_VFS_SPIFFS                  (1)
 #define MICROPY_VFS_FAT                     (0)
+#define  MICROPY_FATFS_REENTRANT            (1)
+
 #define MP_SSIZE_MAX (0x7fffffff)
 
 #define _USE_MKFS 1
@@ -225,14 +230,12 @@ typedef long mp_off_t;
 
 // ext modules
 //extern const struct _mp_obj_module_t machine_module;
-extern const struct _mp_obj_module_t test_module;
-//extern const struct _mp_obj_module_t uos_module;
+extern const struct _mp_obj_module_t uos_module;
 // extern const struct _mp_obj_module_t app_module;
 // extern const struct _mp_obj_module_t socket_module;
 #define MICROPY_PORT_BUILTIN_MODULES \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_test), (mp_obj_t)&test_module }, \
-    //{ MP_OBJ_NEW_QSTR(MP_QSTR_uos), (mp_obj_t)&uos_module }, \
-    //{ MP_OBJ_NEW_QSTR(MP_QSTR_os), (mp_obj_t)&uos_module }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_uos), (mp_obj_t)&uos_module }, \
+//    { MP_OBJ_NEW_QSTR(MP_QSTR_os), (mp_obj_t)&uos_module }, \
     //{ MP_OBJ_NEW_QSTR(MP_QSTR_machine), (mp_obj_t)&machine_module },\
     // { MP_OBJ_NEW_QSTR(MP_QSTR_usocket), (mp_obj_t)&socket_module }, \
     // { MP_OBJ_NEW_QSTR(MP_QSTR_socket), (mp_obj_t)&socket_module }, \

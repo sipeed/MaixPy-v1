@@ -13,6 +13,7 @@
 #include "lib/utils/pyexec.h"
 #include "lib/mp-readline/readline.h"
 #include "gccollect.h"
+#include "py/mpstate.h"
 #if MICROPY_PY_THREAD
 #include "mpthreadport.h"
 #include "py/mpthread.h"
@@ -27,31 +28,15 @@
 #include "fpioa.h"
 #include "gpio.h"
 #include "timer.h"
+#include "w25qxx.h"
 #include "uarths.h"
-//#include "spiffs-port.h"
 /*****freeRTOS****/
 #include "FreeRTOS.h"
 #include "task.h"
-
-
-//************************************************************************************************
-//temp ops
-mp_import_stat_t mp_vfs_import_stat(const char *path) {
-
-    //if (st_mode & MP_S_IFDIR) {
-    //    return MP_IMPORT_STAT_DIR;
-    //} else {
-    //    return MP_IMPORT_STAT_FILE;
-    //}
-
-    //if (SPIFFS_stat(&fs,path, &st) == 0) {
-        return MP_IMPORT_STAT_FILE;
-    //}else{
-        //return MP_IMPORT_STAT_NO_EXIST;
-    //}
-    
-}
-//************************************************************************************************
+/*******spiffs********/
+#include "vfs_spiffs.h"
+#include "spiffs_configport.h"
+#include "spiffs-port.h"
 
 #define UART_BUF_LENGTH_MAX 269
 #define MPY_HEAP_SIZE 1 * 1024 * 1024
@@ -70,6 +55,35 @@ STATIC StaticTask_t mp_task_tcb;
 STATIC StackType_t mp_task_stack[MP_TASK_STACK_LEN] __attribute__((aligned (8)));
 TaskHandle_t mp_main_task_handle;
 
+#define FORMAT_FS_FORCE 0
+static u8_t spiffs_work_buf[SPIFFS_CFG_LOG_PAGE_SZ(fs)*2];
+static u8_t spiffs_fds[32*4];
+static u8_t spiffs_cache_buf[(SPIFFS_CFG_LOG_PAGE_SZ(fs)+32)*4];
+spiffs_user_mount_t spiffs_user_mount_handle;
+uint8_t init_py_file[]={
+0x69,0x6d,0x70,0x6f,0x72,0x74,0x20,0x75,0x6f,0x73,0x0a,0x69,0x6d,0x70,0x6f,0x72,
+0x74,0x20,0x6f,0x73,0x0a,0x69,0x6d,0x70,0x6f,0x72,0x74,0x20,0x6d,0x61,0x63,0x68,
+0x69,0x6e,0x65,0x0a,0x69,0x6d,0x70,0x6f,0x72,0x74,0x20,0x63,0x6f,0x6d,0x6d,0x6f,
+0x6e,0x0a,0x70,0x69,0x6e,0x5f,0x69,0x6e,0x69,0x74,0x3d,0x63,0x6f,0x6d,0x6d,0x6f,
+0x6e,0x2e,0x70,0x69,0x6e,0x5f,0x69,0x6e,0x69,0x74,0x28,0x29,0x0a,0x70,0x69,0x6e,
+0x5f,0x69,0x6e,0x69,0x74,0x2e,0x69,0x6e,0x69,0x74,0x28,0x29,0x0a,0x74,0x65,0x73,
+0x74,0x5f,0x67,0x70,0x69,0x6f,0x5f,0x70,0x69,0x6e,0x5f,0x6e,0x75,0x6d,0x3d,0x31,
+0x35,0x0a,0x66,0x70,0x69,0x6f,0x61,0x3d,0x6d,0x61,0x63,0x68,0x69,0x6e,0x65,0x2e,
+0x66,0x70,0x69,0x6f,0x61,0x28,0x29,0x0a,0x66,0x70,0x69,0x6f,0x61,0x2e,0x73,0x65,
+0x74,0x5f,0x66,0x75,0x6e,0x63,0x74,0x69,0x6f,0x6e,0x28,0x74,0x65,0x73,0x74,0x5f,
+0x67,0x70,0x69,0x6f,0x5f,0x70,0x69,0x6e,0x5f,0x6e,0x75,0x6d,0x2c,0x36,0x33,0x29,
+0x0a,0x74,0x65,0x73,0x74,0x5f,0x70,0x69,0x6e,0x3d,0x6d,0x61,0x63,0x68,0x69,0x6e,
+0x65,0x2e,0x70,0x69,0x6e,0x28,0x37,0x2c,0x32,0x2c,0x30,0x29,0x0a,0x6c,0x63,0x64,
+0x3d,0x6d,0x61,0x63,0x68,0x69,0x6e,0x65,0x2e,0x73,0x74,0x37,0x37,0x38,0x39,0x28,
+0x29,0x0a,0x6c,0x63,0x64,0x2e,0x69,0x6e,0x69,0x74,0x28,0x29,0x0a,0x6c,0x63,0x64,
+0x2e,0x64,0x72,0x61,0x77,0x5f,0x73,0x74,0x72,0x69,0x6e,0x67,0x28,0x31,0x31,0x36,
+0x2c,0x31,0x32,0x31,0x2c,0x22,0x57,0x65,0x6c,0x63,0x6f,0x6d,0x65,0x20,0x74,0x6f,
+0x20,0x4d,0x61,0x69,0x78,0x50,0x79,0x22,0x29,0x0a,0x69,0x66,0x20,0x74,0x65,0x73,
+0x74,0x5f,0x70,0x69,0x6e,0x2e,0x76,0x61,0x6c,0x75,0x65,0x28,0x29,0x20,0x3d,0x3d,
+0x20,0x30,0x3a,0x0a,0x20,0x20,0x20,0x20,0x70,0x72,0x69,0x6e,0x74,0x28,0x27,0x74,
+0x65,0x73,0x74,0x27,0x29,0x0a,0x20,0x20,0x20,0x20,0x6d,0x61,0x63,0x68,0x69,0x6e,
+0x65,0x2e,0x74,0x65,0x73,0x74,0x28,0x29,0x0a};
+
 void do_str(const char *src, mp_parse_input_kind_t input_kind);
 
 const uint8_t Banner[] = {"\n __  __              _____  __   __  _____   __     __ \n\
@@ -81,6 +95,79 @@ const uint8_t Banner[] = {"\n __  __              _____  __   __  _____   __    
 Official Site:http://www.sipeed.com/\n\
 Wiki:http://maixpy.sipeed.com/\n"};
 
+MP_NOINLINE STATIC bool init_flash_spiffs()
+{
+
+	spiffs_user_mount_t* vfs_spiffs = &spiffs_user_mount_handle;
+	vfs_spiffs->flags = SYS_SPIFFS;
+	vfs_spiffs->base.type = &mp_spiffs_vfs_type;
+	vfs_spiffs->fs.user_data = vfs_spiffs;
+	vfs_spiffs->cfg.hal_read_f = spiffs_read_method;
+	vfs_spiffs->cfg.hal_write_f = spiffs_write_method;
+	vfs_spiffs->cfg.hal_erase_f = spiffs_erase_method;
+	
+	vfs_spiffs->cfg.phys_size = SPIFFS_CFG_PHYS_SZ(); // use all spi flash
+	vfs_spiffs->cfg.phys_addr = SPIFFS_CFG_PHYS_ADDR(); // start spiffs at start of spi flash
+	vfs_spiffs->cfg.phys_erase_block = SPIFFS_CFG_PHYS_ERASE_SZ(); // according to datasheet
+	vfs_spiffs->cfg.log_block_size = SPIFFS_CFG_LOG_BLOCK_SZ(); // let us not complicate things
+	vfs_spiffs->cfg.log_page_size = SPIFFS_CFG_LOG_PAGE_SZ(); // as we said
+	int res = SPIFFS_mount(&vfs_spiffs->fs,
+					   &vfs_spiffs->cfg,
+					   spiffs_work_buf,
+					   spiffs_fds,
+					   sizeof(spiffs_fds),
+				       spiffs_cache_buf,
+					   sizeof(spiffs_cache_buf),
+					   0);
+	if(FORMAT_FS_FORCE || res != SPIFFS_OK || res==SPIFFS_ERR_NOT_A_FS)
+	{
+		SPIFFS_unmount(&vfs_spiffs->fs);
+		printf("[MAIXPY]:Spiffs Unmount.\n");
+		printf("[MAIXPY]:Spiffs Formating...\n");
+		s32_t format_res=SPIFFS_format(&vfs_spiffs->fs);
+		printf("[MAIXPY]:Spiffs Format %s \n",format_res?"failed":"successful");
+		if(0 != format_res)
+		{
+			return -1;
+		}
+		res = SPIFFS_mount(&vfs_spiffs->fs,
+			&vfs_spiffs->cfg,
+			spiffs_work_buf,
+			spiffs_fds,
+			sizeof(spiffs_fds),
+			spiffs_cache_buf,
+			sizeof(spiffs_cache_buf),
+			0);
+		printf("[MAIXPY]:Spiffs Mount %s \n", res?"failed":"successful");
+		if(!res)
+		{
+			printf("[MAIXPY]:Spiffs Write init file\n");
+			spiffs_file fd;
+			fd=SPIFFS_open(&vfs_spiffs->fs,"init.py", SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR, 0);
+			if(fd != -1){
+				s32_t ls_res = SPIFFS_lseek(&vfs_spiffs->fs, fd,0,0);
+				if(!ls_res){
+					s32_t w_res = SPIFFS_write(&vfs_spiffs->fs, fd,init_py_file,sizeof(init_py_file));
+					if(w_res <= 0){
+					}else{
+						s32_t f_res = SPIFFS_fflush(&vfs_spiffs->fs, fd);
+					}
+				}
+			}
+			SPIFFS_close (&vfs_spiffs->fs, fd);
+		}
+	}
+	
+	mp_vfs_mount_t *vfs = m_new_obj_maybe(mp_vfs_mount_t);
+    if (vfs == NULL) {
+        printf("[MaixPy]:can't mount flash\n");
+    }
+    vfs->str = "/flash";
+    vfs->len = 6;
+    vfs->obj = MP_OBJ_FROM_PTR(vfs_spiffs);
+    vfs->next = NULL;
+    MP_STATE_VM(vfs_mount_table) = vfs;
+}
 
 void mp_task(
 	#if MICROPY_PY_THREAD 
@@ -99,7 +186,10 @@ soft_reset:
 		gc_init(heap, heap + sizeof(heap));
 #endif
 		mp_init();
-	pyexec_frozen_module("boot.py");
+		mp_obj_list_init(mp_sys_path, 0);
+		mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR_));
+		mp_obj_list_init(mp_sys_argv, 0);//append agrv here
+		init_flash_spiffs();//init spiffs of flash
     #if MICROPY_REPL_EVENT_DRIVEN
 	    	readline_init0();
             readline_process_char(27);
@@ -139,7 +229,6 @@ int main()
 	w25qxx_enable_quad_mode_dma();
 	w25qxx_read_id_dma(&manuf_id, &device_id);
 	printf("[MAIXPY]Flash:0x%02x:0x%02x\n", manuf_id, device_id);
-	my_spiffs_init();
 	/*
 	xTaskCreateAtProcessor(0, // processor
 					     mp_task, // function entry
