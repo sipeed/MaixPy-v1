@@ -34,6 +34,7 @@
 #include "timer.h"
 #include "w25qxx.h"
 #include "uarths.h"
+#include "rtc.h"
 /*****freeRTOS****/
 #include "FreeRTOS.h"
 #include "task.h"
@@ -198,8 +199,7 @@ soft_reset:
         readline_process_char(27);
 		pyexec_event_repl_init();
 		pyexec_frozen_module("boot.py");
-		char c = 0;
-			MP_THREAD_GIL_EXIT();//given gil
+		MP_THREAD_GIL_EXIT();//given gil
 		mp_hal_set_interrupt_char(CHAR_CTRL_C);
 		for (;;) {
 			if (pyexec_mode_kind == PYEXEC_MODE_RAW_REPL) {
@@ -213,9 +213,9 @@ soft_reset:
 			}
 		}
 		mp_deinit();
-		// msleep(1);
-		printf("prower off\n");
-
+		printf("porwer reset\n");
+		msleep(1);	    
+		sysctl->soft_reset.soft_reset = 1;
 		return 0;
 }
 
@@ -228,7 +228,8 @@ int main()
 	printf("[MAIXPY]Pll1:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL1));
 	sysctl_set_power_mode(SYSCTL_POWER_BANK6,SYSCTL_POWER_V33);
 	sysctl_set_power_mode(SYSCTL_POWER_BANK7,SYSCTL_POWER_V33);
-	
+	rtc_init();
+	rtc_timer_set(1970,1, 1,0, 0, 0);
 	uint8_t manuf_id, device_id;
 	w25qxx_init_dma(3, 0);
 	w25qxx_enable_quad_mode_dma();
