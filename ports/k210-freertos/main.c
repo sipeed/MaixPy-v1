@@ -196,7 +196,7 @@ soft_reset:
 		init_flash_spiffs();//init spiffs of flash
     	readline_init0();
         readline_process_char(27);
-		pyexec_event_repl_init();
+		//pyexec_event_repl_init();
 		pyexec_frozen_module("boot.py");
 		char c = 0;
 			MP_THREAD_GIL_EXIT();//given gil
