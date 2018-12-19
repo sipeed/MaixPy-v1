@@ -11,7 +11,6 @@
 // ----------- 8< ------------
 // Following includes are for the linux test build of spiffs
 // These may/should/must be removed/altered/replaced in your target
-#include "params_test.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +19,8 @@
 #ifdef _SPIFFS_TEST
 #include "testrunner.h"
 #endif
+#include "spiffs_configport.h"
+
 // ----------- >8 ------------
 
 // compile time switches

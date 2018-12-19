@@ -2,8 +2,7 @@
 #define MYSPIFFS_H
 
 #include <spiffs.h>
-void my_spiffs_mount();
-void my_spiffs_init();
-int format_fs(void);
-extern spiffs fs;
+s32_t flash_read(int addr, int size, char *buf);
+s32_t flash_write(int addr, int size, char *buf);
+s32_t flash_erase(int addr, int size);
 #endif// MYSPIFFS_H

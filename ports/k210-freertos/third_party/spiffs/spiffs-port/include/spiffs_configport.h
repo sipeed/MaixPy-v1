@@ -43,6 +43,7 @@
 #define SPIFFS_CACHE(ignore)  (1) 
 #define SPIFFS_CACHE_WR(ignore)  (1)
 #define SPIFFS_TEMPORAL_FD_CACHE(ignore)  (1)
+#define SPIFFS_HAL_CALLBACK_EXTRA         (1)
 
 typedef signed int s32_t;
 typedef unsigned int u32_t;
