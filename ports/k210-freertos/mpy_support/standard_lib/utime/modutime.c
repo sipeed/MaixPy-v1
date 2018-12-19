@@ -59,11 +59,21 @@ STATIC mp_uint_t timeutils_seconds_since_1970(mp_uint_t year, mp_uint_t month,
 
 STATIC mp_obj_t time_localtime(size_t n_args, const mp_obj_t *args) {
     timeutils_struct_time_t tm;
-    mp_int_t seconds;
+	mp_int_t seconds;
     if (n_args == 0 || args[0] == mp_const_none) {
-		rtc_timer_get(&tm.tm_year,&tm.tm_mon,&tm.tm_mday,&tm.tm_hour,&tm.tm_min,&tm.tm_sec);
-		tm.tm_wday = rtc_get_wday(tm.tm_year,tm.tm_mon,tm.tm_mday);
-		tm.tm_yday = rtc_get_yday(tm.tm_year,tm.tm_mon,tm.tm_mday);
+		int year = 0;int mon = 0;int mday = 0;int hour = 0;
+		int min = 0;int sec = 0;int wday = 0;int yday = 0;
+		rtc_timer_get(&year,&mon,&mday,&hour,&min,&sec);
+		wday = rtc_get_wday(year,mon,mday);
+		yday = rtc_get_yday(year,mon,mday);
+		tm.tm_year = (uint16_t)year;
+		tm.tm_mon = (uint8_t)mon;
+		tm.tm_mday = (uint8_t)mday;
+		tm.tm_hour = (uint8_t)hour;
+		tm.tm_min = (uint8_t)min;
+		tm.tm_sec = (uint8_t)sec;
+		tm.tm_wday = (uint8_t)wday;
+		tm.tm_yday = (uint8_t)yday;
     } else {
         seconds = mp_obj_get_int(args[0]);
 		timeutils_seconds_since_2000_to_struct_time(seconds, &tm);
@@ -101,17 +111,33 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(time_mktime_obj, time_mktime);
 STATIC mp_obj_t time_time(void) {
     timeutils_struct_time_t tm;
     mp_int_t seconds;
-	rtc_timer_get(&tm.tm_year,&tm.tm_mon,&tm.tm_mday,&tm.tm_hour,&tm.tm_min,&tm.tm_sec);
-	seconds = timeutils_seconds_since_1970(tm.tm_year,tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min,tm.tm_sec);
+	uint32_t year = 0;uint32_t mon = 0;uint32_t mday = 0;uint32_t hour = 0;
+	uint32_t min = 0;uint32_t sec = 0;
+	rtc_timer_get(&year,&mon,&mday,&hour,&min,&sec);
+	seconds = timeutils_seconds_since_1970(year,mon, mday, hour, min,sec);
     return mp_obj_new_int(seconds);
 }
 MP_DEFINE_CONST_FUN_OBJ_0(time_time_obj, time_time);
+
+STATIC mp_obj_t time_set_time(mp_obj_t tuple) {
+	size_t len;
+	mp_obj_t *elem;
+    mp_obj_get_array(tuple, &len, &elem);
+	bool flag = rtc_timer_set(mp_obj_get_int(elem[0]),mp_obj_get_int(elem[1]),mp_obj_get_int(elem[2]),
+				  mp_obj_get_int(elem[3]),mp_obj_get_int(elem[4]),mp_obj_get_int(elem[5]));
+	if(0 == flag) 
+		return mp_const_true;
+	else
+		return mp_const_false;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(time_set_time_obj, time_set_time);
 
 STATIC const mp_rom_map_elem_t time_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_utime) },
 
     { MP_ROM_QSTR(MP_QSTR_localtime), MP_ROM_PTR(&time_localtime_obj) },
     { MP_ROM_QSTR(MP_QSTR_mktime), MP_ROM_PTR(&time_mktime_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_time), MP_ROM_PTR(&time_set_time_obj) },
     { MP_ROM_QSTR(MP_QSTR_time), MP_ROM_PTR(&time_time_obj) },
     { MP_ROM_QSTR(MP_QSTR_sleep), MP_ROM_PTR(&mp_utime_sleep_obj) },
     { MP_ROM_QSTR(MP_QSTR_sleep_ms), MP_ROM_PTR(&mp_utime_sleep_ms_obj) },

@@ -8,6 +8,8 @@
 #include "mphalport.h"
 #include "uarths.h"
 
+#include "encoding.h"
+#include "sysctl.h"
 #include "sleep.h"
 
 STATIC uint8_t stdin_ringbuf_array[256];
@@ -41,20 +43,23 @@ void mp_hal_debug_tx_strn_cooked(void *env, const char *str, uint32_t len) {
 }
 
 
-uint64_t inline mp_hal_ticks_cpu(void){
+mp_uint_t inline mp_hal_ticks_cpu(void)
+{
 	return (unsigned int)(read_csr(mcycle));
 }
 
-uint64_t inline mp_hal_ticks_us(void);
+mp_uint_t inline mp_hal_ticks_us(void)
 {
 	return (unsigned long)(read_csr(mcycle)/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU)/1000000));
 }
 
-uint32_t inline mp_hal_ticks_ms(void) {
+mp_uint_t inline mp_hal_ticks_ms(void)
+{
     return (unsigned int)(read_csr(mcycle)/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU)/1000));
 }
 
-void mp_hal_delay_ms(uint32_t ms) {
+void mp_hal_delay_ms(mp_uint_t ms) 
+{
     unsigned int current_ms = (unsigned int)(mp_hal_ticks_ms());
     while((mp_hal_ticks_ms() - current_ms) < ms){}
 /*
@@ -78,7 +83,7 @@ void mp_hal_delay_ms(uint32_t ms) {
 */
 }
 
-void mp_hal_delay_us(uint32_t us) {
+void mp_hal_delay_us(mp_uint_t us) {
     unsigned long current_us = (unsigned int)(mp_hal_ticks_us());
     while((mp_hal_ticks_us() - current_us) < us){}
 //	const uint32_t overhead = 8;
