@@ -10,10 +10,14 @@
 #include "py/gc.h"
 #include "py/mperrno.h"
 #include "py/stackctrl.h"
+#include "py/mpstate.h"
+#include "py/nlr.h"
+#include "py/compile.h"
+#include "py/mphal.h"
+#include "gccollect.h"
 #include "lib/utils/pyexec.h"
 #include "lib/mp-readline/readline.h"
-#include "gccollect.h"
-#include "py/mpstate.h"
+#include "lib/utils/interrupt_char.h"
 #if MICROPY_PY_THREAD
 #include "mpthreadport.h"
 #include "py/mpthread.h"
@@ -190,23 +194,24 @@ soft_reset:
 		mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR_));
 		mp_obj_list_init(mp_sys_argv, 0);//append agrv here
 		init_flash_spiffs();//init spiffs of flash
-    #if MICROPY_REPL_EVENT_DRIVEN
-	    	readline_init0();
-            readline_process_char(27);
-			pyexec_event_repl_init();
-			//pyexec_frozen_module("boot.py");
-			char c = 0;
-   			MP_THREAD_GIL_EXIT();//given gil
-			for (;;) {
-				int cnt = uarths_receive_data(&c,1);
-				if(cnt==0){continue;}
-				if(pyexec_event_repl_process_char(c)) {
+    	readline_init0();
+        readline_process_char(27);
+		pyexec_event_repl_init();
+		pyexec_frozen_module("boot.py");
+		char c = 0;
+			MP_THREAD_GIL_EXIT();//given gil
+		mp_hal_set_interrupt_char(CHAR_CTRL_C);
+		for (;;) {
+			if (pyexec_mode_kind == PYEXEC_MODE_RAW_REPL) {
+				if (pyexec_raw_repl() != 0) {
+					break;
+				}
+			} else {
+				if (pyexec_friendly_repl() != 0) {
 					break;
 				}
 			}
-    #else
-			pyexec_friendly_repl();
-    #endif
+		}
 		mp_deinit();
 		// msleep(1);
 		printf("prower off\n");
