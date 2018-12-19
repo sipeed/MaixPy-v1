@@ -2,7 +2,7 @@
 # Makefile for maixpy
 # ports/k210-freetos/mpy_support/Makefile
 #
-.PHONY:all update_mk compile
+.PHONY:all update_mk compile rm_genhdr_qstrdefs_generated_h
 CUR_DIR_ADDR := $(shell pwd)/
 ###############################################################################
 # USER OPTIONS
@@ -82,23 +82,24 @@ SUBDIRS := $(GET_SUBDIRS2)
 AllDirs := $(shell ls -R | grep '^\./.*:$$' | awk '{gsub(":","");print}') .
 FILE_MAKEFILE := $(foreach n,$(SUBDIRS) , $(wildcard $(n)/Makefile))
 
-$(BUILD)/_frozen_mpy.c: frozentest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
-	$(ECHO) "MISC freezing bytecode"
-	$(Q)$(TOP)/tools/mpy-tool.py -f -q $(BUILD)/genhdr/qstrdefs.preprocessed.h -mlongint-impl=none $< > $@
+# $(BUILD)/_frozen_mpy.c: frozentest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
+# $(ECHO) "MISC freezing bytecode"
+# $(Q)$(TOP)/tools/mpy-tool.py -f -q $(BUILD)/genhdr/qstrdefs.preprocessed.h -mlongint-impl=none $< > $@
 
 all: compile
 
 ###############################################################################
 # COMPILE CUR SRC FILE
-SRC_C := $(foreach n,$(AllDirs) , $(wildcard $(n)/*.c))
-SRC_CPP := $(foreach n,$(AllDirs) , $(wildcard $(n)/*.cpp))
+TEMP_DIRS := $(subst build,,$(AllDirs))
+SRC_C := $(foreach n,$(TEMP_DIRS) , $(wildcard $(n)/*.c))
+SRC_CPP := $(foreach n,$(TEMP_DIRS) , $(wildcard $(n)/*.cpp))
 SRC_C += $(MPY_EXT_SRC_C)
 ########################
 
 C_OBJ := $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 OBJ += $(PY_O) $(C_OBJ)
 # USE MPY COMPILE SRICPT COMPILE SRC FILE
-CXX_OBJ := $(addprefix $(BUILD), $(SRC_CPP:.cpp=.o))
+CXX_OBJ := $(addprefix $(BUILD)/, $(SRC_CPP:.cpp=.o))
 INCLUDE_FLAGS := $(addprefix -I, $(INC))
 CFLAGS += $(INCLUDE_FLAGS)
 
@@ -113,10 +114,6 @@ $(CXX_OBJ):%.o:%.cpp
 
 # $(HEADER_BUILD)/qstr.i.last $(HEADER_BUILD)/qstrdefs.generated.h $(BUILD)/_frozen_mpy.c
 compile: sub_compile $(OUTPUT_STATIC_LIB)
-
-# compile_frozen_mpy:$(BUILD)/_frozen_mpy.c
-# $(call mod_echo_func,"compile _frozen_mpy ...")
-# $(Q)$(CC)  -o $(BUILD)/_frozen_mpy.o -c $(BUILD)/_frozen_mpy.c -I$(INC) $(CFLAGS)
 
 $(OUTPUT_STATIC_LIB): $(OBJ) $(CXX_OBJ) 
 	@$(AR) rcs -o $(OUTPUT_DIR)$@ $(CXX_OBJ) $(OBJ) $(LIBS) $(LDFLAGS)
