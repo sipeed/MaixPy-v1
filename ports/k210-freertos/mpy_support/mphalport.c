@@ -86,27 +86,29 @@ void mp_hal_delay_ms(mp_uint_t ms)
 void mp_hal_delay_us(mp_uint_t us) {
     unsigned long current_us = (unsigned int)(mp_hal_ticks_us());
     while((mp_hal_ticks_us() - current_us) < us){}
-//	const uint32_t overhead = 8;
-//	const uint32_t pend_overhead = 240;//390Mhz
-//	uint64_t dt;
-//    unsigned long current_us = mp_hal_ticks_us();
-//    if (us < overhead) {
-//		
-//        mp_raise_ValueError("us must > 8");
-//    }
-//    us -= overhead;
-//	uint64_t t0 = mp_hal_ticks_us();
-//	for (;;)
-//	{
-//        uint64_t dt = mp_hal_ticks_us() - t0;
-//        if (dt >= us) {
-//            return;
-//        }
-//        if (dt + pend_overhead < us) {
-//            //mp_handle_pending();
-//        }
-//    }
-/*
+/*	Maix implement
+	const uint32_t overhead = 8;
+	const uint32_t pend_overhead = 240;//390Mhz
+	uint64_t dt;
+    unsigned long current_us = mp_hal_ticks_us();
+    if (us < overhead) {
+		
+        mp_raise_ValueError("us must > 8");
+    }
+    us -= overhead;
+	uint64_t t0 = mp_hal_ticks_us();
+	for (;;)
+	{
+        uint64_t dt = mp_hal_ticks_us() - t0;
+        if (dt >= us) {
+            return;
+        }
+        if (dt + pend_overhead < us) {
+            //mp_handle_pending();
+        }
+    }
+*/
+/*  esp32 implement
     // these constants are tested for a 240MHz clock
     const uint32_t this_overhead = 5;
     const uint32_t pend_overhead = 150;
