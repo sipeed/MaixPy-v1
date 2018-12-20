@@ -38,6 +38,7 @@ build_env:
 	if [ ! -d $(SDK_DIR_NAME) ] ; \
 	then \
 	     git clone -b $(SDK_GIT_BRANCH) $(SDK_GIT_ADDR);\
+		 cd $(SDK_DIR_NAME) && patch -p1 -u < ../sdk.patch && cd -;\
 	fi;
 
 compile:
