@@ -45,8 +45,10 @@ STATIC mp_obj_t Maix_set_function(size_t n_args, const mp_obj_t *pos_args, mp_ma
 		mp_raise_ValueError("This function is invalid");
 	
 	if(0 != fpioa_set_function(pin_num,func_num))
-		mp_raise_OSError("Boom!Can not set fpioa");
-	
+	{
+		printf("[Maix]:Opps!Can not set fpioa\n");
+		mp_raise_OSError(MP_EIO);
+	}
     return mp_const_true;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(Maix_set_function_obj, 0,Maix_set_function);
@@ -70,7 +72,6 @@ STATIC mp_obj_t Maix_get_Pin_num(size_t n_args, const mp_obj_t *pos_args, mp_map
 	
 	if(-1 == Pin_num)
 	{
-		printf("[Maix]:Opps!Can not get Pin num\n");
 		return mp_const_none;
 	}
     return MP_OBJ_NEW_SMALL_INT(Pin_num);

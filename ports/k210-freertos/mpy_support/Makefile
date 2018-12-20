@@ -11,6 +11,7 @@ CROSS_COMPILE ?=
 OUTPUT_DIR := build/
 FROZEN_MPY_DIR ?= builtin-py
 MK_VALUE :="INC += "$(CUR_DIR_ADDR)"\n"
+MK_VALUE +="INC += "$(CUR_DIR_ADDR)"Maix/include/""\n"
 MK_VALUE +="INC += "$(CUR_DIR_ADDR)"standard_lib/include/""\n"
 MK_VALUE +="INC += "$(CUR_DIR_ADDR)"../../../""\n"
 MK_VALUE +="INC += "$(CUR_DIR_ADDR)$(OUTPUT_DIR)"\n"
