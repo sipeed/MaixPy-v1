@@ -1,8 +1,20 @@
 #!/bin/bash
 
-########################## SETTINGS ######################
-toolchain_path=/media/neucrack/data/main/work/sipeed/k210/tools/toolchain/kendryte-toolchain/bin
-##########################################################
+config_file=config.conf
+if [ ! -f $config_file ]; then
+    echo "Please config toolchain path first in config.conf"
+    echo "toolchain_path=/opt/kendryte-toolchain/bin" > config.conf
+    exit 1
+fi
+build_config=`cat $config_file`
+toolchain_setting=`echo ${build_config} |grep toolchain_path`
+toolchain_path="/"`echo -e ${toolchain_setting#*/}`
+
+if [ ! -d $toolchain_path ]; then
+    echo "can not find toolchain, please set toolchain path in config.conf"
+    echo "toolchain_path=/opt/kendryte-toolchain/bin" > config.conf
+    exit 1
+fi
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$toolchain_path
 export CROSS_COMPILE=$toolchain_path/riscv64-unknown-elf-

@@ -4,7 +4,11 @@ MAIXPY
 
 ## Compile
 
-1. Edit `./build.sh `, change `toolchain_path`
+1. Edit `config.conf `, set `toolchain_path`
+
+```
+echo "toolchain_path=/opt/kendryte-toolchain/bin" > config.conf
+```
 
 2. Build
 

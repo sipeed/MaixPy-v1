@@ -4,3 +4,4 @@ Maixpy
 Maixpy.bin
 kendryte-standalone-sdk
 tools/kflash.py
+config.conf
