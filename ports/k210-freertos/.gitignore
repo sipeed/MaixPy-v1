@@ -1,0 +1,6 @@
+mk
+build
+Maixpy
+Maixpy.bin
+kendryte-standalone-sdk
+tools/kflash.py

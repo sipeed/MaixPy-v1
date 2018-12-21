@@ -2,15 +2,16 @@
 # Makefile for maixpy
 # ports/k210-freetos/Makefile
 #
-.PHONY: all clean compile do_mk update_all_platform_mk
+.PHONY: all clean compile update_all_platform_mk
 CUR_DIR_ADDR := $(shell pwd)/
 ###############################################################################
 # USER OPTION
-LIB_NAME ?= Maixpy
 CROSS_COMPILE ?= 
 OUTPUT_DIR := build/
 MK_VALUE :="INC += "".""\n"
-OUTPUT_BIN := Maixpy.bin
+BIN_DIR  :=output
+LIB_NAME ?= $(BIN_DIR)/Maixpy
+OUTPUT_BIN := $(BIN_DIR)/Maixpy.bin
 CC := $(CROSS_COMPILE)gcc
 CXX ?= $(CROSS_COMPILE)c++
 AR ?= $(CROSS_COMPILE)AR
@@ -74,7 +75,7 @@ AllDirs := $(shell ls -R | grep '^\./.*:$$' | awk '{gsub(":","");print}') .
 PLATFORM_MK := $(foreach n,$(AllDirs) , $(wildcard $(n)/$(PLATFORM).mk))
 FILE_MAKEFILE := $(foreach n,$(SUBDIRS) , $(wildcard $(n)/Makefile))
 
-all: do_mk update_all_platform_mk sub_compile compile $(OUTPUT_BIN) print_bin_size
+all: update_all_platform_mk sub_compile compile $(OUTPUT_BIN) print_bin_size
 
 SRC_C := $(wildcard *.c)
 SRC_CPP := $(wildcard *.cpp)
@@ -128,6 +129,7 @@ BIN_LDFLAGS := \
 		-lm
 
 $(LIB_NAME): $(output-file) $(SRC_C_OUTPUT_OBJ) $(SRC_C_OUTPUT_OBJ)
+	mkdir -p $(BIN_DIR)
 	@$(CC) $(CFLAGS) $(BIN_LDFLAGS) -o $@
 
 print_bin_size:
@@ -161,6 +163,6 @@ clean:
 	$(foreach n,$(FILE_MAKEFILE),$(call sub_clean, $(dir $(n))))
 	rm -f mk
 	rm -rf build
-	rm -rf $(LIB_NAME) $(OUTPUT_BIN)
+	rm -rf $(LIB_NAME) $(BIN_DIR)
 
 

@@ -1,4 +1,4 @@
-SHELL:=/bin/bash
+# SHELL:=/bin/bash
 
 CFLAGS = \
 	-DCONFIG_LOG_COLORS \
@@ -69,12 +69,4 @@ CXXFLAGS := \
 	-Wno-error=format= \
 	-Wno-error=pointer-sign
 
-do_mk:
-	$(shell touch ./k210_env)
-	$(shell echo "export LD_LIBRARY_PATH=$$""LD_LIBRARY_PATH:"$(dir $(CROSS_COMPILE)) > ./k210_env)
-	$(call mod_echo_func,"source k210_env"" ...")
-	$(call mod_echo_func,"k210_env "$(shell cat ./k210_env)" ...")
-	$(shell source ./k210_env)
-	source ./k210_env
-	
 
