@@ -41,12 +41,11 @@ const mp_print_t mp_debug_print = {NULL, mp_hal_debug_tx_strn_cooked};
 
 // Send string of given length
 void mp_hal_stdout_tx_strn(const char *str, mp_uint_t len) {
-//    uarths_send_data(str,len);
 
     if (MP_STATE_PORT(Maix_stdio_uart) != NULL) {
         uart_tx_strn(MP_STATE_PORT(Maix_stdio_uart), str, len);
     }
-   mp_uos_dupterm_tx_strn(str, len);
+   	mp_uos_dupterm_tx_strn(str, len);
 }
 
 void mp_hal_debug_tx_strn_cooked(void *env, const char *str, uint32_t len) {

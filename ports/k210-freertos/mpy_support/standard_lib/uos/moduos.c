@@ -116,8 +116,31 @@ STATIC mp_obj_t uos_dupterm(size_t n_args, const mp_obj_t *args) {
 }
 
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(uos_dupterm_obj, 1, 2, uos_dupterm);
+#endif 
 
+#if MICROPY_HW_UART_REPL
+STATIC mp_obj_t uos_set_REPLio(const mp_obj_t *args) {
+
+	mp_obj_t prev_uart_obj;
+	if(mp_obj_get_type(MP_STATE_PORT(Maix_stdio_uart)) == &machine_uart_type)
+		prev_uart_obj = MP_STATE_PORT(Maix_stdio_uart);
+	else 
+		prev_uart_obj = mp_const_none;
+	//judget type 
+	if(mp_obj_get_type(args) == &machine_uart_type)
+	{
+		uart_attach_to_repl(MP_STATE_PORT(Maix_stdio_uart), false);
+		MP_STATE_PORT(Maix_stdio_uart) = args;
+		uart_attach_to_repl(MP_STATE_PORT(Maix_stdio_uart), true);
+	}
+	else
+		return  mp_const_none;
+	return prev_uart_obj;
+	
+}
+MP_DEFINE_CONST_FUN_OBJ_1(uos_set_REPLio_obj, uos_set_REPLio);
 #endif
+
 STATIC mp_obj_t os_sync(void) {
     #if MICROPY_VFS
 	//TODO
@@ -130,6 +153,9 @@ STATIC const mp_rom_map_elem_t os_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_uos) },
     { MP_ROM_QSTR(MP_QSTR_uname), MP_ROM_PTR(&os_uname_obj) },
     { MP_ROM_QSTR(MP_QSTR_urandom), MP_ROM_PTR(&os_urandom_obj) },
+   	#if MICROPY_HW_UART_REPL
+    { MP_ROM_QSTR(MP_QSTR_set_REPLio), MP_ROM_PTR(&uos_set_REPLio_obj) },
+    #endif
     #if MICROPY_PY_OS_DUPTERM
     { MP_ROM_QSTR(MP_QSTR_dupterm), MP_ROM_PTR(&uos_dupterm_obj) },
     #endif
