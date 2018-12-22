@@ -47,7 +47,7 @@
 #include "uarths.h"
 #include "syslog.h"
 #include "plic.h"
-
+#define CHAR_NONE 256
 typedef struct _machine_uart_obj_t {
     mp_obj_base_t base;
 	uint8_t uart_num;
@@ -63,6 +63,7 @@ typedef struct _machine_uart_obj_t {
     uint16_t read_buf_tail;
 	uint16_t timeout;
 	uint16_t timeout_char;
+	uint16_t data_len;
     uint8_t *read_buf;
 } machine_uart_obj_t;
 
@@ -128,6 +129,7 @@ int uart_rx_irq(void *ctx)
 			debug_prink("[uart_rx_irq]data = %c\r\n",data);
 			self->read_buf[self->read_buf_head] = data;
 			self->read_buf_head = next_head;
+			self->data_len++;
 			debug_prink("[uart_rx_irq]read_buf_head = %d\r\n",self->read_buf_head);
 			// Handle interrupt coming in on a UART REPL
 			if (self->attached_to_repl && data == mp_interrupt_char) {
@@ -185,9 +187,10 @@ STATIC bool uart_rx_wait(machine_uart_obj_t *self, uint32_t timeout)
 int uart_rx_char(machine_uart_obj_t *self) 
 {
     if (self->read_buf_tail != self->read_buf_head) {
-        int data;
+        uint8_t data;
         data = self->read_buf[self->read_buf_tail];
         self->read_buf_tail = (self->read_buf_tail + 1) % self->read_buf_len;
+		self->data_len--;
         if (self->rx_int_flag == 0) {
             //re-enable IRQ now we have room in buffer
       		if(MICROPY_UARTHS_DEVICE == self->uart_num)
@@ -197,7 +200,7 @@ int uart_rx_char(machine_uart_obj_t *self)
         }
         return data;
     }
-	return 0;
+	return CHAR_NONE;
 }
 
 
@@ -351,8 +354,9 @@ STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, co
 	// set timeout 
 	if(args[ARG_timeout].u_int >= 0)
 		self->timeout = args[ARG_timeout].u_int;
-	if(args[ARG_timeout].u_int >= 0)
+	if(args[ARG_timeout_char].u_int >= 0)
 		self->timeout_char = args[ARG_timeout_char].u_int;
+	debug_prink("timeout_char = %d\n",self->timeout_char);
 	self->active = true;
 	m_del(byte, self->read_buf, self->read_buf_len);
 	if(args[ARG_read_buf_len].u_int <= 0)
@@ -401,6 +405,7 @@ STATIC mp_obj_t machine_uart_make_new(const mp_obj_type_t *type, size_t n_args, 
     self->parity = 0;
     self->stop = 1;
 	self->read_buf_len = 0;
+	self->data_len = 0;
     mp_map_t kw_args;
     mp_map_init_fixed_table(&kw_args, n_kw, args + n_args);
     machine_uart_init_helper(self, n_args - 1, args + 1, &kw_args);
@@ -453,27 +458,25 @@ STATIC mp_uint_t machine_uart_read(mp_obj_t self_in, void *buf_in, mp_uint_t siz
     if (size == 0) {
         return 0;
     }
-    // wait for first char to become available
-    debug_print("[machine_uart_read]buf = %s\n",self->read_buf);
-	debug_print("[machine_uart_read]size = %d\n",size);
-    if (!uart_rx_wait(self, self->timeout)) {
-        // return EAGAIN error to indicate non-blocking (then read() method returns None)
-        *errcode = MP_EAGAIN;
-        return MP_STREAM_ERROR;
-    }
 
     // read the data
-    byte *orig_buf = buf;
-    for (;;) {
+	int data_num = 0;
+    while(size) {
         int data = uart_rx_char(self);
-        *buf++ = data;
+		if(CHAR_NONE != data)
+		{
+        	*buf++ = data;
+			data_num++;
+			size--;
+		}
 		debug_print("[machine_uart_read]data = %c\n",data);
-        if (--size == 0 || !uart_rx_wait(self, self->timeout_char)) {
+        if (CHAR_NONE == data || !uart_rx_wait(self, self->timeout_char)) {
             // return number of bytes read
-            debug_print("[machine_uart_read]begin return \n");
-            return buf - orig_buf;
+            return data_num;
         }
     }
+	return data_num;
+
 }
 
 STATIC mp_uint_t machine_uart_write(mp_obj_t self_in, const void *buf_in, mp_uint_t size, int *errcode) {
@@ -504,6 +507,7 @@ STATIC mp_uint_t machine_uart_write(mp_obj_t self_in, const void *buf_in, mp_uin
 STATIC mp_uint_t machine_uart_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_t arg, int *errcode) {
     machine_uart_obj_t *self = MP_OBJ_TO_PTR(self_in);
     mp_uint_t ret;
+	printf("[machine_uart_ioctl]\n");
 	if(self->active == 0)
 		return 0;
     if (request == MP_STREAM_POLL) {
