@@ -37,6 +37,9 @@
 #include "py/mphal.h"
 #include "py/lexer.h"
 #include "extmod/misc.h"
+#include "py/mphal.h"
+#include "extmod/misc.h"
+#include "modmachine.h"
 #if MICROPY_VFS
 #include "extmod/vfs.h"
 #endif
@@ -100,18 +103,20 @@ STATIC mp_obj_t os_urandom(mp_obj_t num) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(os_urandom_obj, os_urandom);
 
 #if MICROPY_PY_OS_DUPTERM
-STATIC mp_obj_t os_dupterm_notify(mp_obj_t obj_in) {
-    (void)obj_in;
-    for (;;) {
-        int c = mp_uos_dupterm_rx_chr();
-        if (c < 0) {
-            break;
-        }
-        ringbuf_put(&stdin_ringbuf, c);
+
+STATIC mp_obj_t uos_dupterm(size_t n_args, const mp_obj_t *args) {
+    mp_obj_t prev_uart_obj = mp_uos_dupterm_obj.fun.var(n_args, args);
+    if (mp_obj_get_type(prev_uart_obj) == &machine_uart_type) {
+        uart_attach_to_repl(MP_OBJ_TO_PTR(prev_uart_obj), false);
     }
-    return mp_const_none;
+    if (mp_obj_get_type(args[0]) == &machine_uart_type) {
+        uart_attach_to_repl(MP_OBJ_TO_PTR(args[0]), true);
+    }
+    return prev_uart_obj;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(os_dupterm_notify_obj, os_dupterm_notify);
+
+MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(uos_dupterm_obj, 1, 2, uos_dupterm);
+
 #endif
 STATIC mp_obj_t os_sync(void) {
     #if MICROPY_VFS
@@ -126,8 +131,7 @@ STATIC const mp_rom_map_elem_t os_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_uname), MP_ROM_PTR(&os_uname_obj) },
     { MP_ROM_QSTR(MP_QSTR_urandom), MP_ROM_PTR(&os_urandom_obj) },
     #if MICROPY_PY_OS_DUPTERM
-    { MP_ROM_QSTR(MP_QSTR_dupterm), MP_ROM_PTR(&mp_uos_dupterm_obj) },
-    { MP_ROM_QSTR(MP_QSTR_dupterm_notify), MP_ROM_PTR(&os_dupterm_notify_obj) },
+    { MP_ROM_QSTR(MP_QSTR_dupterm), MP_ROM_PTR(&uos_dupterm_obj) },
     #endif
     #if MICROPY_VFS
     { MP_ROM_QSTR(MP_QSTR_ilistdir), MP_ROM_PTR(&mp_vfs_ilistdir_obj) },

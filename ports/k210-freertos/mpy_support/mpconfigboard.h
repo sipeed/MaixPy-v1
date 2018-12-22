@@ -1,0 +1,1 @@
+#define MICROPY_UARTHS_DEVICE 4

@@ -18,6 +18,8 @@
 #include "lib/utils/pyexec.h"
 #include "lib/mp-readline/readline.h"
 #include "lib/utils/interrupt_char.h"
+#include "modmachine.h"
+#include "mpconfigboard.h"
 #if MICROPY_PY_THREAD
 #include "mpthreadport.h"
 #include "py/mpthread.h"
@@ -27,7 +29,6 @@
 #include "encoding.h"
 #include "sysctl.h"
 #include "plic.h"
-//#include <devices.h>
 /*****peripheral****/
 #include "fpioa.h"
 #include "gpio.h"
@@ -35,6 +36,7 @@
 #include "w25qxx.h"
 #include "uarths.h"
 #include "rtc.h"
+#include "uart.h"
 /*****freeRTOS****/
 #include "FreeRTOS.h"
 #include "task.h"
@@ -200,7 +202,24 @@ soft_reset:
 		//pyexec_event_repl_init();
 		pyexec_frozen_module("boot.py");
 		MP_THREAD_GIL_EXIT();//given gil
+
+#if MICROPY_HW_UART_REPL
+		{
+			mp_obj_t args[3] = {
+				MP_OBJ_NEW_SMALL_INT(MICROPY_UARTHS_DEVICE),
+				MP_OBJ_NEW_SMALL_INT(115200),
+				MP_OBJ_NEW_SMALL_INT(8),
+			};
+			MP_STATE_PORT(Maix_stdio_uart) = machine_uart_type.make_new((mp_obj_t)&machine_uart_type, MP_ARRAY_SIZE(args), 0, args);
+			uart_attach_to_repl(MP_STATE_PORT(Maix_stdio_uart), true);
+		}
+#else
+		MP_STATE_PORT(Maix_stdio_uart) = NULL;
+#endif
+
 		mp_hal_set_interrupt_char(CHAR_CTRL_C);
+		printf(Banner);
+
 		for (;;) {
 			if (pyexec_mode_kind == PYEXEC_MODE_RAW_REPL) {
 				if (pyexec_raw_repl() != 0) {
@@ -221,20 +240,19 @@ soft_reset:
 
 int main()
 {		
-	/*todo interrupt init*/
-	printf(Banner);
-
-	printf("[MAIXPY]Pll0:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL0));
-	printf("[MAIXPY]Pll1:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL1));
+	printk("[MAIXPY]Pll0:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL0));
+	printk("[MAIXPY]Pll1:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL1));
 	sysctl_set_power_mode(SYSCTL_POWER_BANK6,SYSCTL_POWER_V33);
 	sysctl_set_power_mode(SYSCTL_POWER_BANK7,SYSCTL_POWER_V33);
+	plic_init();
+    sysctl_enable_irq();
 	rtc_init();
 	rtc_timer_set(1970,1, 1,0, 0, 0);
 	uint8_t manuf_id, device_id;
 	w25qxx_init_dma(3, 0);
 	w25qxx_enable_quad_mode_dma();
 	w25qxx_read_id_dma(&manuf_id, &device_id);
-	printf("[MAIXPY]Flash:0x%02x:0x%02x\n", manuf_id, device_id);
+	printk("[MAIXPY]Flash:0x%02x:0x%02x\n", manuf_id, device_id);
 	/*
 	xTaskCreateAtProcessor(0, // processor
 					     mp_task, // function entry

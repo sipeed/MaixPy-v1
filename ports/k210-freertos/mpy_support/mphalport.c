@@ -7,38 +7,55 @@
 #include "lib/utils/pyexec.h"
 #include "mphalport.h"
 #include "uarths.h"
-
+#
 #include "encoding.h"
 #include "sysctl.h"
 #include "sleep.h"
 
-STATIC uint8_t stdin_ringbuf_array[256];
-ringbuf_t stdin_ringbuf = {stdin_ringbuf_array, sizeof(stdin_ringbuf_array)};
-
 
 int mp_hal_stdin_rx_chr(void) {
 	char c = 0;
-	for (;;) {
-        int cnt = uarths_receive_data(&c,1);
-        if(cnt==0){continue;}
-        return c;
-    }
+    for (;;) 
+	{
+        if (MP_STATE_PORT(Maix_stdio_uart) != NULL && uart_rx_any(MP_STATE_PORT(Maix_stdio_uart))) 
+		{
+            return uart_rx_char(MP_STATE_PORT(Maix_stdio_uart));
+        }
+		for (size_t idx = 0; idx < MICROPY_PY_OS_DUPTERM; ++idx)
+		{
+			if( MP_STATE_VM(dupterm_objs[idx]) != NULL && uart_rx_any(MP_STATE_VM(dupterm_objs[idx])))
+			{
+				int dupterm_c = mp_uos_dupterm_rx_chr();
+				 if (dupterm_c >= 0) 
+				{
+            		return dupterm_c;
+        		}
+			}
+		}
+   }
 
 }
 void mp_hal_debug_tx_strn_cooked(void *env, const char *str, uint32_t len);
+
 const mp_print_t mp_debug_print = {NULL, mp_hal_debug_tx_strn_cooked};
 
 // Send string of given length
 void mp_hal_stdout_tx_strn(const char *str, mp_uint_t len) {
-        uarths_send_data(str,len);
+//    uarths_send_data(str,len);
+
+    if (MP_STATE_PORT(Maix_stdio_uart) != NULL) {
+        uart_tx_strn(MP_STATE_PORT(Maix_stdio_uart), str, len);
+    }
+   mp_uos_dupterm_tx_strn(str, len);
 }
+
 void mp_hal_debug_tx_strn_cooked(void *env, const char *str, uint32_t len) {
     (void)env;
     while (len--) {
         if (*str == '\n') {
-            uarths_putchar('\r');
+            mp_hal_stdout_tx_strn("\r", 1);
         }
-        uarths_putchar(*str++);
+       mp_hal_stdout_tx_strn(str++, 1);
     }
 }
 

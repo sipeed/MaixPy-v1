@@ -8,9 +8,10 @@
 
 // object representation and NLR handling
 #define MICROPY_OBJ_REPR                    (MICROPY_OBJ_REPR_A)
-#define MICROPY_NLR_SETJMP                  (1)
+#define MICROPY_NLR_SETJMP                  (1)//TODO
 #define MICROPY_READER_VFS                  (1)
 
+#define MICROPY_HW_UART_REPL                (1)
 // MCU definition
 #define MP_ENDIANNESS_LITTLE                (1)
 #define MICROPY_NO_ALLOCA                   (1)
@@ -186,7 +187,7 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_PY_UBINASCII_CRC32          (1)
 #define MICROPY_PY_URANDOM                  (1)
 #define MICROPY_PY_URANDOM_EXTRA_FUNCS      (1)
-#define MICROPY_PY_OS_DUPTERM               (0)
+#define MICROPY_PY_OS_DUPTERM               (1)
 
 #define MICROPY_PY_MACHINE_PULSE            (1)
 #define MICROPY_PY_MACHINE_I2C              (0)
@@ -234,11 +235,13 @@ typedef long mp_off_t;
 extern const struct _mp_obj_module_t uos_module;
 extern const struct _mp_obj_module_t utime_module;
 extern const struct _mp_obj_module_t maix_module;
+extern const struct _mp_obj_module_t machine_module;
 
 #define MICROPY_PORT_BUILTIN_MODULES \
     { MP_OBJ_NEW_QSTR(MP_QSTR_uos), (mp_obj_t)&uos_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_utime), (mp_obj_t)&utime_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_Maix), (mp_obj_t)&maix_module },\
+    { MP_OBJ_NEW_QSTR(MP_QSTR_machine), (mp_obj_t)&machine_module }
     // { MP_OBJ_NEW_QSTR(MP_QSTR_usocket), (mp_obj_t)&socket_module }, \
     // { MP_OBJ_NEW_QSTR(MP_QSTR_socket), (mp_obj_t)&socket_module }, \
     // { MP_OBJ_NEW_QSTR(MP_QSTR_app), (mp_obj_t)&app_module }, \
@@ -273,4 +276,5 @@ extern const struct _mp_obj_module_t maix_module;
 #define MP_STATE_PORT MP_STATE_VM
 
 #define MICROPY_PORT_ROOT_POINTERS \
-    const char *readline_hist[8];
+    const char *readline_hist[16];  \
+    struct _machine_uart_obj_t *Maix_stdio_uart; 
