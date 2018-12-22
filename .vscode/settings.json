@@ -12,6 +12,7 @@
         "spiffs_config.h": "c",
         "spiffs_configport.h": "c",
         "w25qxx.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "rtc.h": "c"
     }
 }

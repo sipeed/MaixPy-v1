@@ -1,0 +1,35 @@
+diff -r -u kendryte-standalone-sdk-origin/lib/drivers/include/rtc.h kendryte-standalone-sdk/lib/drivers/include/rtc.h
+--- kendryte-standalone-sdk-origin/lib/drivers/include/rtc.h	2018-12-20 18:05:30.989516405 +0800
++++ kendryte-standalone-sdk/lib/drivers/include/rtc.h	2018-12-20 17:57:19.974024000 +0800
+@@ -391,6 +391,10 @@
+  */
+ int rtc_init(void);
+ 
++int rtc_get_wday(int year, int month, int day);
++
++int rtc_get_yday(int year, int month, int day);
++
+ #ifdef __cplusplus
+ }
+ #endif
+diff -r -u kendryte-standalone-sdk-origin/lib/drivers/rtc.c kendryte-standalone-sdk/lib/drivers/rtc.c
+--- kendryte-standalone-sdk-origin/lib/drivers/rtc.c	2018-12-20 18:05:30.989516405 +0800
++++ kendryte-standalone-sdk/lib/drivers/rtc.c	2018-12-20 17:56:47.506357000 +0800
+@@ -255,7 +255,7 @@
+     return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+ }
+ 
+-static int rtc_get_yday(int year, int month, int day)
++int rtc_get_yday(int year, int month, int day)
+ {
+     static const int days[2][13] =
+     {
+@@ -267,7 +267,7 @@
+     return days[leap][month] + day;
+ }
+ 
+-static int rtc_get_wday(int year, int month, int day)
++int rtc_get_wday(int year, int month, int day)
+ {
+     /* Magic method to get weekday */
+     int weekday  = (day += month < 3 ? year-- : year - 2, 23 * month / 9 + day + 4 + year / 4 - year / 100 + year / 400) % 7;
