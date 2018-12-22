@@ -20,6 +20,8 @@ function help()
 {
     echo ""
     echo "help:"
+    echo "      ./flash.sh install:   download flash script"
+    echo "      ./flash.sh uninstall: remove flash script"
     echo "      ./flash.sh 'device(default /dev/ttyUSB0)' 'monitor/m/t'"
     echo ""
     echo "  e.g."
@@ -34,6 +36,10 @@ if [[ "x$1" == "xhelp" ]]; then
     exit 0
 elif [[ "x$1" == "xinstall" ]]; then
     git clone https://github.com/sipeed/kflash.py.git tools/kflash.py
+    exit 0
+elif [[ "x$1" == "xuninstall" ]]; then
+    rm -rf tools/kflash.py
+    echo "uninstall ok"
     exit 0
 fi
 
