@@ -49,7 +49,7 @@ end_time=`date +%s`
 time_distance=`expr ${end_time} - ${start_time}`
 date_time_now=$(date +%F\ \ %H:%M:%S)
 echo -ne "\033[1;32m" #green
-echo ====== Build Time: ${time_distance}s  complete at  ${date_time_now} ======= | tee -a ${LOG_FILE}
+echo ====== Build Time: ${time_distance}s  complete at  ${date_time_now} =======
 echo -e "\033[0m"
 
 

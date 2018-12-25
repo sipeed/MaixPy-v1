@@ -9,6 +9,8 @@ bin_file=$1
 monitor=false
 kflash_py=tools/kflash.py/kflash.py
 
+start_time=`date +%s`
+
 if [[ "$2x" != "x" ]] && [[ "$2x" != "mx" ]] && [[ "$2x" != "monitorx" ]] && [[ "$2x" != "tx" ]]; then
     device=$2
 fi
@@ -57,5 +59,11 @@ else
     echo "burn fail"
 fi
 
+end_time=`date +%s`
+time_distance=`expr ${end_time} - ${start_time}`
+date_time_now=$(date +%F\ \ %H:%M:%S)
+echo -ne "\033[1;32m" #green
+echo ====== Flash Time: ${time_distance}s  complete at  ${date_time_now} =======
+echo -e "\033[0m"
 
 

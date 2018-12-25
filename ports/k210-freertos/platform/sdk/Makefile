@@ -43,7 +43,8 @@ build_env:
 
 compile:
 	-mkdir build
-	cd build && cmake ../$(SDK_DIR_NAME)/ -DPROJ=hello_world -DTOOLCHAIN=$(subst bin/,bin,$(dir $(CROSS_COMPILE))) && make
+	MAKE_J_NUMBER=`cat /proc/cpuinfo | grep vendor_id | wc -l`
+	cd build && cmake ../$(SDK_DIR_NAME)/ -DPROJ=hello_world -DTOOLCHAIN=$(subst bin/,bin,$(dir $(CROSS_COMPILE))) && make -j${MAKE_J_NUMBER}
 
 update_mk: build_env
 	$(call mod_echo_func,"update mk file"" ...")
