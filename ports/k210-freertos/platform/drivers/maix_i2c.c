@@ -7,6 +7,8 @@
 #include "math.h"
 #include "sleep.h"
 
+bool is_master_mode[I2C_DEVICE_MAX] = {false, false, false};
+
 static void i2c_clk_init(i2c_device_number_t i2c_num)
 {
     configASSERT(i2c_num < I2C_MAX_NUM);
@@ -47,7 +49,36 @@ void maix_i2c_init(i2c_device_number_t i2c_num, uint32_t address_width,
     i2c_adapter->dma_rdlr = 0;
     i2c_adapter->dma_tdlr = 4;
     i2c_adapter->enable = I2C_ENABLE_ENABLE;
+    is_master_mode[i2c_num] = true;
 }
+
+void maix_i2c_init_as_slave(i2c_device_number_t i2c_num, uint32_t slave_address, uint32_t address_width,
+    const i2c_slave_handler_t *handler)
+{
+    configASSERT(address_width == 7 || address_width == 10);
+    volatile i2c_t *i2c_adapter = i2c[i2c_num];
+    
+    slave_context.i2c_num = i2c_num;
+    slave_context.slave_handler = handler;
+
+    i2c_clk_init(i2c_num);
+    i2c_adapter->enable = 0;
+    i2c_adapter->con = (address_width == 10 ? I2C_CON_10BITADDR_SLAVE : 0) | I2C_CON_SPEED(1) | I2C_CON_STOP_DET_IFADDRESSED;
+    i2c_adapter->ss_scl_hcnt = I2C_SS_SCL_HCNT_COUNT(37);
+    i2c_adapter->ss_scl_lcnt = I2C_SS_SCL_LCNT_COUNT(40);
+    i2c_adapter->sar = I2C_SAR_ADDRESS(slave_address);
+    i2c_adapter->rx_tl = I2C_RX_TL_VALUE(0);
+    i2c_adapter->tx_tl = I2C_TX_TL_VALUE(0);
+    i2c_adapter->intr_mask = I2C_INTR_MASK_RX_FULL | I2C_INTR_MASK_START_DET | I2C_INTR_MASK_STOP_DET | I2C_INTR_MASK_RD_REQ;
+
+    plic_set_priority(IRQN_I2C0_INTERRUPT + i2c_num, 1);
+    plic_irq_register(IRQN_I2C0_INTERRUPT + i2c_num, i2c_slave_irq, &slave_context);
+    plic_irq_enable(IRQN_I2C0_INTERRUPT + i2c_num);
+
+    i2c_adapter->enable = I2C_ENABLE_ENABLE;
+    is_master_mode[i2c_num] = false;
+}
+
 
 /**
  * 
@@ -60,7 +91,8 @@ int maix_i2c_send_data(i2c_device_number_t i2c_num, uint32_t slave_address, cons
     volatile i2c_t* i2c_adapter = i2c[i2c_num];
     size_t fifo_len, index;
 
-    i2c_adapter->tar = I2C_TAR_ADDRESS(slave_address);
+    if(is_master_mode[i2c_num])
+        i2c_adapter->tar = I2C_TAR_ADDRESS(slave_address);
     while (send_buf_len)
     {
         fifo_len = 8 - i2c_adapter->txflr;
@@ -103,8 +135,9 @@ int maix_i2c_recv_data(i2c_device_number_t i2c_num, uint32_t slave_address, cons
     size_t buf_len, rx_len;
     buf_len = rx_len = receive_buf_len;
     volatile i2c_t* i2c_adapter = i2c[i2c_num];
-
-    i2c_adapter->tar = I2C_TAR_ADDRESS(slave_address);
+    
+    if(is_master_mode[i2c_num])
+        i2c_adapter->tar = I2C_TAR_ADDRESS(slave_address);
     while (send_buf_len)
     {
         fifo_len = 8 - i2c_adapter->txflr;
@@ -152,6 +185,39 @@ void maix_i2c_deinit(i2c_device_number_t i2c_num)
 
     i2c_adapter->enable = 0;
     sysctl_clock_disable(SYSCTL_CLOCK_I2C0 + i2c_num);
+    if( !is_master_mode[i2c_num] )
+    {
+        plic_irq_deregister(IRQN_I2C0_INTERRUPT + i2c_num);
+        plic_irq_disable(IRQN_I2C0_INTERRUPT + i2c_num);
+    }
 }
 
+
+
+static int maix_i2c_slave_irq(void *userdata)
+{
+    i2c_slave_context_t *context = (i2c_slave_context_t *)userdata;
+    volatile i2c_t *i2c_adapter = i2c[context->i2c_num];
+    uint32_t status = i2c_adapter->intr_stat;
+    if (status & I2C_INTR_STAT_START_DET)
+    {
+        context->slave_handler->on_event(I2C_EV_START);
+        readl(&i2c_adapter->clr_start_det);
+    }
+    if (status & I2C_INTR_STAT_RX_FULL)
+    {
+        context->slave_handler->on_receive(i2c_adapter->data_cmd);
+    }
+    if (status & I2C_INTR_STAT_RD_REQ)
+    {
+        i2c_adapter->data_cmd = context->slave_handler->on_transmit();
+        readl(&i2c_adapter->clr_rd_req);
+    }
+    if (status & I2C_INTR_STAT_STOP_DET)
+    {
+        context->slave_handler->on_event(I2C_EV_STOP);
+        readl(&i2c_adapter->clr_stop_det);
+    }
+    return 0;
+}
 

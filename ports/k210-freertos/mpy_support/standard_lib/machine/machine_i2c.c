@@ -63,6 +63,7 @@ typedef struct _machine_hard_i2c_obj_t {
 } machine_hard_i2c_obj_t;
 
 STATIC i2c_slave_handler_t slave_callback[I2C_DEVICE_MAX];
+STATIC machine_hard_i2c_obj_t* i2c_obj[I2C_DEVICE_MAX]={NULL, NULL, NULL};
 
 STATIC bool check_i2c_device(uint32_t i2c_id)
 {
@@ -114,13 +115,79 @@ STATIC bool check_addr(uint32_t addr,uint32_t addr_size)
         return false;
     return true;
 }
+///////////////////////////////////
+void on_i2c0_receive(uint32_t data)
+{
+    if(i2c_obj[0] != NULL)
+        mp_call_function_1(i2c_obj[0]->on_receive, mp_obj_new_int(data));
+}
+
+uint32_t on_i2c0_transmit()
+{
+    mp_obj_t ret;
+
+    if(i2c_obj[0] != NULL)
+        ret = mp_call_function_0(i2c_obj[0]->on_transmit);
+    printf("value:%d\n",ret);
+    return mp_obj_get_int(ret);
+}
+
+void on_i2c0_event(i2c_event_t event)
+{
+    if(i2c_obj[0] != NULL)
+        mp_call_function_1(i2c_obj[0]->on_event, mp_obj_new_int(event));
+}
+///////////////////////////////////
+void on_i2c1_receive(uint32_t data)
+{
+    if(i2c_obj[1] != NULL)
+        mp_call_function_1(i2c_obj[1]->on_receive, mp_obj_new_int(data));
+}
+
+uint32_t on_i2c1_transmit()
+{
+    mp_obj_t ret;
+
+    if(i2c_obj[1] != NULL)
+        ret = mp_call_function_0(i2c_obj[1]->on_transmit);
+    return mp_obj_get_int(ret);
+}
+
+void on_i2c1_event(i2c_event_t event)
+{
+    if(i2c_obj[1] != NULL)
+        mp_call_function_1(i2c_obj[1]->on_event, mp_obj_new_int(event));
+}
+/////////////////////////////////////
+void on_i2c2_receive(uint32_t data)
+{
+    if(i2c_obj[2] != NULL)
+        mp_call_function_1(i2c_obj[2]->on_receive, mp_obj_new_int(data));
+}
+
+uint32_t on_i2c2_transmit()
+{
+    mp_obj_t ret;
+
+    if(i2c_obj[2] != NULL)
+        ret = mp_call_function_0(i2c_obj[2]->on_transmit);
+    return mp_obj_get_int(ret);
+}
+
+void on_i2c2_event(i2c_event_t event)
+{
+    if(i2c_obj[2] != NULL)
+        mp_call_function_1(i2c_obj[2]->on_event, mp_obj_new_int(event));
+}
+
+
 
 
 STATIC void machine_hard_i2c_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     machine_hard_i2c_obj_t *self = MP_OBJ_TO_PTR(self_in);
     if(self->mode == MACHINE_I2C_MODE_MASTER)
     {
-        mp_printf(print, "[MAIXPY]I2C:(%p) I2C=%d, mode=%d, freq=%u, timeout=%u, addr_size=%u)",
+        mp_printf(print, "[MAIXPY]I2C:(%p) I2C=%d, mode=%d, freq=%u, addr_size=%u)",
             self, self->i2c, self->mode, self->freq, self->timeout, self->addr_size);
     }
     else
@@ -204,7 +271,7 @@ STATIC mp_obj_t machine_i2c_init_helper(machine_hard_i2c_obj_t* self, mp_uint_t 
     {
         mp_raise_ValueError("[MAIXPY]I2C: mode error!");
     }
-    if(!check_i2c_freq(freq)){
+    if(!check_i2c_freq(freq)){ // just check for master mode
         mp_raise_ValueError("[MAIXPY]I2C: freq value error!");
     }
     if(!check_i2c_timeout(timeout))
@@ -217,8 +284,6 @@ STATIC mp_obj_t machine_i2c_init_helper(machine_hard_i2c_obj_t* self, mp_uint_t 
     }
     if( mode == MACHINE_I2C_MODE_SLAVE)
     {
-        //TODO: support slave mode
-        mp_raise_NotImplementedError("[MAIXPY]I2C: only master mode supported now");
         if(!check_addr(addr, addr_size))
         {
             mp_raise_ValueError("[MAIXPY]I2C: addr/addr size error!");
@@ -255,13 +320,31 @@ STATIC mp_obj_t machine_i2c_init_helper(machine_hard_i2c_obj_t* self, mp_uint_t 
     //TODO: slave mode init
     if( self->mode == MACHINE_I2C_MODE_SLAVE)
     {
-        //slave_callback[self->i2c].on_receive=...
+        if(self->i2c==I2C_DEVICE_0)
+        {
+            slave_callback[self->i2c].on_receive = on_i2c0_receive;
+            slave_callback[self->i2c].on_transmit = on_i2c0_transmit;
+            slave_callback[self->i2c].on_event = on_i2c0_event;
+        }
+        else if(self->i2c==I2C_DEVICE_1)
+        {
+            slave_callback[self->i2c].on_receive = on_i2c1_receive;
+            slave_callback[self->i2c].on_transmit = on_i2c1_transmit;
+            slave_callback[self->i2c].on_event = on_i2c1_event;
+        }
+        else if(self->i2c==I2C_DEVICE_2)
+        {
+            slave_callback[self->i2c].on_receive = on_i2c2_receive;
+            slave_callback[self->i2c].on_transmit = on_i2c2_transmit;
+            slave_callback[self->i2c].on_event = on_i2c2_event;
+        }
         i2c_init_as_slave(self->i2c, self->addr, self->addr_size, slave_callback+self->i2c);
     }
     else
     {
         maix_i2c_init(self->i2c, self->addr_size, self->freq);
     }
+    i2c_obj[self->i2c] = self;
     return mp_const_none;
 }
 
@@ -500,6 +583,13 @@ STATIC mp_obj_t machine_i2c_scan(mp_obj_t self_in) {
 }
 MP_DEFINE_CONST_FUN_OBJ_1(machine_i2c_scan_obj, machine_i2c_scan);
 
+STATIC mp_obj_t machine_i2c_deinit(mp_obj_t self_in) {
+    machine_hard_i2c_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    maix_i2c_deinit(self->i2c);
+    i2c_obj[self->i2c] = NULL;
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(machine_i2c_deinit_obj, machine_i2c_deinit);
 
 STATIC const mp_machine_i2c_p_t machine_hard_i2c_p = {
     .readfrom = machine_hard_i2c_readfrom,
@@ -508,10 +598,12 @@ STATIC const mp_machine_i2c_p_t machine_hard_i2c_p = {
 
 STATIC const mp_rom_map_elem_t machine_i2c_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&machine_i2c_init_obj) },
+    { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&machine_i2c_deinit_obj) },
+    { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&machine_i2c_deinit_obj) },
     { MP_ROM_QSTR(MP_QSTR_scan), MP_ROM_PTR(&machine_i2c_scan_obj) },
 
     // primitive I2C operations
-    /*
+    /* //TODO: primitive(/raw) operations
     { MP_ROM_QSTR(MP_QSTR_start), MP_ROM_PTR(&machine_i2c_start_obj) },
     { MP_ROM_QSTR(MP_QSTR_stop), MP_ROM_PTR(&machine_i2c_stop_obj) },
     { MP_ROM_QSTR(MP_QSTR_readinto), MP_ROM_PTR(&machine_i2c_readinto_obj) },
@@ -529,12 +621,18 @@ STATIC const mp_rom_map_elem_t machine_i2c_locals_dict_table[] = {
 
     // mode
     { MP_ROM_QSTR(MP_QSTR_MODE_MASTER), MP_ROM_INT(MACHINE_I2C_MODE_MASTER) },
-    { MP_ROM_QSTR(MP_QSTR_MODE_SLAVA), MP_ROM_INT(MACHINE_I2C_MODE_SLAVE) },
+    { MP_ROM_QSTR(MP_QSTR_MODE_SLAVE), MP_ROM_INT(MACHINE_I2C_MODE_SLAVE) },
 
     // devices
     { MP_ROM_QSTR(MP_QSTR_I2C0), MP_ROM_INT(I2C_DEVICE_0) },
     { MP_ROM_QSTR(MP_QSTR_I2C1), MP_ROM_INT(I2C_DEVICE_1) },
     { MP_ROM_QSTR(MP_QSTR_I2C2), MP_ROM_INT(I2C_DEVICE_2) },
+
+    // slave mode event
+    { MP_ROM_QSTR(MP_QSTR_I2C_EV_START),   MP_ROM_INT(I2C_EV_START) },
+    { MP_ROM_QSTR(MP_QSTR_I2C_EV_RESTART), MP_ROM_INT(I2C_EV_RESTART) },
+    { MP_ROM_QSTR(MP_QSTR_I2C_EV_STOP),    MP_ROM_INT(I2C_EV_STOP) },
+    
 };
 
 MP_DEFINE_CONST_DICT(mp_machine_soft_i2c_locals_dict, machine_i2c_locals_dict_table);
