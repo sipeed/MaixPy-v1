@@ -126,7 +126,7 @@ i2c.readfrom(0x24,5)
 i2c = I2C(I2C.I2C0, mode=I2C.MODE_MASTER, freq=400000, addr_size=7)
 ```
 
-### ssd1306
+### Demo4: OLED(ssd1306 128x64)
 
 ```
 
@@ -193,6 +193,34 @@ time.sleep(1)
 oled_init(i2c)
 oled_fill(i2c, 0xff)
 
+```
+
+### Demo5: Slave mode
+
+```
+
+from machine import I2C
+import time
+
+def on_receive(data):
+    print(time.time(),"received data:",data)
+
+def on_transmit():
+    data = 0x88
+    print(time.time(),"I will send:",data)
+    return data
+
+def on_event(event):
+    if event == I2C.I2C_EV_START:
+        print(time.time(),"received start event")
+    elif event == I2C.I2C_EV_RESTART:
+        print(time.time(),"received restart event")
+    elif event == I2C.I2C_EV_STOP:
+        print(time.time(),"received stop event")
+    else:
+        print(time.time(),"received unkown event")
+
+i2c = I2C(I2C.I2C0, mode=I2C.MODE_SLAVE, scl=28, sda=29, addr = 0x24, addr_size=7, on_receive=on_receive, on_transmit=on_transmit, on_event=on_event)
 
 
 ```
