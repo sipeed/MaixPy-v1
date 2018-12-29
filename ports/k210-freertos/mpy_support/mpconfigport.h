@@ -191,7 +191,8 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_PY_OS_DUPTERM               (1)
 
 #define MICROPY_PY_MACHINE_PULSE            (1)
-#define MICROPY_PY_MACHINE_I2C              (0)
+#define MICROPY_PY_MACHINE_I2C              (0) // not use mpy internal soft i2c
+#define MICROPY_PY_MACHINE_HW_I2C           (1) // enable hardware i2c
 #define MICROPY_PY_MACHINE_SPI              (0)
 #define MICROPY_PY_MACHINE_SPI_MSB          (0)
 #define MICROPY_PY_MACHINE_SPI_LSB          (0)
@@ -243,10 +244,12 @@ extern const struct _mp_obj_module_t machine_module;
     { MP_OBJ_NEW_QSTR(MP_QSTR_utime), (mp_obj_t)&utime_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_Maix), (mp_obj_t)&maix_module },\
     { MP_OBJ_NEW_QSTR(MP_QSTR_machine), (mp_obj_t)&machine_module }
-    // { MP_OBJ_NEW_QSTR(MP_QSTR_usocket), (mp_obj_t)&socket_module }, \
-    // { MP_OBJ_NEW_QSTR(MP_QSTR_socket), (mp_obj_t)&socket_module }, \
-    // { MP_OBJ_NEW_QSTR(MP_QSTR_app), (mp_obj_t)&app_module }, \
-
+    /*
+    { MP_OBJ_NEW_QSTR(MP_QSTR_usocket), (mp_obj_t)&socket_module }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_socket), (mp_obj_t)&socket_module }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_app), (mp_obj_t)&app_module }, \
+    
+    */
 
 #define MICROPY_PORT_BUILTIN_MODULE_WEAK_LINKS \
     { MP_OBJ_NEW_QSTR(MP_QSTR_os), (mp_obj_t)&uos_module }, \
