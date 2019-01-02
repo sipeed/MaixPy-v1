@@ -12,7 +12,15 @@ echo "toolchain_path=/opt/kendryte-toolchain/bin" > config.conf
 
 2. Build
 
+Build in root path of MaixPy
 ```
+cd MaixPy
+make -C mpy-cross
+```
+
+Build port
+```
+cd ports/k210-freertos
 ./build.sh clean
 ./build.sh
 ```
