@@ -187,12 +187,13 @@ STATIC void machine_hard_i2c_print(const mp_print_t *print, mp_obj_t self_in, mp
     machine_hard_i2c_obj_t *self = MP_OBJ_TO_PTR(self_in);
     if(self->mode == MACHINE_I2C_MODE_MASTER)
     {
-        mp_printf(print, "[MAIXPY]I2C:(%p) I2C=%d, mode=%d, freq=%u, addr_size=%u)",
-            self, self->i2c, self->mode, self->freq, self->timeout, self->addr_size);
+        mp_printf(print, "[MAIXPY]I2C:(%p) I2C=%d, mode=%d, freq=%u, addr_size=%u, scl=%d, sda=%d",
+            self, self->i2c, self->mode, self->freq, self->addr_size, self->pin_scl, self->pin_sda);
     }
     else
     {
-        //TODO: slave mode
+        mp_printf(print, "[MAIXPY]I2C:(%p) I2C=%d, mode=%d, addr_size=%u, addr=%02x, scl=%d, sda=%d, on_receive=%p, on_transmit=%p, on_event=%p",
+            self, self->i2c, self->mode, self->addr_size, self->addr, self->pin_scl, self->pin_sda, self->on_receive, self->on_transmit, self->on_event);
     }
 }
 
@@ -317,7 +318,6 @@ STATIC mp_obj_t machine_i2c_init_helper(machine_hard_i2c_obj_t* self, mp_uint_t 
     self->on_event = args[ARG_on_event].u_obj;
 
     // initialize hardware i2c
-    //TODO: slave mode init
     if( self->mode == MACHINE_I2C_MODE_SLAVE)
     {
         if(self->i2c==I2C_DEVICE_0)
@@ -377,6 +377,11 @@ STATIC mp_obj_t machine_i2c_writeto(size_t n_args, const mp_obj_t *args) {
     {
         mp_raise_NotImplementedError("[MAIXPY]I2C: not support stop option yet");
     }
+    if(bufinfo.len == 0)
+    {
+        //TODO: support only send address and not send any bytes
+        mp_raise_NotImplementedError("[MAIXPY]I2C: not support send 0 byte data yet");
+    }
     int ret = i2c_p->writeto(self, addr,  bufinfo.buf, bufinfo.len, stop);
     if (ret < 0) {
         mp_raise_OSError(-ret);
@@ -390,8 +395,13 @@ STATIC mp_obj_t machine_i2c_readfrom(size_t n_args, const mp_obj_t *args) {
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_machine_i2c_p_t *i2c_p = (mp_machine_i2c_p_t*)self->type->protocol;
     mp_int_t addr = mp_obj_get_int(args[1]);
+    mp_int_t len = mp_obj_get_int(args[2]);
+    if(len == 0)
+    {
+        mp_raise_ValueError("[MAIXPY]I2C: not support receive 0 byte data yet");
+    }
     vstr_t vstr;
-    vstr_init_len(&vstr, mp_obj_get_int(args[2]));
+    vstr_init_len(&vstr, len);
     bool stop = (n_args == 3) ? true : mp_obj_is_true(args[3]);
     //TODO: support not send stop signal
     if(!stop)
@@ -434,6 +444,10 @@ STATIC int read_mem(mp_obj_t self_in, uint16_t addr, uint32_t memaddr, uint8_t m
     size_t memaddr_len = 0;
     for (int16_t i = mem_size - 8; i >= 0; i -= 8) {
         memaddr_buf[memaddr_len++] = memaddr >> i;
+    }
+    if(len == 0)
+    {
+        mp_raise_ValueError("[MAIXPY]I2C: not support receive 0 byte data yet");
     }
     int ret = i2c_recv_data(self->i2c, memaddr_buf, memaddr_len, buf, len);
     if(ret != 0)
