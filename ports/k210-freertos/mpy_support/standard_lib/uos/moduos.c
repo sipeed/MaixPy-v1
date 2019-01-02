@@ -49,6 +49,7 @@
 #endif
 #include "spiffs-port.h"
 #include "spiffs_configport.h"
+#include "rng.h"
 
 
 //extern mp_obj_t file_open(const char* file_name, const mp_obj_type_t *type, mp_arg_val_t *args);
@@ -80,22 +81,14 @@ STATIC mp_obj_t os_uname(void) {
     return (mp_obj_t)&os_uname_info_obj;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(os_uname_obj, os_uname);
-#define MAX 65535
-#define MIN 0
-uint32_t get_random(int num)
-{
-	unsigned int ran_val;
-    srand(num);
-    ran_val = rand() % (MAX + 1 - MIN)+ MIN; 
-	return ran_val;
-}
+
 STATIC mp_obj_t os_urandom(mp_obj_t num) {
     mp_int_t n = mp_obj_get_int(num);
     vstr_t vstr;
     vstr_init_len(&vstr, n);
     uint32_t r = 0;
     for (int i = 0; i < n; i++) {
-        r = get_random(i); // returns 32-bit hardware random number
+        r = rng_get(); // returns 32-bit hardware random number
         vstr.buf[i] = r;
     }
     return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
