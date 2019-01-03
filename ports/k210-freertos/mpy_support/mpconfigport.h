@@ -8,7 +8,7 @@
 
 // object representation and NLR handling
 #define MICROPY_OBJ_REPR                    (MICROPY_OBJ_REPR_A)
-#define MICROPY_NLR_SETJMP                  (1)//TODO
+#define MICROPY_NLR_SETJMP                  (1)
 #define MICROPY_READER_VFS                  (1)
 
 #define MICROPY_HW_UART_REPL                (1)
@@ -206,6 +206,9 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_PY_WEBREPL                  (1)
 #define MICROPY_PY_FRAMEBUF                 (0)
 #define MICROPY_PY_USOCKET_EVENTS           (MICROPY_PY_WEBREPL)
+#define MICROPY_PY_NETWORK                  (1)
+#define MICROPY_PY_USOCKET                  (1)
+#define MICROPY_PY_LWIP                     (0)
 
 //disable ext str pool
 #define MICROPY_QSTR_EXTRA_POOL             mp_qstr_frozen_const_pool
@@ -231,25 +234,23 @@ typedef long mp_off_t;
 #define MICROPY_PORT_BUILTINS \
     { MP_ROM_QSTR(MP_QSTR_open), MP_ROM_PTR(&mp_builtin_open_obj) },
 
-//extern const struct _mp_obj_module_t machine_module;
-// extern const struct _mp_obj_module_t app_module;
 // extern const struct _mp_obj_module_t socket_module;
 extern const struct _mp_obj_module_t uos_module;
 extern const struct _mp_obj_module_t utime_module;
 extern const struct _mp_obj_module_t maix_module;
 extern const struct _mp_obj_module_t machine_module;
+extern const struct _mp_obj_module_t network_module;
+extern const struct _mp_obj_module_t socket_module;
 
 #define MICROPY_PORT_BUILTIN_MODULES \
     { MP_OBJ_NEW_QSTR(MP_QSTR_uos), (mp_obj_t)&uos_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_utime), (mp_obj_t)&utime_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_Maix), (mp_obj_t)&maix_module },\
-    { MP_OBJ_NEW_QSTR(MP_QSTR_machine), (mp_obj_t)&machine_module }, \
-    /*
+    { MP_OBJ_NEW_QSTR(MP_QSTR_machine), (mp_obj_t)&machine_module },\
+    { MP_OBJ_NEW_QSTR(MP_QSTR_network), (mp_obj_t)&network_module },\
     { MP_OBJ_NEW_QSTR(MP_QSTR_usocket), (mp_obj_t)&socket_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_socket), (mp_obj_t)&socket_module }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_app), (mp_obj_t)&app_module }, \
-    
-    */
+
 
 #define MICROPY_PORT_BUILTIN_MODULE_WEAK_LINKS \
     { MP_OBJ_NEW_QSTR(MP_QSTR_binascii), (mp_obj_t)&mp_module_ubinascii }, \
@@ -288,4 +289,5 @@ extern const struct _mp_obj_module_t machine_module;
 
 #define MICROPY_PORT_ROOT_POINTERS \
     const char *readline_hist[16];  \
-    struct _machine_uart_obj_t *Maix_stdio_uart; 
+    struct _machine_uart_obj_t *Maix_stdio_uart; \
+	struct _nic_obj_t *modnetwork_nic; 
