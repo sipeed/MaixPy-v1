@@ -9,6 +9,16 @@
 
 bool is_master_mode[I2C_DEVICE_MAX] = {false, false, false};
 
+typedef struct _i2c_slave_context
+{
+    uint32_t i2c_num;
+    const i2c_slave_handler_t *slave_handler;
+} i2c_slave_context_t;
+
+i2c_slave_context_t maix_slave_context[I2C_DEVICE_MAX];
+
+static int maix_i2c_slave_irq(void *userdata);
+
 static void i2c_clk_init(i2c_device_number_t i2c_num)
 {
     configASSERT(i2c_num < I2C_MAX_NUM);
@@ -58,8 +68,8 @@ void maix_i2c_init_as_slave(i2c_device_number_t i2c_num, uint32_t slave_address,
     configASSERT(address_width == 7 || address_width == 10);
     volatile i2c_t *i2c_adapter = i2c[i2c_num];
     
-    slave_context.i2c_num = i2c_num;
-    slave_context.slave_handler = handler;
+    maix_slave_context[i2c_num].i2c_num = i2c_num;
+    maix_slave_context[i2c_num].slave_handler = handler;
 
     i2c_clk_init(i2c_num);
     i2c_adapter->enable = 0;
@@ -72,7 +82,7 @@ void maix_i2c_init_as_slave(i2c_device_number_t i2c_num, uint32_t slave_address,
     i2c_adapter->intr_mask = I2C_INTR_MASK_RX_FULL | I2C_INTR_MASK_START_DET | I2C_INTR_MASK_STOP_DET | I2C_INTR_MASK_RD_REQ;
 
     plic_set_priority(IRQN_I2C0_INTERRUPT + i2c_num, 1);
-    plic_irq_register(IRQN_I2C0_INTERRUPT + i2c_num, i2c_slave_irq, &slave_context);
+    plic_irq_register(IRQN_I2C0_INTERRUPT + i2c_num, maix_i2c_slave_irq, maix_slave_context+i2c_num);
     plic_irq_enable(IRQN_I2C0_INTERRUPT + i2c_num);
 
     i2c_adapter->enable = I2C_ENABLE_ENABLE;
