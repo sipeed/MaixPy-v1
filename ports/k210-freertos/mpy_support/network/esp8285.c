@@ -110,27 +110,28 @@ int32_t read_data(mp_obj_t uart_obj,char* buf_in,char* buf_out,int wait_times)
 		printf("[MaixPy] %s | buf of out is NULL\n",__func__);
 		return -1;
 	}
-	ret_len = uart_stream->read(uart_obj,buf_in,MAIX_UART_BUF,&errcode); 
-	debug_print(" %s | esp_buf : %s\n",__func__,esp_buf);
+	if(NULL == buf_in)
+		buf = esp_buf;
+	else
+		buf = buf_in;
+	ret_len = uart_stream->read(uart_obj,buf,uart->read_buf_len,&errcode); //read all data
+	debug_print(" %s | buf : %s\n",__func__,buf);
 	if(0 == ret_len)
 	{
 		//printf("[MaixPy] %s | No data for reading\n",__func__);
 		return 0;
 	}
-	if(NULL == buf_in)
-		buf = esp_buf;
-	else
-		buf = buf_in;
+
 	if(-1 == check_ack(buf, ret_len, "IPD"))
 	{
-		printf("[MaixPy] %s | device don't return data\n",__func__);
+		debug_print("[MaixPy] %s | device don't return data\n",__func__);
 		return -1;
 	}
 	buf_cur = buf;
 	while(*buf_cur != '+')
 		buf_cur++;
 	sscanf(buf_cur,"+IPD,%d:",&data_len);
-	debug_print(" %s | data_len = %d\n",__func__,data_len);
+	debug_print("[MaixPy] %s | data_len = %d\n",__func__,data_len);
 	while(*buf_cur++ != ':');
 	memcpy(buf_out, buf_cur,data_len);
 	debug_print(" %s | buf_out : %s\n",__func__,buf_out);
