@@ -47,25 +47,12 @@
 #include "uarths.h"
 #include "syslog.h"
 #include "plic.h"
+
+#define MIN(a, b) (((a) < (b)) ? (a) : (b)) 
+
+#define POWER_OF_2(x) ((x) != 0 && (((x) & ((x) - 1)) == 0))
+
 #define CHAR_NONE 256
-typedef struct _machine_uart_obj_t {
-    mp_obj_base_t base;
-	uint8_t uart_num;
-    uint32_t baudrate;
-    uint8_t bitwidth;
-    uart_parity_t parity;
-    uart_stopbit_t stop;
-	bool active : 1;
-	bool attached_to_repl: 1;
-	bool rx_int_flag: 1;
-	uint16_t read_buf_len;             
-    uint16_t read_buf_head;    
-    uint16_t read_buf_tail;
-	uint16_t timeout;
-	uint16_t timeout_char;
-	uint16_t data_len;
-    uint8_t *read_buf;
-} machine_uart_obj_t;
 
 #define Maix_DEBUG 0
 #if Maix_DEBUG==1
@@ -93,62 +80,121 @@ STATIC const char *_parity_name[] = {"None", "1", "0"};
 
 void DISABLE_RX_INT(machine_uart_obj_t *self)
 {
+	uint8_t data;
+	printk("7\r\n");
 	self->rx_int_flag = 0;
+//	uart_receive_data(self->uart_num,&data , 1);
 	uart_irq_unregister(self->uart_num, UART_RECEIVE);
+	printk("8\r\n");
 }
 //extern uarths_context_t g_uarths_context;
 void DISABLE_HSRX_INT(machine_uart_obj_t *self)
 {
 	self->rx_int_flag = 0;
+	uint8_t data;
+//	uarths_receive_data(&data,1);
     //g_uarths_context.callback = NULL;
     //g_uarths_context.ctx = NULL;
 	plic_irq_disable(IRQN_UARTHS_INTERRUPT);
     plic_irq_unregister(IRQN_UARTHS_INTERRUPT);
 
 }
-int uart_rx_irq(void *ctx) 
+mp_uint_t uart_rx_any(machine_uart_obj_t *self) 
+{
+	int buffer_bytes = self->read_buf_head - self->read_buf_tail;
+	if (buffer_bytes < 0)
+	{
+		return buffer_bytes + self->read_buf_len ;
+	} 
+	else if (buffer_bytes > 0)
+	{
+		return buffer_bytes ;
+	} 
+	else 
+	{
+		//__HAL_UART_GET_FLAG(&self->uart, UART_FLAG_RXNE) != RESET
+		return 0;
+	}
+}
+
+int uart_rx_irq(void *ctx)
 {
     machine_uart_obj_t *self = ctx;
 	uint8_t data = 0;
-	debug_prink("[uart_rx_irq]read_buf_len = %d\r\n",self->read_buf_len);
     if (self == NULL) {
         return 0;
     }
 	if (self->read_buf_len != 0) {
-		uint16_t next_head = (self->read_buf_head + 1) % self->read_buf_len;
-		// only read data if room in buf
-		if (next_head != self->read_buf_tail) {
-			int ret =  0;
-			if(MICROPY_UARTHS_DEVICE == self->uart_num)
-				ret = uarths_receive_data(&data,1);
-			else if(UART_DEVICE_MAX > self->uart_num)
-				ret = uart_receive_data(self->uart_num,&data , 1);
-			// can not receive any data ,return 
-			if(0 == ret)
-				return ;
-			debug_prink("[uart_rx_irq]data = %c\r\n",data);
-			self->read_buf[self->read_buf_head] = data;
-			self->read_buf_head = next_head;
-			self->data_len++;
-			debug_prink("[uart_rx_irq]read_buf_head = %d\r\n",self->read_buf_head);
-			// Handle interrupt coming in on a UART REPL
-			if (self->attached_to_repl && data == mp_interrupt_char) {
-				if (MP_STATE_VM(mp_pending_exception) == MP_OBJ_NULL) {
-					mp_keyboard_interrupt();
-				} else {
-					MP_STATE_VM(mp_pending_exception) = MP_OBJ_NULL;
-					//pendsv_object = &MP_STATE_VM(mp_kbd_exception);
+		if(self->attached_to_repl)
+		{
+			uint16_t next_head = (self->read_buf_head + 1) % self->read_buf_len;
+			// only read data if room in buf
+			if (next_head != self->read_buf_tail) {
+				int ret = 0;
+				if(MICROPY_UARTHS_DEVICE == self->uart_num)
+					ret = uarths_receive_data(&data,1);
+				else if(UART_DEVICE_MAX > self->uart_num)
+					ret = uart_receive_data(self->uart_num,&data , 1);
+				// can not receive any data ,return 
+				if(0 == ret)
+					return 0;
+				debug_prink("[uart_rx_irq]data = %c\r\n",data);
+				self->read_buf[self->read_buf_head] = data;
+				self->read_buf_head = next_head;
+				self->data_len++;
+				debug_prink("[uart_rx_irq]read_buf_head = %d\r\n",self->read_buf_head);
+				// Handle interrupt coming in on a UART REPL
+				if (data == mp_interrupt_char) {
+					if (MP_STATE_VM(mp_pending_exception) == MP_OBJ_NULL) {
+						mp_keyboard_interrupt();
+					} else {
+						MP_STATE_VM(mp_pending_exception) = MP_OBJ_NULL;
+						//pendsv_object = &MP_STATE_VM(mp_kbd_exception);
+					}
 				}
-				return;
-			}
 
+			}
+			else {
+				// No room: leave char in buf, disable interrupt,open it util rx char
+				if(MICROPY_UARTHS_DEVICE == self->uart_num)
+					//DISABLE_HSRX_INT(self);	
+					uarths_receive_data(&data,1);
+				else if(UART_DEVICE_MAX > self->uart_num)
+					//DISABLE_RX_INT(self);
+					uart_receive_data(self->uart_num,&data , 1);
+			}
+			return 0;
 		}
-		else {
-			// No room: leave char in buf, disable interrupt,open it util rx char
-			if(MICROPY_UARTHS_DEVICE == self->uart_num)
-				DISABLE_HSRX_INT(self);	
-			else if(UART_DEVICE_MAX > self->uart_num)
-				DISABLE_RX_INT(self);
+		else
+		{
+			int head_to_end = 0;
+			int head_to_tail = 0;
+			uint16_t size = 0;
+			uint16_t rx_ret = 0;
+			uint16_t next_head = (self->read_buf_head + 1) % self->read_buf_len;
+			while (next_head != self->read_buf_tail)
+			{
+				if(MICROPY_UARTHS_DEVICE == self->uart_num)
+					rx_ret = uarths_receive_data(&self->read_buf[self->read_buf_head],1);
+				else if(UART_DEVICE_MAX > self->uart_num)
+					rx_ret = uart_receive_data(self->uart_num,&self->read_buf[self->read_buf_head],1);
+				if(0 == rx_ret)
+					break;
+				self->read_buf_head = next_head;
+				self->data_len++;
+				next_head = (self->read_buf_head + 1) % self->read_buf_len;
+			}
+			if(next_head == self->read_buf_tail)
+			{
+				//printk("1\r\n");
+				if(MICROPY_UARTHS_DEVICE == self->uart_num)
+					uarths_receive_data(&data,1);
+					//DISABLE_HSRX_INT(self); 
+				else if(UART_DEVICE_MAX > self->uart_num)
+					uart_receive_data(self->uart_num,&data,1);
+					//DISABLE_RX_INT(self);
+			}
+			return 0;
 		}
 	}
 
@@ -163,17 +209,17 @@ void ENABLE_RX_INT(machine_uart_obj_t *self)
 void ENABLE_HSRX_INT(machine_uart_obj_t *self)
 {
 	self->rx_int_flag = 1;
-	uarths_set_irq(UART_RECEIVE,uart_rx_irq,self,2);
+	uarths_set_irq(UARTHS_RECEIVE,uart_rx_irq,self,2);
 }
 
 
-STATIC bool uart_rx_wait(machine_uart_obj_t *self, uint32_t timeout) 
+bool uart_rx_wait(machine_uart_obj_t *self, uint32_t timeout) 
 {
     uint32_t start = mp_hal_ticks_ms();
 	debug_print("[uart_rx_wait]read_buf_head = %d\n",self->read_buf_head);
 	debug_print("[uart_rx_wait]read_buf_tail = %d\n",self->read_buf_tail);
     for (;;) {
-        if (self->read_buf_tail != self->read_buf_head ) {
+        if (self->read_buf_tail != self->read_buf_head) {
             return true; // have at least 1 char ready for reading
         }
         if (mp_hal_ticks_ms() - start >= timeout) {
@@ -203,23 +249,28 @@ int uart_rx_char(machine_uart_obj_t *self)
 	return CHAR_NONE;
 }
 
-
-mp_uint_t uart_rx_any(machine_uart_obj_t *self) 
+int uart_rx_data(machine_uart_obj_t *self,uint8_t* buf_in,uint32_t size) 
 {
-	int buffer_bytes = self->read_buf_head - self->read_buf_tail;
-	if (buffer_bytes < 0) 
+	uint16_t data_num = 0;
+	uint8_t* buf = buf_in;
+    while(self->read_buf_tail != self->read_buf_head && size > 0) 
 	{
-		return buffer_bytes + self->read_buf_len;
-	} 
-	else if (buffer_bytes > 0)
-	{
-		return buffer_bytes;
-	} 
-	else 
-	{
-		//__HAL_UART_GET_FLAG(&self->uart, UART_FLAG_RXNE) != RESET
-		return 0;
+        *buf = self->read_buf[self->read_buf_tail];
+        self->read_buf_tail = (self->read_buf_tail + 1) % self->read_buf_len;
+		self->data_len--;
+		buf++;
+		data_num++;
+		size--;
+
+    }
+	if (self->rx_int_flag == 0) {
+		//re-enable IRQ now we have room in buffer
+		if(MICROPY_UARTHS_DEVICE == self->uart_num)
+			ENABLE_HSRX_INT(self);	
+		else if(UART_DEVICE_MAX > self->uart_num)
+			ENABLE_RX_INT(self);
 	}
+	return data_num;
 }
 
 STATIC bool uart_tx_wait(machine_uart_obj_t *self, uint32_t timeout) 
@@ -251,24 +302,35 @@ STATIC size_t uart_tx_data(machine_uart_obj_t *self, const void *src_data, size_
     const uint8_t *src = (uint8_t*)src_data;
     size_t num_tx = 0;
 	size_t cal = 0;	
-	
-    while (num_tx < size) {
-		/*
-        if (Determine whether to send data(timeout)) {
-            *errcode = MP_ETIMEDOUT;
-            return num_tx;
-        }
-        */
-        uint8_t data;
-        data = *src++;
-	
-		if(MICROPY_UARTHS_DEVICE == self->uart_num)
-			cal = uarths_send_data(&data,1);
-		else if(UART_DEVICE_MAX > self->uart_num)
-			cal= uart_send_data(self->uart_num, &data,1);
-		
-        num_tx = num_tx + cal;
-    }
+	if(self->attached_to_repl)
+	{
+	    while (num_tx < size) {
+			/*
+	        if (Determine whether to send data(timeout)) {
+	            *errcode = MP_ETIMEDOUT;
+	            return num_tx;
+	        }
+	        */	        
+	        uint8_t data;
+	        data = *src++;
+			if(MICROPY_UARTHS_DEVICE == self->uart_num)
+				cal = uarths_send_data(&data,1);
+			else if(UART_DEVICE_MAX > self->uart_num)
+				cal= uart_send_data(self->uart_num, &data,1);		
+	        num_tx = num_tx + cal;
+	    }
+	}
+	else
+	{
+		while (num_tx < size) {        
+			if(MICROPY_UARTHS_DEVICE == self->uart_num)
+				cal = uarths_send_data(src,size);
+			else if(UART_DEVICE_MAX > self->uart_num)
+				cal= uart_send_data(self->uart_num, src,size);	
+			src = src + cal;
+ 	        num_tx = num_tx + cal;
+	    }
+	}
     // wait for the UART frame to complete
     /*
     if (Determine whether the transmission is completed(timeout)) {
@@ -287,6 +349,17 @@ void uart_tx_strn(machine_uart_obj_t *uart_obj, const char *str, uint len) {
 
 
 void uart_attach_to_repl(machine_uart_obj_t *self, bool attached) {
+	if(MICROPY_UARTHS_DEVICE == self->uart_num){
+		DISABLE_HSRX_INT(self);
+		uarths_set_interrupt_cnt(UARTHS_RECEIVE,0);
+		ENABLE_HSRX_INT(self);
+	}
+	else if(UART_DEVICE_MAX > self->uart_num){
+		DISABLE_RX_INT(self);
+		uart_set_receive_trigger(self->uart_num, UART_RECEIVE_FIFO_1);
+		ENABLE_RX_INT(self);
+	
+	}
     self->attached_to_repl = attached;
 }
 
@@ -307,7 +380,7 @@ STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, co
         { MP_QSTR_stop, MP_ARG_INT, {.u_int = UART_STOP_1} },
         { MP_QSTR_timeout, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 1000} },
         { MP_QSTR_timeout_char, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 10} },
-        { MP_QSTR_read_buf_len, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 256} },
+        { MP_QSTR_read_buf_len, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = MAIX_UART_BUF} },
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -378,6 +451,7 @@ STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, co
 		uarths_config(self->baudrate,self->stop);
 		uarths_set_interrupt_cnt(UARTHS_RECEIVE,0);
 		ENABLE_HSRX_INT(self);
+
 	}
 	else if(UART_DEVICE_MAX > self->uart_num){
 	    uart_init(self->uart_num);
@@ -450,8 +524,7 @@ STATIC MP_DEFINE_CONST_DICT(machine_uart_locals_dict, machine_uart_locals_dict_t
 
 STATIC mp_uint_t machine_uart_read(mp_obj_t self_in, void *buf_in, mp_uint_t size, int *errcode) {
     machine_uart_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    byte *buf = buf_in;
-
+    char *buf = buf_in;
 	if(self->active == 0)
 		return 0;
     // make sure we want at least 1 char
@@ -461,22 +534,67 @@ STATIC mp_uint_t machine_uart_read(mp_obj_t self_in, void *buf_in, mp_uint_t siz
 
     // read the data
 	int data_num = 0;
-    while(size) {
-        int data = uart_rx_char(self);
-		if(CHAR_NONE != data)
+	uint16_t next_head = (self->read_buf_head + 1) % self->read_buf_len;
+	if(next_head == self->read_buf_tail)
+	{
+//		if(MICROPY_UARTHS_DEVICE == self->uart_num)
+//			DISABLE_HSRX_INT(self); 
+//		else if(UART_DEVICE_MAX > self->uart_num)
+//			DISABLE_RX_INT(self);
+	}
+	if(uart_rx_wait(self, self->timeout_char))
+	{
+		if(self->attached_to_repl)
 		{
-        	*buf++ = data;
-			data_num++;
-			size--;
+		    while(size) 
+			{
+		        int data = uart_rx_char(self);
+				if(CHAR_NONE != data)
+				{
+		        	*buf++ = data;
+					data_num++;
+					size--;
+					debug_print("[machine_uart_read] data is valid,size = %d,data = %c\n",size,data);
+				}
+		        else if (CHAR_NONE == data || !uart_rx_any(self)) 
+				{
+		            break;
+		        }	
+		    }
 		}
-		debug_print("[machine_uart_read]data = %c\n",data);
-        if (CHAR_NONE == data || !uart_rx_wait(self, self->timeout_char)) {
-            // return number of bytes read
-            return data_num;
-        }
-    }
-	return data_num;
-
+		else
+		{
+			//printf("[MaixPy] %s | uart read data\n",__func__);
+			int ret_num = 0;
+			while(size > 0)
+			{
+				uint8_t* buf = buf_in;
+				ret_num = uart_rx_data(self, buf, size);
+				if(0 != ret_num)
+				{
+					data_num = data_num + ret_num;
+					buf = buf + ret_num;
+				}
+				else if(0 == ret_num || !uart_rx_any(self)) 
+				{
+					break;
+				}
+				size = size - ret_num;
+			}
+			//printf("[MaixPy] %s | uart read data finished\n",__func__);
+		}
+	}
+	if(data_num != 0)
+	{
+		return data_num;
+	}
+	else
+	{
+		debug_print("[machine_uart_read] retrun error\n");
+		*errcode = MP_EAGAIN;
+		//return MP_STREAM_ERROR;//don't return MP_STREAM_ERROR.It will lead error which can't get reading buf
+		return 0;
+	}
 }
 
 STATIC mp_uint_t machine_uart_write(mp_obj_t self_in, const void *buf_in, mp_uint_t size, int *errcode) {
