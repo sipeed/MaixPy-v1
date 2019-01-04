@@ -7,6 +7,7 @@
 
 #include "w25qxx.h"
 #include "sleep.h"
+#include "syscalls.h"
 
 #include "spiffs-port.h"
 #include "spiffs_config.h"
@@ -18,9 +19,9 @@ typedef struct _spiffs_FILE{
 } spiffs_FILE;
 
 
-s32_t sys_spiffs_read(int addr, int size, char *buf)
+s32_t sys_spiffs_read(uint32_t addr, uint32_t size, char *buf)
 {
-    int phy_addr=addr;
+    uint32_t phy_addr=addr;
     w25qxx_status_t res = w25qxx_read_data_dma(phy_addr, buf, size,W25QXX_QUAD_FAST);
 	#if open_fs_debug
     printf("flash read addr:%x size:%d buf_head:%x %x\n",phy_addr,size,buf[0],buf[1]);
@@ -33,7 +34,7 @@ s32_t sys_spiffs_read(int addr, int size, char *buf)
     }
     return res;
 }
-s32_t sys_spiffs_write(int addr, int size, char *buf)
+s32_t sys_spiffs_write(uint32_t addr, uint32_t size, char *buf)
 {
     int phy_addr=addr;
     
@@ -49,7 +50,7 @@ s32_t sys_spiffs_write(int addr, int size, char *buf)
     }
     return res;
 }
-s32_t sys_spiffs_erase(int addr, int size)
+s32_t sys_spiffs_erase(uint32_t addr, uint32_t size)
 {
     int phy_addr=addr;
     unsigned char *temp_pool;
@@ -66,7 +67,7 @@ s32_t sys_spiffs_erase(int addr, int size)
     return res;
 }
 
-s32_t spiffs_read_method(spiffs* fs,int addr, int size, char *buf)
+s32_t spiffs_read_method(spiffs* fs,uint32_t addr, uint32_t size, char *buf)
 {
 	spiffs_user_mount_t *vfs = fs->user_data;
     if (vfs == NULL) {
@@ -89,7 +90,7 @@ s32_t spiffs_read_method(spiffs* fs,int addr, int size, char *buf)
 }
 
 
-s32_t spiffs_write_method(spiffs* fs,int addr, int size, char *buf)
+s32_t spiffs_write_method(spiffs* fs,uint32_t addr, uint32_t size, char *buf)
 {
 	spiffs_user_mount_t *vfs = fs->user_data;
     if (vfs == NULL) {
@@ -111,7 +112,7 @@ s32_t spiffs_write_method(spiffs* fs,int addr, int size, char *buf)
 }
 
 
-s32_t spiffs_erase_method(spiffs* fs,int addr, int size)
+s32_t spiffs_erase_method(spiffs* fs,uint32_t addr, uint32_t size)
 {
 	spiffs_user_mount_t *vfs = fs->user_data;
     if (vfs == NULL) {

@@ -104,7 +104,6 @@ STATIC void file_obj_print(const mp_print_t *print, mp_obj_t self_in, mp_print_k
 
 STATIC mp_uint_t file_obj_read(mp_obj_t self_in, void *buf, mp_uint_t size, int *errcode) {
     pyb_file_obj_t *self = MP_OBJ_TO_PTR(self_in);
-
     spiffs_FILE fp=self->fp;
 	s32_t ret = SPIFFS_read(fp.fs, fp.fd, buf, size);
     if(ret <  0){

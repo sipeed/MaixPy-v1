@@ -9,8 +9,8 @@ OUTPUT_DIR :=build/
 # Optional options
 PLATFORM ?=
 ####################################
-SDK_GIT_ADDR := https://github.com/kendryte/kendryte-standalone-sdk.git
-SDK_GIT_BRANCH := develop
+SDK_GIT_ADDR := https://github.com/sipeed/kendryte-standalone-sdk.git
+SDK_GIT_BRANCH := Maixpy-dev
 CUR_DIR_ADDR := $(shell pwd)/
 SDK_DIR_NAME :=kendryte-standalone-sdk
 SDK_DIR_ADDR := $(CUR_DIR_ADDR)$(SDK_DIR_NAME)/
@@ -38,7 +38,6 @@ build_env:
 	if [ ! -d $(SDK_DIR_NAME) ] ; \
 	then \
 	     git clone -b $(SDK_GIT_BRANCH) $(SDK_GIT_ADDR);\
-		 cd $(SDK_DIR_NAME) && patch -p1 -u < ../sdk.patch && cd -;\
 	fi;
 
 compile:

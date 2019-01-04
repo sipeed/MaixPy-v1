@@ -48,10 +48,6 @@
 #include "syslog.h"
 #include "plic.h"
 
-#define MIN(a, b) (((a) < (b)) ? (a) : (b)) 
-
-#define POWER_OF_2(x) ((x) != 0 && (((x) & ((x) - 1)) == 0))
-
 #define CHAR_NONE 256
 
 #define Maix_DEBUG 0
@@ -82,9 +78,9 @@ void DISABLE_RX_INT(machine_uart_obj_t *self)
 {
 	uint8_t data;
 	self->rx_int_flag = 0;
-	debug_print("[MaixPy] %s | befor\n",__func__);
+	//printf("[MaixPy] %s | befor\n",__func__);
 	uart_irq_unregister(self->uart_num, UART_RECEIVE);
-	debug_print("[MaixPy] %s | after\n",__func__);
+	//printf("[MaixPy] %s | after\n",__func__);
 }
 //extern uarths_context_t g_uarths_context;
 void DISABLE_HSRX_INT(machine_uart_obj_t *self)
@@ -161,9 +157,6 @@ int uart_rx_irq(void *ctx)
 		}
 		else
 		{
-			int head_to_end = 0;
-			int head_to_tail = 0;
-			uint16_t size = 0;
 			uint16_t rx_ret = 0;
 			uint16_t next_head = (self->read_buf_head + 1) % self->read_buf_len;
 			while (next_head != self->read_buf_tail)
@@ -184,6 +177,7 @@ int uart_rx_irq(void *ctx)
 					uarths_receive_data(&data,1);
 				else if(UART_DEVICE_MAX > self->uart_num)
 					uart_receive_data(self->uart_num,&data,1);
+			
 			}
 			return 0;
 		}
@@ -194,9 +188,9 @@ int uart_rx_irq(void *ctx)
 void ENABLE_RX_INT(machine_uart_obj_t *self)
 {
 	self->rx_int_flag = 1;
-	debug_print("[MaixPy] %s | befor\n",__func__);
+	//printf("[MaixPy] %s | befor\n",__func__);
 	uart_irq_register(self->uart_num, UART_RECEIVE, uart_rx_irq, self, 2);
-	debug_print("[MaixPy] %s | after\n",__func__);
+	//printf("[MaixPy] %s | after\n",__func__);
 }
 
 void ENABLE_HSRX_INT(machine_uart_obj_t *self)
@@ -256,13 +250,6 @@ int uart_rx_data(machine_uart_obj_t *self,uint8_t* buf_in,uint32_t size)
 		size--;
 
     }
-	if (self->rx_int_flag == 0) {
-		//re-enable IRQ now we have room in buffer
-		if(MICROPY_UARTHS_DEVICE == self->uart_num)
-			ENABLE_HSRX_INT(self);
-		else if(UART_DEVICE_MAX > self->uart_num)
-			ENABLE_RX_INT(self);
-	}
 	return data_num;
 }
 
@@ -516,18 +503,9 @@ STATIC mp_uint_t machine_uart_read(mp_obj_t self_in, void *buf_in, mp_uint_t siz
     if (size == 0) {
         return 0;
     }
-
+	uint16_t next_head = 0;
     // read the data
 	int data_num = 0;
-	//TODO:solve buf - when enable rx irq,machine will stop running
-//	uint16_t next_head = (self->read_buf_head + 1) % self->read_buf_len;
-//	if(next_head == self->read_buf_tail)
-//	{
-//		if(MICROPY_UARTHS_DEVICE == self->uart_num)
-//			DISABLE_HSRX_INT(self); 
-//		else if(UART_DEVICE_MAX > self->uart_num)
-//			DISABLE_RX_INT(self);
-//	}
 	if(uart_rx_wait(self, self->timeout_char))
 	{
 		if(self->attached_to_repl)
@@ -554,7 +532,23 @@ STATIC mp_uint_t machine_uart_read(mp_obj_t self_in, void *buf_in, mp_uint_t siz
 			while(size > 0)
 			{
 				uint8_t* buf = buf_in;
+//				next_head = (self->read_buf_head + 1) % self->read_buf_len;
+//				if(next_head == self->read_buf_tail)
+//				{
+//					TODO:solve buf - when enable rx irq,machine will stop running
+//					if(MICROPY_UARTHS_DEVICE == self->uart_num)
+//						DISABLE_HSRX_INT(self); 
+//					else if(UART_DEVICE_MAX > self->uart_num)
+//						DISABLE_RX_INT(self);
+//				}
 				ret_num = uart_rx_data(self, buf, size);
+//				if (self->rx_int_flag == 0) {
+//					//re-enable IRQ now we have room in buffer
+//					if(MICROPY_UARTHS_DEVICE == self->uart_num)
+//						ENABLE_HSRX_INT(self);
+//					else if(UART_DEVICE_MAX > self->uart_num)
+//						ENABLE_RX_INT(self);
+//				}
 				if(0 != ret_num)
 				{
 					data_num = data_num + ret_num;

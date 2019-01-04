@@ -165,7 +165,7 @@ MP_NOINLINE STATIC bool init_flash_spiffs()
 		}
 	}
 	
-	mp_vfs_mount_t *vfs = m_new_obj_maybe(mp_vfs_mount_t);
+	mp_vfs_mount_t *vfs = m_new_obj(mp_vfs_mount_t);
     if (vfs == NULL) {
         printf("[MaixPy]:can't mount flash\n");
     }
