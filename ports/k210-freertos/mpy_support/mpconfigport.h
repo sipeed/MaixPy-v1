@@ -193,12 +193,8 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_PY_MACHINE_PULSE            (1)
 #define MICROPY_PY_MACHINE_I2C              (0) // not use mpy internal soft i2c
 #define MICROPY_PY_MACHINE_HW_I2C           (1) // enable hardware i2c
-#define MICROPY_PY_MACHINE_SPI              (0)
-#define MICROPY_PY_MACHINE_SPI_MSB          (0)
-#define MICROPY_PY_MACHINE_SPI_LSB          (0)
-#define MICROPY_PY_MACHINE_SPI_MAKE_NEW     machine_hw_spi_make_new
-#define MICROPY_HW_SOFTSPI_MIN_DELAY        (0)
-#define MICROPY_HW_SOFTSPI_MAX_BAUDRATE     (ets_get_cpu_frequency() * 1000000 / 200) // roughly
+#define MICROPY_PY_MACHINE_SPI              (0) // disable soft spi
+#define MICROPY_PY_MACHINE_HW_SPI           (1) // enable hardware spi
 #define MICROPY_PY_USSL                     (0)
 #define MICROPY_SSL_MBEDTLS                 (0)
 #define MICROPY_PY_USSL_FINALISER           (0)

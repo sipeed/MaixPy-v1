@@ -224,3 +224,41 @@ i2c = I2C(I2C.I2C0, mode=I2C.MODE_SLAVE, scl=28, sda=29, addr = 0x24, addr_size=
 
 
 ```
+
+
+## SPI
+
+### Demo1
+
+```
+from machine import SPI
+
+spi1 = SPI(SPI.SPI1, mode=SPI.MODE_MASTER, baudrate=10000000, polarity=0, phase=0, bits=8, firstbit=SPI.MSB, sck=28, mosi=29, miso=30, ss0=27)
+w = b'1234'
+r = bytearray(4)
+spi1.write(w)
+spi1.write(w, cs=SPI.SS0)
+spi1.write_readinto(w, r)
+spi1.read(5, write=0x00)
+spi1.readinto(r, write=0x00)
+```
+
+
+### Demo2: SSD1306 OLED
+
+```
+from machine import SPI
+
+
+w = b'1234'
+spi1.write(w)
+```
+
+
+### Demo3: DVP SPI data(8 lines) interface lcd
+
+```
+from machine import SPI
+
+spi1 = SPI(SPI.SPI0, mode=SPI.MODE_MASTER_8, baudrate=10000000, polarity=0, phase=0, bits=8, firstbit=SPI.MSB, sck=28, ss0=27)
+```
