@@ -13,7 +13,7 @@ MaixPy is an open source MicroPython project based on the Sipeed M1 platform. It
 
 MaixPy version is Python 3.4
 
-For more information on MaixPy, please visit http://maixpy.sipeed.com/
+For more information on MaixPy, please visit http://blog.sipeed.com/
 
 
 Directory architecture

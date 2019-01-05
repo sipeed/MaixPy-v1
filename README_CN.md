@@ -11,7 +11,7 @@ MaixPy基于Sipeed Maix One平台适配的micropython,支持Sipeed M1上的多�
 
 MaixPy基于K210裸机sdk编写,版本Python 3.4
 
-更多关于MaixPy的内容，请到http://maixpy.sipeed.com/ 查看了解
+更多关于MaixPy的内容，请到http://blog.sipeed.com/ 查看了解
 
 
 目录架构
