@@ -32,7 +32,7 @@
 #include "py/mperrno.h"
 #include "extmod/machine_i2c.h"
 #include "i2c.h"
-#include "maix_i2c.h"
+#include "sipeed_i2c.h"
 #include "mpconfigport.h"
 #include "fpioa.h"
 #include "sleep.h"
