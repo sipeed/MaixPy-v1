@@ -42,7 +42,7 @@ build_env:
 	fi;
 
 compile:
-	-mkdir build
+	-mkdir -p build
 	MAKE_J_NUMBER=`cat /proc/cpuinfo | grep vendor_id | wc -l`
 	cd build && cmake ../$(SDK_DIR_NAME)/ -DPROJ=hello_world -DTOOLCHAIN=$(subst bin/,bin,$(dir $(CROSS_COMPILE))) && make -j${MAKE_J_NUMBER}
 

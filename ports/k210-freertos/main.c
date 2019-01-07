@@ -24,11 +24,13 @@
 #include "mpthreadport.h"
 #include "py/mpthread.h"
 #endif
+#include "machine_uart.h"
 /*****bsp****/
 #include "sleep.h"
 #include "encoding.h"
 #include "sysctl.h"
 #include "plic.h"
+#include "printf.h"
 /*****peripheral****/
 #include "fpioa.h"
 #include "gpio.h"
@@ -49,18 +51,17 @@
 #define MPY_HEAP_SIZE 1 * 1024 * 1024
 extern int mp_hal_stdin_rx_chr(void);
 
-static char *stack_top;
+// static char *stack_top;
 #if MICROPY_ENABLE_GC
 static char heap[MPY_HEAP_SIZE];
 #endif
 
-#define MP_TASK_PRIORITY        4
-#define MP_TASK_STACK_SIZE      (16 * 1024)
-#define MP_TASK_STACK_LEN       (MP_TASK_STACK_SIZE / sizeof(StackType_t))
+// #define MP_TASK_PRIORITY        4
+// #define MP_TASK_STACK_SIZE      (16 * 1024)
+// #define MP_TASK_STACK_LEN       (MP_TASK_STACK_SIZE / sizeof(StackType_t))
 
-STATIC StaticTask_t mp_task_tcb;
-STATIC StackType_t mp_task_stack[MP_TASK_STACK_LEN] __attribute__((aligned (8)));
-TaskHandle_t mp_main_task_handle;
+// STATIC StackType_t mp_task_stack[MP_TASK_STACK_LEN] __attribute__((aligned (8)));
+// TaskHandle_t mp_main_task_handle;
 
 #define FORMAT_FS_FORCE 0
 static u8_t spiffs_work_buf[SPIFFS_CFG_LOG_PAGE_SZ(fs)*2];
@@ -93,7 +94,7 @@ uint8_t init_py_file[]={
 
 void do_str(const char *src, mp_parse_input_kind_t input_kind);
 
-const uint8_t Banner[] = {"\n __  __              _____  __   __  _____   __     __ \n\
+const char* Banner = {"\n __  __              _____  __   __  _____   __     __ \n\
 |  \\/  |     /\\     |_   _| \\ \\ / / |  __ \\  \\ \\   / /\n\
 | \\  / |    /  \\      | |    \\ V /  | |__) |  \\ \\_/ / \n\
 | |\\/| |   / /\\ \\     | |     > <   |  ___/    \\   /  \n\
@@ -157,14 +158,17 @@ MP_NOINLINE STATIC bool init_flash_spiffs()
 					s32_t w_res = SPIFFS_write(&vfs_spiffs->fs, fd,init_py_file,sizeof(init_py_file));
 					if(w_res <= 0){
 					}else{
-						s32_t f_res = SPIFFS_fflush(&vfs_spiffs->fs, fd);
+						SPIFFS_fflush(&vfs_spiffs->fs, fd);
 					}
 				}
 			}
 			SPIFFS_close (&vfs_spiffs->fs, fd);
 		}
 	}
-	
+	// mp_obj_t args[2] = {MP_OBJ_FROM_PTR(vfs_spiffs), mp_obj_new_str("/",1) };
+	// mp_map_t kw_args;
+    // mp_map_init_fixed_table(&kw_args, 0, NULL);
+	// mp_vfs_mount(2, args, &kw_args);
 	mp_vfs_mount_t *vfs = m_new_obj_maybe(mp_vfs_mount_t);
     if (vfs == NULL) {
         printf("[MaixPy]:can't mount flash\n");
@@ -174,6 +178,7 @@ MP_NOINLINE STATIC bool init_flash_spiffs()
     vfs->obj = MP_OBJ_FROM_PTR(vfs_spiffs);
     vfs->next = NULL;
     MP_STATE_VM(vfs_mount_table) = vfs;
+	return true;
 }
 
 void mp_task(
@@ -185,9 +190,9 @@ void mp_task(
 #if MICROPY_PY_THREAD
 		mp_thread_init(&mp_task_stack[0], MP_TASK_STACK_LEN);
 #endif
-soft_reset:
+// soft_reset:
 		// initialise the stack pointer for the main thread
-		mp_stack_set_top((void *)sp);
+		mp_stack_set_top((void *)(uint64_t)sp);
 		mp_stack_set_limit(MP_TASK_STACK_SIZE - 1024);
 #if MICROPY_ENABLE_GC
 		gc_init(heap, heap + sizeof(heap));
@@ -235,15 +240,20 @@ soft_reset:
 		printf("porwer reset\n");
 		msleep(1);	    
 		sysctl->soft_reset.soft_reset = 1;
-		return 0;
 }
 
 int main()
 {		
 	printk("[MAIXPY]Pll0:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL0));
 	printk("[MAIXPY]Pll1:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL1));
-	sysctl_set_power_mode(SYSCTL_POWER_BANK6,SYSCTL_POWER_V33);
-	sysctl_set_power_mode(SYSCTL_POWER_BANK7,SYSCTL_POWER_V33);
+	sysctl_set_power_mode(SYSCTL_POWER_BANK0,SYSCTL_POWER_V33);
+	sysctl_set_power_mode(SYSCTL_POWER_BANK1,SYSCTL_POWER_V33);
+	sysctl_set_power_mode(SYSCTL_POWER_BANK2,SYSCTL_POWER_V33);
+	sysctl_set_power_mode(SYSCTL_POWER_BANK3,SYSCTL_POWER_V33);
+	sysctl_set_power_mode(SYSCTL_POWER_BANK4,SYSCTL_POWER_V33);
+	sysctl_set_power_mode(SYSCTL_POWER_BANK5,SYSCTL_POWER_V33);
+	sysctl_set_power_mode(SYSCTL_POWER_BANK6,SYSCTL_POWER_V33);	
+	sysctl_set_power_mode(SYSCTL_POWER_BANK7,SYSCTL_POWER_V33);	
 	plic_init();
     sysctl_enable_irq();
 	rtc_init();

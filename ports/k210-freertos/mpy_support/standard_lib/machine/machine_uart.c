@@ -47,6 +47,7 @@
 #include "uarths.h"
 #include "syslog.h"
 #include "plic.h"
+#include "machine_uart.h"
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b)) 
 

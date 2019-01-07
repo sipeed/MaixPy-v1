@@ -142,8 +142,10 @@ int maix_i2c_recv_data(i2c_device_number_t i2c_num, uint32_t slave_address, cons
     configASSERT(i2c_num < I2C_MAX_NUM);
 
     size_t fifo_len, index;
-    size_t buf_len, rx_len;
-    buf_len = rx_len = receive_buf_len;
+    // size_t buf_len; 
+    size_t rx_len;
+    rx_len = receive_buf_len;
+    // buf_len = rx_len;
     volatile i2c_t* i2c_adapter = i2c[i2c_num];
     
     if(is_master_mode[i2c_num])
