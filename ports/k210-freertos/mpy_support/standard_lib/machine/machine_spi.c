@@ -49,6 +49,14 @@ typedef enum{
     MACHINE_SPI_MODE_MAX
 }machine_spi_mode_t;
 
+typedef enum{
+    MACHINE_SPI_CS0 = 0,
+    MACHINE_SPI_CS1    ,
+    MACHINE_SPI_CS2    ,
+    MACHINE_SPI_CS3    ,
+    MACHINE_SPI_MAX
+}machine_spi_cs_t;
+
 // SPI protocol
 typedef struct {
     void (*init)(mp_obj_base_t *obj, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args);
@@ -487,7 +495,7 @@ STATIC mp_obj_t mp_machine_spi_write_readinto(size_t n_args, const mp_obj_t *pos
     machine_hw_spi_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
 
     mp_arg_val_t args[MP_ARRAY_SIZE(machine_spi_write_allowed_args)];
-    mp_arg_parse_all(n_args - 2, pos_args + 2, kw_args,
+    mp_arg_parse_all(n_args - 3, pos_args + 3, kw_args,
         MP_ARRAY_SIZE(machine_spi_write_allowed_args), machine_spi_write_allowed_args, args);
 
     bool cs_valid = true;
@@ -536,6 +544,11 @@ STATIC const mp_rom_map_elem_t machine_spi_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_MODE_MASTER_2), MP_ROM_INT(MACHINE_SPI_MODE_MASTER_2) },
     { MP_ROM_QSTR(MP_QSTR_MODE_MASTER_4), MP_ROM_INT(MACHINE_SPI_MODE_MASTER_4) },
     { MP_ROM_QSTR(MP_QSTR_MODE_MASTER_8), MP_ROM_INT(MACHINE_SPI_MODE_MASTER_8) },
+    //cs(chip select)
+    { MP_ROM_QSTR(MP_QSTR_CS0), MP_ROM_INT(MACHINE_SPI_CS0) },
+    { MP_ROM_QSTR(MP_QSTR_CS1), MP_ROM_INT(MACHINE_SPI_CS1) },
+    { MP_ROM_QSTR(MP_QSTR_CS2), MP_ROM_INT(MACHINE_SPI_CS2) },
+    { MP_ROM_QSTR(MP_QSTR_CS3), MP_ROM_INT(MACHINE_SPI_CS3) },
 };
 
 MP_DEFINE_CONST_DICT(mp_machine_spi_locals_dict, machine_spi_locals_dict_table);
