@@ -29,7 +29,7 @@ CFLAGS :=
 ###############################################################################
 # SOME FUNCTIONS
 define mod_echo_func
-	@echo "\033[;34m"$(1)"\033[;34m";
+	@echo "\033[;34m"$(1)"\033[;0m";
 endef
 define sub_clean
 	$(MAKE) -C $(1) clean CROSS_COMPILE=$(CROSS_COMPILE) PLATFORM=$(PLATFORM);

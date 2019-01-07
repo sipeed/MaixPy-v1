@@ -28,7 +28,7 @@ MK_VALUE +="platform-lds += "$(CUR_DIR_ADDR)$(SDK_DIR_NAME)"/lds/kendryte.ld""\r
 ####################################
 
 define mod_echo_func
-	@echo "\033[;39m"$(1)"\033[;39m";
+	@echo "\033[;39m"$(1)"\033[;0m";
 endef
 
 all: build_env compile update_mk

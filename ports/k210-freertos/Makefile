@@ -50,7 +50,7 @@ define sub_make
 endef
 
 define mod_echo_func
-	@echo "\033[;31m"$(1)"\033[;31m";
+	@echo "\033[;34m"$(1)"\033[;0m";
 endef
 
 define update_sub_platform_mk
