@@ -27,14 +27,21 @@ MK_VALUE +="output-file += "'$$(liba-sdk)'"\r\n"
 MK_VALUE +="platform-lds += "$(CUR_DIR_ADDR)$(SDK_DIR_NAME)"/lds/kendryte.ld""\r\n"
 ####################################
 
+CMAKE_VERSION:= `cmake -version`
+
 define mod_echo_func
-	@echo "\033[;39m"$(1)"\033[;39m";
+	@echo $(1);
 endef
 
 all: build_env compile update_mk
 
 # cd $(SDK_DIR_NAME) && patch -p1 -u < ../freeRTOS.patch && cd -;
 build_env:
+	if [ ! $(CMAKE_VERSION) ];\
+	then \
+	  echo "cmake not found ";\
+	fi;
+		
 	if [ ! -d $(SDK_DIR_NAME) ] ; \
 	then \
 	     git clone -b $(SDK_GIT_BRANCH) $(SDK_GIT_ADDR);\
