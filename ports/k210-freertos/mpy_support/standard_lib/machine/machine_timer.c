@@ -111,7 +111,7 @@ STATIC bool check_period_setting(uint32_t period, uint32_t unit, uint32_t div)
     double counter = 0;
 
 
-    if( (period<0) || (period>=UINT32_MAX) )
+    if( period>=UINT32_MAX )
         return false;
     if( !check_div(div) ||
         !check_unit(unit)
