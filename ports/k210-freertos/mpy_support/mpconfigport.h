@@ -290,4 +290,5 @@ extern const struct _mp_obj_module_t socket_module;
 #define MICROPY_PORT_ROOT_POINTERS \
     const char *readline_hist[16];  \
     struct _machine_uart_obj_t *Maix_stdio_uart; \
-	struct _nic_obj_t *modnetwork_nic; 
+	struct _nic_obj_t *modnetwork_nic; \
+    mp_obj_t Maix_gpio_irq_handler[40];
