@@ -450,11 +450,15 @@ STATIC mp_obj_t machine_uart_make_new(const mp_obj_type_t *type, size_t n_args, 
     mp_map_t kw_args;
     mp_map_init_fixed_table(&kw_args, n_kw, args + n_args);
     machine_uart_init_helper(self, n_args - 1, args + 1, &kw_args);
-	
     return MP_OBJ_FROM_PTR(self);
 }
 
-
+/*******************************************
+name:uart.init(xxx,xxx,xxx)
+arg: xxxxxxx
+     xxxxx
+return:xxx
+*******************************************/
 STATIC mp_obj_t machine_uart_init(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
     machine_uart_init_helper(args[0], n_args -1 , args + 1, kw_args);
     return mp_const_none;
@@ -532,23 +536,7 @@ STATIC mp_uint_t machine_uart_read(mp_obj_t self_in, void *buf_in, mp_uint_t siz
 			while(size > 0)
 			{
 				uint8_t* buf = buf_in;
-//				next_head = (self->read_buf_head + 1) % self->read_buf_len;
-//				if(next_head == self->read_buf_tail)
-//				{
-//					TODO:solve buf - when enable rx irq,machine will stop running
-//					if(MICROPY_UARTHS_DEVICE == self->uart_num)
-//						DISABLE_HSRX_INT(self); 
-//					else if(UART_DEVICE_MAX > self->uart_num)
-//						DISABLE_RX_INT(self);
-//				}
 				ret_num = uart_rx_data(self, buf, size);
-//				if (self->rx_int_flag == 0) {
-//					//re-enable IRQ now we have room in buffer
-//					if(MICROPY_UARTHS_DEVICE == self->uart_num)
-//						ENABLE_HSRX_INT(self);
-//					else if(UART_DEVICE_MAX > self->uart_num)
-//						ENABLE_RX_INT(self);
-//				}
 				if(0 != ret_num)
 				{
 					data_num = data_num + ret_num;
@@ -570,8 +558,8 @@ STATIC mp_uint_t machine_uart_read(mp_obj_t self_in, void *buf_in, mp_uint_t siz
 	{
 		debug_print("[machine_uart_read] retrun error\n");
 		*errcode = MP_EAGAIN;
-		//return MP_STREAM_ERROR;//don't return MP_STREAM_ERROR.It will lead error which can't get reading buf
-		return 0;
+		return MP_STREAM_ERROR;//don't return MP_STREAM_ERROR.It will lead error which can't get reading buf
+		//return 0;
 	}
 }
 

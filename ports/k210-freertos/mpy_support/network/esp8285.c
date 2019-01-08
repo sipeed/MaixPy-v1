@@ -6,6 +6,7 @@
 #include "py/runtime.h"
 #include "py/misc.h"
 #include "py/mphal.h"
+#include "py/objstr.h"
 #include "extmod/misc.h"
 #include "lib/netutils/netutils.h"
 
@@ -61,7 +62,6 @@ uint32_t recv(mp_obj_t uart_obj,uint8_t *buf_in,uint32_t size){
 }
 
 uint32_t rev_all(mp_obj_t uart_obj,uint8_t *buf_in,int wait_times){
-
 	uint8_t *buf = NULL;
 	int remain_len = 0;
 	int rev_len = 0;
@@ -97,11 +97,16 @@ uint32_t rev_all(mp_obj_t uart_obj,uint8_t *buf_in,int wait_times){
 
 int32_t read_data(mp_obj_t uart_obj,char* buf_in,char* buf_out,int wait_times)
 {
-	char* buf = NULL;
-	char* buf_cur = NULL;
-	int ret_len = 0;
-	int data_len = 0;
-	int errcode  = 0;
+	uint8_t* buf = NULL;
+	uint8_t* buf_cur = NULL;
+	uint32_t ret_len = 0;
+	uint32_t data_len = 0;
+	uint32_t errcode  = 0;
+	uint32_t total_len = 0;
+	uint8_t char_cur = 0;
+	uint8_t *check_str = "+IPD";
+	uint8_t *str_p = check_str;
+	uint8_t raw_length[8] = {0};
 	struct _machine_uart_obj_t *uart = uart_obj;
 	const mp_stream_p_t * uart_stream = mp_get_stream(uart_obj);
 	int total_rev_len = 0;
@@ -114,27 +119,50 @@ int32_t read_data(mp_obj_t uart_obj,char* buf_in,char* buf_out,int wait_times)
 		buf = esp_buf;
 	else
 		buf = buf_in;
-	ret_len = uart_stream->read(uart_obj,buf,uart->read_buf_len,&errcode); //read all data
-	debug_print(" %s | buf : %s\n",__func__,buf);
-	if(0 == ret_len)
-	{
-		//printf("[MaixPy] %s | No data for reading\n",__func__);
-		return 0;
+	while(1)
+	{	
+		ret_len = uart_stream->read(uart_obj,&char_cur,1,&errcode); //read all data
+		if(MP_STREAM_ERROR == ret_len)
+			break;
+		if(char_cur == *str_p)
+		{
+			str_p++;
+		}else{
+			str_p = check_str;
+		}
+		if(*str_p == '\0')
+		{
+			memset(raw_length,0, sizeof(raw_length));
+			buf_cur = raw_length;
+			while(1)
+			{
+				uart_stream->read(uart_obj,buf_cur,1,&errcode);
+				if(*buf_cur == ':')
+					break;
+				buf_cur++;
+			}
+			sscanf(raw_length,",%d:",&data_len);
+			break;
+		}
 	}
-
-	if(-1 == check_ack(buf, ret_len, "IPD"))
-	{
-		debug_print("[MaixPy] %s | device don't return data\n",__func__);
+	if(0 == data_len)
 		return -1;
+	total_len = data_len;
+	buf = buf_out;
+	while(total_len > 0)
+	{
+		ret_len = uart_stream->read(uart_obj,buf,total_len,&errcode);
+		if(MP_STREAM_ERROR == ret_len)
+			break;
+		total_len = total_len - ret_len;
+		buf = buf + ret_len;
 	}
-	buf_cur = buf;
-	while(*buf_cur != '+')
-		buf_cur++;
-	sscanf(buf_cur,"+IPD,%d:",&data_len);
-	debug_print("[MaixPy] %s | data_len = %d\n",__func__,data_len);
-	while(*buf_cur++ != ':');
-	memcpy(buf_out, buf_cur,data_len);
-	debug_print(" %s | buf_out : %s\n",__func__,buf_out);
+	uart_send_data(0,raw_length,sizeof(raw_length));
+	uart_send_data(0,"\r\n",2);
+	if(0 != total_len)
+	{
+		return data_len - total_len;//
+	}
 	return data_len;
 }
 uint8_t revc_string(mp_obj_t uart_obj,char* buf_in,uint8_t *str)
@@ -342,6 +370,8 @@ uint8_t esp8285_init(mp_obj_t uart_obj)
 {
 	//send_cmd(uart_obj,"AT+RESTORE","ready",5);
 	bool config_flag = 1;
+	uart_init(0);
+	uart_config(0, 115200, 8, UART_STOP_1,  UART_PARITY_NONE);
 	config_flag = config_flag && send_cmd(uart_obj,"ATE0","OK",1);
 	//printf("[MaixPy] %s | 1 \n",__func__);
 	config_flag = config_flag && send_cmd(uart_obj,"AT","OK",1);
