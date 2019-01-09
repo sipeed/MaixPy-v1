@@ -1,3 +1,23 @@
+/**
+ * @file ESP8266.cpp
+ * @brief The implementation of class ESP8266. 
+ * @author Wu Pengfei<pengfei.wu@itead.cc> 
+ * @date 2015.02
+ * 
+ * @par Copyright:
+ * Copyright (c) 2015 ITEAD Intelligent Systems Co., Ltd. \n\n
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version. \n\n
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -20,284 +40,17 @@
 #include "atomic.h"
 #include "uart.h"
 #include "uarths.h"
-
 #include "esp8285.h"
 
-#define Sipeed_DEBUG 0
-#if Sipeed_DEBUG==1
-#define debug_print(x,arg...) printf("[MaixPy]"x,##arg)
-#else 
-#define debug_print(x,arg...) 
-#endif
+#define ESP8285_BUF_SIZE 2048 
 
-
-/***************************************************************/
-#define ESP_BUF_LEN 2048
-unsigned char esp_buf[ESP_BUF_LEN] = {0};
-
-uint32_t recv(mp_obj_t uart_obj,uint8_t *buf_in,uint32_t size){
-	char* buf = NULL;
-	int errcode  = 0;
-	const mp_stream_p_t * uart_stream = mp_get_stream(uart_obj);
-	if(buf_in == NULL || size == 0)
-	{
-		memset(esp_buf, 0, 1024);
-		buf = esp_buf;
-	}
-	else
-		buf = buf_in;
-	if(0 == uart_rx_any(uart_obj))
-	{
-		debug_print("[MaixPy] %s | No data\n",__func__);
-		return 0;
-	}
-	msleep(1);
-	int rev_len = uart_stream->read(uart_obj,buf,size,&errcode); 
-	if(0 == rev_len)
-	{
-		printf("[MaixPy] %s | receive data faild\n",__func__);
-		return 0;
-	}
-	return rev_len;
-}
-
-uint32_t rev_all(mp_obj_t uart_obj,uint8_t *buf_in,int wait_times){
-	uint8_t *buf = NULL;
-	int remain_len = 0;
-	int rev_len = 0;
-	int total_rev_len = 0;
-	struct _machine_uart_obj_t *uart = uart_obj;
-	if(0 > wait_times)
-		wait_times = 0;
-	if(NULL == buf_in)
-	{
-		memset(esp_buf,0,1024);
-		buf = esp_buf;
-	}
-	else
-		buf = buf_in;
-	if(uart_rx_wait(uart,(uart->timeout)*wait_times))
-	{
-		while(1)
-		{
-			rev_len = recv(uart_obj,buf+total_rev_len,10);
-			if(0 == rev_len)
-				break;
-			total_rev_len = total_rev_len + rev_len;
-		}
-	}
-	if(total_rev_len == 0)
-	{
-		debug_print(" %s | time out\n",__func__);
-		return 0;
-	}
-	debug_print(" %s | total_rev_len = %d\n",__func__,total_rev_len);
-	return total_rev_len;
-}
-
-int32_t read_data(mp_obj_t uart_obj,char* buf_in,char* buf_out,int wait_times)
-{
-	uint8_t* buf = NULL;
-	uint8_t* buf_cur = NULL;
-	uint32_t ret_len = 0;
-	uint32_t data_len = 0;
-	uint32_t errcode  = 0;
-	uint32_t total_len = 0;
-	uint8_t char_cur = 0;
-	uint8_t *check_str = "+IPD";
-	uint8_t *str_p = check_str;
-	uint8_t raw_length[8] = {0};
-	struct _machine_uart_obj_t *uart = uart_obj;
-	const mp_stream_p_t * uart_stream = mp_get_stream(uart_obj);
-	int total_rev_len = 0;
-	if(buf_out == NULL)
-	{
-		printf("[MaixPy] %s | buf of out is NULL\n",__func__);
-		return -1;
-	}
-	if(NULL == buf_in)
-		buf = esp_buf;
-	else
-		buf = buf_in;
-	while(1)
-	{	
-		ret_len = uart_stream->read(uart_obj,&char_cur,1,&errcode); //read all data
-		if(MP_STREAM_ERROR == ret_len)
-			break;
-		if(char_cur == *str_p)
-		{
-			str_p++;
-		}else{
-			str_p = check_str;
-		}
-		if(*str_p == '\0')
-		{
-			memset(raw_length,0, sizeof(raw_length));
-			buf_cur = raw_length;
-			while(1)
-			{
-				uart_stream->read(uart_obj,buf_cur,1,&errcode);
-				if(*buf_cur == ':')
-					break;
-				buf_cur++;
-			}
-			sscanf(raw_length,",%d:",&data_len);
-			break;
-		}
-	}
-	if(0 == data_len)
-		return -1;
-	total_len = data_len;
-	buf = buf_out;
-	while(total_len > 0)
-	{
-		ret_len = uart_stream->read(uart_obj,buf,total_len,&errcode);
-		if(MP_STREAM_ERROR == ret_len)
-			break;
-		total_len = total_len - ret_len;
-		buf = buf + ret_len;
-	}
-	uart_send_data(0,raw_length,sizeof(raw_length));
-	uart_send_data(0,"\r\n",2);
-	if(0 != total_len)
-	{
-		return data_len - total_len;//
-	}
-	return data_len;
-}
-uint8_t revc_string(mp_obj_t uart_obj,char* buf_in,uint8_t *str)
-{
-	uint8_t *str_p;
-	uint8_t *buf;
-	int ret_len = 0;
-	struct _machine_uart_obj_t *uart = uart_obj;
-	if(buf_in == NULL)
-	{
-		memset(esp_buf,0,1024);
-		buf = esp_buf;
-	}
-	else
-		buf = buf_in;
-	str_p = str;
-	while(*str_p !='\0' && uart_rx_wait(uart,uart->timeout))
-	{
-		if(recv(uart_obj,buf,1)<=0)
-			break;
-		if(*buf == *str_p)
-		{
-			str_p++;
-		}else{
-			str_p = str;
-		}
-		buf++;
-		ret_len++;
-	}
-	return ret_len;	
-}
-
-uint32_t send(mp_obj_t uart_obj,uint8_t *buf_in,uint32_t size){
-	const mp_stream_p_t * uart_stream = mp_get_stream(uart_obj);
-	int errcode;
-	int send_len = 0;
-	if(buf_in == NULL || size == 0)
-	{
-		printf("[MaixPy] %s | send parameter error\n",__func__);
-		return 0;
-	}
-	send_len = uart_stream->write(uart_obj,buf_in,size,&errcode); 
-	if (MP_STREAM_ERROR == send_len)
-	{
-		printf("[MaixPy] %s | MP_STREAM_ERROR\n",__func__);
-		return 0;
-	}
-	else if(0 == send_len)
-	{
-		printf("[MaixPy] %s | send data faild\n",__func__);
-		return 0;
-	}
-	return send_len;
-}
-
-
-uint8_t send_data(mp_obj_t uart_obj,uint8_t *data,uint32_t size)
-{
-	uint8_t res=0; 
-	uint32_t ret_len = 0;
-	debug_print(" %s | send_data:%s\n",__func__,data);
-	ret_len = send(uart_obj,data,size);
-	if(ret_len == 0)
-	{
-		printf("[MaixPy] %s | send_data faild\n",__func__);
-		return 0;	
-	}
-	res = revc_string(uart_obj,NULL,"OK");
-	if(0 == res)
-	{
-		printf("[MaixPy] %s | 0 == res\n",__func__);
-	}
-	else
-	{
-		return ret_len;
-	}	
-}
-
-uint8_t send_cmd(mp_obj_t uart_obj,uint8_t *cmd,uint8_t *ack,int wait_times)
-{
-	uint32_t ret=1;
-	if(cmd == NULL)
-	{
-		printf("[MaixPy] %s | please input a command\n",__func__);
-		return 0;
-	}
-	if(0 > wait_times)
-		wait_times = 0;
-SEND_CMD:
-	debug_print(" %s | send_cmd %s \n",__func__,cmd);
-	send(uart_obj,cmd,strlen(cmd));
-	send(uart_obj,"\r\n",2);
-	if(ack == NULL)
-		return 1;// Received data but didn't know its ack string
-	ret = rev_all(uart_obj,NULL,wait_times);
-	if(ret == 0)
-	{
-		printf("[MaixPy] %s | can not get any about ack\n",__func__);
-		return ret;
-	}
-	else
-	{
-		if(-1 != check_ack(NULL,ret,ack))
-		{
-			debug_print(" %s | Find ack\n",__func__);
-			ret = 1;
-		}
-		else
-		{
-			if(-1 != check_ack(NULL,ret,"ERROR"))
-			{
-				printf("[MaixPy] %s | send command error\n",__func__);
-				ret = 0;
-			}
-			else if(-1 != check_ack(NULL,ret,"busy"))
-			{
-				printf("[MaixPy] %s | send again\n",__func__);
-				goto SEND_CMD;
-			}
-			printf("[MaixPy] %s | can not Find ack\n",__func__);
-			ret = 0;
-		}
-	}
-
-	return ret;
-}
-
-
-void get_next(char* targe, int next[])
+STATIC void kmp_get_next(uint8_t* targe, uint32_t next[])
 {  
-    int targe_Len = strlen(targe);  
+    uint32_t tag_len = strlen(targe);  
     next[0] = -1;  
-    int k = -1;  
-    int j = 0;  
-    while (j < targe_Len - 1)  
+    uint32_t k = -1;  
+    uint32_t j = 0;  
+    while (j < tag_len - 1)  
     {     
         if (k == -1 || targe[j] == targe[k])  
         {  
@@ -314,12 +67,12 @@ void get_next(char* targe, int next[])
         }  
     }  
 }  
-int Kmp_match(char* src,int src_len,char* targe, int* next)  
+STATIC uint32_t kmp_match(uint8_t* src,uint32_t src_len,uint8_t* targe, uint32_t* next)
 {  
-    int i = 0;  
-    int j = 0;  
-    int sLen = src_len;  
-    int pLen = strlen(targe);  
+    uint32_t i = 0;  
+    uint32_t j = 0;  
+    uint32_t sLen = src_len;  
+    uint32_t pLen = strlen(targe);  
     while (i < sLen && j < pLen)  
     {     
         if (j == -1 || src[i] == targe[j])  
@@ -337,226 +90,188 @@ int Kmp_match(char* src,int src_len,char* targe, int* next)
     else  
         return -1;  
 } 
-int check_ack(char* src,int src_len,char* tagert)
+STATIC uint32_t kmp_find(uint8_t* src,uint32_t src_len,uint8_t* tagert)
 {
-	int index = 0;
-	char* src_buf = NULL;
-	if(NULL == src)
-		src_buf = esp_buf;
-	else
-		src_buf = src;
-	int tagert_Length = strlen(tagert);
-	int next[tagert_Length];
-	get_next(tagert,next);
-	index = Kmp_match(src_buf,src_len,tagert,next);
+	uint32_t index = 0;
+	uint8_t* src_buf = src;
+	uint32_t tag_len = strlen(tagert);
+	uint32_t next[tag_len];
+	kmp_get_next(tagert,next);
+	index = kmp_match(src_buf,src_len,tagert,next);
 	return index;
 }
-uint8_t *buf_addr()
+STATIC uint32_t data_find(uint8_t* src,uint32_t src_len,uint8_t* tagert)
 {
-	return esp_buf;
+	return kmp_find(src,src_len,tagert);
 }
 
-uint16_t get_data_len(uint8_t* buf)
+bool kick(esp8285_obj* nic)
 {
-	uint16_t len = 0;
-	char* buf_cur = NULL;
-	if(buf = NULL)
-		buf_cur = esp_buf;
-	else
-		buf_cur = buf;
-	return len;
-}
-uint8_t esp8285_init(mp_obj_t uart_obj)
-{
-	//send_cmd(uart_obj,"AT+RESTORE","ready",5);
-	bool config_flag = 1;
-	uart_init(0);
-	uart_config(0, 115200, 8, UART_STOP_1,  UART_PARITY_NONE);
-	config_flag = config_flag && send_cmd(uart_obj,"ATE0","OK",1);
-	//printf("[MaixPy] %s | 1 \n",__func__);
-	config_flag = config_flag && send_cmd(uart_obj,"AT","OK",1);
-	//printf("[MaixPy] %s | 2 \n",__func__);
-	config_flag = config_flag && send_cmd(uart_obj,"AT+CIPMODE=0","OK",1);
-	//printf("[MaixPy] %s | 3 \n",__func__);
-	config_flag = config_flag && send_cmd(uart_obj,"AT+CWMODE=1","OK",1);
-	//printf("[MaixPy] %s | 4 \n",__func__);
-	config_flag = config_flag && send_cmd(uart_obj,"AT+CIPMUX=0","OK",1);
-	//printf("[MaixPy] %s | 5 \n",__func__);
-	config_flag = config_flag && send_cmd(uart_obj,"AT+CWQAP","OK",1);
-	//printf("[MaixPy] %s | 6 \n",__func__);
-	if(1 == config_flag)
-	{
-		printf("[MaixPy] %s | esp8285 config success\n",__func__);
-		return 1;
-	}
-	else
-		return 0;
+    return eAT(nic);
 }
 
-uint8_t esp8285_connect(mp_obj_t uart_obj,
-							 uint8_t *ssid,uint32_t ssid_len,
-							 uint8_t *password,uint32_t psw_len)
+bool reset(esp8285_obj* nic)
 {
-	uint8_t *command;
-	uint32_t AT_len = strlen("AT+CWJAP_CUR=\"\",\"\"");
-	uint32_t cmd_len = ssid_len+psw_len+AT_len;
-	uint8_t ret = 0;
-	command=m_new(uint8_t,cmd_len);
-	sprintf((char*)command,"AT+CWJAP_CUR=\"%s\",\"%s\"",ssid,password);
-	send_cmd(uart_obj,command,NULL,0);
-	uint32_t rec_len = 0;
-	memset(esp_buf, 0, 1024);
-	while(1)
-	{
-		ret = rev_all(uart_obj,esp_buf+rec_len,5);
-		if(0 != ret)
-		{
-			rec_len = rec_len + ret;
-			if(-1 != check_ack(esp_buf,rec_len,"OK"))
-			{
-				ret = 1;
-				printf("[MaixPy] %s | connect wifi\n",__func__);
-				break;
-			}
-			else if(-1 != check_ack(esp_buf,rec_len,"ERROR"))
-			{
-				ret = 0;
-				printf("[MaixPy] %s | connect ERROR\n",__func__);
-				break;
-			}
-		}
-		else
-		{
-			printf("[MaixPy] %s | connect failed\n",__func__);
-			ret = 0;
-		}
-	}		
-	m_del(uint8_t,command,cmd_len);
-	return ret;
+    unsigned long start;
+    if (eATRST(nic)) {
+        msleep(2000);
+        start = mp_hal_ticks_ms();
+        while (mp_hal_ticks_ms() - start < 3000) {
+            if (eAT(nic)) {
+                msleep(1500); /* Waiting for stable */
+                return true;
+            }
+            msleep(100);
+        }
+    }
+    return false;
 }
 
-uint8_t esp8285_disconnect(mp_obj_t uart_obj)
+uint8_t* getVersion(esp8285_obj* nic)
 {
-	 uint8_t *command = "AT+CWQAP";
-	 uint32_t cmd_len = strlen(command);
-	 uint8_t ret = 0;
-	 ret = send_cmd(uart_obj,command,"OK",5);
-	 return ret;
+    uint8_t* version;
+    eATGMR(nic,version);
+    return version;
 }
 
-ipconfig* esp8285_ipconfig(mp_obj_t uart_obj)
-{	
-	ipconfig* esp8285_ipconfig = m_new_obj_maybe(ipconfig);
-	uint32_t rec_len = 0;
-	uint8_t *CIPSTA_command = "AT+CIPSTA_CUR?";
-	char* char_cur = NULL;
-	//check ip_addr gateway netmask
-	send_cmd(uart_obj,CIPSTA_command,NULL,0);
-	rec_len = rev_all(uart_obj,NULL,5);
-	if(0 == rec_len)
-	{
-		printf("[MaixPy] %s | esp8285_ipconfig could'n get CIPSTA return data\n",__func__);
-		return NULL;
-	}
-	if(-1 == check_ack(NULL, rec_len,"OK"))
-	{
-		printf("[MaixPy] %s | esp8285_ipconfig  CIPSTA return ERROR\n",__func__);
-		return NULL;
-	}
-	char_cur = strstr(esp_buf, "ip");
-	if(char_cur == NULL)
-	{
-		printf("[MaixPy] %s | esp8285_ipconfig could'n get ip\n",__func__);
-		return NULL;
-	}
-	char ip_buf[16] = {0};
-	sscanf(char_cur,"ip:\"%[^\"]\"",ip_buf);
-	esp8285_ipconfig->ip = mp_obj_new_str(ip_buf,strlen(ip_buf));
-	char_cur = strstr(esp_buf, "gateway");
-	if(char_cur == NULL)
-	{
-		printf("[MaixPy] %s | esp8285_ipconfig could'n get gateway\n",__func__);
-		return NULL;
-	}
-	char gateway_buf[16] = {0};
-	sscanf(char_cur,"gateway:\"%[^\"]\"",gateway_buf);
-	esp8285_ipconfig->gateway = mp_obj_new_str(gateway_buf,strlen(gateway_buf));
-
-	char_cur = strstr(esp_buf, "netmask");
-	if(char_cur == NULL)
-	{
-		printf("[MaixPy] %s | esp8285_ipconfig could'n get netmask\n",__func__);
-		return NULL;
-	}
-	char netmask_buf[16] = {0};
-	sscanf(char_cur,"netmask:\"%[^\"]\"",netmask_buf);
-	esp8285_ipconfig->netmask = mp_obj_new_str(netmask_buf,strlen(netmask_buf));
-	//ssid & mac
-	uint8_t *CWJAP_command = "AT+CWJAP_CUR?";
-	send_cmd(uart_obj,CWJAP_command,NULL,0);
-	rec_len = rev_all(uart_obj,NULL,5);	
-	if(0 == rec_len)
-	{
-		printf("[MaixPy] %s | esp8285_ipconfig could'n get CWJAP data\n",__func__);
-		return NULL;
-	}	
-	char ssid[50] = {0};
-	char MAC[17] = {0};
-	sscanf(esp_buf, "+CWJAP_CUR:\"%[^\"]\",\"%[^\"]\"", ssid, MAC);
-	esp8285_ipconfig->ssid = mp_obj_new_str(ssid,strlen(ssid));
-	esp8285_ipconfig->MAC = mp_obj_new_str(MAC,strlen(MAC));
-
-	debug_print(" %s | ip_buf = %s\n",ip_buf);
-	debug_print(" %s | gateway_buf = %s\n",gateway_buf);
-	debug_print(" %s | netmask_buf = %s\n",netmask_buf);
-	debug_print(" %s | ssid = %s\n",ssid);
-	debug_print(" %s | MAC = %s\n",MAC);
-	m_del_obj(ipconfig,esp8285_ipconfig);
-	return esp8285_ipconfig;
+bool setOprToStation(esp8285_obj* nic)
+{
+    uint8_t mode;
+    if (!qATCWMODE(nic,&mode)) {
+        return false;
+    }
+    if (mode == 1) {
+        return true;
+    } else {
+        if (sATCWMODE(nic,1)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }
 
 
-
-int add_escapte(char* str,char* dest)
+bool joinAP(esp8285_obj* nic,uint8_t* ssid, uint8_t* pwd)
 {
-	unsigned char* tmp = dest;
-	int len = strlen(str);
-	int i = 0;
-	if(str == NULL)
-	{
-		printf("[MaixPy] %s | str == NULL\n",__func__);
-		return 0;
-	}
-	for(;i < len+1;i++)
-	{
-		if(i == 0)
-		{
-			tmp[i] = '\"';
-			continue;
-		}
-		tmp[i]=str[i-1];
-	}
-	tmp[i] = '\"';
-	return 1;
+    return sATCWJAP(nic,ssid, pwd);
 }
 
-
-uint8_t esp8285_uart_gethostbyname(mp_obj_t uart_obj,uint8_t* host,uint32_t len,uint8_t* out_ip)
+bool enableClientDHCP(esp8285_obj* nic,uint8_t mode, bool enabled)
 {
-	unsigned char host_ip[len+2];//note!!
-	add_escapte(host, host_ip);
-	unsigned char cmd_buf[strlen("AT+CIPDOMAIN=%s")+len+1];
-	sprintf(cmd_buf,"AT+CIPDOMAIN=\"%s\"",host);
-	int ret = 0;
-	ret = send_cmd(uart_obj,cmd_buf,"OK",3);
-	if(-1 == ret)
+    return sATCWDHCP(nic,mode, enabled);
+}
+
+bool leaveAP(esp8285_obj* nic)
+{
+    return eATCWQAP(nic);
+}
+
+uint8_t* getIPStatus(esp8285_obj* nic)
+{
+    uint8_t* list;
+    eATCIPSTATUS(nic,list);
+    return list;
+}
+
+uint8_t* getLocalIP(esp8285_obj* nic)
+{
+    uint8_t* list;
+    eATCIFSR(nic,list);
+    return list;
+}
+
+bool enableMUX(esp8285_obj* nic)
+{
+    return sATCIPMUX(nic,1);
+}
+
+bool disableMUX(esp8285_obj* nic)
+{
+    return sATCIPMUX(nic,0);
+}
+
+bool createTCP(esp8285_obj* nic,uint8_t* addr, uint32_t port)
+{
+    return sATCIPSTARTSingle(nic,"TCP", addr, port);
+}
+
+bool releaseTCP(esp8285_obj* nic)
+{
+    return eATCIPCLOSESingle(nic);
+}
+
+bool registerUDP(esp8285_obj* nic,uint8_t* addr, uint32_t port)
+{
+    return sATCIPSTARTSingle(nic,"UDP", addr, port);
+}
+
+bool unregisterUDP(esp8285_obj* nic)
+{
+    return eATCIPCLOSESingle(nic);
+}
+
+bool createTCP_mul(esp8285_obj* nic,uint8_t mux_id, uint8_t* addr, uint32_t port)
+{
+    return sATCIPSTARTMultiple(nic,mux_id, "TCP", addr, port);
+}
+
+bool releaseTCP_mul(esp8285_obj* nic,uint8_t mux_id)
+{
+    return sATCIPCLOSEMulitple(nic,mux_id);
+}
+
+bool registerUDP_mul(esp8285_obj* nic,uint8_t mux_id, uint8_t* addr, uint32_t port)
+{
+    return sATCIPSTARTMultiple(nic,mux_id, "UDP", addr, port);
+}
+
+bool unregisterUDP_mul(esp8285_obj* nic,uint8_t mux_id)
+{
+    return sATCIPCLOSEMulitple(nic,mux_id);
+}
+
+bool setTCPServerTimeout(esp8285_obj* nic,uint32_t timeout)
+{
+    return sATCIPSTO(nic,timeout);
+}
+
+bool startTCPServer(esp8285_obj* nic,uint32_t port)
+{
+    if (sATCIPSERVER(nic,1, port)) {
+        return true;
+    }
+    return false;
+}
+
+bool stopTCPServer(esp8285_obj* nic)
+{
+    sATCIPSERVER(nic,0,0);
+    reset(nic);
+    return false;
+}
+
+bool startServer(esp8285_obj* nic,uint32_t port)
+{
+    return startTCPServer(nic,port);
+}
+
+bool stopServer(esp8285_obj* nic)
+{
+    return stopTCPServer(nic);
+}
+
+bool get_host_byname(esp8285_obj* nic,uint8_t* host,uint32_t len,uint8_t* out_ip)
+{
+	int index = 0;
+	if(false == sATCIPDOMAIN(nic,host))
 	{
-		printf("[MaixPy] %s | send command failed\n",__func__,host);
+		printf("[MaixPy] %s | get_host_byname failed\n",__func__);
+		return false;
 	}
-	unsigned char IP_buf[16]={0};
-	sscanf(esp_buf,"+CIPDOMAIN:%s",IP_buf);
-	//printf("[MaixPy] %s | esp_buf = %s\n",__func__,esp_buf);
-	//printf("[MaixPy] %s | IP_buf = %s\n",__func__,IP_buf);
+	uint8_t IP_buf[16]={0};
+	index = data_find(nic->buffer,ESP8285_BUF_SIZE,"+CIPDOMAIN:");
+	sscanf(nic->buffer + index,"+CIPDOMAIN:%s",IP_buf);
 	mp_obj_t IP = mp_obj_new_str(IP_buf, strlen(IP_buf));
 	nlr_buf_t nlr;
 	if (nlr_push(&nlr) == 0)
@@ -564,52 +279,778 @@ uint8_t esp8285_uart_gethostbyname(mp_obj_t uart_obj,uint8_t* host,uint32_t len,
 		netutils_parse_ipv4_addr(IP,out_ip,NETUTILS_BIG);
 		nlr_pop();
 	}
-	return 1;
+	return true;
 }
-int esp8285_uart_connect(mp_obj_t uart_obj,int type,const uint8_t* ip,mp_int_t port)
+
+bool get_ipconfig(esp8285_obj* nic, ipconfig_obj* ipconfig)
 {
-	mp_obj_t IP = netutils_format_ipv4_addr(ip,NETUTILS_BIG);
-	char *host = mp_obj_str_get_str(IP);
-	debug_print(" %s | host = %s\n",__func__,host);
-	int cmd_len = strlen(host) + 
-				  3 + //type
-				  4 + //port char  
-				  strlen("AT+CIPSTART=") + 
-				  4;  //" char  
-	uint8_t* command = m_new(uint8_t,cmd_len);
-	switch(type)
+
+	if(0 == qATCIPSTA_CUR(nic))
+		return false;
+	uint8_t* cur = NULL;
+	cur = strstr(nic->buffer, "ip");
+	if(cur == NULL)
 	{
-		case MOD_NETWORK_SOCK_STREAM:
-			sprintf(command,"AT+CIPSTART=\"TCP\",\"%s\",%d",host,port);
-			break;
-		case MOD_NETWORK_SOCK_DGRAM:
-			sprintf(command,"AT+CIPSTART=\"UDP\",\"%s\",%d",host,port);
-			break;
-		default:
-			sprintf(command,"AT+CIPSTART=\"TCP\",\"%s\",%d",host,port);
-			break;
+		printf("[MaixPy] %s | esp8285_ipconfig could'n get ip\n",__func__);
+		return false;
 	}
-	debug_print(" %s | command %s\n",__func__,command);
-	int ret = send_cmd(uart_obj,command,"OK",3);
-	m_del(uint8_t, command, cmd_len);
-	if(1 == ret)
+	char ip_buf[16] = {0};
+	sscanf(cur,"ip:\"%[^\"]\"",ip_buf);
+	ipconfig->ip = mp_obj_new_str(ip_buf,strlen(ip_buf));
+	cur = strstr(nic->buffer, "gateway");
+	if(cur == NULL)
 	{
-		if(-1 != check_ack(NULL, 1024, "CONNECT"))
-			return 1; 
-		else
-		{
-			printf("[MaixPy] %s | CONNECT ERROR\n",__func__);
-			return 0;
-		}
+		printf("[MaixPy] %s | esp8285_ipconfig could'n get gateway\n",__func__);
+		return false;
 	}
-	else if(-1 != check_ack(NULL, 1024, "ERROR"))
+	char gateway_buf[16] = {0};
+	sscanf(cur,"gateway:\"%[^\"]\"",gateway_buf);
+	ipconfig->gateway = mp_obj_new_str(gateway_buf,strlen(gateway_buf));
+	cur = strstr(nic->buffer, "netmask");
+	if(cur == NULL)
 	{
-		if(-1 != check_ack(NULL, 1024, "ALREADY CONNECTED"))
-			return 1;
-		else
-		{
-			printf("[MaixPy] %s | can not get \"OK\" ack\n",__func__);
-			return 0;
-		}
+		printf("[MaixPy] %s | esp8285_ipconfig could'n get netmask\n",__func__);
+		return false;
+	}
+	char netmask_buf[16] = {0};
+	sscanf(cur,"netmask:\"%[^\"]\"",netmask_buf);
+	ipconfig->netmask = mp_obj_new_str(netmask_buf,strlen(netmask_buf));
+	//ssid & mac
+	if(false == qATCWJAP_CUR(nic))
+	{
+		return false;
+	}
+	uint8_t ssid[50] = {0};
+	uint8_t MAC[17] = {0};
+	cur = strstr(nic->buffer, "+CWJAP_CUR:");
+	sscanf(cur, "+CWJAP_CUR:\"%[^\"]\",\"%[^\"]\"", ssid, MAC);
+	ipconfig->ssid = mp_obj_new_str(ssid,strlen(ssid));
+	ipconfig->MAC = mp_obj_new_str(MAC,strlen(MAC));
+	return true;
+}
+
+
+bool esp_send(esp8285_obj* nic,const uint8_t *buffer, uint32_t len)
+{
+    return sATCIPSENDSingle(nic,buffer, len);
+}
+
+bool esp_send_mul(esp8285_obj* nic,uint8_t mux_id, const uint8_t *buffer, uint32_t len)
+{
+    return sATCIPSENDMultiple(nic,mux_id, buffer, len);
+}
+
+uint32_t esp_recv(esp8285_obj* nic,uint8_t *buffer, uint32_t buffer_size, uint32_t timeout)
+{
+    return recvPkg(nic,buffer, buffer_size, NULL, timeout, NULL);
+}
+
+uint32_t esp_recv_mul(esp8285_obj* nic,uint8_t mux_id, uint8_t *buffer, uint32_t buffer_size, uint32_t timeout)
+{
+    uint8_t id;
+    uint32_t ret;
+    ret = recvPkg(nic,buffer, buffer_size, NULL, timeout, &id);
+    if (ret > 0 && id == mux_id) {
+        return ret;
+    }
+    return 0;
+}
+
+uint32_t esp_recv_mul_id(esp8285_obj* nic,uint8_t *coming_mux_id, uint8_t *buffer, uint32_t buffer_size, uint32_t timeout)
+{
+    return recvPkg(nic,buffer, buffer_size, NULL, timeout, coming_mux_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/* +IPD,<id>,<len>:<data> */
+/* +IPD,<len>:<data> */
+
+uint32_t recvPkg(esp8285_obj*nic,uint8_t *buffer, uint32_t buffer_size, uint32_t *data_len, uint32_t timeout, uint8_t *coming_mux_id)
+{
+	int errcode;
+	uint8_t data = 0;
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+
+	
+    char a;
+    int index_PIPDcomma = -1;
+    int index_colon = -1; /* : */
+    int index_comma = -1; /* , */
+    int len = -1;
+    int8_t id = -1;
+    bool has_data = false;
+    uint32_t ret;
+    unsigned long start;
+    uint32_t i;
+    
+    if (buffer == NULL) {
+        return -1;
+    }
+    uint32_t iter = 0;
+	memset(nic->buffer, 0, ESP8285_BUF_SIZE);
+    start = mp_hal_ticks_ms();
+    while (mp_hal_ticks_ms() - start < timeout) {
+        if(uart_rx_any(nic->uart_obj) > 0) {
+			uart_stream->read(nic->uart_obj,&nic->buffer[iter++],1,&errcode); 
+        }
+        index_PIPDcomma = data_find(nic->buffer,iter,"+IPD,");
+        if (index_PIPDcomma != -1) {
+            index_colon = data_find(nic->buffer+index_PIPDcomma + 5 , ESP8285_BUF_SIZE - 5 ,":");
+            if (index_colon != -1) {
+                index_comma = data_find(nic->buffer+index_PIPDcomma + 5 , ESP8285_BUF_SIZE - 5 ,",");
+                /* +IPD,id,len:data */
+                if (index_comma != -1 && index_comma < index_colon) {
+					sscanf(&nic->buffer[index_PIPDcomma],"+IPD,%d,%d:",&id,&len);
+                    if (id < 0 || id > 4) {
+                        return -1;
+                    }
+                    if (len <= 0) {
+                        return -1;
+                    }
+                } else { /* +IPD,len:data */
+                	sscanf(&nic->buffer[index_PIPDcomma],"+IPD,%d:",&len);
+                    if (len <= 0) {
+                        return -1;
+                    }
+                }
+                has_data = true;
+                break;
+            }
+        }
+    }
+    if (has_data) {
+        i = 0;
+        ret = len > buffer_size ? buffer_size : len;
+        start = mp_hal_ticks_ms();
+        while (mp_hal_ticks_ms() - start < 3000) {
+            while(uart_rx_any(nic->uart_obj) > 0 && i < ret) {
+				uart_stream->read(nic->uart_obj,&buffer[i++],1,&errcode); 
+            }
+            if (i == ret) {
+                rx_empty(nic);
+                if (data_len) {
+                    *data_len = len;    
+                }
+                if (index_comma != -1 && coming_mux_id) {
+                    *coming_mux_id = id;
+                }
+                return ret;
+            }
+        }
+    }
+    return 0;
+}
+
+void rx_empty(esp8285_obj* nic) 
+{
+	int errcode;
+	uint8_t data = 0;
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+    while(uart_rx_any(nic->uart_obj) > 0) {
+        uart_stream->read(nic->uart_obj,&data,1,&errcode); 
+    }
+}
+
+uint8_t* recvString_1(esp8285_obj* nic,uint8_t* target1,uint32_t timeout)
+{
+	int errcode;
+	uint32_t iter = 0;
+	memset(nic->buffer,0,ESP8285_BUF_SIZE);
+    unsigned long start = mp_hal_ticks_ms();
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+    while (mp_hal_ticks_ms() - start < timeout) {
+        while(uart_rx_any(nic->uart_obj) > 0) {
+            uart_stream->read(nic->uart_obj,&nic->buffer[iter++],1,&errcode);
+        }
+        if (data_find(nic->buffer,iter+1,target1) != -1) {
+            return nic->buffer;
+        } 
+    }
+    return NULL;
+}
+
+
+uint8_t* recvString_2(esp8285_obj* nic,uint8_t* target1, uint8_t* target2, uint32_t timeout)
+{
+	int errcode;
+	uint32_t iter = 0;
+	memset(nic->buffer,0,ESP8285_BUF_SIZE);
+    unsigned long start = mp_hal_ticks_ms();
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+    while (mp_hal_ticks_ms() - start < timeout) {
+        while(uart_rx_any(nic->uart_obj) > 0) {
+            uart_stream->read(nic->uart_obj,&nic->buffer[iter++],1,&errcode);
+        }
+        if (data_find(nic->buffer,iter+1,target1) != -1) {
+            break;
+        } else if (data_find(nic->buffer,iter+1,target2) != -1) {
+            break;
+        }
+    }
+    return nic->buffer;
+}
+
+uint8_t* recvString_3(esp8285_obj* nic,uint8_t* target1, uint8_t* target2,uint8_t* target3,uint32_t timeout)
+{
+
+	int errcode;
+	uint32_t iter = 0;
+	memset(nic->buffer,0,ESP8285_BUF_SIZE);
+    unsigned long start = mp_hal_ticks_ms();
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+    while (mp_hal_ticks_ms() - start < timeout) {
+        while(uart_rx_any(nic->uart_obj) > 0) {
+            uart_stream->read(nic->uart_obj,&nic->buffer[iter++],1,&errcode);
+        }
+        if (data_find(nic->buffer,iter+1,target1) != -1) {
+            break;
+        } else if (data_find(nic->buffer,iter+1,target2) != -1) {
+            break;
+        } else if (data_find(nic->buffer,iter+1,target3) != -1) {
+            break;
+        }
+    }
+    return nic->buffer;
+}
+
+bool recvFind(esp8285_obj* nic,uint8_t* target, uint32_t timeout)
+{
+    uint8_t* data_tmp;
+    recvString_1(nic, target, timeout);
+    if (data_find(nic->buffer,ESP8285_BUF_SIZE,target) != -1) {
+        return true;
+    }
+    return false;
+}
+
+bool recvFindAndFilter(esp8285_obj* nic,uint8_t* target, uint8_t* begin, uint8_t* end, uint8_t* data, uint32_t timeout)
+{
+    recvString_1(nic,target, timeout);
+    if (data_find(nic->buffer,ESP8285_BUF_SIZE,target) != -1) {
+        int32_t index1 = data_find(nic->buffer,ESP8285_BUF_SIZE,begin);
+        int32_t index2 = data_find(nic->buffer,ESP8285_BUF_SIZE,end);
+        if (index1 != -1 && index2 != -1) {
+            index1 += strlen(begin);
+			data = m_new(uint8_t, index2 - index1);
+			memcpy(data,nic->buffer[index1], index2 - index1);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool eAT(esp8285_obj* nic)
+{	
+	int errcode = 0;
+	uint8_t* cmd = "AT\r\n";
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+    rx_empty(nic);// clear rx
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+    return recvFind(nic,"OK",1000);
+}
+
+bool eATE(esp8285_obj* nic,bool enable)
+{	
+	int errcode = 0;
+	uint8_t* cmd = "ATE0\r\n";
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+    rx_empty(nic);// clear rx
+    if(enable)
+    {
+    	uint8_t* cmd = "ATE0\r\n";
+		uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+    	return recvFind(nic,"OK",1000);
+    }
+	else
+	{
+    	uint8_t* cmd = "ATE1\r\n";
+		uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+    	return recvFind(nic,"OK",1000);		
 	}
 }
+
+
+bool eATRST(esp8285_obj* nic) 
+{
+	int errcode = 0;
+	uint8_t* cmd = "AT+RST\r\n";
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+    rx_empty(nic);// clear rx
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+    return recvFind(nic,"OK",1000);
+}
+
+bool eATGMR(esp8285_obj* nic,uint8_t* version)
+{
+
+	int errcode = 0;
+	uint8_t* cmd = "AT+GMR\r\n";
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+    rx_empty(nic);// clear rx
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+
+    return recvFindAndFilter(nic,"OK", "\r\r\n", "\r\n\r\nOK", version, 5000); 
+}
+
+bool qATCWMODE(esp8285_obj* nic,uint8_t *mode) 
+{
+	int errcode = 0;
+	uint8_t* cmd = "AT+CWMODE?\r\n";
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+    uint8_t* str_mode;
+    bool ret;
+    if (!mode) {
+        return false;
+    }
+    rx_empty(nic);
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+    ret = recvFindAndFilter(nic,"OK", "+CWMODE:", "\r\n\r\nOK", str_mode,1000); 
+    if (ret) {
+        *mode = atoi(str_mode);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool sATCWMODE(esp8285_obj* nic,uint8_t mode)
+{
+	int errcode = 0;
+	uint8_t* cmd = "AT+CWMODE=";
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);	
+	uint8_t mode_str[10] = {0};
+	itoa(mode, mode_str, 10);
+    rx_empty(nic);
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+	uart_stream->write(nic->uart_obj,mode_str,strlen(mode_str),&errcode);
+	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);    
+    recvString_2(nic,"OK", "no change",1000);
+    if (data_find(nic->buffer,ESP8285_BUF_SIZE,"OK") != -1 || data_find(nic->buffer,ESP8285_BUF_SIZE,"no change") != -1) {
+        return true;
+    }
+    return false;
+}
+
+bool sATCWJAP(esp8285_obj* nic,uint8_t* ssid, uint8_t* pwd)
+{
+	int errcode = 0;
+	uint8_t *cmd = "AT+CWJAP=\"";
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);	
+    rx_empty(nic);	
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+	uart_stream->write(nic->uart_obj,ssid,strlen(ssid),&errcode);
+	uart_stream->write(nic->uart_obj,"\",\"",strlen("\",\""),&errcode);
+	uart_stream->write(nic->uart_obj,pwd,strlen(pwd),&errcode);
+	uart_stream->write(nic->uart_obj,"\"",strlen("\""),&errcode);
+	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
+    recvString_2(nic,"OK", "FAIL", 10000);
+    if (data_find(nic->buffer,ESP8285_BUF_SIZE,"OK") != -1) {
+        return true;
+    }
+    return false;
+}
+
+bool sATCWDHCP(esp8285_obj* nic,uint8_t mode, bool enabled)
+{
+	int errcode = 0;
+	uint8_t* cmd = "AT+CWDHCP=";
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);	
+	uint8_t strEn[2] = {0};
+	if (enabled) {
+		strcpy(strEn, "1");
+	}
+	else
+	{
+		strcpy(strEn, "0");
+	}
+    rx_empty(nic);
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+	uart_stream->write(nic->uart_obj,strEn,strlen(strEn),&errcode);
+	uart_stream->write(nic->uart_obj,",",strlen(","),&errcode);
+	uart_stream->write(nic->uart_obj,mode,1,&errcode);
+	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
+    recvString_2(nic,"OK", "FAIL", 10000);
+    if (data_find(nic->buffer,ESP8285_BUF_SIZE,"OK") != -1) {
+        return true;
+    }
+    return false;
+}
+
+
+bool eATCWQAP(esp8285_obj* nic)
+{
+	int errcode = 0;
+	uint8_t* cmd = "AT+CWQAP\r\n";
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);	
+    rx_empty(nic);
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+    return recvFind(nic,"OK",1000);
+}
+
+bool eATCIPSTATUS(esp8285_obj* nic,uint8_t* list)
+{
+    int errcode = 0;
+	uint8_t* cmd = "AT+CIPSTATUS\r\n";
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);	
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+    msleep(100);
+    rx_empty(nic);
+    uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+    return recvFindAndFilter(nic,"OK", "\r\r\n", "\r\n\r\nOK", list,1000);
+}
+bool sATCIPSTARTSingle(esp8285_obj* nic,uint8_t* type, uint8_t* addr, uint32_t port)
+{
+    int errcode = 0;
+	uint8_t* cmd = "AT+CIPSTART=\"";
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+	mp_obj_t IP = netutils_format_ipv4_addr(addr,NETUTILS_BIG);
+	uint8_t *host = mp_obj_str_get_str(IP);
+	uint8_t port_str[10] = {0};
+	itoa(port, port_str, 10);
+	rx_empty(nic);
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+	uart_stream->write(nic->uart_obj,type,strlen(type),&errcode);
+	uart_stream->write(nic->uart_obj,"\",\"",strlen("\",\""),&errcode);
+	uart_stream->write(nic->uart_obj,host,strlen(host),&errcode);
+	uart_stream->write(nic->uart_obj,"\",",strlen("\","),&errcode);
+	uart_stream->write(nic->uart_obj,port_str,strlen(port_str),&errcode);
+	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
+    recvString_3(nic,"OK", "ERROR", "ALREADY CONNECT", 10000);
+    if (data_find(nic->buffer,ESP8285_BUF_SIZE,"OK") != -1 || data_find(nic->buffer,ESP8285_BUF_SIZE,"ALREADY CONNECT") != -1) {
+        return true;
+    }
+    return false;
+}
+bool sATCIPSTARTMultiple(esp8285_obj*nic,uint8_t mux_id, uint8_t* type, uint8_t* addr, uint32_t port)
+{
+    int errcode = 0;
+	uint8_t* cmd = "AT+CIPSTART=";
+	uint8_t port_str[10] = {0};
+	itoa(port,port_str ,10);
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+	rx_empty(nic);
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+	uart_stream->write(nic->uart_obj,mux_id,1,&errcode);
+	uart_stream->write(nic->uart_obj,",\"",strlen(",\""),&errcode);
+	uart_stream->write(nic->uart_obj,type,strlen(type),&errcode);
+	uart_stream->write(nic->uart_obj,"\",\"",strlen("\",\""),&errcode);
+	uart_stream->write(nic->uart_obj,addr,strlen(addr),&errcode);
+	uart_stream->write(nic->uart_obj,"\",",strlen("\","),&errcode);
+	uart_stream->write(nic->uart_obj,port_str,strlen(port_str),&errcode);
+	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
+    recvString_3(nic,"OK", "ERROR", "ALREADY CONNECT", 10000);
+    if (data_find(nic->buffer,ESP8285_BUF_SIZE,"OK") != -1 || data_find(nic->buffer,ESP8285_BUF_SIZE,"ALREADY CONNECT") != -1) {
+        return true;
+    }
+    return false;
+}
+bool sATCIPSENDSingle(esp8285_obj*nic,const uint8_t *buffer, uint32_t len)
+{
+	int errcode = 0;
+	uint8_t* cmd = "AT+CIPSEND=";
+	uint8_t len_str[10] = {0};
+	itoa(len,len_str ,10);
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+	rx_empty(nic);
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+	uart_stream->write(nic->uart_obj,len_str,strlen(len_str),&errcode);
+	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
+    if (recvFind(nic,">", 5000)) {
+        rx_empty(nic);
+		uart_stream->write(nic->uart_obj,buffer,len,&errcode);
+        return recvFind(nic,"SEND OK", 10000);
+    }
+    return false;
+}
+bool sATCIPSENDMultiple(esp8285_obj* nic,uint8_t mux_id, const uint8_t *buffer, uint32_t len)
+{
+   	int errcode = 0;
+	uint8_t* cmd = "AT+CIPSEND=";
+	uint8_t len_str[10] = {0};
+	itoa(len,len_str ,10);
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+	rx_empty(nic);
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+	uart_stream->write(nic->uart_obj,mux_id,1,&errcode);
+	uart_stream->write(nic->uart_obj,",",strlen(","),&errcode);
+	uart_stream->write(nic->uart_obj,len_str,strlen(len_str),&errcode);
+    if (recvFind(nic,">", 5000)) {
+        rx_empty(nic);
+		uart_stream->write(nic->uart_obj,buffer,len,&errcode);
+		uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
+        return recvFind(nic,"SEND OK", 10000);
+    }
+    return false;
+}
+bool sATCIPCLOSEMulitple(esp8285_obj* nic,uint8_t mux_id)
+{
+	int errcode = 0;
+	uint8_t* cmd = "AT+CIPCLOSE=";
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);	
+	rx_empty(nic);
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+	uart_stream->write(nic->uart_obj,mux_id,1,&errcode);
+	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
+    recvString_2(nic,"OK", "link is not", 5000);
+    if (data_find(nic->buffer,ESP8285_BUF_SIZE,"OK") != -1 || data_find(nic->buffer,ESP8285_BUF_SIZE,"link is not") != -1) {
+        return true;
+    }
+    return false;
+}
+bool eATCIPCLOSESingle(esp8285_obj* nic)
+{
+
+	int errcode = 0;
+	uint8_t* cmd = "AT+CIPCLOSE\r\n";
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);	
+    rx_empty(nic);
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+    return recvFind(nic,"OK", 5000);
+}
+bool eATCIFSR(esp8285_obj* nic,uint8_t* list)
+{
+	int errcode = 0;
+	uint8_t* cmd = "AT+CIFSR\r\n";
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+    rx_empty(nic);
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+    return recvFindAndFilter(nic,"OK", "\r\r\n", "\r\n\r\nOK", list,5000);
+}
+bool sATCIPMUX(esp8285_obj* nic,uint8_t mode)
+{
+	int errcode = 0;
+	uint8_t* cmd = "AT+CIPMUX=";
+	uint8_t mode_str[10] = {0};
+	itoa(mode, mode_str, 10);
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);	
+    rx_empty(nic);
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+	uart_stream->write(nic->uart_obj,mode_str,strlen(mode_str),&errcode);
+	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
+    recvString_2(nic,"OK", "Link is builded",5000);
+    if (data_find(nic->buffer,ESP8285_BUF_SIZE,"OK") != -1) {
+        return true;
+    }
+    return false;
+}
+bool sATCIPSERVER(esp8285_obj* nic,uint8_t mode, uint32_t port)
+{
+	int errcode = 0;
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);	
+    if (mode) {
+		uint8_t* cmd = "AT+CIPSERVER=1,";
+		uint8_t port_str[10] = {0};
+		itoa(port, port_str, 10);
+        rx_empty(nic);
+		uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+		uart_stream->write(nic->uart_obj,port_str,strlen(port_str),&errcode);
+		uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
+        recvString_2(nic,"OK", "no change",1000);
+        if (data_find(nic->buffer,ESP8285_BUF_SIZE,"OK") != -1 || data_find(nic->buffer,ESP8285_BUF_SIZE,"no change") != -1) {
+            return true;
+        }
+        return false;
+    } else {
+        rx_empty(nic);
+		uint8_t* cmd = "AT+CIPSERVER=0";
+		uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+		uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
+        return recvFind(nic,"\r\r\n",1000);
+    }
+}
+bool sATCIPSTO(esp8285_obj* nic,uint32_t timeout)
+{
+
+	int errcode = 0;
+	uint8_t* cmd = "AT+CIPSTO=";
+	uint8_t timeout_str[10] = {0};
+	itoa(timeout, timeout_str, 10);
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);	
+	rx_empty(nic);
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+	uart_stream->write(nic->uart_obj,timeout_str,strlen(timeout_str),&errcode);
+    uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
+    return recvFind(nic,"OK",1000);
+}
+
+bool sATCIPMODE(esp8285_obj* nic,uint8_t mode)
+{
+
+	int errcode = 0;
+	uint8_t* cmd = "AT+CIPMODE=";
+	uint8_t mode_str[10] = {0};
+	itoa(mode, mode_str, 10);
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);	
+	rx_empty(nic);
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+	uart_stream->write(nic->uart_obj,mode_str,strlen(mode_str),&errcode);
+    uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
+    return recvFind(nic,"OK",1000);
+}
+
+bool sATCIPDOMAIN(esp8285_obj* nic,uint8_t* domain_name)
+{
+	int errcode = 0;
+	uint8_t* cmd = "AT+CIPDOMAIN=";
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+	rx_empty(nic);
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+	uart_stream->write(nic->uart_obj,"\"",strlen("\""),&errcode);
+	uart_stream->write(nic->uart_obj,domain_name,strlen(domain_name),&errcode);
+	uart_stream->write(nic->uart_obj,"\"",strlen("\""),&errcode);
+	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);  
+    return recvFind(nic,"OK",1000);
+}
+
+bool qATCIPSTA_CUR(esp8285_obj* nic)
+{
+	int errcode = 0;
+	uint8_t* cmd = "AT+CIPSTA_CUR?";
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+	rx_empty(nic);
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
+	return recvFind(nic,"OK",1000);
+}
+bool sATCIPSTA_CUR(esp8285_obj* nic,uint8_t* ip,uint8_t* gateway,uint8_t* netmask)
+{
+	int errcode = 0;
+	uint8_t* cmd = "AT+CIPSTA_CUR=";
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+	rx_empty(nic);
+	if(NULL == ip)
+	{
+		return false;
+	}
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+	uart_stream->write(nic->uart_obj,ip,strlen(ip),&errcode);
+	if(NULL == gateway)
+	{
+		uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
+		return recvFind(nic,"OK",1000);
+	}
+	uart_stream->write(nic->uart_obj,",",strlen(","),&errcode);
+	uart_stream->write(nic->uart_obj,gateway,strlen(gateway),&errcode);
+	if(NULL == netmask)
+	{
+		uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
+		return recvFind(nic,"OK",1000);
+	}
+	uart_stream->write(nic->uart_obj,",",strlen(","),&errcode);
+	uart_stream->write(nic->uart_obj,netmask,strlen(netmask),&errcode);
+	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
+	return recvFind(nic,"OK",1000);
+}
+
+bool qATCWJAP_CUR(esp8285_obj* nic)
+{
+	int errcode = 0;
+	uint8_t* cmd = "AT+CWJAP_CUR?";
+	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+	rx_empty(nic);
+	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
+	return recvFind(nic,"OK",1000);
+}
+
+bool eINIT(esp8285_obj* nic)
+{
+	bool init_flag = 1;
+	init_flag = init_flag && eAT(nic);
+	init_flag = init_flag && eATE(nic,0);
+	init_flag = init_flag && sATCIPMODE(nic,0);
+	init_flag = init_flag && setOprToStation(nic);
+	init_flag = init_flag && disableMUX(nic);
+	init_flag = init_flag && leaveAP(nic);
+}
+//bool setOprToSoftAP(void)
+//{
+//    uint8_t mode;
+//    if (!qATCWMODE(&mode)) {
+//        return false;
+//    }
+//    if (mode == 2) {
+//        return true;
+//    } else {
+//        if (sATCWMODE(2) && reset()) {
+//            return true;
+//        } else {
+//            return false;
+//        }
+//    }
+//}
+
+//bool ESP8266::setOprToStationSoftAP(void)
+//{
+//    uint8_t mode;
+//    if (!qATCWMODE(&mode)) {
+//        return false;
+//    }
+//    if (mode == 3) {
+//        return true;
+//    } else {
+//        if (sATCWMODE(3) && reset()) {
+//            return true;
+//        } else {
+//            return false;
+//        }
+//    }
+//}
+
+//String ESP8266::getAPList(void)
+//{
+//    String list;
+//    eATCWLAP(list);
+//    return list;
+//}
+
+
+//bool setSoftAPParam(String ssid, String pwd, uint8_t chl, uint8_t ecn)
+//{
+//    return sATCWSAP(ssid, pwd, chl, ecn);
+//}
+
+//String getJoinedDeviceIP(void)
+//{
+//    String list;
+//    eATCWLIF(list);
+//    return list;
+//}
+
+//bool ESP8266::eATCWLAP(String &list)
+//{
+//    String data;
+//    rx_empty();
+//    m_puart->println("AT+CWLAP");
+//    return recvFindAndFilter("OK", "\r\r\n", "\r\n\r\nOK", list, 10000);
+//}
+
+
+//bool ESP8266::sATCWSAP(String ssid, String pwd, uint8_t chl, uint8_t ecn)
+//{
+//    String data;
+//    rx_empty();
+//    m_puart->print("AT+CWSAP=\"");
+//    m_puart->print(ssid);
+//    m_puart->print("\",\"");
+//    m_puart->print(pwd);
+//    m_puart->print("\",");
+//    m_puart->print(chl);
+//    m_puart->print(",");
+//    m_puart->println(ecn);
+//    
+//    data = recvString("OK", "ERROR", 5000);
+//    if (data.indexOf("OK") != -1) {
+//        return true;
+//    }
+//    return false;
+//}
+
+//bool ESP8266::eATCWLIF(String &list)
+//{
+//    String data;
+//    rx_empty();
+//    m_puart->println("AT+CWLIF");
+//    return recvFindAndFilter("OK", "\r\r\n", "\r\n\r\nOK", list);
+//}
+

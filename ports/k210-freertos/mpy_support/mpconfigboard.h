@@ -8,6 +8,8 @@
 #include "uart.h"
 #include "uarths.h"
 
+#define MAIX_UART_BUF 2048
+#define ESP8285_BUF_SIZE 2048 
 #define MICROPY_UARTHS_DEVICE 4
 #define MICROPY_UART_NIC 1
 typedef struct _machine_uart_obj_t {
@@ -28,13 +30,21 @@ typedef struct _machine_uart_obj_t {
 	uint16_t data_len;
     uint8_t *read_buf;
 } machine_uart_obj_t;
-typedef struct _ipconfig
+typedef struct _ipconfig_obj
 {
 	mp_obj_t ip;
 	mp_obj_t gateway;
 	mp_obj_t netmask;
 	mp_obj_t ssid;
 	mp_obj_t MAC;
-}ipconfig;
-#define MAIX_UART_BUF 2048
+}ipconfig_obj;
+
+typedef struct _esp8285_obj
+{
+	mp_obj_t uart_obj;
+	uint8_t buffer[ESP8285_BUF_SIZE];
+	
+}esp8285_obj;
+
+
 #endif//__MPCONFIGBOARD_MAIX_H

@@ -412,7 +412,11 @@ STATIC mp_obj_t mod_usocket_getaddrinfo(mp_obj_t host_in, mp_obj_t port_in) {
 	{
 		int ret = 0;
 		if (nic_type->gethostbyname != NULL)
-			nic_type->gethostbyname(nic ,host,strlen(host),out_ip);	}
+			if(false == nic_type->gethostbyname(nic ,host,strlen(host),out_ip))
+			{
+				return mp_const_none;
+			}
+	}
 	else
 	{
 		nlr_buf_t nlr;

@@ -36,16 +36,18 @@
 #include "modmachine.h"
 #include "esp8285.h"
 #include "mpconfigboard.h"
-
+#define ESP8285_BUF_SIZE 2048
 STATIC bool nic_connected = false;
 typedef struct _nic_obj_t {
 		mp_obj_base_t base;
 #if MICROPY_UART_NIC
-		mp_obj_t uart_obj; 
+		mp_obj_t uart_obj;
+		esp8285_obj esp8285;
 #endif 
-	} nic_obj_t;
+} nic_obj_t;
 
 STATIC nic_obj_t nic_obj;
+
 typedef struct _stream_obj_t {
 	unsigned char stream[2048];
 	int stream_cur;
@@ -295,8 +297,6 @@ STATIC int cc3k_socket_ioctl(mod_network_socket_obj_t *socket, mp_uint_t request
     return ret;
 }
 */
-#define NIC_BUF_LEN 2048
-uint8_t nic_data[NIC_BUF_LEN] = {0};
 STATIC mp_uint_t esp8285_socket_recv(mod_network_socket_obj_t *socket, byte *buf, mp_uint_t len, int *_errno) {
 	if(&mod_network_nic_type_esp8285 != mp_obj_get_type(MP_OBJ_TO_PTR(socket->nic)))
 	{
@@ -306,8 +306,7 @@ STATIC mp_uint_t esp8285_socket_recv(mod_network_socket_obj_t *socket, byte *buf
 	}
 	nic_obj_t* self = MP_OBJ_TO_PTR(socket->nic);
 	int read_len = 0;
-	memset(nic_data, 0, NIC_BUF_LEN);
-	read_len = read_data(self->uart_obj,nic_data,buf,1);
+	read_len = esp_recv(&self->esp8285,buf,len,1000);
 	if(-1 == read_len)
 		*_errno = MP_EIO;
 	return read_len;
@@ -322,21 +321,14 @@ STATIC mp_uint_t esp8285_socket_send(mod_network_socket_obj_t *socket, const byt
 		return -1;
 	}
 	nic_obj_t* self = MP_OBJ_TO_PTR(socket->nic);
-	uint8_t* cmd = NULL;
-	uint16_t cmd_len = strlen("AT+CIPSEND=") + 4;
-	cmd = m_new(uint8_t,cmd_len);
-	sprintf(cmd,"AT+CIPSEND=%d",len);
-	bool flag = send_cmd(self->uart_obj,cmd,"OK",2);
-	m_del(uint8_t, cmd, cmd_len);
-	if(0 == flag)
+	if(0 == esp_send(&self->esp8285,buf,len))
 	{
 		printf("[MaixPy] %s | send data failed\n",__func__);
 		*_errno = MP_EIO;
 		return -1;
 	}
-	uint32_t ret_len = send_data(self->uart_obj,buf,len);
 	
-    return ret_len;
+    return len;
 }
 
 
@@ -354,10 +346,35 @@ STATIC int esp8285_socket_connect(mod_network_socket_obj_t *socket, byte *ip, mp
 		return -1;
 	}
 	nic_obj_t* self = MP_OBJ_TO_PTR(socket->nic);
-	if(0 == esp8285_uart_connect(self->uart_obj,socket->u_param.type,ip,port))
+	switch(socket->u_param.type)
 	{
-		*_errno = -1;
-		return -1;
+		case MOD_NETWORK_SOCK_STREAM:
+		{
+			if(false == createTCP(&self->esp8285,ip,port))
+			{
+				*_errno = -1;
+				return -1;
+			}
+			break;
+		}
+		case MOD_NETWORK_SOCK_DGRAM:
+		{
+			if(false == registerUDP(&self->esp8285,ip,port))
+			{
+				*_errno = -1;
+				return -1;
+			}
+			break;
+		}
+		default:
+		{
+			if(false == createTCP(&self->esp8285,ip,port))
+			{
+				*_errno = -1;
+				return -1;
+			}
+			break;
+		}
 	}
     return 0;
 }
@@ -368,15 +385,13 @@ STATIC int esp8285_socket_gethostbyname(mp_obj_t nic, const char *name, mp_uint_
 	if(&mod_network_nic_type_esp8285 == mp_obj_get_type(nic))
 	{
 		self = nic;
-		return esp8285_uart_gethostbyname(self->uart_obj,name,len,out_ip);
+		return get_host_byname(&nic_obj.esp8285,name,len,out_ip);
 	}
 }
 
 STATIC mp_obj_t esp8285_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
 	
 #if MICROPY_UART_NIC
-
-	const mp_stream_p_t *uart_stream;	
 
     // set uart to communicate
 	if(&machine_uart_type != mp_obj_get_type(args[0])) 
@@ -386,17 +401,16 @@ STATIC mp_obj_t esp8285_make_new(const mp_obj_type_t *type, size_t n_args, size_
 	else
 	{
 		mp_get_stream_raise(args[0], MP_STREAM_OP_READ | MP_STREAM_OP_WRITE | MP_STREAM_OP_IOCTL);
-		uart_stream = mp_get_stream(args[0]);
 		nic_obj.base.type = (mp_obj_type_t*)&mod_network_nic_type_esp8285;		
+		nic_obj.esp8285.uart_obj = args[0];
 		nic_obj.uart_obj = args[0];
+		memset(nic_obj.esp8285.buffer, 0, ESP8285_BUF_SIZE);
 	}
-    if (0 == esp8285_init(args[0])) {
+    if (0 == eINIT(&nic_obj.esp8285)) {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_OSError, "couldn't init nic esp8285 ,try again please\n"));
     }
 	mod_network_register_nic((mp_obj_t)&nic_obj);
-	memset(stream.stream,0,1024);
-	stream.stream_cur = 0;
-	stream.stream_len = 0;
+
     return (mp_obj_t)&nic_obj;
 #endif
 }
@@ -432,7 +446,8 @@ STATIC mp_obj_t esp8285_nic_connect(size_t n_args, const mp_obj_t *pos_args, mp_
         key = mp_obj_str_get_data(args[1].u_obj, &key_len);
     }
     // connect to AP
-    if (0 == esp8285_connect(self->uart_obj,(uint8_t*)ssid, ssid_len, (uint8_t*)key, key_len)) {
+    
+    if (0 == joinAP(&self->esp8285,(uint8_t*)ssid,(uint8_t*)key)) {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_OSError, "could not connect to ssid=%s, key=%s\n", ssid, key));
     }
 	nic_connected = 1;
@@ -443,7 +458,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(esp8285_nic_connect_obj, 1, esp8285_nic_connec
 STATIC mp_obj_t esp8285_nic_disconnect(mp_obj_t self_in) {
     // should we check return value?
     nic_obj_t* self = self_in;
-	if (0 == esp8285_disconnect(self->uart_obj)) {
+	if (false == leaveAP(&self->esp8285)) {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_OSError, "conldn't disconnect wifi,plase try again or reboot nic\n"));
     }
 	nic_connected = 0;
@@ -459,7 +474,16 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(esp8285_nic_isconnected_obj, esp8285_nic_isconn
 
 STATIC mp_obj_t esp8285_nic_ifconfig(mp_obj_t self_in) {
 	nic_obj_t* self = self_in;
-	ipconfig* esp_ipconfig = esp8285_ipconfig(self->uart_obj);
+	ipconfig_obj* esp_ipconfig = m_new_obj_with_finaliser(ipconfig_obj);
+	esp_ipconfig->gateway = mp_const_none;
+	esp_ipconfig->ip = mp_const_none;
+	esp_ipconfig->MAC = mp_const_none;
+	esp_ipconfig->netmask = mp_const_none;
+	esp_ipconfig->ssid = mp_const_none;
+	if(false == get_ipconfig(&self->esp8285,esp_ipconfig))
+	{
+		return mp_const_none;
+	}
 	mp_obj_t tuple[7] = { esp_ipconfig->ip,
 						  esp_ipconfig->netmask,
 						  esp_ipconfig->gateway,
