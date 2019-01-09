@@ -49,7 +49,7 @@
 #define MICROPY_HAL_HAS_VT100               (1)
 
 #define MICROPY_CPYTHON_COMPAT              (1)
-#define MICROPY_STREAMS_NON_BLOCK           (0)
+#define MICROPY_STREAMS_NON_BLOCK           (1)
 #define MICROPY_STREAMS_POSIX_API           (0)
 #define MICROPY_MODULE_BUILTIN_INIT         (1)
 #define MICROPY_MODULE_WEAK_LINKS           (1)
