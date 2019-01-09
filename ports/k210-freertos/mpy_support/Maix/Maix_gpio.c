@@ -212,7 +212,7 @@ STATIC mp_obj_t Maix_gpio_obj_init_helper(const Maix_gpio_obj_t *self, size_t n_
         if (0 <= self->num && self->num < MP_ARRAY_SIZE(Maix_gpio_obj)) {
             self = (Maix_gpio_obj_t*)&Maix_gpio_obj[self->num];
             if(pin_io_mode == GPIO_DM_OUTPUT && args[ARG_pull].u_obj != mp_const_none && args[ARG_pull].u_obj != GPIO_DM_PULL_NONE){
-                mp_raise_ValueError("When this pin is in output mode, it is not allowed to pull up and down.");
+                mp_raise_ValueError("When this pin is in output mode, it is not allowed to pull up and down.please use GPIO.PULL_NONE");
             }else{
                 if(args[ARG_pull].u_obj != mp_const_none && mp_obj_get_int(args[ARG_pull].u_obj) != GPIO_DM_PULL_NONE ){
                     if(mp_obj_get_int(args[ARG_pull].u_obj) == GPIO_DM_INPUT_PULL_UP || mp_obj_get_int(args[ARG_pull].u_obj) == GPIO_DM_INPUT_PULL_DOWN){
