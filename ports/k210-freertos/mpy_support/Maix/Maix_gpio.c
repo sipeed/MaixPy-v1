@@ -174,7 +174,7 @@ STATIC void Maix_gpio_isr_handler(void *arg) {
    Maix_gpio_obj_t *self = arg;
    //only gpiohs support irq,so only support gpiohs in this func
    mp_obj_t handler = self->callback;
-   mp_call_function_1(handler, MP_OBJ_FROM_PTR(self));
+   mp_call_function_2(handler, MP_OBJ_FROM_PTR(self), mp_obj_new_int_from_uint(self->id));
 //    mp_sched_schedule(handler, MP_OBJ_FROM_PTR(self));
 //    mp_hal_wake_main_task_from_isr();
 }
@@ -321,7 +321,10 @@ STATIC mp_obj_t Maix_gpio_irq(size_t n_args, const mp_obj_t *pos_args, mp_map_t 
         mp_obj_t handler = args[ARG_handler].u_obj;
         uint32_t trigger = args[ARG_trigger].u_int;
         mp_obj_t wake_obj = args[ARG_wake].u_obj;
-        if(wake_obj != mp_const_none){
+        mp_int_t temp_wake_int;
+        mp_obj_get_int_maybe(args[ARG_wake].u_obj,&temp_wake_int);
+        
+        if(wake_obj != mp_const_none && temp_wake_int != 0){
             mp_raise_ValueError("This platform does not support interrupt wakeup");
         }else{
             if (trigger == GPIO_PE_NONE || trigger == GPIO_PE_RISING || trigger == GPIO_PE_FALLING || trigger == GPIO_PE_BOTH) {
@@ -331,7 +334,6 @@ STATIC mp_obj_t Maix_gpio_irq(size_t n_args, const mp_obj_t *pos_args, mp_map_t 
                     trigger = 0;
                 }
                 self->callback = handler;
-                mp_call_function_1(self->callback, MP_OBJ_FROM_PTR(self));
                 gpiohs_set_pin_edge((uint8_t)self->id,trigger);
                 gpiohs_set_irq((uint8_t)self->id, args[MP_QSTR_priority].u_int, Maix_gpio_isr_handler, (void *)self);
             }else{
@@ -417,6 +419,9 @@ STATIC const mp_rom_map_elem_t Maix_gpio_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_GPIO5), MP_ROM_INT(37) },
     { MP_ROM_QSTR(MP_QSTR_GPIO6), MP_ROM_INT(38) },
     { MP_ROM_QSTR(MP_QSTR_GPIO7), MP_ROM_INT(39) },
+
+    //wakeup not support
+    { MP_ROM_QSTR(MP_QSTR_WAKEUP_NOT_SUPPORT), MP_ROM_INT(0) },
 };
 
 STATIC mp_uint_t pin_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_t arg, int *errcode) {
