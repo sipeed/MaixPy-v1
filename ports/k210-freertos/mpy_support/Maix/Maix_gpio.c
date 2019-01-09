@@ -55,7 +55,7 @@ typedef struct _Maix_gpio_obj_t {
     gpio_type_t gpio_type;
     gpio_num_t id;
     mp_obj_t   callback;
-    int8_t gpio_mode;
+    uint8_t gpio_mode;
     int8_t gpio_pull;
 } Maix_gpio_obj_t;
 
@@ -434,12 +434,14 @@ STATIC mp_obj_t Maix_gpio_pull(size_t n_args, const mp_obj_t *pos_args, mp_map_t
 
     if(mp_obj_get_int(args[ARG_pull].u_obj) != GPIO_DM_PULL_NONE && gpio_mode[self->num] == GPIO_DM_OUTPUT) {
         mp_raise_ValueError("When this pin is in output mode, it is not allowed to pull up and down.please use GPIO.PULL_NONE");
-    }  else{
+    }  else if(mp_obj_get_int(args[ARG_pull].u_obj) != GPIO_DM_PULL_NONE && gpio_mode[self->num] == GPIO_DM_INPUT){
         if(self->gpio_type == GPIO){
             gpio_set_drive_mode(self->id, mp_obj_get_int(args[ARG_pull].u_obj));
         }else{
             gpiohs_set_drive_mode(self->id, mp_obj_get_int(args[ARG_pull].u_obj));
         }
+        gpio_pull[self->num] = mp_obj_get_int(args[ARG_pull].u_obj);
+    }else{
         gpio_pull[self->num] = mp_obj_get_int(args[ARG_pull].u_obj);
     }
     return mp_const_none;
