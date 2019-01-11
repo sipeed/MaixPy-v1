@@ -75,7 +75,7 @@ function write_copyright(){
       then
 	    echo "Warning:[$1]The first line of this file contains the commented string"
       else
-	    cat copyright.txt $1 >$1.new && mv $i.new $1
+            cat copyright.txt >$1.new && echo -e "\r\n" >> $1.new && cat $1 >> $1.new  && mv $1.new $1
       fi
   fi
 }
