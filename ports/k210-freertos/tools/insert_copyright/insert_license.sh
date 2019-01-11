@@ -10,6 +10,9 @@ if_Iw=false
 if_Recursive=
 dir_addr=
 file_type=
+declare -a ignore_dir_list
+ignore_dir_list_file=ignore_dir
+if_ignore_dir=false
 while true ; do
     case "$1" in
         -r) if_Recursive=true ; shift ;;
@@ -45,11 +48,21 @@ while true ; do
         *) echo "Internal error!" ; exit 1 ;;
     esac
 done
-echo "Remaining arguments:"
+# echo "Remaining arguments:"
 for arg do
    echo '--> '"\`$arg'" ;
 done
+temp_i=0
+if [ -f $ignore_dir_list_file ];then
+	while read -r line
+	do
+	    ignore_dir_list[$temp_i]=${line};
+            echo $temp_i":"${ignore_dir_list[$temp_i]};
+            ((temp_i++))
+	done < $ignore_dir_list_file
+fi
 
+echo "------------------------------------------------------------------"
 if [ ! $file_type ]; then
     file_type="c|cpp|h|hpp";
 fi
@@ -71,17 +84,25 @@ function write_copyright(){
   # echo "first_line:$first_line"
   if ! grep -q Copyright $1
   then
-      if [[ $first_line =~ "/*" ]] && ! $if_Iw;
+      if_ignore_dir=false;
+      for ignore_dir in ${ignore_dir_list[@]};do
+	
+        if [[ $1 =~ ^$ignore_dir ]];then echo -e "\033[36m ignore\033[0m:"$1;if_ignore_dir=true;break; fi
+      done
+      if ([[ $first_line =~ "/*" ]] && (! $if_Iw)) || $if_ignore_dir;
       then
-	    echo "Warning:[$1]The first line of this file contains the commented string"
+	if ! $if_ignore_dir;then
+	    echo -e "\033[31m Warning \033[0m:[$1]The first line of this file contains the commented string "
+        fi
       else
+            echo $1
             cat copyright.txt >$1.new && echo -e "\r\n" >> $1.new && cat $1 >> $1.new  && mv $1.new $1
       fi
   fi
 }
 if $if_Recursive;then
     for i in $dir_addr**/*.@($file_type);do
-        echo $i
+        # echo $i
         write_copyright $i
     done
 else
@@ -89,7 +110,7 @@ else
         $dir_addr="."
     fi
     for i in $dir_addr/*.@($file_type);do
-        echo $i
+        # echo $i
         write_copyright $i
     done
 fi
