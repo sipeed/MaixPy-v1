@@ -58,9 +58,9 @@ if [ ! $if_Recursive ]; then
     if_Recursive=false;
 fi
 
-if [ $dir_addr ]; then
-    cd $dir_addr;
-fi
+# if [ $dir_addr ]; then
+#     cd $dir_addr;
+# fi
 
 
 echo "file_type:$file_type";
@@ -80,17 +80,21 @@ function write_copyright(){
   fi
 }
 if $if_Recursive;then
-    for i in **/*.@($file_type);do
+    for i in $dir_addr**/*.@($file_type);do
         echo $i
         write_copyright $i
     done
 else
-    for i in ./*.@($file_type);do
+    if [ $dir_addr ]; then
+        $dir_addr="."
+    fi
+    for i in $dir_addr/*.@($file_type);do
         echo $i
         write_copyright $i
     done
 fi
 
-if [ $dir_addr ]; then
-    cd -;
-fi
+# if [ $dir_addr ]; then
+#     cd -;
+# fi
+
