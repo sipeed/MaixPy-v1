@@ -232,9 +232,14 @@ i2c = I2C(I2C.I2C0, mode=I2C.MODE_SLAVE, scl=28, sda=29, addr = 0x24, addr_size=
 import utime
 from Maix import GPIO
 fm.registered(board_info.LED_R,fm.fpioa.GPIO0)
-led_r=GPIO(GPIO.GPIO0,GPIO.OUT)
+led_r=GPIO(GPIO.GPIO0,GPIO.OUT,GPIO.PULL_NONE,value=0)
 utime.sleep_ms(500)
 led_r.value()
+led_r.mode(GPIO.IN)
+led_r.mode(GPIO.OUT)
+led_r.pull(GPIO.PULL_UP)
+led_r.pull(GPIO.PULL_NONE)
+led_r.pull(GPIO.PULL_DOWN)
 fm.unregistered(board_info.LED_R,fm.fpioa.GPIO0)
 fm.registered(board_info.LED_R,fm.fpioa.GPIO1)
 led_r=GPIO(GPIO.GPIO1,GPIO.OUT)
