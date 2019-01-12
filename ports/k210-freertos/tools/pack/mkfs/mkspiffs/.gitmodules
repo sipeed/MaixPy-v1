@@ -1,3 +1,0 @@
-[submodule "spiffs"]
-	path = spiffs
-	url = https://github.com/pellepl/spiffs.git

@@ -55,8 +55,7 @@ typedef struct _Maix_gpio_obj_t {
     gpio_type_t gpio_type;
     gpio_num_t id;
     mp_obj_t   callback;
-    uint8_t gpio_mode;
-    int8_t gpio_pull;
+    
 } Maix_gpio_obj_t;
 
 typedef struct _Maix_gpio_irq_obj_t {
@@ -155,9 +154,6 @@ STATIC const Maix_gpio_obj_t Maix_gpio_obj[] = {
 
 };
 
-static int8_t gpio_mode[MP_ARRAY_SIZE(Maix_gpio_obj)];
-static int8_t gpio_pull[MP_ARRAY_SIZE(Maix_gpio_obj)];
-
 // forward declaration
 STATIC const Maix_gpio_irq_obj_t Maix_gpio_irq_object[];
 
@@ -215,8 +211,8 @@ STATIC mp_obj_t Maix_gpio_obj_init_helper(const Maix_gpio_obj_t *self, size_t n_
         mp_int_t pin_io_mode = mp_obj_get_int(args[ARG_mode].u_obj);
         if (0 <= self->num && self->num < MP_ARRAY_SIZE(Maix_gpio_obj)) {
             self = (Maix_gpio_obj_t*)&Maix_gpio_obj[self->num];
-            if(pin_io_mode == GPIO_DM_OUTPUT && args[ARG_pull].u_obj != mp_const_none && mp_obj_get_int(args[ARG_pull].u_obj) != GPIO_DM_PULL_NONE){
-                mp_raise_ValueError("When this pin is in output mode, it is not allowed to pull up and down.please use GPIO.PULL_NONE");
+            if(pin_io_mode == GPIO_DM_OUTPUT && args[ARG_pull].u_obj != mp_const_none && args[ARG_pull].u_obj != GPIO_DM_PULL_NONE){
+                mp_raise_ValueError("When this pin is in output mode, it is not allowed to pull up and down.");
             }else{
                 if(args[ARG_pull].u_obj != mp_const_none && mp_obj_get_int(args[ARG_pull].u_obj) != GPIO_DM_PULL_NONE ){
                     if(mp_obj_get_int(args[ARG_pull].u_obj) == GPIO_DM_INPUT_PULL_UP || mp_obj_get_int(args[ARG_pull].u_obj) == GPIO_DM_INPUT_PULL_DOWN){
@@ -225,9 +221,6 @@ STATIC mp_obj_t Maix_gpio_obj_init_helper(const Maix_gpio_obj_t *self, size_t n_
                         mp_raise_ValueError("this mode not support.");
                     }
                 }
-                gpio_mode[self->num] = mp_obj_get_int(args[ARG_mode].u_obj);
-                gpio_pull[self->num] = mp_obj_get_int(args[ARG_pull].u_obj);
-                printf("gpio_mode[self->num] %d gpio_pull[self->num] %d\n",gpio_mode[self->num],gpio_pull[self->num]);
                 if(self->gpio_type == GPIO){
                     gpio_set_drive_mode(self->id, pin_io_mode);
                 }else{
@@ -368,106 +361,12 @@ STATIC mp_obj_t Maix_gpio_disirq(size_t n_args, const mp_obj_t *pos_args, mp_map
 
 STATIC  MP_DEFINE_CONST_FUN_OBJ_KW(Maix_gpio_disirq_obj,1,Maix_gpio_disirq);
 
-STATIC mp_obj_t Maix_gpio_on(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    Maix_gpio_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
-
-    if(self->gpio_type == GPIO){
-        gpio_set_pin((uint8_t)self->id, 1);
-    }else{
-        gpiohs_set_pin((uint8_t)self->id, 1);
-    }
-    return mp_const_none;
-}
-
-STATIC  MP_DEFINE_CONST_FUN_OBJ_KW(Maix_gpio_on_obj,1,Maix_gpio_on);
-
-STATIC mp_obj_t Maix_gpio_off(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    Maix_gpio_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
-
-    if(self->gpio_type == GPIO){
-        gpio_set_pin((uint8_t)self->id, 0);
-    }else{
-        gpiohs_set_pin((uint8_t)self->id, 0);
-    }
-    return mp_const_none;
-}
-
-STATIC  MP_DEFINE_CONST_FUN_OBJ_KW(Maix_gpio_off_obj,1,Maix_gpio_off);
-
-STATIC mp_obj_t Maix_gpio_mode(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    Maix_gpio_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
-    enum { ARG_mode, };
-    static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_mode, MP_ARG_OBJ, {.u_obj = mp_const_none}},
-    };
-
-    // parse args
-    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
-    mp_arg_parse_all(n_args-1, pos_args+1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
-
-    if(gpio_pull[self->num] !=  GPIO_DM_PULL_NONE && mp_obj_get_int(args[ARG_mode].u_obj) == GPIO_DM_OUTPUT) {
-        mp_raise_ValueError("When this pin is in output mode, it is not allowed to pull up and down.please use GPIO.PULL_NONE");
-    }  else{
-        if(self->gpio_type == GPIO){
-            gpio_set_drive_mode(self->id, mp_obj_get_int(args[ARG_mode].u_obj));
-        }else{
-            gpiohs_set_drive_mode(self->id, mp_obj_get_int(args[ARG_mode].u_obj));
-        }
-        gpio_mode[self->num] = mp_obj_get_int(args[ARG_mode].u_obj);
-    }
-
-    return mp_const_none;
-}
-
-STATIC  MP_DEFINE_CONST_FUN_OBJ_KW(Maix_gpio_mode_obj,1,Maix_gpio_mode);
-
-STATIC mp_obj_t Maix_gpio_pull(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    Maix_gpio_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
-    enum { ARG_pull, };
-    static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_pull, MP_ARG_OBJ, {.u_obj = mp_const_none}},
-    };
-
-    // parse args
-    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
-    mp_arg_parse_all(n_args-1, pos_args+1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
-
-    if(mp_obj_get_int(args[ARG_pull].u_obj) != GPIO_DM_PULL_NONE && gpio_mode[self->num] == GPIO_DM_OUTPUT) {
-        mp_raise_ValueError("When this pin is in output mode, it is not allowed to pull up and down.please use GPIO.PULL_NONE");
-    }  else if(mp_obj_get_int(args[ARG_pull].u_obj) != GPIO_DM_PULL_NONE && gpio_mode[self->num] == GPIO_DM_INPUT){
-        if(self->gpio_type == GPIO){
-            gpio_set_drive_mode(self->id, mp_obj_get_int(args[ARG_pull].u_obj));
-        }else{
-            gpiohs_set_drive_mode(self->id, mp_obj_get_int(args[ARG_pull].u_obj));
-        }
-        gpio_pull[self->num] = mp_obj_get_int(args[ARG_pull].u_obj);
-    }else{
-        gpio_pull[self->num] = mp_obj_get_int(args[ARG_pull].u_obj);
-    }
-    return mp_const_none;
-}
-
-STATIC  MP_DEFINE_CONST_FUN_OBJ_KW(Maix_gpio_pull_obj,1,Maix_gpio_pull);
-
-STATIC mp_obj_t Maix_gpio_driver(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    Maix_gpio_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
-    mp_raise_ValueError("Not Support");
-    return mp_const_none;
-}
-
-STATIC  MP_DEFINE_CONST_FUN_OBJ_KW(Maix_gpio_driver_obj,1,Maix_gpio_driver);
-
 STATIC const mp_rom_map_elem_t Maix_gpio_locals_dict_table[] = {
     // instance methods
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&Maix_gpio_init_obj) },
     { MP_ROM_QSTR(MP_QSTR_value), MP_ROM_PTR(&Maix_gpio_value_obj) },
     { MP_ROM_QSTR(MP_QSTR_irq), MP_ROM_PTR(&Maix_gpio_irq_obj) },
     { MP_ROM_QSTR(MP_QSTR_disirq), MP_ROM_PTR(&Maix_gpio_disirq_obj) },
-    { MP_ROM_QSTR(MP_QSTR_on), MP_ROM_PTR(&Maix_gpio_on_obj) },
-    { MP_ROM_QSTR(MP_QSTR_off), MP_ROM_PTR(&Maix_gpio_off_obj) },
-    { MP_ROM_QSTR(MP_QSTR_mode), MP_ROM_PTR(&Maix_gpio_mode_obj) },
-    { MP_ROM_QSTR(MP_QSTR_pull), MP_ROM_PTR(&Maix_gpio_pull_obj) },
-    { MP_ROM_QSTR(MP_QSTR_driver), MP_ROM_PTR(&Maix_gpio_driver_obj) },
     // class constants
     { MP_ROM_QSTR(MP_QSTR_IN), MP_ROM_INT(GPIO_DM_INPUT) },
     { MP_ROM_QSTR(MP_QSTR_OUT), MP_ROM_INT(GPIO_DM_OUTPUT) },
