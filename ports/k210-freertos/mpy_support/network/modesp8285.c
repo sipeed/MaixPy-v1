@@ -118,13 +118,6 @@ STATIC void cc3k_callback(long event_type, char *data, unsigned char length) {
     }
 }
 
-
-
-
-STATIC void cc3k_socket_close(mod_network_socket_obj_t *socket) {
-    CC3000_EXPORT(closesocket)(socket->u_state);
-}
-
 STATIC int cc3k_socket_bind(mod_network_socket_obj_t *socket, byte *ip, mp_uint_t port, int *_errno) {
     MAKE_SOCKADDR(addr, ip, port)
     int ret = CC3000_EXPORT(bind)(socket->u_state, &addr, sizeof(addr));
@@ -297,6 +290,18 @@ STATIC int cc3k_socket_ioctl(mod_network_socket_obj_t *socket, mp_uint_t request
     return ret;
 }
 */
+
+STATIC mp_uint_t esp8285_socket_close(mod_network_socket_obj_t *socket) {
+	if(&mod_network_nic_type_esp8285 != mp_obj_get_type(MP_OBJ_TO_PTR(socket->nic)))
+	{
+		printf("[MaixPy] %s | esp8285_socket_connect can not get nic\n",__func__);
+		return -1;
+	}
+	nic_obj_t* self = MP_OBJ_TO_PTR(socket->nic);
+	return releaseTCP(&self->esp8285);
+}
+
+
 STATIC mp_uint_t esp8285_socket_recv(mod_network_socket_obj_t *socket, byte *buf, mp_uint_t len, int *_errno) {
 	if(&mod_network_nic_type_esp8285 != mp_obj_get_type(MP_OBJ_TO_PTR(socket->nic)))
 	{
@@ -517,8 +522,8 @@ const mod_network_nic_type_t mod_network_nic_type_esp8285 = {
     .socket = esp8285_socket_socket,
     .send = esp8285_socket_send,
     .recv = esp8285_socket_recv,
-/*
-    .close = cc3k_socket_close,
+    .close = esp8285_socket_close,
+/*  
     .bind = cc3k_socket_bind,
     .listen = cc3k_socket_listen,
     .accept = cc3k_socket_accept,

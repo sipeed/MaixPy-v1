@@ -312,15 +312,15 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_connect_obj, socket_connect);
 
 
 STATIC const mp_rom_map_elem_t socket_locals_dict_table[] = {
+	{ MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&mp_stream_close_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_settimeout), MP_ROM_PTR(&socket_settimeout_obj) },
     { MP_ROM_QSTR(MP_QSTR_setblocking), MP_ROM_PTR(&socket_setblocking_obj) },
     { MP_ROM_QSTR(MP_QSTR_connect), MP_ROM_PTR(&socket_connect_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_send), MP_ROM_PTR(&socket_send_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_recv), MP_ROM_PTR(&socket_recv_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_close), MP_ROM_PTR(&mp_stream_close_obj) },
 
-/*   
-    { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&mp_stream_close_obj) },
-    { MP_ROM_QSTR(MP_QSTR_close), MP_ROM_PTR(&mp_stream_close_obj) },
+/*    
     { MP_ROM_QSTR(MP_QSTR_bind), MP_ROM_PTR(&socket_bind_obj) },
     { MP_ROM_QSTR(MP_QSTR_listen), MP_ROM_PTR(&socket_listen_obj) },
     { MP_ROM_QSTR(MP_QSTR_accept), MP_ROM_PTR(&socket_accept_obj) },  
@@ -356,11 +356,31 @@ STATIC mp_obj_t socket_make_new(const mp_obj_type_t *type, size_t n_args, size_t
     return MP_OBJ_FROM_PTR(s);
 }
 
+mp_uint_t socket_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_t arg, int *errcode) {
+    mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    if (request == MP_STREAM_CLOSE) {
+        if (self->nic != MP_OBJ_NULL) {
+            self->nic_type->close(self);
+            self->nic = MP_OBJ_NULL;
+        }
+        return 0;
+    }
+	if(self->nic_type->ioctl)
+    	return self->nic_type->ioctl(self, request, arg, errcode);
+}
+
+
+STATIC const mp_stream_p_t socket_stream_p = {
+    .ioctl = socket_ioctl,
+    .is_text = false,
+};
+
 
 STATIC const mp_obj_type_t socket_type = {
 	{ &mp_type_type },
 	.name = MP_QSTR_socket,
 	.make_new = socket_make_new,
+	.protocol = &socket_stream_p,
 	.locals_dict = (mp_obj_dict_t*)&socket_locals_dict,
 };
 
