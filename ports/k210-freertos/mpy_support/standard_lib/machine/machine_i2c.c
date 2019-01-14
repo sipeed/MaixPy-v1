@@ -546,14 +546,14 @@ STATIC mp_obj_t machine_i2c_writeto_mem(size_t n_args, const mp_obj_t *pos_args,
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(machine_i2c_writeto_mem_obj, 1, machine_i2c_writeto_mem);
 
 STATIC mp_obj_t machine_i2c_readfrom_mem(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum { ARG_addr, ARG_memaddr, ARG_n, ARG_mem_size };
+    enum { ARG_addr, ARG_memaddr, ARG_nbytes, ARG_mem_size };
     mp_arg_val_t args[MP_ARRAY_SIZE(machine_i2c_mem_allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args,
         MP_ARRAY_SIZE(machine_i2c_mem_allowed_args), machine_i2c_mem_allowed_args, args);
 
     // create the buffer to store data into
     vstr_t vstr;
-    vstr_init_len(&vstr, mp_obj_get_int(args[ARG_n].u_obj));
+    vstr_init_len(&vstr, mp_obj_get_int(args[ARG_nbytes].u_obj));
 
     // do the transfer
     int ret = read_mem(pos_args[0], args[ARG_addr].u_int, args[ARG_memaddr].u_int,

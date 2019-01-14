@@ -207,6 +207,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(k210_pwm_disable_obj,1, 1, k210_pwm_d
 
 STATIC const mp_rom_map_elem_t k210_pwm_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&k210_pwm_init_obj) },
+    { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&k210_pwm_deinit_obj) },
     { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&k210_pwm_deinit_obj) },
     { MP_ROM_QSTR(MP_QSTR_freq), MP_ROM_PTR(&k210_pwm_freq_obj) },
     { MP_ROM_QSTR(MP_QSTR_duty), MP_ROM_PTR(&k210_pwm_duty_obj) },
