@@ -111,7 +111,7 @@ STATIC bool check_period_setting(uint32_t period, uint32_t unit, uint32_t div)
     double counter = 0;
 
 
-    if( (period<0) || (period>=UINT32_MAX) )
+    if( period>=UINT32_MAX )
         return false;
     if( !check_div(div) ||
         !check_unit(unit)
@@ -140,8 +140,8 @@ STATIC void machine_timer_print(const mp_print_t *print, mp_obj_t self_in, mp_pr
     else
         unit = "ns";
     mp_printf(print, 
-        "[MAIXPY]Timer:(%p) timer=%d, channel=%d, mode=%d, period=%d%s, priority=%d, div=%d, callback=%p, param=%p",
-        self, self->timer, self->channel, self->mode, self->period, unit, self->priority, self->div, self->callback, self->param);
+        "[MAIXPY]Timer:(%p) timer=%d, channel=%d, mode=%d, period=%d%s, priority=%d, div=%d, callback=%p, arg=%p",
+        self, self->timer, self->channel, self->mode, self->period, unit, self->priority, self->div, self->callback, self->arg);
 }
 
 STATIC void machine_timer_disable(machine_timer_obj_t *self) {
@@ -166,7 +166,7 @@ STATIC int machine_timer_isr(void *self_in) {
 	debug_print("[MAIXPY]Timer:type->call = %p\n",type->call);
 	if(type != NULL)
 	{
-        mp_call_function_2(self->callback, MP_OBJ_FROM_PTR(self), self->param);
+        mp_call_function_2(self->callback, MP_OBJ_FROM_PTR(self), self->arg);
 	}
 	else
 	{
@@ -210,7 +210,7 @@ STATIC mp_obj_t machine_timer_init_helper(machine_timer_obj_t *self, mp_uint_t n
         ARG_period,
         ARG_unit,
         ARG_callback,
-        ARG_param,
+        ARG_arg,
         ARG_start,
         ARG_priority,
         ARG_div
@@ -220,7 +220,7 @@ STATIC mp_obj_t machine_timer_init_helper(machine_timer_obj_t *self, mp_uint_t n
         { MP_QSTR_period,        MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 1000} },                  // default 1000ms
         { MP_QSTR_unit,          MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = MACHINE_TIMER_UNIT_MS} },
         { MP_QSTR_callback,      MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} },
-        { MP_QSTR_param,         MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        { MP_QSTR_arg,         MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} },
         { MP_QSTR_start,         MP_ARG_KW_ONLY | MP_ARG_BOOL, {.u_bool = true} },
         { MP_QSTR_priority,      MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 1} },
         { MP_QSTR_div,           MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} }, // default div=0: timerclksel=aclk/2 
@@ -233,7 +233,7 @@ STATIC mp_obj_t machine_timer_init_helper(machine_timer_obj_t *self, mp_uint_t n
     self->period = args[ARG_period].u_int;
     self->unit = args[ARG_unit].u_int;
     self->callback = args[ARG_callback].u_obj;
-    self->param = args[ARG_param].u_obj;
+    self->arg = args[ARG_arg].u_obj;
     is_start = args[ARG_start].u_bool;
     self->priority = args[ARG_priority].u_int;
     self->div = args[ARG_div].u_int;

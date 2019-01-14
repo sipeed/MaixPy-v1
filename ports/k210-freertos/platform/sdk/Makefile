@@ -28,7 +28,7 @@ MK_VALUE +="platform-lds += "$(CUR_DIR_ADDR)$(SDK_DIR_NAME)"/lds/kendryte.ld""\r
 ####################################
 
 define mod_echo_func
-	@echo "\033[;39m"$(1)"\033[;39m";
+	@echo "\033[;39m"$(1)"\033[;0m";
 endef
 
 all: build_env compile update_mk
@@ -41,7 +41,7 @@ build_env:
 	fi;
 
 compile:
-	-mkdir build
+	-mkdir -p build
 	MAKE_J_NUMBER=`cat /proc/cpuinfo | grep vendor_id | wc -l`
 	cd build && cmake ../$(SDK_DIR_NAME)/ -DPROJ=hello_world -DTOOLCHAIN=$(subst bin/,bin,$(dir $(CROSS_COMPILE))) && make -j${MAKE_J_NUMBER}
 

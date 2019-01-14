@@ -47,6 +47,7 @@
 #include "uarths.h"
 #include "syslog.h"
 #include "plic.h"
+#include "machine_uart.h"
 
 #define CHAR_NONE 256
 

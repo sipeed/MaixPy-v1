@@ -27,7 +27,7 @@ typedef struct _machine_timer_obj_t {
     machine_timer_unit_t   unit;      //machine_timer_unit_t
     machine_timer_mode_t   mode;      //machine_timer_mode_t
 	mp_obj_t               callback;
-    mp_obj_t               param;
+    mp_obj_t               arg;
     uint32_t               priority;  //[1,7]
     uint32_t               div;       //freq div [1,8]
     bool                   active;

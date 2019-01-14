@@ -17,6 +17,7 @@
 #include "spi.h"
 #include "sysctl.h"
 #include "dmac.h"
+#include "sipeed_spi.h"
 
 uint32_t spi_bus_no = 0;
 uint32_t spi_chip_select = 0;

@@ -32,7 +32,7 @@
 #include "py/mperrno.h"
 #include "extmod/machine_i2c.h"
 #include "i2c.h"
-#include "maix_i2c.h"
+#include "sipeed_i2c.h"
 #include "mpconfigport.h"
 #include "fpioa.h"
 #include "sleep.h"
@@ -98,9 +98,9 @@ STATIC bool check_addr_size(uint32_t addr_size)
 
 STATIC bool check_pin(uint32_t scl, uint32_t sda)
 {
-    if(scl<0 || scl > 47)
+    if(scl > 47)
         return false;
-    if(sda<0 || sda > 47)
+    if(sda > 47)
         return false;
     return true;
 }
@@ -127,9 +127,11 @@ uint32_t on_i2c0_transmit()
     mp_obj_t ret;
 
     if(i2c_obj[0] != NULL)
+    {
         ret = mp_call_function_0(i2c_obj[0]->on_transmit);
-    printf("value:%d\n",ret);
-    return mp_obj_get_int(ret);
+        return mp_obj_get_int(ret);
+    }
+    return 0;
 }
 
 void on_i2c0_event(i2c_event_t event)
@@ -149,8 +151,11 @@ uint32_t on_i2c1_transmit()
     mp_obj_t ret;
 
     if(i2c_obj[1] != NULL)
+    {
         ret = mp_call_function_0(i2c_obj[1]->on_transmit);
-    return mp_obj_get_int(ret);
+        return mp_obj_get_int(ret);
+    }
+    return 0;
 }
 
 void on_i2c1_event(i2c_event_t event)
@@ -170,8 +175,11 @@ uint32_t on_i2c2_transmit()
     mp_obj_t ret;
 
     if(i2c_obj[2] != NULL)
+    {
         ret = mp_call_function_0(i2c_obj[2]->on_transmit);
-    return mp_obj_get_int(ret);
+        return mp_obj_get_int(ret);
+    }
+    return 0;
 }
 
 void on_i2c2_event(i2c_event_t event)
@@ -241,7 +249,7 @@ STATIC mp_obj_t machine_i2c_init_helper(machine_hard_i2c_obj_t* self, mp_uint_t 
         ARG_on_event
     };
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_id, MP_ARG_REQUIRED | MP_ARG_OBJ },
+        { MP_QSTR_id, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_int = I2C_DEVICE_0} },
         { MP_QSTR_mode, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = MACHINE_I2C_MODE_MASTER} },
         { MP_QSTR_scl, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
         { MP_QSTR_sda, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
@@ -439,7 +447,7 @@ MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_i2c_readfrom_into_obj, 3, 4, machine
 
 STATIC int read_mem(mp_obj_t self_in, uint16_t addr, uint32_t memaddr, uint8_t mem_size, uint8_t *buf, size_t len) {
     machine_hard_i2c_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    mp_machine_i2c_p_t *i2c_p = (mp_machine_i2c_p_t*)self->base.type->protocol;
+    // mp_machine_i2c_p_t *i2c_p = (mp_machine_i2c_p_t*)self->base.type->protocol;
     uint8_t memaddr_buf[4];
     size_t memaddr_len = 0;
     for (int16_t i = mem_size - 8; i >= 0; i -= 8) {
@@ -538,14 +546,14 @@ STATIC mp_obj_t machine_i2c_writeto_mem(size_t n_args, const mp_obj_t *pos_args,
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(machine_i2c_writeto_mem_obj, 1, machine_i2c_writeto_mem);
 
 STATIC mp_obj_t machine_i2c_readfrom_mem(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum { ARG_addr, ARG_memaddr, ARG_n, ARG_mem_size };
+    enum { ARG_addr, ARG_memaddr, ARG_nbytes, ARG_mem_size };
     mp_arg_val_t args[MP_ARRAY_SIZE(machine_i2c_mem_allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args,
         MP_ARRAY_SIZE(machine_i2c_mem_allowed_args), machine_i2c_mem_allowed_args, args);
 
     // create the buffer to store data into
     vstr_t vstr;
-    vstr_init_len(&vstr, mp_obj_get_int(args[ARG_n].u_obj));
+    vstr_init_len(&vstr, mp_obj_get_int(args[ARG_nbytes].u_obj));
 
     // do the transfer
     int ret = read_mem(pos_args[0], args[ARG_addr].u_int, args[ARG_memaddr].u_int,
@@ -580,7 +588,7 @@ MP_DEFINE_CONST_FUN_OBJ_KW(machine_i2c_readfrom_mem_into_obj, 1, machine_i2c_rea
 
 STATIC mp_obj_t machine_i2c_scan(mp_obj_t self_in) {
     machine_hard_i2c_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    mp_machine_i2c_p_t *i2c_p = (mp_machine_i2c_p_t*)self->base.type->protocol;
+    // mp_machine_i2c_p_t *i2c_p = (mp_machine_i2c_p_t*)self->base.type->protocol;
     mp_obj_t list = mp_obj_new_list(0, NULL);
     uint8_t temp;
     // 7-bit addresses 0b0000xxx and 0b1111xxx are reserved

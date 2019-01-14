@@ -50,6 +50,7 @@
 #include "spiffs-port.h"
 #include "spiffs_configport.h"
 #include "rng.h"
+#include "machine_uart.h"
 
 
 //extern mp_obj_t file_open(const char* file_name, const mp_obj_type_t *type, mp_arg_val_t *args);
@@ -112,7 +113,7 @@ MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(uos_dupterm_obj, 1, 2, uos_dupterm);
 #endif 
 
 #if MICROPY_HW_UART_REPL
-STATIC mp_obj_t uos_set_REPLio(const mp_obj_t *args) {
+STATIC mp_obj_t uos_set_REPLio(mp_obj_t *args) {
 
 	mp_obj_t prev_uart_obj;
 	if(mp_obj_get_type(MP_STATE_PORT(Maix_stdio_uart)) == &machine_uart_type)
