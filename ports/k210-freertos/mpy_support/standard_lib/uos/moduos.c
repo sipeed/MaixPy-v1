@@ -42,7 +42,7 @@
 #include "modmachine.h"
 #include "lib/oofatfs/ff.h"
 #include "extmod/vfs_fat.h"
-
+#include "machine_uart.h"
 #if MICROPY_VFS
 #include "extmod/vfs.h"
 #endif
@@ -115,7 +115,7 @@ MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(uos_dupterm_obj, 1, 2, uos_dupterm);
 #endif 
 
 #if MICROPY_HW_UART_REPL
-STATIC mp_obj_t uos_set_REPLio(const mp_obj_t *args) {
+STATIC mp_obj_t uos_set_REPLio(const mp_obj_t args) {
 
 	mp_obj_t prev_uart_obj;
 	if(mp_obj_get_type(MP_STATE_PORT(Maix_stdio_uart)) == &machine_uart_type)
@@ -126,7 +126,7 @@ STATIC mp_obj_t uos_set_REPLio(const mp_obj_t *args) {
 	if(mp_obj_get_type(args) == &machine_uart_type)
 	{
 		uart_attach_to_repl(MP_STATE_PORT(Maix_stdio_uart), false);
-		MP_STATE_PORT(Maix_stdio_uart) = args;
+		MP_STATE_PORT(Maix_stdio_uart) = MP_OBJ_TO_PTR(args);;
 		uart_attach_to_repl(MP_STATE_PORT(Maix_stdio_uart), true);
 	}
 	else
