@@ -82,6 +82,7 @@ SRC_CPP := $(wildcard *.cpp)
 SRC_C_OBJ := $(SRC_C:.c=.o)
 CXX_OBJ := $(SRC_CPP:.cpp=.o)
 INCLUDE_FLAGS := $(addprefix -I, $(INC))
+CFLAGS += -DFFCONF_H=\"lib/oofatfs/ffconf.h\"
 CFLAGS += $(INCLUDE_FLAGS)
 $(CXX_OBJ):%.o:%.cpp
 	@mkdir -p $(dir $(OUTPUT_DIR))

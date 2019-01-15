@@ -20,6 +20,8 @@
 #include "lib/utils/interrupt_char.h"
 #include "modmachine.h"
 #include "mpconfigboard.h"
+#include "lib/oofatfs/ff.h"
+#include "extmod/vfs_fat.h"
 #if MICROPY_PY_THREAD
 #include "mpthreadport.h"
 #include "py/mpthread.h"
@@ -33,18 +35,19 @@
 #include "fpioa.h"
 #include "gpio.h"
 #include "timer.h"
-#include "w25qxx.h"
 #include "uarths.h"
 #include "rtc.h"
 #include "uart.h"
+#include "w25qxx.h"
+#include "sdcard.h"
 /*****freeRTOS****/
 #include "FreeRTOS.h"
 #include "task.h"
-/*******spiffs********/
+/*******storage********/
 #include "vfs_spiffs.h"
 #include "spiffs_configport.h"
 #include "spiffs-port.h"
-
+#include "machine_sdcard.h"
 #define UART_BUF_LENGTH_MAX 269
 #define MPY_HEAP_SIZE 1 * 1024 * 1024
 extern int mp_hal_stdin_rx_chr(void);
@@ -102,6 +105,69 @@ const uint8_t Banner[] = {"\n __  __              _____  __   __  _____   __    
 Official Site:http://www.sipeed.com/\n\
 Wiki:http://maixpy.sipeed.com/\n"};
 
+STATIC bool init_sdcard_fs(void) {
+    bool first_part = true;
+    for (int part_num = 1; part_num <= 4; ++part_num) {
+        // create vfs object
+        fs_user_mount_t *vfs_fat = m_new_obj_maybe(fs_user_mount_t);
+        mp_vfs_mount_t *vfs = m_new_obj_maybe(mp_vfs_mount_t);
+        if (vfs == NULL || vfs_fat == NULL) {
+            break;
+        }
+        vfs_fat->flags = FSUSER_FREE_OBJ;
+        sdcard_init_vfs(vfs_fat, part_num);
+
+        // try to mount the partition
+        FRESULT res = f_mount(&vfs_fat->fatfs);
+        if (res != FR_OK) {
+            // couldn't mount
+            m_del_obj(fs_user_mount_t, vfs_fat);
+            m_del_obj(mp_vfs_mount_t, vfs);
+        } 
+		else 
+		{
+            // mounted via FatFs, now mount the SD partition in the VFS
+            if (first_part) {
+                // the first available partition is traditionally called "sd" for simplicity
+                vfs->str = "/sd";
+                vfs->len = 3;
+            } else {
+                // subsequent partitions are numbered by their index in the partition table
+                if (part_num == 2) {
+                    vfs->str = "/sd2";
+                } else if (part_num == 2) {
+                    vfs->str = "/sd3";
+                } else {
+                    vfs->str = "/sd4";
+                }
+                vfs->len = 4;
+            }
+            vfs->obj = MP_OBJ_FROM_PTR(vfs_fat);
+            vfs->next = NULL;
+            for (mp_vfs_mount_t **m = &MP_STATE_VM(vfs_mount_table);; m = &(*m)->next) {
+                if (*m == NULL) {
+                    *m = vfs;
+                    break;
+                }
+            }
+            if (first_part) {
+                // use SD card as current directory
+                MP_STATE_PORT(vfs_cur) = vfs;
+				first_part = false;
+            }
+        }
+    }
+	
+    if (first_part) {
+        printf("PYB: can't mount SD card\n");
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+
 MP_NOINLINE STATIC bool init_flash_spiffs()
 {
 
@@ -135,7 +201,7 @@ MP_NOINLINE STATIC bool init_flash_spiffs()
 		printf("[MAIXPY]:Spiffs Format %s \n",format_res?"failed":"successful");
 		if(0 != format_res)
 		{
-			return -1;
+			return false;
 		}
 		res = SPIFFS_mount(&vfs_spiffs->fs,
 			&vfs_spiffs->cfg,
@@ -168,12 +234,14 @@ MP_NOINLINE STATIC bool init_flash_spiffs()
 	mp_vfs_mount_t *vfs = m_new_obj(mp_vfs_mount_t);
     if (vfs == NULL) {
         printf("[MaixPy]:can't mount flash\n");
+		return false;
     }
     vfs->str = "/flash";
     vfs->len = 6;
     vfs->obj = MP_OBJ_FROM_PTR(vfs_spiffs);
     vfs->next = NULL;
     MP_STATE_VM(vfs_mount_table) = vfs;
+	return true;
 }
 
 void mp_task(
@@ -196,13 +264,25 @@ soft_reset:
 		mp_obj_list_init(mp_sys_path, 0);
 		mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR_));
 		mp_obj_list_init(mp_sys_argv, 0);//append agrv here
-		init_flash_spiffs();//init spiffs of flash
+		bool mounted_sdcard = false;
+		bool mounted_flash= false;
+		mounted_flash = init_flash_spiffs();//init spiffs of flash
+		sd_init();
+		if (sdcard_is_present()) {
+			spiffs_stat  fno;
+        // if there is a file in the flash called "SKIPSD", then we don't mount the SD card
+	        if (!mounted_flash || SPIFFS_stat(&spiffs_user_mount_handle.fs,"SKIPSD",&fno) != SPIFFS_OK){
+	            mounted_sdcard = init_sdcard_fs();
+	        }
+    	}
+		if (mounted_sdcard) {
+//			mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR_slash_sd));
+//			mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_sd_slash_lib));
+		}
     	readline_init0();
         readline_process_char(27);
-		//pyexec_event_repl_init();
 		pyexec_frozen_module("boot.py");
-		MP_THREAD_GIL_EXIT();//given gil
-
+		//MP_THREAD_GIL_EXIT();//given gil
 #if MICROPY_HW_UART_REPL
 		{
 			mp_obj_t args[3] = {
@@ -253,7 +333,7 @@ int main()
 	w25qxx_init_dma(3, 0);
 	w25qxx_enable_quad_mode_dma();
 	w25qxx_read_id_dma(&manuf_id, &device_id);
-	printk("[MAIXPY]Flash:0x%02x:0x%02x\n", manuf_id, device_id);
+	printk("[MAIXPY]Flash:0x%02x:0x%02x\r\n", manuf_id, device_id);
 	/*
 	xTaskCreateAtProcessor(0, // processor
 					     mp_task, // function entry

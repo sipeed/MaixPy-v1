@@ -169,6 +169,7 @@ STATIC const mp_rom_map_elem_t os_module_globals_table[] = {
     #endif
 	#if MICROPY_VFS_SPIFFS
 	{ MP_ROM_QSTR(MP_QSTR_VfsSpiffs), MP_ROM_PTR(&mp_spiffs_vfs_type) },
+	{ MP_ROM_QSTR(MP_QSTR_VfsFat), MP_ROM_PTR(&mp_fat_vfs_type) },
 	#endif
 };
 

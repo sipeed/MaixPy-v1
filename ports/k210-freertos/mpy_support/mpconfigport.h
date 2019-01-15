@@ -154,9 +154,9 @@ extern const struct _mp_print_t mp_debug_print;
 #define mp_type_textio                      mp_type_vfs_spiffs_textio
 #define MICROPY_VFS                         (1)
 #define MICROPY_VFS_SPIFFS                  (1)
-#define MICROPY_VFS_FAT                     (0)
-#define  MICROPY_FATFS_REENTRANT            (1)
-
+#define MICROPY_VFS_FAT                     (1)
+#define MICROPY_FATFS_MULTI_PARTITION       (1)
+#define MICROPY_FATFS_RPATH            (2)
 #define MP_SSIZE_MAX (0x7fffffff)
 
 #define _USE_MKFS 1

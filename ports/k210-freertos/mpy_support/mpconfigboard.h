@@ -8,10 +8,9 @@
 #include "uart.h"
 #include "uarths.h"
 
+/***********Uart module**************/
 #define MAIX_UART_BUF 2048
-#define ESP8285_BUF_SIZE 2048 
 #define MICROPY_UARTHS_DEVICE 4
-#define MICROPY_UART_NIC 1
 typedef struct _machine_uart_obj_t {
     mp_obj_base_t base;
 	uint8_t uart_num;
@@ -30,6 +29,10 @@ typedef struct _machine_uart_obj_t {
 	uint16_t data_len;
     uint8_t *read_buf;
 } machine_uart_obj_t;
+
+/***********net mod**************/
+#define ESP8285_BUF_SIZE 2048 
+#define MICROPY_UART_NIC 1
 typedef struct _ipconfig_obj
 {
 	mp_obj_t ip;
@@ -38,7 +41,6 @@ typedef struct _ipconfig_obj
 	mp_obj_t ssid;
 	mp_obj_t MAC;
 }ipconfig_obj;
-
 typedef struct _esp8285_obj
 {
 	mp_obj_t uart_obj;
