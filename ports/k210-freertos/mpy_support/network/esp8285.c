@@ -31,6 +31,7 @@
 #include "modmachine.h"
 #include "mphalport.h"
 #include "mpconfigboard.h"
+#include "machine_uart.h"
 #include "modnetwork.h"
 #include "plic.h"
 #include "sysctl.h"

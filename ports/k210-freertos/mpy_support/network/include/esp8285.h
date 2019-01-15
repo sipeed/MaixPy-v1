@@ -36,6 +36,22 @@
 #include "mpconfigboard.h"
 #include "modnetwork.h"
 
+typedef struct _ipconfig_obj
+{
+	mp_obj_t ip;
+	mp_obj_t gateway;
+	mp_obj_t netmask;
+	mp_obj_t ssid;
+	mp_obj_t MAC;
+}ipconfig_obj;
+
+typedef struct _esp8285_obj
+{
+	mp_obj_t uart_obj;
+	uint8_t buffer[ESP8285_BUF_SIZE];
+	
+}esp8285_obj;
+
 /*
  * Provide an easy-to-use way to manipulate ESP8266. 
  */

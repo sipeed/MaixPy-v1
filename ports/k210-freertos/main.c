@@ -31,6 +31,7 @@
 #include "encoding.h"
 #include "sysctl.h"
 #include "plic.h"
+#include "syslog.h"
 /*****peripheral****/
 #include "fpioa.h"
 #include "gpio.h"
@@ -48,11 +49,11 @@
 #include "spiffs_configport.h"
 #include "spiffs-port.h"
 #include "machine_sdcard.h"
+#include "machine_uart.h"
 #define UART_BUF_LENGTH_MAX 269
 #define MPY_HEAP_SIZE 1 * 1024 * 1024
 extern int mp_hal_stdin_rx_chr(void);
 
-static char *stack_top;
 #if MICROPY_ENABLE_GC
 static char heap[MPY_HEAP_SIZE];
 #endif
@@ -61,10 +62,11 @@ static char heap[MPY_HEAP_SIZE];
 #define MP_TASK_STACK_SIZE      (16 * 1024)
 #define MP_TASK_STACK_LEN       (MP_TASK_STACK_SIZE / sizeof(StackType_t))
 
+#if MICROPY_PY_THREAD 
 STATIC StaticTask_t mp_task_tcb;
 STATIC StackType_t mp_task_stack[MP_TASK_STACK_LEN] __attribute__((aligned (8)));
 TaskHandle_t mp_main_task_handle;
-
+#endif
 #define FORMAT_FS_FORCE 0
 static u8_t spiffs_work_buf[SPIFFS_CFG_LOG_PAGE_SZ(fs)*2];
 static u8_t spiffs_fds[32*4];
@@ -96,7 +98,7 @@ uint8_t init_py_file[]={
 
 void do_str(const char *src, mp_parse_input_kind_t input_kind);
 
-const uint8_t Banner[] = {"\n __  __              _____  __   __  _____   __     __ \n\
+const char Banner[] = {"\n __  __              _____  __   __  _____   __     __ \n\
 |  \\/  |     /\\     |_   _| \\ \\ / / |  __ \\  \\ \\   / /\n\
 | \\  / |    /  \\      | |    \\ V /  | |__) |  \\ \\_/ / \n\
 | |\\/| |   / /\\ \\     | |     > <   |  ___/    \\   /  \n\
@@ -249,7 +251,7 @@ void mp_task(
 	void *pvParameter
 	#endif
 	) {
-		volatile uint32_t sp = (uint32_t)get_sp();
+		volatile uintptr_t sp = (uint32_t)get_sp();
 #if MICROPY_PY_THREAD
 		mp_thread_init(&mp_task_stack[0], MP_TASK_STACK_LEN);
 #endif
@@ -315,7 +317,6 @@ soft_reset:
 		printf("porwer reset\n");
 		msleep(1);	    
 		sysctl->soft_reset.soft_reset = 1;
-		return 0;
 }
 
 int main()

@@ -40,6 +40,9 @@
 #include "py/mphal.h"
 #include "extmod/misc.h"
 #include "modmachine.h"
+#include "lib/oofatfs/ff.h"
+#include "extmod/vfs_fat.h"
+
 #if MICROPY_VFS
 #include "extmod/vfs.h"
 #endif

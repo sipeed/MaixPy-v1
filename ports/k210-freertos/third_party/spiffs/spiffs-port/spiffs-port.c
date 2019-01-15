@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "w25qxx.h"
 
-s32_t flash_read(int addr, int size, char *buf)
+s32_t flash_read(uint32_t addr, uint32_t size, uint8_t *buf)
 {
     int phy_addr=addr;
     w25qxx_status_t res = w25qxx_read_data_dma(phy_addr, buf, size, W25QXX_QUAD_FAST);
@@ -19,7 +19,7 @@ s32_t flash_read(int addr, int size, char *buf)
     }
     return SPIFFS_OK;
 }
-s32_t flash_write(int addr, int size, char *buf)
+s32_t flash_write(uint32_t addr, uint32_t size, uint8_t *buf)
 {
     int phy_addr=addr;
 
@@ -36,10 +36,9 @@ s32_t flash_write(int addr, int size, char *buf)
 
     return SPIFFS_OK;
 }
-s32_t flash_erase(int addr, int size)
+s32_t flash_erase(uint32_t addr, uint32_t size)
 {
     int phy_addr=addr;
-    unsigned char *temp_pool;
 	#if open_fs_debug
     printf("flash erase addr:%x size:%f\n",phy_addr,size/1024.00);
 	#endif

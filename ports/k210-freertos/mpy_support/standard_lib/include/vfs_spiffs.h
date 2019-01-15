@@ -96,11 +96,11 @@ extern const mp_obj_type_t mp_spiffs_vfs_type;
 extern const mp_obj_type_t mp_type_vfs_spiffs_fileio;
 extern const mp_obj_type_t mp_type_vfs_spiffs_textio;
 
-s32_t spiffs_read_method(spiffs* fs,uint32_t addr, uint32_t size, char *buf);
-s32_t spiffs_write_method(spiffs* fs,uint32_t addr, uint32_t size, char *buf);
+s32_t spiffs_read_method(spiffs* fs,uint32_t addr, uint32_t size, uint8_t *buf);
+s32_t spiffs_write_method(spiffs* fs,uint32_t addr, uint32_t size, uint8_t *buf);
 s32_t spiffs_erase_method(spiffs* fs,uint32_t addr, uint32_t size);
-s32_t sys_spiffs_read(uint32_t addr, uint32_t size, char *buf);
-s32_t sys_spiffs_write(uint32_t addr, uint32_t size, char *buf);
+s32_t sys_spiffs_read(uint32_t addr, uint32_t size, uint8_t *buf);
+s32_t sys_spiffs_write(uint32_t addr, uint32_t size, uint8_t *buf);
 s32_t sys_spiffs_erase(uint32_t addr, uint32_t size);
 int mp_module_spiffs_mount(spiffs* fs,spiffs_config* cfg);
 int mp_module_spiffs_format(spiffs* fs);

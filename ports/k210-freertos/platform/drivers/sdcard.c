@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include "gpiohs.h"
 #include "sleep.h"
-
+#include "syslog.h"
 #define MAIX_SDCARD_DEBUG 0
 #if MAIX_SDCARD_DEBUG==1
 #define debug_print(x,arg...) printk(x,##arg)

@@ -43,6 +43,7 @@
 
 #include "mpconfigboard.h"
 #include "modmachine.h"
+#include "machine_uart.h"
 #include "uart.h"
 #include "uarths.h"
 #include "syslog.h"
