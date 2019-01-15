@@ -5,7 +5,6 @@
 #include "stdint.h"
 #include "py/obj.h"
 #include "uart.h"
-
 typedef struct _machine_uart_obj_t {
     mp_obj_base_t base;
 	uint8_t uart_num;

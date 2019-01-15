@@ -31,6 +31,7 @@ include ../../../py/mkenv.mk
 QSTR_DEFS = qstrdefsport.h
 # include py core make definitionsvers/uarths.c
 include ../../../py/py.mk
+
 MPY_EXT_SRC_C := \
 		lib/utils/stdout_helpers.c \
 		lib/utils/interrupt_char.c \
@@ -39,7 +40,8 @@ MPY_EXT_SRC_C := \
 		lib/mp-readline/readline.c \
 		lib/netutils/netutils.c \
 		lib/timeutils/timeutils.c \
-		lib/utils/sys_stdio_mphal.c
+		lib/utils/sys_stdio_mphal.c \
+		lib/oofatfs/ff.c 
 
 ###############################################################################
 # Optional options
@@ -104,7 +106,7 @@ OBJ += $(PY_O) $(C_OBJ)
 CXX_OBJ := $(addprefix $(BUILD)/, $(SRC_CPP:.cpp=.o))
 INCLUDE_FLAGS := $(addprefix -I, $(INC))
 CFLAGS += $(INCLUDE_FLAGS)
-
+CFLAGS += $(CFLAGS_MOD)# test
 # List of sources for qstr extraction
 SRC_QSTR += $(SRC_C)
 # Append any auto-generated sources that are needed by sources listed in SRC_QSTR

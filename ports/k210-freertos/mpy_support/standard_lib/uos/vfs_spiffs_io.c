@@ -3,6 +3,7 @@
 #include "py/binary.h"
 #include "py/objarray.h"
 #include "py/misc.h"
+#include "py/runtime.h"
 #include "vfs_spiffs.h"
 
 #include "w25qxx.h"
@@ -19,7 +20,7 @@ typedef struct _spiffs_FILE{
 } spiffs_FILE;
 
 
-s32_t sys_spiffs_read(uint32_t addr, uint32_t size, char *buf)
+s32_t sys_spiffs_read(uint32_t addr, uint32_t size, uint8_t *buf)
 {
     uint32_t phy_addr=addr;
     w25qxx_status_t res = w25qxx_read_data_dma(phy_addr, buf, size,W25QXX_QUAD_FAST);
@@ -34,7 +35,7 @@ s32_t sys_spiffs_read(uint32_t addr, uint32_t size, char *buf)
     }
     return res;
 }
-s32_t sys_spiffs_write(uint32_t addr, uint32_t size, char *buf)
+s32_t sys_spiffs_write(uint32_t addr, uint32_t size, uint8_t *buf)
 {
     int phy_addr=addr;
     
@@ -53,7 +54,6 @@ s32_t sys_spiffs_write(uint32_t addr, uint32_t size, char *buf)
 s32_t sys_spiffs_erase(uint32_t addr, uint32_t size)
 {
     int phy_addr=addr;
-    unsigned char *temp_pool;
 	#if open_fs_debug
     printf("flash erase addr:%x size:%f\n",phy_addr,size/1024.00);
 	#endif
@@ -67,7 +67,7 @@ s32_t sys_spiffs_erase(uint32_t addr, uint32_t size)
     return res;
 }
 
-s32_t spiffs_read_method(spiffs* fs,uint32_t addr, uint32_t size, char *buf)
+s32_t spiffs_read_method(spiffs* fs,uint32_t addr, uint32_t size, uint8_t *buf)
 {
 	spiffs_user_mount_t *vfs = fs->user_data;
     if (vfs == NULL) {
@@ -86,11 +86,11 @@ s32_t spiffs_read_method(spiffs* fs,uint32_t addr, uint32_t size, char *buf)
 		return SPIFFS_OK;
         // TODO handle error return
     }
-   
+   return SPIFFS_OK;
 }
 
 
-s32_t spiffs_write_method(spiffs* fs,uint32_t addr, uint32_t size, char *buf)
+s32_t spiffs_write_method(spiffs* fs,uint32_t addr, uint32_t size, uint8_t *buf)
 {
 	spiffs_user_mount_t *vfs = fs->user_data;
     if (vfs == NULL) {
@@ -109,6 +109,7 @@ s32_t spiffs_write_method(spiffs* fs,uint32_t addr, uint32_t size, char *buf)
 		return SPIFFS_OK;
         // TODO handle error return
     }
+	return SPIFFS_OK;
 }
 
 
@@ -129,6 +130,7 @@ s32_t spiffs_erase_method(spiffs* fs,uint32_t addr, uint32_t size)
 		// TODO handle error return
 		return SPIFFS_OK;
     } 
+	return SPIFFS_OK;
 }
 
 

@@ -61,8 +61,8 @@ STATIC mp_obj_t time_localtime(size_t n_args, const mp_obj_t *args) {
     timeutils_struct_time_t tm;
 	mp_int_t seconds;
     if (n_args == 0 || args[0] == mp_const_none) {
-		int year = 0;int mon = 0;int mday = 0;int hour = 0;
-		int min = 0;int sec = 0;int wday = 0;int yday = 0;
+		uint32_t year = 0;uint32_t mon = 0;uint32_t mday = 0;uint32_t hour = 0;
+		uint32_t min = 0;uint32_t sec = 0;uint32_t wday = 0;uint32_t yday = 0;
 		rtc_timer_get(&year,&mon,&mday,&hour,&min,&sec);
 		wday = rtc_get_wday(year,mon,mday);
 		yday = rtc_get_yday(year,mon,mday);
