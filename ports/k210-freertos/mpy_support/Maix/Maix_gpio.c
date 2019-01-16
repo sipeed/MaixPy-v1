@@ -30,6 +30,7 @@
 #include <string.h>
 
 #include "gpio.h"
+#include "gpiohs.h"
 
 #include "py/runtime.h"
 #include "py/mphal.h"
@@ -335,7 +336,7 @@ STATIC mp_obj_t Maix_gpio_irq(size_t n_args, const mp_obj_t *pos_args, mp_map_t 
                 }
                 self->callback = handler;
                 gpiohs_set_pin_edge((uint8_t)self->id,trigger);
-                gpiohs_set_irq((uint8_t)self->id, args[MP_QSTR_priority].u_int, Maix_gpio_isr_handler, (void *)self);
+                gpiohs_irq_register((uint8_t)self->id, args[MP_QSTR_priority].u_int, Maix_gpio_isr_handler, (void *)self);
             }else{
 
             }
