@@ -94,6 +94,7 @@ STATIC uint32_t kmp_find(uint8_t* src,uint32_t src_len,uint8_t* tagert)
 	uint32_t next = malloc(sizeof(uint32_t) * tag_len);
 	kmp_get_next(tagert,next);
 	index = kmp_match(src,src_len,tagert,next);
+	free(next);
 	return index;
 }
 STATIC uint32_t data_find(uint8_t* src,uint32_t src_len,uint8_t* tagert)
@@ -458,7 +459,7 @@ uint8_t* recvString_1(esp8285_obj* nic,uint8_t* target1,uint32_t timeout)
         while(uart_rx_any(nic->uart_obj) > 0) {
             uart_stream->read(nic->uart_obj,&nic->buffer[iter++],1,&errcode);
         }
-        if (data_find(nic->buffer,iter+1,target1) != -1) {
+        if (data_find(nic->buffer,iter,target1) != -1) {
             return nic->buffer;
         } 
     }
@@ -471,15 +472,15 @@ uint8_t* recvString_2(esp8285_obj* nic,uint8_t* target1, uint8_t* target2, uint3
 	int errcode;
 	uint32_t iter = 0;
 	memset(nic->buffer,0,ESP8285_BUF_SIZE);
-    unsigned long start = mp_hal_ticks_ms();
+    unsigned int start = mp_hal_ticks_ms();
 	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
     while (mp_hal_ticks_ms() - start < timeout) {
-        while(uart_rx_any(nic->uart_obj) > 0) {
+        while(uart_rx_any(nic->uart_obj) > 1 && iter < ESP8285_BUF_SIZE) {
             uart_stream->read(nic->uart_obj,&nic->buffer[iter++],1,&errcode);
         }
-        if (data_find(nic->buffer,iter+1,target1) != -1) {
+        if (data_find(nic->buffer,iter,target1) != -1) {
             break;
-        } else if (data_find(nic->buffer,iter+1,target2) != -1) {
+        } else if (data_find(nic->buffer,iter,target2) != -1) {
             break;
         }
     }
@@ -498,11 +499,11 @@ uint8_t* recvString_3(esp8285_obj* nic,uint8_t* target1, uint8_t* target2,uint8_
         while(uart_rx_any(nic->uart_obj) > 0) {
             uart_stream->read(nic->uart_obj,&nic->buffer[iter++],1,&errcode);
         }
-        if (data_find(nic->buffer,iter+1,target1) != -1) {
+        if (data_find(nic->buffer,iter,target1) != -1) {
             break;
-        } else if (data_find(nic->buffer,iter+1,target2) != -1) {
+        } else if (data_find(nic->buffer,iter,target2) != -1) {
             break;
-        } else if (data_find(nic->buffer,iter+1,target3) != -1) {
+        } else if (data_find(nic->buffer,iter,target3) != -1) {
             break;
         }
     }
@@ -953,7 +954,7 @@ bool eINIT(esp8285_obj* nic)
 {
 	bool init_flag = 1;
 	init_flag = init_flag && eAT(nic);
-	init_flag = init_flag && eATE(nic,0);
+	init_flag = init_flag && eATE(nic,1);
 	init_flag = init_flag && sATCIPMODE(nic,0);
 	init_flag = init_flag && setOprToStation(nic);
 	init_flag = init_flag && disableMUX(nic);
