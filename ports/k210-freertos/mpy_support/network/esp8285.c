@@ -41,14 +41,13 @@
 #include "esp8285.h"
 
 #define ESP8285_BUF_SIZE 2048 
-
-STATIC void kmp_get_next(uint8_t* targe, uint32_t next[])
+STATIC void kmp_get_next(char* targe, int next[])
 {  
-    uint32_t tag_len = strlen(targe);  
+    int targe_Len = strlen(targe);  
     next[0] = -1;  
-    uint32_t k = -1;  
-    uint32_t j = 0;  
-    while (j < tag_len - 1)  
+    int k = -1;  
+    int j = 0;  
+    while (j < targe_Len - 1)  
     {     
         if (k == -1 || targe[j] == targe[k])  
         {  
@@ -65,12 +64,12 @@ STATIC void kmp_get_next(uint8_t* targe, uint32_t next[])
         }  
     }  
 }  
-STATIC uint32_t kmp_match(uint8_t* src,uint32_t src_len,uint8_t* targe, uint32_t* next)
+STATIC int kmp_match(char* src,int src_len,char* targe, int* next)  
 {  
-    uint32_t i = 0;  
-    uint32_t j = 0;  
-    uint32_t sLen = src_len;  
-    uint32_t pLen = strlen(targe);  
+    int i = 0;  
+    int j = 0;  
+    int sLen = src_len;  
+    int pLen = strlen(targe);  
     while (i < sLen && j < pLen)  
     {     
         if (j == -1 || src[i] == targe[j])  
@@ -91,11 +90,10 @@ STATIC uint32_t kmp_match(uint8_t* src,uint32_t src_len,uint8_t* targe, uint32_t
 STATIC uint32_t kmp_find(uint8_t* src,uint32_t src_len,uint8_t* tagert)
 {
 	uint32_t index = 0;
-	uint8_t* src_buf = src;
 	uint32_t tag_len = strlen(tagert);
-	uint32_t next[tag_len];
+	uint32_t next = malloc(sizeof(uint32_t) * tag_len);
 	kmp_get_next(tagert,next);
-	index = kmp_match(src_buf,src_len,tagert,next);
+	index = kmp_match(src,src_len,tagert,next);
 	return index;
 }
 STATIC uint32_t data_find(uint8_t* src,uint32_t src_len,uint8_t* tagert)
@@ -960,6 +958,7 @@ bool eINIT(esp8285_obj* nic)
 	init_flag = init_flag && setOprToStation(nic);
 	init_flag = init_flag && disableMUX(nic);
 	init_flag = init_flag && leaveAP(nic);
+	return init_flag;
 }
 //bool setOprToSoftAP(void)
 //{
