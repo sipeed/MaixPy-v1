@@ -345,7 +345,7 @@ STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, co
     enum { ARG_baudrate, ARG_bitwidth, ARG_parity, ARG_stop ,ARG_timeout,ARG_timeout_char,ARG_read_buf_len};
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_baudrate, MP_ARG_INT, {.u_int = 115200} },
-        { MP_QSTR_bits, MP_ARG_INT, {.u_int = 8} },
+        { MP_QSTR_bits, MP_ARG_INT, {.u_int = UART_BITWIDTH_8BIT} },
         { MP_QSTR_parity, MP_ARG_INT, {.u_int = UART_PARITY_NONE} },
         { MP_QSTR_stop, MP_ARG_INT, {.u_int = UART_STOP_1} },
         { MP_QSTR_timeout, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 1000} },
