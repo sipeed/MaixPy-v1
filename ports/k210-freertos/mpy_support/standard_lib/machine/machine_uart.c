@@ -362,7 +362,7 @@ STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, co
     }
 	
     // set data bits
-    if (args[ARG_bitwidth].u_int >=5 && args[ARG_bitwidth].u_int <=8) {
+    if (args[ARG_bitwidth].u_int >=UART_BITWIDTH_5BIT && args[ARG_bitwidth].u_int <=UART_BITWIDTH_8BIT) {
             self->bitwidth=args[ARG_bitwidth].u_int;
     }else{
             mp_raise_ValueError("[MAIXPY]UART:invalid data bits");
