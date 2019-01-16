@@ -12,7 +12,6 @@ class fpioa_manager:
             self.board_dict[pin] = function
             self.fpioa_dict[function] = pin
             self.fpioa.set_function(pin,function)
-            print("set successed")
             return 1
         else:
             return 0

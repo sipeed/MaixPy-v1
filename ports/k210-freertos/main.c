@@ -100,14 +100,14 @@ uint8_t init_py_file[]={
 
 void do_str(const char *src, mp_parse_input_kind_t input_kind);
 
-const char Banner[] = {"\n __  __              _____  __   __  _____   __     __ \n\
-|  \\/  |     /\\     |_   _| \\ \\ / / |  __ \\  \\ \\   / /\n\
-| \\  / |    /  \\      | |    \\ V /  | |__) |  \\ \\_/ / \n\
-| |\\/| |   / /\\ \\     | |     > <   |  ___/    \\   /  \n\
-| |  | |  / ____ \\   _| |_   / . \\  | |         | |   \n\
-|_|  |_| /_/    \\_\\ |_____| /_/ \\_\\ |_|         |_|\n\
-Official Site:http://www.sipeed.com/\n\
-Wiki:http://maixpy.sipeed.com/\n"};
+const char Banner[] = {"\r\n __  __              _____  __   __  _____   __     __ \r\n\
+|  \\/  |     /\\     |_   _| \\ \\ / / |  __ \\  \\ \\   / /\r\n\
+| \\  / |    /  \\      | |    \\ V /  | |__) |  \\ \\_/ / \r\n\
+| |\\/| |   / /\\ \\     | |     > <   |  ___/    \\   /  \r\n\
+| |  | |  / ____ \\   _| |_   / . \\  | |         | |   \r\n\
+|_|  |_| /_/    \\_\\ |_____| /_/ \\_\\ |_|         |_|\r\n\
+Official Site:http://www.sipeed.com/\r\n\
+Wiki:http://maixpy.sipeed.com/\r\n"};
 
 STATIC bool init_sdcard_fs(void) {
     bool first_part = true;
@@ -254,10 +254,11 @@ void mp_task(
 	#endif
 	) {
 		volatile uintptr_t sp = (uint32_t)get_sp();
+
 #if MICROPY_PY_THREAD
 		mp_thread_init(&mp_task_stack[0], MP_TASK_STACK_LEN);
 #endif
-// soft_reset:
+soft_reset:
 		// initialise the stack pointer for the main thread
 		mp_stack_set_top((void *)(uint64_t)sp);
 		mp_stack_set_limit(MP_TASK_STACK_SIZE - 1024);
@@ -268,6 +269,9 @@ void mp_task(
 		mp_obj_list_init(mp_sys_path, 0);
 		mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR_));
 		mp_obj_list_init(mp_sys_argv, 0);//append agrv here
+    	readline_init0();
+
+		// initialise peripherals
 		bool mounted_sdcard = false;
 		bool mounted_flash= false;
 		mounted_flash = init_flash_spiffs();//init spiffs of flash
@@ -283,10 +287,6 @@ void mp_task(
 //			mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR_slash_sd));
 //			mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_sd_slash_lib));
 		}
-    	readline_init0();
-        readline_process_char(27);
-		pyexec_frozen_module("boot.py");
-		//MP_THREAD_GIL_EXIT();//given gil
 #if MICROPY_HW_UART_REPL
 		{
 			mp_obj_t args[3] = {
@@ -301,8 +301,12 @@ void mp_task(
 		MP_STATE_PORT(Maix_stdio_uart) = NULL;
 #endif
 
+		// run boot-up scripts
+        // readline_process_char(27);
 		mp_hal_set_interrupt_char(CHAR_CTRL_C);
-		printf(Banner);
+		pyexec_frozen_module("_boot.py");
+		// pyexec_file("boot.py");
+		mp_hal_stdout_tx_strn(Banner, strlen(Banner));
 
 		for (;;) {
 			if (pyexec_mode_kind == PYEXEC_MODE_RAW_REPL) {
@@ -315,10 +319,18 @@ void mp_task(
 				}
 			}
 		}
+
+#if MICROPY_PY_THREAD
+		mp_thread_deinit();
+#endif
+#if MICROPY_ENABLE_GC
+		gc_sweep_all();
+#endif
+		mp_hal_stdout_tx_strn("[MaixPy]: soft reboot\r\n", 23);
 		mp_deinit();
-		printf("porwer reset\n");
-		msleep(1);	    
-		sysctl->soft_reset.soft_reset = 1;
+		msleep(10);	    
+		goto soft_reset;
+		// sysctl->soft_reset.soft_reset = 1;
 }
 
 int main()
