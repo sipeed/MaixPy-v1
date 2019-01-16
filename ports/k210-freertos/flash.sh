@@ -5,14 +5,13 @@ baud=2000000
 device=/dev/ttyUSB0
 #######################################
 
-bin_file=$1
 monitor=false
 kflash_py=tools/kflash.py/kflash.py
 
 start_time=`date +%s`
 
-if [[ "$2x" != "x" ]] && [[ "$2x" != "mx" ]] && [[ "$2x" != "monitorx" ]] && [[ "$2x" != "tx" ]]; then
-    device=$2
+if [[ "$1x" != "x" ]] && [[ "$1x" != "mx" ]] && [[ "$1x" != "monitorx" ]] && [[ "$1x" != "tx" ]]; then
+    device=$1
 fi
 if [[ "${@: -1}x" == "mx" ]] || [[ "${@: -1}x" == "monitorx" ]] || [[ "${@: -1}x" == "tx" ]]; then
     monitor=true
