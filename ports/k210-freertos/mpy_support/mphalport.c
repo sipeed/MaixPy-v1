@@ -61,7 +61,7 @@ void mp_hal_debug_tx_strn_cooked(void *env, const char *str, uint32_t len) {
 
 mp_uint_t inline mp_hal_ticks_cpu(void)
 {
-	return (unsigned int)(read_csr(mcycle));
+	return (unsigned long)(read_csr(mcycle));
 }
 
 mp_uint_t inline mp_hal_ticks_us(void)

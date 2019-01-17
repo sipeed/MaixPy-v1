@@ -12,7 +12,7 @@
 #define MAIX_UART_BUF 2048
 #define MICROPY_UARTHS_DEVICE 4
 /***********net mod**************/
-#define ESP8285_BUF_SIZE 2048 
+#define ESP8285_BUF_SIZE 4096 
 #define MICROPY_UART_NIC 1
 
 #endif//__MPCONFIGBOARD_MAIX_H

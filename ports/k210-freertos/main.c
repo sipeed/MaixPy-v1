@@ -53,7 +53,7 @@
 #include "machine_sdcard.h"
 #include "machine_uart.h"
 #define UART_BUF_LENGTH_MAX 269
-#define MPY_HEAP_SIZE 1 * 1024 * 1024
+#define MPY_HEAP_SIZE  2* 1024 * 1024
 extern int mp_hal_stdin_rx_chr(void);
 
 #if MICROPY_ENABLE_GC

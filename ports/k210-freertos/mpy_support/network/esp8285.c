@@ -40,7 +40,6 @@
 #include "uarths.h"
 #include "esp8285.h"
 
-#define ESP8285_BUF_SIZE 2048 
 STATIC void kmp_get_next(char* targe, int next[])
 {  
     int targe_Len = strlen(targe);  
@@ -361,7 +360,7 @@ uint32_t esp_recv_mul_id(esp8285_obj* nic,uint8_t *coming_mux_id, uint8_t *buffe
 /*----------------------------------------------------------------------------*/
 /* +IPD,<id>,<len>:<data> */
 /* +IPD,<len>:<data> */
-
+int total = 0;
 uint32_t recvPkg(esp8285_obj*nic,uint8_t *buffer, uint32_t buffer_size, uint32_t *data_len, uint32_t timeout, uint8_t *coming_mux_id)
 {
 	int errcode;
@@ -407,10 +406,12 @@ uint32_t recvPkg(esp8285_obj*nic,uint8_t *buffer, uint32_t buffer_size, uint32_t
                 } else { /* +IPD,len:data */
                 	sscanf(&nic->buffer[index_PIPDcomma],"+IPD,%d:",&len);
                     if (len <= 0) {
+                        printf("----aaaaaaa------\n");
                         return -1;
                     }
                 }
                 has_data = true;
+                // printf("----bbbbbb  ni si le ------\n");
                 break;
             }
         }
@@ -424,17 +425,23 @@ uint32_t recvPkg(esp8285_obj*nic,uint8_t *buffer, uint32_t buffer_size, uint32_t
 				uart_stream->read(nic->uart_obj,&buffer[i++],1,&errcode); 
             }
             if (i == ret) {
-                rx_empty(nic);
+                // rx_empty(nic);
                 if (data_len) {
                     *data_len = len;    
                 }
                 if (index_comma != -1 && coming_mux_id) {
                     *coming_mux_id = id;
                 }
+                if(ret == 0)
+                    printf("-------------cccccccccccc---------------\n");
+                total += ret;
+                printf("r:%d, total:%d\n", ret, total);
                 return ret;
             }
         }
     }
+    printf("-------------ddddddddddddddd---------------\n");
+    printf("total:%d\n", total);
     return 0;
 }
 

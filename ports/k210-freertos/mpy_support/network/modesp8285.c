@@ -36,7 +36,7 @@
 #include "modmachine.h"
 #include "esp8285.h"
 #include "mpconfigboard.h"
-#define ESP8285_BUF_SIZE 2048
+
 STATIC bool nic_connected = false;
 typedef struct _nic_obj_t {
 		mp_obj_base_t base;
@@ -311,7 +311,7 @@ STATIC mp_uint_t esp8285_socket_recv(mod_network_socket_obj_t *socket, byte *buf
 	}
 	nic_obj_t* self = MP_OBJ_TO_PTR(socket->nic);
 	int read_len = 0;
-	read_len = esp_recv(&self->esp8285,buf,len,1000);
+	read_len = esp_recv(&self->esp8285,buf,len,3000);
 	if(-1 == read_len)
 		*_errno = MP_EIO;
 	return read_len;

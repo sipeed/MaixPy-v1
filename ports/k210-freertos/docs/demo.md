@@ -435,6 +435,7 @@ fm.unregistered(board_info.LED_R,fm.fpioa.GPIOHS31)
 ```
 
 ### Demo1:GPIO INPUT test
+
 ```
 import utime
 from Maix import GPIO
@@ -642,6 +643,7 @@ fm.unregistered(board_info.LED_R,fm.fpioa.GPIOHS31)
 ```
 
 ### Demo1:GPIO IRQ test
+
 ```
 import utime
 from Maix import GPIO
@@ -906,7 +908,7 @@ key.irq(test_irq,GPIO.IRQ_BOTH,GPIO.WAKEUP_NOT_SUPPORT,7)
 
 key.disirq()
 fm.unregistered(board_info.BOOT_KEY,fm.fpioa.GPIOHS31)
-
+```
 
 ## SPI
 
@@ -924,4 +926,78 @@ spi1.write_readinto(w, r)
 spi1.read(5, write=0x00)
 spi1.readinto(r, write=0x00)
 ```
+
+## socket
+
+### Demo1: HTTP Get Picture
+
+```python
+import socket
+import network
+import gc
+import os
+
+fm.registered(board_info.WIFI_RX,fm.fpioa.UART2_TX)
+fm.registered(board_info.WIFI_TX,fm.fpioa.UART2_RX)
+uart = machine.UART(machine.UART.UART2,115200,timeout=1000, read_buf_len=4096)
+nic=network.ESP8285(uart)
+nic.connect("Sipeed_2.4G","****")
+
+sock = socket.socket()
+addr = socket.getaddrinfo("i1.bvimg.com", 80)[0][-1]
+sock.connect(addr)
+sock.send('''GET /666569/6714f06208bb4c61.png HTTP/1.1
+Host: i1.bvimg.com
+cache-control: no-cache
+
+''')
+
+img = b""
+while True:
+    data = sock.recv(4096)
+    if len(data) == 0:
+        break
+    img = img + data
+
+print(len(img))
+img = img[img.find(b"\r\n\r\n")+4:]
+print(len(img))
+
+f = open("test.jpg","wb")
+f.write(img)
+f.close()
+```
+
+### Demo2 send data(picture)
+
+```python
+
+import os
+import socket
+import network
+import gc
+
+fm.registered(board_info.WIFI_RX,fm.fpioa.UART2_TX)
+fm.registered(board_info.WIFI_TX,fm.fpioa.UART2_RX)
+uart = machine.UART(machine.UART.UART2,115200,timeout=1000, read_buf_len=4096)
+nic=network.ESP8285(uart)
+nic.connect("Sipeed_2.4G","****")
+
+addr = ("192.168.0.183", 3456)
+sock = socket.socket()
+sock.connect(addr)
+
+f = open("test.jpg","rb")
+while True:
+    img = f.read(2048)
+    if not img or (len(img) == 0):
+        break
+    sock.send(img)
+f.close()
+sock.close()
+
+```
+
+
+
 
