@@ -36,6 +36,13 @@
 #include "mpconfigboard.h"
 #include "modnetwork.h"
 
+
+////////////////////////// config /////////////////////////
+
+#define ESP8285_MAX_ONCE_SEND 2048
+
+//////////////////////////////////////////////////////////
+
 typedef struct _ipconfig_obj
 {
 	mp_obj_t ip;

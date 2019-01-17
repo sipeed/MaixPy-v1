@@ -328,7 +328,19 @@ bool get_ipconfig(esp8285_obj* nic, ipconfig_obj* ipconfig)
 
 bool esp_send(esp8285_obj* nic,const uint8_t *buffer, uint32_t len, uint32_t timeout)
 {
-    return sATCIPSENDSingle(nic,buffer, len, timeout);
+    bool ret = false;
+    uint32_t send_total_len = 0;
+    uint16_t send_len = 0;
+
+    while(send_total_len < len)
+    {
+        send_len = (len > ESP8285_MAX_ONCE_SEND)?ESP8285_MAX_ONCE_SEND:len;
+        ret = sATCIPSENDSingle(nic,buffer+send_total_len, send_len, timeout);
+        if(!ret)
+            return false;
+        send_total_len += send_len;
+    }
+    return true;
 }
 
 bool esp_send_mul(esp8285_obj* nic,uint8_t mux_id, const uint8_t *buffer, uint32_t len)
