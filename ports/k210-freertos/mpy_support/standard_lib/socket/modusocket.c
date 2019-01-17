@@ -266,7 +266,12 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_send_obj, socket_send);
 // otherwise, timeout is in seconds
 STATIC mp_obj_t socket_settimeout(mp_obj_t self_in, mp_obj_t timeout_in) {
 	mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
-	printf("[MaixPy] %s | uart socket Do nothing\n",__func__);
+	float timeout = mp_obj_get_float(timeout_in);
+    if(timeout < 0)
+        mp_raise_ValueError("[MaixPy] timeout parameter error");
+    else if(timeout == 0)
+        mp_raise_NotImplementedError("[MaixPy] not support always blocked yet");
+    self->timeout = timeout;
 	return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_settimeout_obj, socket_settimeout);
@@ -344,6 +349,7 @@ STATIC mp_obj_t socket_make_new(const mp_obj_type_t *type, size_t n_args, size_t
     s->u_param.domain = MOD_NETWORK_AF_INET;
     s->u_param.type = MOD_NETWORK_SOCK_STREAM;
     s->u_param.fileno = 0;
+    s->timeout = 10; // default timeout: 10s
 	if (n_args >= 1) {
         s->u_param.domain = mp_obj_get_int(args[0]);
         if (n_args >= 2) {

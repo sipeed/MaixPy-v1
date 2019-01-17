@@ -290,7 +290,7 @@ bool get_host_byname(esp8285_obj* nic,uint8_t* host,uint32_t len,uint8_t* out_ip
  * @retval true - success.
  * @retval false - failure.
  */
-bool esp_send(esp8285_obj* nic,const uint8_t *buffer, uint32_t len);
+bool esp_send(esp8285_obj* nic,const uint8_t *buffer, uint32_t len, uint32_t timeout);
         
 /**
  * Send data based on one of TCP or UDP builded already in multiple mode. 
@@ -379,7 +379,7 @@ bool eATCWQAP(esp8285_obj* nic);
 bool eATCIPSTATUS(esp8285_obj* nic,uint8_t* list);
 bool sATCIPSTARTSingle(esp8285_obj* nic,uint8_t* type, uint8_t* addr, uint32_t port);
 bool sATCIPSTARTMultiple(esp8285_obj*nic,uint8_t mux_id, uint8_t* type, uint8_t* addr, uint32_t port);
-bool sATCIPSENDSingle(esp8285_obj*nic,const uint8_t *buffer, uint32_t len);
+bool sATCIPSENDSingle(esp8285_obj*nic,const uint8_t *buffer, uint32_t len, uint32_t timeout);
 bool sATCIPSENDMultiple(esp8285_obj* nic,uint8_t mux_id, const uint8_t *buffer, uint32_t len);
 bool sATCIPCLOSEMulitple(esp8285_obj* nic,uint8_t mux_id);
 bool eATCIPCLOSESingle(esp8285_obj* nic);
@@ -401,7 +401,8 @@ bool qATCIPSTA_CUR(esp8285_obj* nic);
 /*
 * bool sATCWSAP(char* ssid, char* pwd, uint8_t chl, uint8_t ecn);
 * bool eATCWLIF(char* &list);
-*/
+
+*/
 
 /**
  * Set operation mode to softap. 

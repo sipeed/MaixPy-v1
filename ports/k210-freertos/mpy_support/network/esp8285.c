@@ -326,9 +326,9 @@ bool get_ipconfig(esp8285_obj* nic, ipconfig_obj* ipconfig)
 }
 
 
-bool esp_send(esp8285_obj* nic,const uint8_t *buffer, uint32_t len)
+bool esp_send(esp8285_obj* nic,const uint8_t *buffer, uint32_t len, uint32_t timeout)
 {
-    return sATCIPSENDSingle(nic,buffer, len);
+    return sATCIPSENDSingle(nic,buffer, len, timeout);
 }
 
 bool esp_send_mul(esp8285_obj* nic,uint8_t mux_id, const uint8_t *buffer, uint32_t len)
@@ -360,7 +360,6 @@ uint32_t esp_recv_mul_id(esp8285_obj* nic,uint8_t *coming_mux_id, uint8_t *buffe
 /*----------------------------------------------------------------------------*/
 /* +IPD,<id>,<len>:<data> */
 /* +IPD,<len>:<data> */
-int total = 0;
 uint32_t recvPkg(esp8285_obj*nic,uint8_t *buffer, uint32_t buffer_size, uint32_t *data_len, uint32_t timeout, uint8_t *coming_mux_id)
 {
 	int errcode;
@@ -385,7 +384,7 @@ uint32_t recvPkg(esp8285_obj*nic,uint8_t *buffer, uint32_t buffer_size, uint32_t
     uint32_t iter = 0;
 	memset(nic->buffer, 0, ESP8285_BUF_SIZE);
     start = mp_hal_ticks_ms();
-    while (mp_hal_ticks_ms() - start < timeout) {
+    while ((mp_hal_ticks_ms() - start < timeout) ) {
         if(uart_rx_any(nic->uart_obj) > 0) {
 			uart_stream->read(nic->uart_obj,&nic->buffer[iter++],1,&errcode); 
         }
@@ -406,12 +405,10 @@ uint32_t recvPkg(esp8285_obj*nic,uint8_t *buffer, uint32_t buffer_size, uint32_t
                 } else { /* +IPD,len:data */
                 	sscanf(&nic->buffer[index_PIPDcomma],"+IPD,%d:",&len);
                     if (len <= 0) {
-                        printf("----aaaaaaa------\n");
                         return -1;
                     }
                 }
                 has_data = true;
-                // printf("----bbbbbb  ni si le ------\n");
                 break;
             }
         }
@@ -432,16 +429,10 @@ uint32_t recvPkg(esp8285_obj*nic,uint8_t *buffer, uint32_t buffer_size, uint32_t
                 if (index_comma != -1 && coming_mux_id) {
                     *coming_mux_id = id;
                 }
-                if(ret == 0)
-                    printf("-------------cccccccccccc---------------\n");
-                total += ret;
-                printf("r:%d, total:%d\n", ret, total);
                 return ret;
             }
         }
     }
-    printf("-------------ddddddddddddddd---------------\n");
-    printf("total:%d\n", total);
     return 0;
 }
 
@@ -748,7 +739,7 @@ bool sATCIPSTARTMultiple(esp8285_obj*nic,uint8_t mux_id, uint8_t* type, uint8_t*
     }
     return false;
 }
-bool sATCIPSENDSingle(esp8285_obj*nic,const uint8_t *buffer, uint32_t len)
+bool sATCIPSENDSingle(esp8285_obj*nic,const uint8_t *buffer, uint32_t len, uint32_t timeout)
 {
 	int errcode = 0;
 	uint8_t* cmd = "AT+CIPSEND=";
@@ -762,7 +753,7 @@ bool sATCIPSENDSingle(esp8285_obj*nic,const uint8_t *buffer, uint32_t len)
     if (recvFind(nic,">", 5000)) {
         rx_empty(nic);
 		uart_stream->write(nic->uart_obj,buffer,len,&errcode);
-        return recvFind(nic,"SEND OK", 10000);
+        return recvFind(nic,"SEND OK", timeout);
     }
     return false;
 }

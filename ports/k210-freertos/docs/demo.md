@@ -941,7 +941,7 @@ fm.registered(board_info.WIFI_RX,fm.fpioa.UART2_TX)
 fm.registered(board_info.WIFI_TX,fm.fpioa.UART2_RX)
 uart = machine.UART(machine.UART.UART2,115200,timeout=1000, read_buf_len=4096)
 nic=network.ESP8285(uart)
-nic.connect("Sipeed_2.4G","****")
+nic.connect("Sipeed_2.4G","Sipeed123.")
 
 sock = socket.socket()
 addr = socket.getaddrinfo("i1.bvimg.com", 80)[0][-1]
@@ -953,6 +953,7 @@ cache-control: no-cache
 ''')
 
 img = b""
+sock.settimeout(3)
 while True:
     data = sock.recv(4096)
     if len(data) == 0:

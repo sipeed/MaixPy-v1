@@ -311,7 +311,7 @@ STATIC mp_uint_t esp8285_socket_recv(mod_network_socket_obj_t *socket, byte *buf
 	}
 	nic_obj_t* self = MP_OBJ_TO_PTR(socket->nic);
 	int read_len = 0;
-	read_len = esp_recv(&self->esp8285,buf,len,3000);
+	read_len = esp_recv(&self->esp8285,buf,len, (uint32_t)(socket->timeout*1000) );
 	if(-1 == read_len)
 		*_errno = MP_EIO;
 	return read_len;
@@ -326,7 +326,7 @@ STATIC mp_uint_t esp8285_socket_send(mod_network_socket_obj_t *socket, const byt
 		return -1;
 	}
 	nic_obj_t* self = MP_OBJ_TO_PTR(socket->nic);
-	if(0 == esp_send(&self->esp8285,buf,len))
+	if(0 == esp_send(&self->esp8285,buf,len, (uint32_t)(socket->timeout*1000) ) )
 	{
 		printf("[MaixPy] %s | send data failed\n",__func__);
 		*_errno = MP_EIO;
