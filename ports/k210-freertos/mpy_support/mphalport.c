@@ -14,13 +14,17 @@
 
 
 int mp_hal_stdin_rx_chr(void) {
-	char c = 0;
-    for (;;) 
+	int c = 0;
+	for (;;)
 	{
-        if (MP_STATE_PORT(Maix_stdio_uart) != NULL && uart_rx_any(MP_STATE_PORT(Maix_stdio_uart))) 
+		if (MP_STATE_PORT(Maix_stdio_uart) != NULL ) 
 		{
-            return uart_rx_char(MP_STATE_PORT(Maix_stdio_uart));
-        }
+			c = uart_rx_char(MP_STATE_PORT(Maix_stdio_uart));
+			if (c != -1) {
+				return c;
+			}
+			MICROPY_EVENT_POLL_HOOK
+		}
 		for (size_t idx = 0; idx < MICROPY_PY_OS_DUPTERM; ++idx)
 		{
 			if( MP_STATE_VM(dupterm_objs[idx]) != NULL && uart_rx_any(MP_STATE_VM(dupterm_objs[idx])))
@@ -28,11 +32,11 @@ int mp_hal_stdin_rx_chr(void) {
 				int dupterm_c = mp_uos_dupterm_rx_chr();
 				 if (dupterm_c >= 0) 
 				{
-            		return dupterm_c;
-        		}
+					return dupterm_c;
+				}
 			}
 		}
-   }
+	}
 
 }
 void mp_hal_debug_tx_strn_cooked(void *env, const char *str, uint32_t len);

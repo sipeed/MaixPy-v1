@@ -284,8 +284,6 @@ soft_reset:
 	        }
     	}
 		if (mounted_sdcard) {
-//			mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR_slash_sd));
-//			mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_sd_slash_lib));
 		}
 #if MICROPY_HW_UART_REPL
 		{
@@ -302,10 +300,8 @@ soft_reset:
 #endif
 
 		// run boot-up scripts
-        // readline_process_char(27);
 		mp_hal_set_interrupt_char(CHAR_CTRL_C);
 		pyexec_frozen_module("_boot.py");
-		// pyexec_file("boot.py");
 		mp_hal_stdout_tx_strn(Banner, strlen(Banner));
 
 		for (;;) {
@@ -349,16 +345,20 @@ int main()
 	w25qxx_enable_quad_mode_dma();
 	w25qxx_read_id_dma(&manuf_id, &device_id);
 	printk("[MAIXPY]Flash:0x%02x:0x%02x\r\n", manuf_id, device_id);
-	/*
+#if MICROPY_PY_THREAD 
 	xTaskCreateAtProcessor(0, // processor
-					     mp_task, // function entry
-					     "mp_task", //task name
-					     MP_TASK_STACK_LEN, //stack_deepth
-					     NULL, //function arg
-					     MP_TASK_PRIORITY, //task priority
-					     &mp_main_task_handle);//task handl
-	*/
+						 mp_task, // function entry
+						 "mp_task", //task name
+						 MP_TASK_STACK_LEN, //stack_deepth
+						 NULL, //function arg
+						 MP_TASK_PRIORITY, //task priority
+						 &mp_main_task_handle);//task handl
+	vTaskStartScheduler();
+	for(;;);
+#else
 	mp_task();
+#endif
+
 }
 void do_str(const char *src, mp_parse_input_kind_t input_kind) {
     nlr_buf_t nlr;

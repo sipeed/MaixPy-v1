@@ -40,7 +40,7 @@
 #define MICROPY_ENABLE_SCHEDULER            (1)
 #define MICROPY_SCHEDULER_DEPTH             (8)
 
-#define MICROPY_ENABLE_FINALISER            (0)
+#define MICROPY_ENABLE_FINALISER            (1)
 #define MICROPY_STACK_CHECK                 (0)
 #define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF (1)
 #define MICROPY_KBD_EXCEPTION               (1)
@@ -146,8 +146,8 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_PY_UTIME_MP_HAL             (1)
 
 //thread todo
-#define MICROPY_PY_THREAD                   (0)
-#define MICROPY_PY_THREAD_GIL               (0)
+#define MICROPY_PY_THREAD                   (1)
+#define MICROPY_PY_THREAD_GIL               (1)
 #define MICROPY_PY_THREAD_GIL_VM_DIVISOR    (32)
 
 #define mp_type_fileio                      mp_type_vfs_spiffs_fileio
@@ -280,6 +280,19 @@ extern const struct _mp_obj_module_t socket_module;
 //#define MICROPY_MIN_USE_CORTEX_CPU (1)
 //#define MICROPY_MIN_USE_STM32_MCU (1)
 //#endif
+
+#if MICROPY_PY_THREAD
+#define MICROPY_EVENT_POLL_HOOK \
+    do { \
+        extern void mp_handle_pending(void); \
+        mp_handle_pending(); \
+        MP_THREAD_GIL_EXIT(); \
+        MP_THREAD_GIL_ENTER(); \
+    } while (0);
+#else
+#define MICROPY_EVENT_POLL_HOOK 
+#endif
+
 
 #define MP_STATE_PORT MP_STATE_VM
 

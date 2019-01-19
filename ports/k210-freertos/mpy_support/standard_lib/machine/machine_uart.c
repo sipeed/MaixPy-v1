@@ -50,8 +50,6 @@
 #include "plic.h"
 #include "machine_uart.h"
 
-#define CHAR_NONE 256
-
 #define Maix_DEBUG 0
 #if Maix_DEBUG==1
 #define debug_print(x,arg...) printf("[MaixPy]"x,##arg)
@@ -235,7 +233,7 @@ int uart_rx_char(machine_uart_obj_t *self)
         }
         return data;
     }
-	return CHAR_NONE;
+	return -1;
 }
 
 int uart_rx_data(machine_uart_obj_t *self,uint8_t* buf_in,uint32_t size) 
@@ -519,14 +517,14 @@ STATIC mp_uint_t machine_uart_read(mp_obj_t self_in, void *buf_in, mp_uint_t siz
 		    while(size) 
 			{
 		        int data = uart_rx_char(self);
-				if(CHAR_NONE != data)
+				if(-1 != data)
 				{
 		        	*buf++ = data;
 					data_num++;
 					size--;
 					debug_print("[machine_uart_read] data is valid,size = %d,data = %c\n",size,data);
 				}
-		        else if (CHAR_NONE == data || !uart_rx_any(self)) 
+		        else if (-1 == data || !uart_rx_any(self)) 
 				{
 		            break;
 		        }	
