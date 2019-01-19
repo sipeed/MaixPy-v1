@@ -86,7 +86,7 @@ STATIC mp_obj_t machine_help(size_t n_args, const mp_obj_t *pos_args, mp_map_t *
 			printf ("|  %s%s|  %s%s|\n", func_name[i],fun_space_str,func_description[i],des_space_str) ;
 			free(des_space_str);
 			free(fun_space_str);
-			printf ("+———————————————————+——————————————————————————————————+\n") ;
+			printf ("+-------------------+----------------------------------+\n") ;
 		}
 	}
 	else
@@ -106,7 +106,7 @@ STATIC mp_obj_t machine_help(size_t n_args, const mp_obj_t *pos_args, mp_map_t *
 		printf ("|  %s%s|  %s%s|\n", func_name[args[ARG_func].u_int],fun_space_str,func_description[args[ARG_func].u_int],des_space_str) ;
 		free(des_space_str);
 		free(fun_space_str);
-		printf ("+———————————————————+——————————————————————————————————+\n") ;
+		printf ("+-------------------+----------------------------------+\n") ;
 	}
     return mp_const_none;
 }
