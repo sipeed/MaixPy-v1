@@ -113,7 +113,7 @@ typedef struct _sensor {
     uint32_t hw_flags;          // Hardware flags (clock polarities/hw capabilities)
 
     uint32_t vsync_pin;         // VSYNC GPIO output pin.
-    GPIO_TypeDef *vsync_gpio;   // VSYNC GPIO output port.
+    // GPIO_TypeDef *vsync_gpio;   // VSYNC GPIO output port.
 
     polarity_t pwdn_pol; // PWDN polarity (TODO move to hw_flags)
     polarity_t reset_pol; // Reset polarity (TODO move to hw_flags)
@@ -241,7 +241,7 @@ int sensor_set_special_effect(sde_t sde);
 int sensor_set_lens_correction(int enable, int radi, int coef);
 
 // Set vsync output pin
-int sensor_set_vsync_output(GPIO_TypeDef *gpio, uint32_t pin);
+// int sensor_set_vsync_output(GPIO_TypeDef *gpio, uint32_t pin);
 
 // Default snapshot function.
 int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_cb);

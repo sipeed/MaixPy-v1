@@ -9,12 +9,17 @@
 #ifndef __MUTEX_H__
 #define __MUTEX_H__
 #include <stdint.h>
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
+
 #define MUTEX_TID_IDE (1<<0)
 #define MUTEX_TID_OMV (1<<1)
 
-typedef volatile struct {
-    uint32_t tid;
-    uint32_t lock;
+typedef struct {
+    SemaphoreHandle_t lock;
+    StaticSemaphore_t buffer;
+	uint32_t tid;
 } mutex_t;
 void mutex_init(mutex_t *mutex);
 void mutex_lock(mutex_t *mutex, uint32_t tid);
