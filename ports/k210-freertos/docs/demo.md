@@ -1003,3 +1003,17 @@ sock.close()
 
 
 
+## image
+
+
+### save image to flash or sd card
+
+```python
+
+import image
+img = image.Image()
+img.save("/sd/image.jpg")
+```
+
+
+
