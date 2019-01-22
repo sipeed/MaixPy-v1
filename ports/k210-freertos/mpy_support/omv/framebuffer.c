@@ -10,11 +10,11 @@
 #include "omv_boardconfig.h"
 #include "framebuffer.h"
 
-extern char _fb_base;
-framebuffer_t *fb_framebuffer = (framebuffer_t *) &_fb_base;
+uint8_t _fb_base[OMV_FB_SIZE + OMV_FB_ALLOC_SIZE] __attribute__((aligned(8)));
+framebuffer_t *fb_framebuffer = (framebuffer_t *) _fb_base;
 
-extern char _jpeg_buf;
-jpegbuffer_t *jpeg_fb_framebuffer = (jpegbuffer_t *) &_jpeg_buf;
+uint8_t _jpeg_buf[OMV_JPEG_BUF_SIZE] __attribute__((aligned(8)));
+jpegbuffer_t *jpeg_fb_framebuffer = (jpegbuffer_t *) _jpeg_buf;
 
 uint32_t fb_buffer_size()
 {

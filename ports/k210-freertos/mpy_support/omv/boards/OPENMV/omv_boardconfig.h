@@ -38,7 +38,7 @@
 #define OMV_RAW_BUF_SIZE        (409600)
 
 // Enable hardware JPEG
-#define OMV_HARDWARE_JPEG       (1)
+#define OMV_HARDWARE_JPEG       (0)
 
 // Enable MT9V034 and LEPTON sensors
 #define OMV_ENABLE_MT9V034      (1)
@@ -62,8 +62,8 @@
 #define OMV_JPEG_MEMORY         SRAM3       // JPEG buffer memory.
 #define OMV_VOSPI_MEMORY        SRAM4       // VoSPI buffer memory.
 
-#define OMV_FB_SIZE             (400K)      // FB memory: header + VGA/GS image
-#define OMV_FB_ALLOC_SIZE       (96K)       // minimum fb alloc size
+#define OMV_FB_SIZE             (400*1024)      // FB memory: header + VGA/GS image
+#define OMV_FB_ALLOC_SIZE       (200*1024)       // minimum fb alloc size
 #define OMV_STACK_SIZE          (7K)
 #define OMV_HEAP_SIZE           (240K)
 
@@ -228,5 +228,8 @@
 #define LEPTON_SPI_MISO_PORT        (GPIOB)
 #define LEPTON_SPI_MOSI_PORT        (GPIOB)
 #define LEPTON_SPI_SSEL_PORT        (GPIOA)
+
+// For K210
+#define __CLZ(n) __builtin_clz(n)
 
 #endif //__OMV_BOARDCONFIG_H__

@@ -9,11 +9,15 @@
 #include <mp.h>
 #include "fb_alloc.h"
 #include "framebuffer.h"
+#include "omv_boardconfig.h"
 
-extern char _fballoc;
-static char *pointer = &_fballoc;
+extern uint8_t _fb_base[];
+char* _fballoc = NULL;
+static char *pointer = NULL;
 
-__weak NORETURN void fb_alloc_fail()
+#define nlr_raise_for_fb_alloc_mark(obj) nlr_raise(obj)
+
+NORETURN void fb_alloc_fail()
 {
     nlr_raise(mp_obj_new_exception_msg(&mp_type_MemoryError,
         "Out of fast Frame Buffer Stack Memory!"
@@ -22,7 +26,8 @@ __weak NORETURN void fb_alloc_fail()
 
 void fb_alloc_init0()
 {
-    pointer = &_fballoc;
+    _fballoc = (char*)(_fb_base+OMV_FB_SIZE + OMV_FB_ALLOC_SIZE);
+    pointer = _fballoc;
 }
 
 uint32_t fb_avail()
@@ -52,7 +57,7 @@ void fb_alloc_mark()
 
 void fb_alloc_free_till_mark()
 {
-    while (pointer < &_fballoc) {
+    while (pointer < _fballoc) {
         int size = *((uint32_t *) pointer);
         pointer += size; // Get size and pop.
         if (size == sizeof(uint32_t)) break; // Break on first marker.
@@ -118,14 +123,14 @@ void *fb_alloc0_all(uint32_t *size)
 
 void fb_free()
 {
-    if (pointer < &_fballoc) {
+    if (pointer < _fballoc) {
         pointer += *((uint32_t *) pointer); // Get size and pop.
     }
 }
 
 void fb_free_all()
 {
-    while (pointer < &_fballoc) {
+    while (pointer < _fballoc) {
         pointer += *((uint32_t *) pointer); // Get size and pop.
     }
 }
