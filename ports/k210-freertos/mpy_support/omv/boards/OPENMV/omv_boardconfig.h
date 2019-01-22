@@ -9,6 +9,19 @@
 #ifndef __OMV_BOARDCONFIG_H__
 #define __OMV_BOARDCONFIG_H__
 
+#define OMV_INIT_RESOLUTION 800*600
+#define OMV_INIT_BPP 2
+#define OMV_JPEG_BUF_SIZE 23 * 1024 // IDE JPEG buffer (header + data).
+#define OMV_FB_ALLOC_SIZE 83 * 1024 // minimum fb alloc size
+#define OMV_FB_SIZE 301 * 1024
+#define OMV_LINE_BUF_SIZE 3 * 1024 // Image line buffer round(640 * 2BPP * 2 buffers).
+
+#define DCMI_RESET_LOW()      dvp->cmos_cfg &= ~DVP_CMOS_RESET
+#define DCMI_RESET_HIGH()     dvp->cmos_cfg |= DVP_CMOS_RESET
+#define DCMI_PWDN_LOW()       dvp->cmos_cfg |= DVP_CMOS_POWER_DOWN
+#define DCMI_PWDN_HIGH()      dvp->cmos_cfg &= ~DVP_CMOS_POWER_DOWN
+
+
 // Architecture info
 #define OMV_ARCH_STR            "K210" // 33 chars max
 #define OMV_BOARD_TYPE          "Maix"
@@ -62,15 +75,11 @@
 #define OMV_JPEG_MEMORY         SRAM3       // JPEG buffer memory.
 #define OMV_VOSPI_MEMORY        SRAM4       // VoSPI buffer memory.
 
-#define OMV_FB_SIZE             (400K)      // FB memory: header + VGA/GS image
-#define OMV_FB_ALLOC_SIZE       (96K)       // minimum fb alloc size
 #define OMV_STACK_SIZE          (7K)
 #define OMV_HEAP_SIZE           (240K)
 
-#define OMV_LINE_BUF_SIZE       (3K)        // Image line buffer round(640 * 2BPP * 2 buffers).
 #define OMV_MSC_BUF_SIZE        (12K)       // USB MSC bot data
 #define OMV_VFS_BUF_SIZE        (1K)        // VFS sturct + FATFS file buffer (624 bytes)
-#define OMV_JPEG_BUF_SIZE       (32 * 1024) // IDE JPEG buffer (header + data).
 
 #define OMV_BOOT_ORIGIN         0x08000000
 #define OMV_BOOT_LENGTH         128K
@@ -144,12 +153,6 @@
 #define DCMI_HSYNC_PORT         (GPIOA)
 #define DCMI_VSYNC_PORT         (GPIOB)
 #define DCMI_PXCLK_PORT         (GPIOA)
-
-#define DCMI_RESET_LOW()        HAL_GPIO_WritePin(DCMI_RESET_PORT, DCMI_RESET_PIN, GPIO_PIN_RESET)
-#define DCMI_RESET_HIGH()       HAL_GPIO_WritePin(DCMI_RESET_PORT, DCMI_RESET_PIN, GPIO_PIN_SET)
-
-#define DCMI_PWDN_LOW()         HAL_GPIO_WritePin(DCMI_PWDN_PORT, DCMI_PWDN_PIN, GPIO_PIN_RESET)
-#define DCMI_PWDN_HIGH()        HAL_GPIO_WritePin(DCMI_PWDN_PORT, DCMI_PWDN_PIN, GPIO_PIN_SET)
 
 #define DCMI_FSIN_LOW()         HAL_GPIO_WritePin(DCMI_FSIN_PORT, DCMI_FSIN_PIN, GPIO_PIN_RESET)
 #define DCMI_FSIN_HIGH()        HAL_GPIO_WritePin(DCMI_FSIN_PORT, DCMI_FSIN_PIN, GPIO_PIN_SET)

@@ -5834,16 +5834,16 @@ static const mp_obj_type_t py_image_type = {
 // }
 // STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_image_imagereader_obj, py_image_imagereader);
 
-// mp_obj_t py_image(int w, int h, int bpp, void *pixels)
-// {
-//     py_image_obj_t *o = m_new_obj(py_image_obj_t);
-//     o->base.type = &py_image_type;
-//     o->_cobj.w = w;
-//     o->_cobj.h = h;
-//     o->_cobj.bpp = bpp;
-//     o->_cobj.pixels = pixels;
-//     return o;
-// }
+ mp_obj_t py_image(int w, int h, int bpp, void *pixels)
+ {
+     py_image_obj_t *o = m_new_obj(py_image_obj_t);
+     o->base.type = &py_image_type;
+     o->_cobj.w = w;
+     o->_cobj.h = h;
+     o->_cobj.bpp = bpp;
+     o->_cobj.pixels = pixels;
+     return o;
+ }
 
 mp_obj_t py_image_from_struct(image_t *img)
 {

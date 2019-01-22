@@ -11,15 +11,16 @@
 #include <stdint.h>
 #include "mutex.h"
 
+
+
 typedef struct framebuffer {
     int x,y;
     int w,h;
     int u,v;
     int bpp;
-    uint8_t pixels[];
+	uint8_t* pixels;
+//    uint8_t pixels[];
 } framebuffer_t;
-
-extern framebuffer_t *fb_framebuffer;
 
 typedef struct jpegbuffer {
     int w,h;
@@ -31,6 +32,7 @@ typedef struct jpegbuffer {
 } jpegbuffer_t;
 
 extern jpegbuffer_t *jpeg_fb_framebuffer;
+extern framebuffer_t *fb_framebuffer;
 
 // Use these macros to get a pointer to main or JPEG framebuffer.
 #define MAIN_FB()           (fb_framebuffer)

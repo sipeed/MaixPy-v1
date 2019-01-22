@@ -52,9 +52,16 @@
 #include "spiffs-port.h"
 #include "machine_sdcard.h"
 #include "machine_uart.h"
+/**********omv**********/
+#include "omv_boardconfig.h"
+#include "framebuffer.h"
+#include "sensor.h"
+
 #define UART_BUF_LENGTH_MAX 269
 #define MPY_HEAP_SIZE  2* 1024 * 1024
-extern int mp_hal_stdin_rx_chr(void);
+
+uint8_t* _fb_base;
+uint8_t* _jpeg_buf;
 
 #if MICROPY_ENABLE_GC
 static char heap[MPY_HEAP_SIZE];
@@ -345,6 +352,10 @@ int main()
 	w25qxx_enable_quad_mode_dma();
 	w25qxx_read_id_dma(&manuf_id, &device_id);
 	printk("[MAIXPY]Flash:0x%02x:0x%02x\r\n", manuf_id, device_id);
+	_fb_base = (uint8_t*)malloc(sizeof(framebuffer_t));
+	_jpeg_buf = (jpegbuffer_t*)malloc(sizeof(jpegbuffer_t) + OMV_JPEG_BUF_SIZE);
+	fb_framebuffer = (framebuffer_t *)_fb_base;
+	jpeg_fb_framebuffer = (jpegbuffer_t *) _jpeg_buf;
 #if MICROPY_PY_THREAD 
 	xTaskCreateAtProcessor(0, // processor
 						 mp_task, // function entry
