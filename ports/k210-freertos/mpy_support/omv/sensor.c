@@ -6,32 +6,32 @@
  * Sensor abstraction layer.
  *
  */
+
 #include <stdlib.h>
 #include <string.h>
 #include "mp.h"
-#include "irq.h"
 #include "cambus.h"
-#include "ov9650.h"
 #include "ov2640.h"
-#include "ov7725.h"
-#include "mt9v034.h"
-#include "lepton.h"
 #include "sensor.h"
-#include "systick.h"
 #include "framebuffer.h"
 #include "omv_boardconfig.h"
+#include "dvp.h"
+#include "mphalport.h"
+#include "plic.h"
+#include "fpioa.h"
+#include "syslog.h"
+#include "ff.h"
+extern volatile dvp_t* const dvp;
 
 #define OV_CHIP_ID      (0x0A)
 #define ON_CHIP_ID      (0x00)
 #define MAX_XFER_SIZE   (0xFFFC*4)
+#define systick_sleep mp_hal_delay_ms
 
-sensor_t           sensor     = {0};
-TIM_HandleTypeDef  TIMHandle  = {0};
-DMA_HandleTypeDef  DMAHandle  = {0};
-DCMI_HandleTypeDef DCMIHandle = {0};
+sensor_t  sensor     = {0};
 
 static volatile int line = 0;
-extern uint8_t _line_buf;
+uint8_t _line_buf;
 static uint8_t *dest_fb = NULL;
 
 const int resolution[][2] = {
@@ -67,122 +67,38 @@ const int resolution[][2] = {
     {1600, 1200},    /* UXGA      */
 };
 
-#if (OMV_XCLK_SOURCE == OMV_XCLK_TIM)
-static int extclk_config(int frequency)
+void _ndelay(uint32_t ns)
 {
-    /* TCLK (PCLK * 2) */
-    int tclk = DCMI_TIM_PCLK_FREQ() * 2;
+    uint32_t i;
 
-    /* Period should be even */
-    int period = (tclk / frequency) - 1;
-
-    if (TIMHandle.Init.Period && (TIMHandle.Init.Period != period)) {
-        // __HAL_TIM_SET_AUTORELOAD sets TIMHandle.Init.Period...
-        __HAL_TIM_SET_AUTORELOAD(&TIMHandle, period);
-        __HAL_TIM_SET_COMPARE(&TIMHandle, DCMI_TIM_CHANNEL, period / 2);
-        return 0;
+    while (ns && ns--)
+    {
+        for (i = 0; i < 25; i++)
+            __asm__ __volatile__("nop");
     }
-
-    /* Timer base configuration */
-    TIMHandle.Instance           = DCMI_TIM;
-    TIMHandle.Init.Period        = period;
-    TIMHandle.Init.Prescaler     = TIM_ETRPRESCALER_DIV1;
-    TIMHandle.Init.CounterMode   = TIM_COUNTERMODE_UP;
-    TIMHandle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-
-    /* Timer channel configuration */
-    TIM_OC_InitTypeDef TIMOCHandle;
-    TIMOCHandle.Pulse       = period / 2;
-    TIMOCHandle.OCMode      = TIM_OCMODE_PWM1;
-    TIMOCHandle.OCPolarity  = TIM_OCPOLARITY_HIGH;
-    TIMOCHandle.OCFastMode  = TIM_OCFAST_DISABLE;
-    TIMOCHandle.OCIdleState = TIM_OCIDLESTATE_RESET;
-
-    if ((HAL_TIM_PWM_Init(&TIMHandle) != HAL_OK)
-    || (HAL_TIM_PWM_ConfigChannel(&TIMHandle, &TIMOCHandle, DCMI_TIM_CHANNEL) != HAL_OK)
-    || (HAL_TIM_PWM_Start(&TIMHandle, DCMI_TIM_CHANNEL) != HAL_OK)) {
-        return -1;
-    }
-
-    return 0;
-}
-#endif // (OMV_XCLK_SOURCE == OMV_XCLK_TIM)
-
-static int dcmi_config(uint32_t jpeg_mode)
-{
-    // DCMI configuration
-    DCMIHandle.Instance         = DCMI;
-    // VSYNC clock polarity
-    DCMIHandle.Init.VSPolarity  = SENSOR_HW_FLAGS_GET(&sensor, SENSOR_HW_FLAGS_VSYNC) ?
-                                    DCMI_VSPOLARITY_HIGH : DCMI_VSPOLARITY_LOW;
-    // HSYNC clock polarity
-    DCMIHandle.Init.HSPolarity  = SENSOR_HW_FLAGS_GET(&sensor, SENSOR_HW_FLAGS_HSYNC) ?
-                                    DCMI_HSPOLARITY_HIGH : DCMI_HSPOLARITY_LOW;
-    // PXCLK clock polarity
-    DCMIHandle.Init.PCKPolarity = SENSOR_HW_FLAGS_GET(&sensor, SENSOR_HW_FLAGS_PIXCK) ?
-                                    DCMI_PCKPOLARITY_RISING : DCMI_PCKPOLARITY_FALLING;
-
-    DCMIHandle.Init.SynchroMode = DCMI_SYNCHRO_HARDWARE;    // Enable Hardware synchronization
-    DCMIHandle.Init.CaptureRate = DCMI_CR_ALL_FRAME;        // Capture rate all frames
-    DCMIHandle.Init.ExtendedDataMode = DCMI_EXTEND_DATA_8B; // Capture 8 bits on every pixel clock
-    DCMIHandle.Init.JPEGMode = jpeg_mode;                   // Set JPEG Mode
-    #if defined(MCU_SERIES_F7) || defined(MCU_SERIES_H7)
-    DCMIHandle.Init.ByteSelectMode  = DCMI_BSM_ALL;         // Capture all received bytes
-    DCMIHandle.Init.ByteSelectStart = DCMI_OEBS_ODD;        // Ignored
-    DCMIHandle.Init.LineSelectMode  = DCMI_LSM_ALL;         // Capture all received lines
-    DCMIHandle.Init.LineSelectStart = DCMI_OELS_ODD;        // Ignored
-    #endif
-
-    // Associate the DMA handle to the DCMI handle
-    __HAL_LINKDMA(&DCMIHandle, DMA_Handle, DMAHandle);
-
-   // Initialize the DCMI
-    HAL_DCMI_DeInit(&DCMIHandle);
-    if (HAL_DCMI_Init(&DCMIHandle) != HAL_OK) {
-        // Initialization Error
-        return -1;
-    }
-
-    // Configure and enable DCMI IRQ Channel
-    NVIC_SetPriority(DCMI_IRQn, IRQ_PRI_DCMI);
-    HAL_NVIC_EnableIRQ(DCMI_IRQn);
-    return 0;
 }
 
-static int dma_config()
+static int sensor_irq(void *ctx)
 {
-    // DMA Stream configuration
-    DMAHandle.Instance                  = DMA2_Stream1;             /* Select the DMA instance          */
-    #if defined(MCU_SERIES_H7)
-    DMAHandle.Init.Request              = DMA_REQUEST_DCMI;         /* DMA Channel                      */
-    #else
-    DMAHandle.Init.Channel              = DMA_CHANNEL_1;            /* DMA Channel                      */
-    #endif
-    DMAHandle.Init.Direction            = DMA_PERIPH_TO_MEMORY;     /* Peripheral to memory transfer    */
-    DMAHandle.Init.MemInc               = DMA_MINC_ENABLE;          /* Memory increment mode Enable     */
-    DMAHandle.Init.PeriphInc            = DMA_PINC_DISABLE;         /* Peripheral increment mode Enable */
-    DMAHandle.Init.PeriphDataAlignment  = DMA_PDATAALIGN_WORD;      /* Peripheral data alignment : Word */
-    DMAHandle.Init.MemDataAlignment     = DMA_MDATAALIGN_WORD;      /* Memory data alignment : Word     */
-    DMAHandle.Init.Mode                 = DMA_NORMAL;               /* Normal DMA mode                  */
-    DMAHandle.Init.Priority             = DMA_PRIORITY_HIGH;        /* Priority level : high            */
-    DMAHandle.Init.FIFOMode             = DMA_FIFOMODE_ENABLE;      /* FIFO mode enabled                */
-    DMAHandle.Init.FIFOThreshold        = DMA_FIFO_THRESHOLD_FULL;  /* FIFO threshold full              */
-    DMAHandle.Init.MemBurst             = DMA_MBURST_INC4;          /* Memory burst                     */
-    DMAHandle.Init.PeriphBurst          = DMA_PBURST_SINGLE;        /* Peripheral burst                 */
+	printk("sensor_irq\r\n");
+	sensor_t *sensor = ctx;
+	if (dvp_get_interrupt(DVP_STS_FRAME_FINISH)) {
+		dvp_clear_interrupt(DVP_STS_FRAME_START | DVP_STS_FRAME_FINISH);
+		sensor->image_buf.buf_used[sensor->image_buf.buf_sel] = 1;
+		sensor->image_buf.buf_sel ^= 0x01;
+		dvp_set_display_addr((uint32_t)sensor->image_buf.addr[sensor->image_buf.buf_sel]);	
+	} else {
+		dvp_clear_interrupt(DVP_STS_FRAME_START);
+		if (sensor->image_buf.buf_used[sensor->image_buf.buf_sel] == 0)
+		{
+			printk("sensor_irq convert\r\n");
+			dvp_start_convert();
+		}
+	}
 
-    // Configure and disable DMA IRQ Channel
-    NVIC_SetPriority(DMA2_Stream1_IRQn, IRQ_PRI_DMA21);
-    HAL_NVIC_DisableIRQ(DMA2_Stream1_IRQn);
-
-    // Initialize the DMA stream
-    HAL_DMA_DeInit(&DMAHandle);
-    if (HAL_DMA_Init(&DMAHandle) != HAL_OK) {
-        // Initialization Error
-        return -1;
-    }
-
-    return 0;
+	return 0;
 }
+
 
 void sensor_init0()
 {
@@ -193,8 +109,8 @@ void sensor_init0()
     int fb_enabled = JPEG_FB()->enabled;
 
     // Clear framebuffers
-    memset(MAIN_FB(), 0, sizeof(*MAIN_FB()));
-    memset(JPEG_FB(), 0, sizeof(*JPEG_FB()));
+    memset(MAIN_FB(), 0, sizeof(framebuffer_t));
+    memset(JPEG_FB(), 0, sizeof(jpegbuffer_t) + OMV_JPEG_BUF_SIZE);
 
     // Set default quality
     JPEG_FB()->quality = 35;
@@ -203,54 +119,38 @@ void sensor_init0()
     JPEG_FB()->enabled = fb_enabled;
 }
 
-int sensor_init()
+int sensor_init1()
 {
     int init_ret = 0;
+	
+	fpioa_set_function(47, FUNC_CMOS_PCLK);
+	fpioa_set_function(46, FUNC_CMOS_XCLK);
+	fpioa_set_function(45, FUNC_CMOS_HREF);
+	fpioa_set_function(44, FUNC_CMOS_PWDN);
+	fpioa_set_function(43, FUNC_CMOS_VSYNC);
+	fpioa_set_function(42, FUNC_CMOS_RST);
+	fpioa_set_function(41, FUNC_SCCB_SCLK);
+	fpioa_set_function(40, FUNC_SCCB_SDA);
 
     /* Do a power cycle */
     DCMI_PWDN_HIGH();
-    systick_sleep(10);
+    mp_hal_ticks_ms(10);
 
     DCMI_PWDN_LOW();
-    systick_sleep(10);
+    mp_hal_ticks_ms(10);
 
     // Initialize the camera bus.
-    cambus_init();
-    systick_sleep(10);
+    cambus_init(8);
+	 // Initialize dvp interface
+	dvp_set_xclk_rate(24000000);
+	dvp_enable_burst();
+	dvp_disable_auto();
+	dvp_set_output_enable(0, 1);
+	dvp_set_output_enable(1, 1);
+	dvp_set_image_format(DVP_CFG_RGB_FORMAT);
+	dvp_set_image_size(320, 240);
 
-    // Configure the sensor external clock (XCLK) to XCLK_FREQ.
-    //
-    // Max pixclk is 2.5 * HCLK:
-    //  STM32F427@180MHz PCLK = 71.9999MHz
-    //  STM32F769@216MHz PCLK = 86.4000MHz
-    //
-    // OV2640:
-    //  The sensor's internal PLL (when CLKRC=0x80) doubles the XCLK_FREQ
-    //  (XCLK=XCLK_FREQ*2), and the unscaled PIXCLK output is XCLK_FREQ*4
-    //
-    // OV7725 PCLK when prescalar is enabled (CLKRC[6]=0):
-    //  Internal clock = Input clock × PLL multiplier / [(CLKRC[5:0] + 1) × 2]
-    //
-    // OV7725 PCLK when prescalar is disabled (CLKRC[6]=1):
-    //  Internal clock = Input clock × PLL multiplier
-    //
-    #if (OMV_XCLK_SOURCE == OMV_XCLK_TIM)
-    // Configure external clock timer.
-    if (extclk_config(OMV_XCLK_FREQUENCY) != 0) {
-        // Timer problem
-        return -1;
-    }
-    #elif (OMV_XCLK_SOURCE == OMV_XCLK_MCO)
-    // Pass through the MCO1 clock with source input set to HSE (12MHz).
-    // Note MCO1 is multiplexed on OPENMV2/TIM1 only.
-    HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_HSE, RCC_MCODIV_1);
-    #else
-    #error "OMV_XCLK_SOURCE is not set!"
-    #endif
-
-    /* Reset the sesnor state */
-    memset(&sensor, 0, sizeof(sensor_t));
-
+	
     /* Some sensors have different reset polarities, and we can't know which sensor
        is connected before initializing cambus and probing the sensor, which in turn
        requires pulling the sensor out of the reset state. So we try to probe the
@@ -260,10 +160,10 @@ int sensor_init()
 
     /* Reset the sensor */
     DCMI_RESET_HIGH();
-    systick_sleep(10);
+    mp_hal_ticks_ms(10);
 
     DCMI_RESET_LOW();
-    systick_sleep(10);
+    mp_hal_ticks_ms(10);
 
     /* Probe the sensor */
     sensor.slv_addr = cambus_scan();
@@ -272,9 +172,9 @@ int sensor_init()
            so the reset line is active low */
         sensor.reset_pol = ACTIVE_LOW;
 
-        /* Pull the sensor out of the reset state */
+        /* Pull the sensor out of the reset state,systick_sleep() */
         DCMI_RESET_HIGH();
-        systick_sleep(10);
+        mp_hal_delay_ms(10);
 
         /* Probe again to set the slave addr */
         sensor.slv_addr = cambus_scan();
@@ -282,14 +182,14 @@ int sensor_init()
             sensor.pwdn_pol = ACTIVE_LOW;
 
             DCMI_PWDN_HIGH();
-            systick_sleep(10);
+            mp_hal_delay_ms(10);
 
             sensor.slv_addr = cambus_scan();
             if (sensor.slv_addr == 0) {
                 sensor.reset_pol = ACTIVE_HIGH;
 
                 DCMI_RESET_LOW();
-                systick_sleep(10);
+                mp_hal_delay_ms(10);
 
                 sensor.slv_addr = cambus_scan();
                 if (sensor.slv_addr == 0) {
@@ -307,30 +207,26 @@ int sensor_init()
 
     if (sensor.slv_addr == LEPTON_ID) {
         sensor.chip_id = LEPTON_ID;
-        if (extclk_config(LEPTON_XCLK_FREQ) != 0) {
-            return -3;
-        }
-        init_ret = lepton_init(&sensor);
+		/*set LEPTON xclk rate*/
+		/*lepton_init*/
     } else {
         // Read ON semi sensor ID.
         cambus_readb(sensor.slv_addr, ON_CHIP_ID, &sensor.chip_id);
         if (sensor.chip_id == MT9V034_ID) {
-            if (extclk_config(MT9V034_XCLK_FREQ) != 0) {
-                return -3;
-            }
-            init_ret = mt9v034_init(&sensor);
+			/*set MT9V034 xclk rate*/
+			/*mt9v034_init*/
         } else { // Read OV sensor ID.
             cambus_readb(sensor.slv_addr, OV_CHIP_ID, &sensor.chip_id);
             // Initialize sensor struct.
             switch (sensor.chip_id) {
                 case OV9650_ID:
-                    init_ret = ov9650_init(&sensor);
+					/*ov9650_init*/
                     break;
                 case OV2640_ID:
                     init_ret = ov2640_init(&sensor);
                     break;
                 case OV7725_ID:
-                    init_ret = ov7725_init(&sensor);
+					/*ov7725_init*/
                     break;
                 default:
                     // Sensor is not supported.
@@ -339,55 +235,69 @@ int sensor_init()
         }
     }
 
+
     if (init_ret != 0 ) {
         // Sensor init failed.
         return -4;
     }
-
-    /* Configure the DCMI DMA Stream */
-    if (dma_config() != 0) {
-        // DMA problem
-        return -5;
-    }
-
-    /* Configure the DCMI interface. This should be called
-       after ovxxx_init to set VSYNC/HSYNC/PCLK polarities */
-    if (dcmi_config(DCMI_JPEG_DISABLE) != 0){
-        // DCMI config failed
-        return -6;
-    }
-
-    // Disable VSYNC EXTI IRQ
-    HAL_NVIC_DisableIRQ(DCMI_VSYNC_IRQN);
-
+	
     // Clear fb_enabled flag
     // This is executed only once to initialize the FB enabled flag.
     JPEG_FB()->enabled = 0;
 
     /* All good! */
+	printf("exit sensor_init\n");
     return 0;
+}
+int sensor_init2()
+{
+	
+	void* ptr = NULL;
+	if(ptr == NULL)
+	{
+		ptr = malloc(sizeof(uint8_t) * 320 * 240 * (2 * 2) + 127);
+	}
+	sensor.image_buf.addr[0] = (uint32_t *)(((uint32_t)ptr + 127) & 0xFFFFFF80);
+	sensor.image_buf.addr[1] = (uint32_t *)((uint32_t)sensor.image_buf.addr[0] + 320 * 240 * 2);
+	sensor.image_buf.buf_used[0] = 0;
+	sensor.image_buf.buf_used[1] = 0;
+	sensor.image_buf.buf_sel = 0;
+	dvp_set_display_addr((uint32_t)sensor.image_buf.addr[sensor.image_buf.buf_sel]);
+
+    /* set irq handle */
+	plic_irq_register(IRQN_DVP_INTERRUPT, sensor_irq, (void*)&sensor);
+	
+    // Disable IRQ
+	dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 0);
+	
+	plic_set_priority(IRQN_DVP_INTERRUPT, 2);
+	plic_irq_enable(IRQN_DVP_INTERRUPT);
+	//plic_irq_disable(IRQN_DVP_INTERRUPT);
+
+	dvp_clear_interrupt(DVP_STS_FRAME_START | DVP_STS_FRAME_FINISH);
+	dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 1);
+	
 }
 
 int sensor_reset()
 {
+	sensor_init0();
+	sensor_init1();
     // Reset the sesnor state
     sensor.sde         = 0;
     sensor.pixformat   = 0;
     sensor.framesize   = 0;
     sensor.framerate   = 0;
     sensor.gainceiling = 0;
-    sensor.vsync_gpio  = NULL;
-
     // Call sensor-specific reset function
     if (sensor.reset(&sensor) != 0) {
         return -1;
     }
 
-    // Just in case there's a running DMA request.
-    HAL_DMA_Abort(&DMAHandle);
+    // Disable dvp  IRQ
+    sensor_init2();
 
-    // Disable VSYNC EXTI IRQ
-    HAL_NVIC_DisableIRQ(DCMI_VSYNC_IRQN);
+	printf("exit sensor_reset\n");
     return 0;
 }
 
@@ -406,6 +316,7 @@ int sensor_sleep(int enable)
     return 0;
 }
 
+
 int sensor_shutdown(int enable)
 {
     if (enable) {
@@ -417,6 +328,7 @@ int sensor_shutdown(int enable)
     systick_sleep(10);
     return 0;
 }
+
 
 int sensor_read_reg(uint8_t reg_addr)
 {
@@ -438,7 +350,6 @@ int sensor_write_reg(uint8_t reg_addr, uint16_t reg_data)
 
 int sensor_set_pixformat(pixformat_t pixformat)
 {
-    uint32_t jpeg_mode = DCMI_JPEG_DISABLE;
 
     if (sensor.pixformat == pixformat) {
         // No change
@@ -454,15 +365,10 @@ int sensor_set_pixformat(pixformat_t pixformat)
     // Set pixel format
     sensor.pixformat = pixformat;
 
-    // Set JPEG mode
-    if (pixformat == PIXFORMAT_JPEG) {
-        jpeg_mode = DCMI_JPEG_ENABLE;
-    }
-
     // Skip the first frame.
     MAIN_FB()->bpp = -1;
 
-    return dcmi_config(jpeg_mode);
+    return 0;
 }
 
 int sensor_set_framesize(framesize_t framesize)
@@ -473,11 +379,11 @@ int sensor_set_framesize(framesize_t framesize)
     }
 
     // Call the sensor specific function
-    if (sensor.set_framesize == NULL
-        || sensor.set_framesize(&sensor, framesize) != 0) {
-        // Operation not supported
-        return -1;
-    }
+//    if (sensor.set_framesize == NULL
+//        || sensor.set_framesize(&sensor, framesize) != 0) {
+//        // Operation not supported
+//        return -1;
+//    }
 
     // Set framebuffer size
     sensor.framesize = framesize;
@@ -710,23 +616,12 @@ int sensor_set_lens_correction(int enable, int radi, int coef)
     return 0;
 }
 
-int sensor_set_vsync_output(GPIO_TypeDef *gpio, uint32_t pin)
+int sensor_set_vsync_output()
 {
-    sensor.vsync_pin  = pin;
-    sensor.vsync_gpio = gpio;
-    // Enable VSYNC EXTI IRQ
-    NVIC_SetPriority(DCMI_VSYNC_IRQN, IRQ_PRI_EXTINT);
-    HAL_NVIC_EnableIRQ(DCMI_VSYNC_IRQN);
+	dvp_clear_interrupt(DVP_STS_FRAME_START | DVP_STS_FRAME_FINISH);
+	plic_irq_enable(IRQN_DVP_INTERRUPT);
+	dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 1);
     return 0;
-}
-
-void DCMI_VsyncExtiCallback()
-{
-    __HAL_GPIO_EXTI_CLEAR_FLAG(1 << DCMI_VSYNC_IRQ_LINE);
-    if (sensor.vsync_gpio != NULL) {
-        HAL_GPIO_WritePin(sensor.vsync_gpio, sensor.vsync_pin,
-                !HAL_GPIO_ReadPin(DCMI_VSYNC_PORT, DCMI_VSYNC_PIN));
-    }
 }
 
 static void sensor_check_buffsize()
@@ -761,7 +656,8 @@ static void sensor_check_buffsize()
 // with a pointer to the line buffer that was used. At this point the
 // DMA transfers the next line to the other half of the line buffer.
 // Note:  For JPEG this function is called once (and ignored) at the end of the transfer.
-void DCMI_DMAConvCpltUser(uint32_t addr)
+
+void Image_CpltUser(uint32_t addr)
 {
     uint8_t *src = (uint8_t*) addr;
     uint8_t *dst = dest_fb;
@@ -813,15 +709,16 @@ void DCMI_DMAConvCpltUser(uint32_t addr)
 // uses the DCMI and DMA to capture frames and each line is processed in the DCMI_DMAConvCpltUser function.
 int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_cb)
 {
+	printf("[MaixPy] %s | test\n",__func__);
     uint32_t frame = 0;
     bool streaming = (streaming_cb != NULL); // Streaming mode.
     bool doublebuf = false; // Use double buffers in streaming mode.
-    uint32_t addr, length, tick_start;
-
+    uint32_t addr, length;
+	uint64_t tick_start;
     // Compress the framebuffer for the IDE preview, only if it's not the first frame,
     // the framebuffer is enabled and the image sensor does not support JPEG encoding.
     // Note: This doesn't run unless the IDE is connected and the framebuffer is enabled.
-    fb_update_jpeg_buffer();
+    //fb_update_jpeg_buffer();
 
     // Make sure the raw frame fits into the FB. If it doesn't it will be cropped if
     // the format is set to GS, otherwise the pixel format will be swicthed to BAYER.
@@ -882,26 +779,15 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
         line = 0;
 
         // Snapshot start tick
-        tick_start = HAL_GetTick();
-
+       
         // Enable DMA IRQ
-        HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
-
-        #if defined(DCMI_FSIN_PIN)
-        if (sensor->chip_id == MT9V034_ID) {
-            DCMI_FSIN_HIGH();
-        }
-        #endif
-
+        
         if (sensor->pixformat == PIXFORMAT_JPEG) {
             // Start a regular transfer
-            HAL_DCMI_Start_DMA(&DCMIHandle,
-                    DCMI_MODE_SNAPSHOT, addr, length/4);
         } else {
             // Start a multibuffer transfer (line by line)
-            HAL_DCMI_Start_DMA_MB(&DCMIHandle,
-                    DCMI_MODE_SNAPSHOT, addr, length/4, h);
         }
+
 
         if (streaming_cb && doublebuf && image->pixels != NULL) {
             // Call streaming callback function with previous frame.
@@ -909,32 +795,33 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
             streaming = streaming_cb(image);
         }
 
-        // Wait for frame
-        while ((DCMI->CR & DCMI_CR_CAPTURE) != 0) {
-            // Wait for interrupt
-            __WFI();
+        // exchange buffer
+        plic_irq_disable(IRQN_DVP_INTERRUPT);
+		
+        //get dvp interrupt status
+//        sensor->irq_flag = 0;
+//		tick_start = mp_hal_ticks_ms();
+//        while (sensor->irq_flag == 0) {
+//            // Wait for interrupt
+//            if ((mp_hal_ticks_ms() - tick_start) >= 3000) {
+//                // Sensor timeout, most likely a HW issue.
+//                // Abort the DMA request.
+//                return -1;
+//            }
+//        }
+		mp_hal_delay_ms(20);
+		
+		//Image_CpltUser(NULL);//TODO
 
-            if ((HAL_GetTick() - tick_start) >= 3000) {
-                // Sensor timeout, most likely a HW issue.
-                // Abort the DMA request.
-                HAL_DMA_Abort(&DMAHandle);
-                return -1;
-            }
-        }
-
-        #if defined(DCMI_FSIN_PIN)
-        if (sensor->chip_id == MT9V034_ID) {
-            DCMI_FSIN_LOW();
-        }
-        #endif
-
+		MAIN_FB()->pixels = sensor->image_buf.addr[sensor->image_buf.buf_sel ^ 0x01];
+		
         // Abort DMA transfer.
         // Note: In JPEG mode the DMA will still be waiting for data since
         // the max frame size is set, so we need to abort the DMA transfer.
-        HAL_DMA_Abort(&DMAHandle);
+        //...
 
         // Disable DMA IRQ
-        HAL_NVIC_DisableIRQ(DMA2_Stream1_IRQn);
+        //...
 
         // Fix the BPP
         switch (sensor->pixformat) {
@@ -950,7 +837,7 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
                 break;
             case PIXFORMAT_JPEG:
                 // Read the number of data items transferred
-                MAIN_FB()->bpp = (MAX_XFER_SIZE - __HAL_DMA_GET_COUNTER(&DMAHandle))*4;
+                MAIN_FB()->bpp = MAX_XFER_SIZE * 4;
                 break;
             default:
                 break;
@@ -986,5 +873,175 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
         }
     } while (streaming == true);
 
+	mp_vfs_mount_t *m = MP_STATE_VM(vfs_mount_table);
+    for (;m->next != NULL; m = m->next) {
+		if(0 == strcmp(m->str, "/sd"))
+			break;
+	}
+	printf("[MaixPy] %s | str = %s\n",__func__,m->str);
+	fs_user_mount_t *vfs_fat =  MP_OBJ_TO_PTR(m->obj);
+	FIL fp;
+	FRESULT res = f_open(&vfs_fat->fatfs, &fp, "my_rgb", FA_WRITE | FA_CREATE_NEW | FA_CREATE_ALWAYS);
+	if (res != FR_OK) {
+		printf("[MaixPy] %s | open res != FR_OK\n",__func__);
+    }
+	uint32_t sz_out = 0;
+	uint32_t size = 320*240*2;
+   	res = f_write(&fp,(void*)MAIN_FB()->pixels, size, &sz_out);
+    if (res != FR_OK) {
+		printf("[MaixPy] %s | write res != FR_OK\n",__func__);
+    }
+    if (sz_out != size) {
+		printf("[MaixPy] %s | sz_out != size\n",__func__);
+    }
+    res = f_sync(&fp);
+    if (res != FR_OK) {
+		printf("[MaixPy] %s | f_sync error\n",__func__);
+
+    }
+    res = f_close(&fp);
+    if (res != FR_OK) {
+		printf("[MaixPy] %s | f_close error\n",__func__);
+    }
+
     return 0;
 }
+
+
+/*
+
+
+void DCMI_VsyncExtiCallback()
+{
+    __HAL_GPIO_EXTI_CLEAR_FLAG(1 << DCMI_VSYNC_IRQ_LINE);
+    if (sensor.vsync_gpio != NULL) {
+        HAL_GPIO_WritePin(sensor.vsync_gpio, sensor.vsync_pin,
+                !HAL_GPIO_ReadPin(DCMI_VSYNC_PORT, DCMI_VSYNC_PIN));
+    }
+}
+
+
+TIM_HandleTypeDef  TIMHandle  = {0};
+//#if (OMV_XCLK_SOURCE == OMV_XCLK_TIM)
+//static int extclk_config(int frequency)
+//{
+//    // TCLK (PCLK * 2) 
+//    int tclk = DCMI_TIM_PCLK_FREQ() * 2;
+
+//    // Period should be even S
+//    int period = (tclk / frequency) - 1;
+
+//    if (TIMHandle.Init.Period && (TIMHandle.Init.Period != period)) {
+//        // __HAL_TIM_SET_AUTORELOAD sets TIMHandle.Init.Period...
+//        __HAL_TIM_SET_AUTORELOAD(&TIMHandle, period);
+//        __HAL_TIM_SET_COMPARE(&TIMHandle, DCMI_TIM_CHANNEL, period / 2);
+//        return 0;
+//    }
+
+//    //Timer base configuration 
+//    TIMHandle.Instance           = DCMI_TIM;
+//    TIMHandle.Init.Period        = period;
+//    TIMHandle.Init.Prescaler     = TIM_ETRPRESCALER_DIV1;
+//    TIMHandle.Init.CounterMode   = TIM_COUNTERMODE_UP;
+//    TIMHandle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+
+//    // Timer channel configuration 
+//    TIM_OC_InitTypeDef TIMOCHandle;
+//    TIMOCHandle.Pulse       = period / 2;
+//    TIMOCHandle.OCMode      = TIM_OCMODE_PWM1;
+//    TIMOCHandle.OCPolarity  = TIM_OCPOLARITY_HIGH;
+//    TIMOCHandle.OCFastMode  = TIM_OCFAST_DISABLE;
+//    TIMOCHandle.OCIdleState = TIM_OCIDLESTATE_RESET;
+
+//    if ((HAL_TIM_PWM_Init(&TIMHandle) != HAL_OK)
+//    || (HAL_TIM_PWM_ConfigChannel(&TIMHandle, &TIMOCHandle, DCMI_TIM_CHANNEL) != HAL_OK)
+//    || (HAL_TIM_PWM_Start(&TIMHandle, DCMI_TIM_CHANNEL) != HAL_OK)) {
+//        return -1;
+//    }
+
+//    return 0;
+//}
+//#endif // (OMV_XCLK_SOURCE == OMV_XCLK_TIM)
+
+
+
+DMA_HandleTypeDef  DMAHandle  = {0};
+static int dcmi_config(uint32_t jpeg_mode)
+{
+    // DCMI configuration
+    DCMIHandle.Instance         = DCMI;
+    // VSYNC clock polarity
+    DCMIHandle.Init.VSPolarity  = SENSOR_HW_FLAGS_GET(&sensor, SENSOR_HW_FLAGS_VSYNC) ?
+                                    DCMI_VSPOLARITY_HIGH : DCMI_VSPOLARITY_LOW;
+    // HSYNC clock polarity
+    DCMIHandle.Init.HSPolarity  = SENSOR_HW_FLAGS_GET(&sensor, SENSOR_HW_FLAGS_HSYNC) ?
+                                    DCMI_HSPOLARITY_HIGH : DCMI_HSPOLARITY_LOW;
+    // PXCLK clock polarity
+    DCMIHandle.Init.PCKPolarity = SENSOR_HW_FLAGS_GET(&sensor, SENSOR_HW_FLAGS_PIXCK) ?
+                                    DCMI_PCKPOLARITY_RISING : DCMI_PCKPOLARITY_FALLING;
+
+    DCMIHandle.Init.SynchroMode = DCMI_SYNCHRO_HARDWARE;    // Enable Hardware synchronization
+    DCMIHandle.Init.CaptureRate = DCMI_CR_ALL_FRAME;        // Capture rate all frames
+    DCMIHandle.Init.ExtendedDataMode = DCMI_EXTEND_DATA_8B; // Capture 8 bits on every pixel clock
+    DCMIHandle.Init.JPEGMode = jpeg_mode;                   // Set JPEG Mode
+    #if defined(MCU_SERIES_F7) || defined(MCU_SERIES_H7)
+    DCMIHandle.Init.ByteSelectMode  = DCMI_BSM_ALL;         // Capture all received bytes
+    DCMIHandle.Init.ByteSelectStart = DCMI_OEBS_ODD;        // Ignored
+    DCMIHandle.Init.LineSelectMode  = DCMI_LSM_ALL;         // Capture all received lines
+    DCMIHandle.Init.LineSelectStart = DCMI_OELS_ODD;        // Ignored
+    #endif
+
+    // Associate the DMA handle to the DCMI handle
+    __HAL_LINKDMA(&DCMIHandle, DMA_Handle, DMAHandle);
+
+   // Initialize the DCMI
+    HAL_DCMI_DeInit(&DCMIHandle);
+    if (HAL_DCMI_Init(&DCMIHandle) != HAL_OK) {
+        // Initialization Error
+        return -1;
+    }
+
+    // Configure and enable DCMI IRQ Channel
+    NVIC_SetPriority(DCMI_IRQn, IRQ_PRI_DCMI);
+    HAL_NVIC_EnableIRQ(DCMI_IRQn);
+    return 0;
+}
+
+static int dma_config()
+{
+    // DMA Stream configuration
+    DMAHandle.Instance                  = DMA2_Stream1;             //Select the DMA instance         
+    #if defined(MCU_SERIES_H7)
+    DMAHandle.Init.Request              = DMA_REQUEST_DCMI;         //DMA Channel                     
+    #else
+    DMAHandle.Init.Channel              = DMA_CHANNEL_1;            //DMA Channel                     
+    #endif
+    DMAHandle.Init.Direction            = DMA_PERIPH_TO_MEMORY;     //Peripheral to memory transfer   
+    DMAHandle.Init.MemInc               = DMA_MINC_ENABLE;          //Memory increment mode Enable    
+    DMAHandle.Init.PeriphInc            = DMA_PINC_DISABLE;         //Peripheral increment mode Enable
+    DMAHandle.Init.PeriphDataAlignment  = DMA_PDATAALIGN_WORD;      //Peripheral data alignment : Word
+    DMAHandle.Init.MemDataAlignment     = DMA_MDATAALIGN_WORD;      //Memory data alignment : Word    
+    DMAHandle.Init.Mode                 = DMA_NORMAL;               //Normal DMA mode                 
+    DMAHandle.Init.Priority             = DMA_PRIORITY_HIGH;        //Priority level : high           
+    DMAHandle.Init.FIFOMode             = DMA_FIFOMODE_ENABLE;      //FIFO mode enabled               
+    DMAHandle.Init.FIFOThreshold        = DMA_FIFO_THRESHOLD_FULL;  //FIFO threshold full             
+    DMAHandle.Init.MemBurst             = DMA_MBURST_INC4;          //Memory burst                    
+    DMAHandle.Init.PeriphBurst          = DMA_PBURST_SINGLE;        //Peripheral burst                
+
+    // Configure and disable DMA IRQ Channel
+    NVIC_SetPriority(DMA2_Stream1_IRQn, IRQ_PRI_DMA21);
+    HAL_NVIC_DisableIRQ(DMA2_Stream1_IRQn);
+
+    // Initialize the DMA stream
+    HAL_DMA_DeInit(&DMAHandle);
+    if (HAL_DMA_Init(&DMAHandle) != HAL_OK) {
+        // Initialization Error
+        return -1;
+    }
+
+    return 0;
+}
+
+
+*/
+

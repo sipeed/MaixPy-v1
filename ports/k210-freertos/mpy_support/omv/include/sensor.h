@@ -6,6 +6,7 @@
  * Sensor abstraction layer.
  *
  */
+
 #ifndef __SENSOR_H__
 #define __SENSOR_H__
 #include <stdint.h>
@@ -105,16 +106,24 @@ typedef enum {
 
 typedef bool (*streaming_cb_t)(image_t *image);
 
+struct sensor_buf
+{
+	uint8_t* addr[2];
+	uint8_t buf_used[2];
+	uint8_t buf_sel;
+};
+
 typedef struct _sensor sensor_t;
 typedef struct _sensor {
+	uint8_t  buf_num;
+	uint8_t  irq_flag;
+	struct sensor_buf image_buf;
     uint8_t  chip_id;           // Sensor ID.
     uint8_t  slv_addr;          // Sensor I2C slave address.
     uint16_t gs_bpp;            // Grayscale bytes per pixel.
     uint32_t hw_flags;          // Hardware flags (clock polarities/hw capabilities)
 
     uint32_t vsync_pin;         // VSYNC GPIO output pin.
-    // GPIO_TypeDef *vsync_gpio;   // VSYNC GPIO output port.
-
     polarity_t pwdn_pol; // PWDN polarity (TODO move to hw_flags)
     polarity_t reset_pol; // Reset polarity (TODO move to hw_flags)
 
@@ -150,7 +159,10 @@ typedef struct _sensor {
     int  (*set_special_effect)  (sensor_t *sensor, sde_t sde);
     int  (*set_lens_correction) (sensor_t *sensor, int enable, int radi, int coef);
     int  (*snapshot)            (sensor_t *sensor, image_t *image, streaming_cb_t streaming_cb);
-} sensor_t;
+/*
+	GPIO_TypeDef *vsync_gpio;   // VSYNC GPIO output port.
+*/
+} sensor_t __attribute__((aligned (8)));
 
 // Resolution table
 extern const int resolution[][2];
@@ -241,8 +253,9 @@ int sensor_set_special_effect(sde_t sde);
 int sensor_set_lens_correction(int enable, int radi, int coef);
 
 // Set vsync output pin
-// int sensor_set_vsync_output(GPIO_TypeDef *gpio, uint32_t pin);
+//int sensor_set_vsync_output(GPIO_TypeDef *gpio, uint32_t pin);
 
 // Default snapshot function.
 int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_cb);
 #endif /* __SENSOR_H__ */
+

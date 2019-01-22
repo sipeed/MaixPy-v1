@@ -9,18 +9,212 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include STM32_HAL_H
 #include "cambus.h"
 #include "ov2640.h"
-#include "systick.h"
 #include "ov2640_regs.h"
 #include "omv_boardconfig.h"
-
+#include "mphalport.h"
+#include "dvp.h"
 #define SVGA_HSIZE     (800)
 #define SVGA_VSIZE     (600)
 
 #define UXGA_HSIZE     (1600)
 #define UXGA_VSIZE     (1200)
+
+static const uint8_t ov2640_config[][2] = {
+	{0xff, 0x01},
+	{0x12, 0x80},
+	{0xff, 0x00},
+	{0x2c, 0xff},
+	{0x2e, 0xdf},
+	{0xff, 0x01},
+	{0x3c, 0x32},
+	{0x11, 0x00},
+	{0x09, 0x02},
+	{0x04, 0x58},
+	{0x13, 0xe5},
+	{0x14, 0x48},
+	{0x2c, 0x0c},
+	{0x33, 0x78},
+	{0x3a, 0x33},
+	{0x3b, 0xfb},
+	{0x3e, 0x00},
+	{0x43, 0x11},
+	{0x16, 0x10},
+	{0x39, 0x92},
+	{0x35, 0xda},
+	{0x22, 0x1a},
+	{0x37, 0xc3},
+	{0x23, 0x00},
+	{0x34, 0xc0},
+	{0x36, 0x1a},
+	{0x06, 0x88},
+	{0x07, 0xc0},
+	{0x0d, 0x87},
+	{0x0e, 0x41},
+	{0x4c, 0x00},
+	{0x48, 0x00},
+	{0x5b, 0x00},
+	{0x42, 0x03},
+	{0x4a, 0x81},
+	{0x21, 0x99},
+	{0x24, 0x40},
+	{0x25, 0x38},
+	{0x26, 0x82},
+	{0x5c, 0x00},
+	{0x63, 0x00},
+	{0x46, 0x22},
+	{0x0c, 0x3c},
+	{0x61, 0x70},
+	{0x62, 0x80},
+	{0x7c, 0x05},
+	{0x20, 0x80},
+	{0x28, 0x30},
+	{0x6c, 0x00},
+	{0x6d, 0x80},
+	{0x6e, 0x00},
+	{0x70, 0x02},
+	{0x71, 0x94},
+	{0x73, 0xc1},
+	{0x3d, 0x34},
+	{0x5a, 0x57},
+	{0x12, 0x40},
+	{0x17, 0x11},
+	{0x18, 0x43},
+	{0x19, 0x00},
+	{0x1a, 0x4b},
+	{0x32, 0x09},
+	{0x37, 0xc0},
+	{0x4f, 0xca},
+	{0x50, 0xa8},
+	{0x5a, 0x23},
+	{0x6d, 0x00},
+	{0x3d, 0x38},
+	{0xff, 0x00},
+	{0xe5, 0x7f},
+	{0xf9, 0xc0},
+	{0x41, 0x24},
+	{0xe0, 0x14},
+	{0x76, 0xff},
+	{0x33, 0xa0},
+	{0x42, 0x20},
+	{0x43, 0x18},
+	{0x4c, 0x00},
+	{0x87, 0xd5},
+	{0x88, 0x3f},
+	{0xd7, 0x03},
+	{0xd9, 0x10},
+	{0xd3, 0x82},
+	{0xc8, 0x08},
+	{0xc9, 0x80},
+	{0x7c, 0x00},
+	{0x7d, 0x00},
+	{0x7c, 0x03},
+	{0x7d, 0x48},
+	{0x7d, 0x48},
+	{0x7c, 0x08},
+	{0x7d, 0x20},
+	{0x7d, 0x10},
+	{0x7d, 0x0e},
+	{0x90, 0x00},
+	{0x91, 0x0e},
+	{0x91, 0x1a},
+	{0x91, 0x31},
+	{0x91, 0x5a},
+	{0x91, 0x69},
+	{0x91, 0x75},
+	{0x91, 0x7e},
+	{0x91, 0x88},
+	{0x91, 0x8f},
+	{0x91, 0x96},
+	{0x91, 0xa3},
+	{0x91, 0xaf},
+	{0x91, 0xc4},
+	{0x91, 0xd7},
+	{0x91, 0xe8},
+	{0x91, 0x20},
+	{0x92, 0x00},
+	{0x93, 0x06},
+	{0x93, 0xe3},
+	{0x93, 0x05},
+	{0x93, 0x05},
+	{0x93, 0x00},
+	{0x93, 0x04},
+	{0x93, 0x00},
+	{0x93, 0x00},
+	{0x93, 0x00},
+	{0x93, 0x00},
+	{0x93, 0x00},
+	{0x93, 0x00},
+	{0x93, 0x00},
+	{0x96, 0x00},
+	{0x97, 0x08},
+	{0x97, 0x19},
+	{0x97, 0x02},
+	{0x97, 0x0c},
+	{0x97, 0x24},
+	{0x97, 0x30},
+	{0x97, 0x28},
+	{0x97, 0x26},
+	{0x97, 0x02},
+	{0x97, 0x98},
+	{0x97, 0x80},
+	{0x97, 0x00},
+	{0x97, 0x00},
+	{0xc3, 0xed},
+	{0xa4, 0x00},
+	{0xa8, 0x00},
+	{0xc5, 0x11},
+	{0xc6, 0x51},
+	{0xbf, 0x80},
+	{0xc7, 0x10},
+	{0xb6, 0x66},
+	{0xb8, 0xa5},
+	{0xb7, 0x64},
+	{0xb9, 0x7c},
+	{0xb3, 0xaf},
+	{0xb4, 0x97},
+	{0xb5, 0xff},
+	{0xb0, 0xc5},
+	{0xb1, 0x94},
+	{0xb2, 0x0f},
+	{0xc4, 0x5c},
+	{0xc0, 0x64},
+	{0xc1, 0x4b},
+	{0x8c, 0x00},
+	{0x86, 0x3d},
+	{0x50, 0x00},
+	{0x51, 0xc8},
+	{0x52, 0x96},
+	{0x53, 0x00},
+	{0x54, 0x00},
+	{0x55, 0x00},
+	{0x5a, 0xc8},
+	{0x5b, 0x96},
+	{0x5c, 0x00},
+	{0xd3, 0x02},
+	{0xc3, 0xed},
+	{0x7f, 0x00},
+	{0xda, 0x08},
+	{0xe5, 0x1f},
+	{0xe1, 0x67},
+	{0xe0, 0x00},
+	{0xdd, 0x7f},
+	{0x05, 0x00},
+	//[OV2640_OutSize_Set] width:320 height:240
+	{0xff, 0x00},
+	{0xe0, 0x04},
+	{0x5a, 0x50},
+	{0x5b, 0x3c},
+	{0x5c, 0x00},
+	{0xe0, 0x00},
+#if 0 //color bar
+	{0xff, 0x01},
+	{0x12, 0x02},
+#endif
+	{0x00, 0x00}
+};
+
 
 static const uint8_t default_regs[][2] = {
     { BANK_SEL, BANK_SEL_DSP },
@@ -384,6 +578,7 @@ static const uint8_t saturation_regs[NUM_SATURATION_LEVELS + 1][5] = {
 
 static int reset(sensor_t *sensor)
 {
+	printf("[MaixPy] %s | sensor->slv_addr = %x\n",__func__,sensor->slv_addr);
     int i=0;
     const uint8_t (*regs)[2];
 
@@ -392,23 +587,24 @@ static int reset(sensor_t *sensor)
     cambus_writeb(sensor->slv_addr, COM7, COM7_SRST);
 
     /* delay n ms */
-    systick_sleep(10);
+    mp_hal_delay_ms(10);
 
     i = 0;
-    regs = default_regs;
+    //regs = default_regs;
+    regs = ov2640_config;
     /* Write initial regsiters */
     while (regs[i][0]) {
         cambus_writeb(sensor->slv_addr, regs[i][0], regs[i][1]);
         i++;
     }
-
-    i = 0;
-    regs = svga_regs;
-    /* Write DSP input regsiters */
-    while (regs[i][0]) {
-        cambus_writeb(sensor->slv_addr, regs[i][0], regs[i][1]);
-        i++;
-    }
+	sensor->pixformat = PIXFORMAT_RGB565;
+//    i = 0;
+//    regs = svga_regs;
+//    /* Write DSP input regsiters */
+//    while (regs[i][0]) {
+//        cambus_writeb(sensor->slv_addr, regs[i][0], regs[i][1]);
+//        i++;
+//    }
 
     return 0;
 }
@@ -421,15 +617,18 @@ static int set_pixformat(sensor_t *sensor, pixformat_t pixformat)
     /* read pixel format reg */
     switch (pixformat) {
         case PIXFORMAT_RGB565:
+			dvp_set_image_format(DVP_CFG_RGB_FORMAT);
             regs = rgb565_regs;
             break;
         case PIXFORMAT_YUV422:
+			dvp_set_image_format(DVP_CFG_YUV_FORMAT);
         case PIXFORMAT_GRAYSCALE:
             regs = yuv422_regs;
+			dvp_set_image_format(DVP_CFG_Y_FORMAT);
             break;
-        case PIXFORMAT_JPEG:
-            regs = jpeg_regs;
-            break;
+//        case PIXFORMAT_JPEG:
+//            regs = jpeg_regs;
+//            break;
         default:
             return -1;
     }
@@ -439,9 +638,9 @@ static int set_pixformat(sensor_t *sensor, pixformat_t pixformat)
         cambus_writeb(sensor->slv_addr, regs[i][0], regs[i][1]);
         i++;
     }
-
+	
     /* delay n ms */
-    systick_sleep(30);
+    mp_hal_delay_ms(30);
 
     return 0;
 }
@@ -488,8 +687,8 @@ static int set_framesize(sensor_t *sensor, framesize_t framesize)
     ret |= cambus_writeb(sensor->slv_addr, R_BYPASS, R_BYPASS_DSP_EN);
 
     /* delay n ms */
-    systick_sleep(30);
-
+    mp_hal_delay_ms(30);
+	dvp_set_image_size(w, h);
     return ret;
 }
 
@@ -604,28 +803,28 @@ static int set_colorbar(sensor_t *sensor, int enable)
 
 static int set_auto_gain(sensor_t *sensor, int enable, float gain_db, float gain_db_ceiling)
 {
-    uint8_t reg;
-    int ret = cambus_readb(sensor->slv_addr, BANK_SEL, &reg);
-    ret |= cambus_writeb(sensor->slv_addr, BANK_SEL, reg | BANK_SEL_SENSOR);
-    ret |= cambus_readb(sensor->slv_addr, COM8, &reg);
-    ret |= cambus_writeb(sensor->slv_addr, COM8, (reg & (~COM8_AGC_EN)) | ((enable != 0) ? COM8_AGC_EN : 0));
+//    uint8_t reg;
+//    int ret = cambus_readb(sensor->slv_addr, BANK_SEL, &reg);
+//    ret |= cambus_writeb(sensor->slv_addr, BANK_SEL, reg | BANK_SEL_SENSOR);
+//    ret |= cambus_readb(sensor->slv_addr, COM8, &reg);
+//    ret |= cambus_writeb(sensor->slv_addr, COM8, (reg & (~COM8_AGC_EN)) | ((enable != 0) ? COM8_AGC_EN : 0));
 
-    if ((enable == 0) && (!isnanf(gain_db)) && (!isinff(gain_db))) {
-        float gain = IM_MAX(IM_MIN(fast_expf((gain_db / 20.0) * fast_log(10.0)), 32.0), 1.0);
+//    if ((enable == 0) && (!isnanf(gain_db)) && (!isinff(gain_db))) {
+//        float gain = IM_MAX(IM_MIN(fast_expf((gain_db / 20.0) * fast_log(10.0)), 32.0), 1.0);
 
-        int gain_temp = fast_roundf(fast_log2(IM_MAX(gain / 2.0, 1.0)));
-        int gain_hi = 0xF >> (4 - gain_temp);
-        int gain_lo = IM_MIN(fast_roundf(((gain / (1 << gain_temp)) - 1.0) * 16.0), 15);
+//        int gain_temp = fast_roundf(fast_log2(IM_MAX(gain / 2.0, 1.0)));
+//        int gain_hi = 0xF >> (4 - gain_temp);
+//        int gain_lo = IM_MIN(fast_roundf(((gain / (1 << gain_temp)) - 1.0) * 16.0), 15);
 
-        ret |= cambus_writeb(sensor->slv_addr, GAIN, (gain_hi << 4) | (gain_lo << 0));
-    } else if ((enable != 0) && (!isnanf(gain_db_ceiling)) && (!isinff(gain_db_ceiling))) {
-        float gain_ceiling = IM_MAX(IM_MIN(fast_expf((gain_db_ceiling / 20.0) * fast_log(10.0)), 128.0), 2.0);
+//        ret |= cambus_writeb(sensor->slv_addr, GAIN, (gain_hi << 4) | (gain_lo << 0));
+//    } else if ((enable != 0) && (!isnanf(gain_db_ceiling)) && (!isinff(gain_db_ceiling))) {
+//        float gain_ceiling = IM_MAX(IM_MIN(fast_expf((gain_db_ceiling / 20.0) * fast_log(10.0)), 128.0), 2.0);
 
-        ret |= cambus_readb(sensor->slv_addr, COM9, &reg);
-        ret |= cambus_writeb(sensor->slv_addr, COM9, (reg & 0x1F) | ((fast_ceilf(fast_log2(gain_ceiling)) - 1) << 5));
-    }
+//        ret |= cambus_readb(sensor->slv_addr, COM9, &reg);
+//        ret |= cambus_writeb(sensor->slv_addr, COM9, (reg & 0x1F) | ((fast_ceilf(fast_log2(gain_ceiling)) - 1) << 5));
+//    }
 
-    return ret;
+//    return ret;
 }
 
 static int get_gain_db(sensor_t *sensor, float *gain_db)
