@@ -56,7 +56,7 @@
 #include "omv_boardconfig.h"
 #include "framebuffer.h"
 #include "sensor.h"
-
+#include "omv.h"
 #define UART_BUF_LENGTH_MAX 269
 #define MPY_HEAP_SIZE  2* 1024 * 1024
 
@@ -277,6 +277,9 @@ soft_reset:
 		mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR_));
 		mp_obj_list_init(mp_sys_argv, 0);//append agrv here
     	readline_init0();
+
+		// module init
+		omv_init();
 
 		// initialise peripherals
 		bool mounted_sdcard = false;

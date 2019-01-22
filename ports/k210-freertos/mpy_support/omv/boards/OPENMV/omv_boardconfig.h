@@ -51,7 +51,7 @@
 #define OMV_RAW_BUF_SIZE        (409600)
 
 // Enable hardware JPEG
-#define OMV_HARDWARE_JPEG       (1)
+#define OMV_HARDWARE_JPEG       (0)
 
 // Enable MT9V034 and LEPTON sensors
 #define OMV_ENABLE_MT9V034      (1)
@@ -231,5 +231,8 @@
 #define LEPTON_SPI_MISO_PORT        (GPIOB)
 #define LEPTON_SPI_MOSI_PORT        (GPIOB)
 #define LEPTON_SPI_SSEL_PORT        (GPIOA)
+
+// For K210
+#define __CLZ(n) __builtin_clz(n)
 
 #endif //__OMV_BOARDCONFIG_H__
