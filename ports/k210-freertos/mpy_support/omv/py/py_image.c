@@ -1214,23 +1214,23 @@ static mp_obj_t py_image_copy(uint n_args, const mp_obj_t *args, mp_map_t *kw_ar
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_copy_obj, 1, py_image_copy);
 
-// static mp_obj_t py_image_save(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
-// {
-//     image_t *arg_img = py_image_cobj(args[0]);
-//     const char *path = mp_obj_str_get_str(args[1]);
+static mp_obj_t py_image_save(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
+{
+    image_t *arg_img = py_image_cobj(args[0]);
+    const char *path = mp_obj_str_get_str(args[1]);
 
-//     rectangle_t roi;
-//     py_helper_keyword_rectangle_roi(arg_img, n_args, args, 2, kw_args, &roi);
+    rectangle_t roi;
+    py_helper_keyword_rectangle_roi(arg_img, n_args, args, 2, kw_args, &roi);
 
-//     int arg_q = py_helper_keyword_int(n_args, args, 3, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_quality), 50);
-//     PY_ASSERT_TRUE_MSG((1 <= arg_q) && (arg_q <= 100), "Error: 1 <= quality <= 100!");
+    int arg_q = py_helper_keyword_int(n_args, args, 3, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_quality), 50);
+    PY_ASSERT_TRUE_MSG((1 <= arg_q) && (arg_q <= 100), "Error: 1 <= quality <= 100!");
 
-//     fb_alloc_mark();
-//     imlib_save_image(arg_img, path, &roi, arg_q);
-//     fb_alloc_free_till_mark();
-//     return args[0];
-// }
-// STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_save_obj, 2, py_image_save);
+    fb_alloc_mark();
+    imlib_save_image(arg_img, path, &roi, arg_q);
+    fb_alloc_free_till_mark();
+    return args[0];
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_save_obj, 2, py_image_save);
 
 // //////////////////
 // // Drawing Methods
@@ -5369,7 +5369,7 @@ static const mp_rom_map_elem_t locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_compressed),          MP_ROM_PTR(&py_image_compressed_obj)},
     {MP_ROM_QSTR(MP_QSTR_compressed_for_ide),  MP_ROM_PTR(&py_image_compressed_for_ide_obj)},
     {MP_ROM_QSTR(MP_QSTR_copy),                MP_ROM_PTR(&py_image_copy_obj)},
-//     {MP_ROM_QSTR(MP_QSTR_save),                MP_ROM_PTR(&py_image_save_obj)},
+    {MP_ROM_QSTR(MP_QSTR_save),                MP_ROM_PTR(&py_image_save_obj)},
 //     /* Drawing Methods */
 //     {MP_ROM_QSTR(MP_QSTR_clear),               MP_ROM_PTR(&py_image_clear_obj)},
 //     {MP_ROM_QSTR(MP_QSTR_draw_line),           MP_ROM_PTR(&py_image_draw_line_obj)},

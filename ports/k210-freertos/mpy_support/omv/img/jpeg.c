@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include "xalloc.h"
 #include "fb_alloc.h"
-// #include "ff_wrapper.h"
+#include "vfs_wrapper.h"
 #include "imlib.h"
 #include "omv_boardconfig.h"
 
@@ -1241,22 +1241,29 @@ jpeg_overflow:
 //     file_close(&fp);
 // }
 
-// void jpeg_write(image_t *img, const char *path, int quality)
-// {
-//     FIL fp;
-//     file_write_open(&fp, path);
-//     if (IM_IS_JPEG(img)) {
-//         write_data(&fp, img->pixels, img->bpp);
-//     } else {
-//         uint32_t size;
-//         uint8_t *buffer = fb_alloc_all(&size);
-//         image_t out = { .w=img->w, .h=img->h, .bpp=size, .pixels=buffer };
-//         // When jpeg_compress needs more memory than in currently allocated it
-//         // will try to realloc. MP will detect that the pointer is outside of
-//         // the heap and return NULL which will cause an out of memory error.
-//         jpeg_compress(img, &out, quality, false);
-//         write_data(&fp, out.pixels, out.bpp);
-//         fb_free();
-//     }
-//     file_close(&fp);
-// }
+void jpeg_write(image_t *img, const char *path, int quality)
+{
+    int err;
+    mp_uint_t ret;
+
+    if (IM_IS_JPEG(img)) {
+        printf("is jpeg already\n");
+        vfs_save_data(path, img->pixels, img->bpp, &err);
+        if( err != 0)
+            mp_raise_OSError(err);
+    } else {
+        uint32_t size;
+        uint8_t *buffer = fb_alloc_all(&size);
+        image_t out = { .w=img->w, .h=img->h, .bpp=size, .pixels=buffer };
+        // When jpeg_compress needs more memory than in currently allocated it
+        // will try to realloc. MP will detect that the pointer is outside of
+        // the heap and return NULL which will cause an out of memory error.
+        printf("alloc all:%d\n",size);
+        jpeg_compress(img, &out, quality, false);
+        printf("compress ok\n");
+        ret = vfs_save_data(path, out.pixels, out.bpp, &err);
+        fb_free();
+        if(err != 0)
+            mp_raise_OSError(err);
+    }
+}
