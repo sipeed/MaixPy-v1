@@ -192,3 +192,38 @@ void vfs_internal_close(mp_obj_t fs, int* error_code)
     }
 }
 
+mp_uint_t vfs_internal_seek(mp_obj_t fs, mp_int_t offset, uint8_t whence, int* error_code)
+{
+    fs_info_t* fs_info = (fs_info_t*)fs;
+    mp_stream_p_t* stream = fs_info->base.type->protocol;
+    *error_code = 0;
+    struct mp_stream_seek_t seek;
+    seek.offset = offset;
+    seek.whence = whence;
+    return stream->ioctl(fs, MP_STREAM_SEEK, &seek, error_code);
+}
+
+mp_uint_t vfs_internal_size(mp_obj_t fs)
+{
+    fs_info_t* fs_info = (fs_info_t*)fs;
+    mp_stream_p_t* stream = fs_info->base.type->protocol;
+    if(fs_info->base.type == &mp_type_vfs_spiffs_fileio ||
+        fs_info->base.type == &mp_type_vfs_spiffs_textio)
+    {
+        spiffs_FILE spiffs_f = ((pyb_file_spiffs_obj_t*)fs)->fp;
+        spiffs* f = spiffs_f.fs;
+        spiffs_file fd = spiffs_f.fd;
+        spiffs_stat stat;
+        SPIFFS_fstat(f, fd, &stat);
+        return stat.size;
+    }
+    else if(fs_info->base.type == &mp_type_vfs_fat_fileio ||
+            fs_info->base.type == &mp_type_vfs_fat_textio)
+    {
+        FIL f = ((pyb_file_fatfs_obj_t*)fs)->fp;
+        return f_size(&f);
+    }
+}
+
+
+

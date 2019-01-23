@@ -5922,10 +5922,9 @@ mp_obj_t py_image_load_image(uint n_args, const mp_obj_t *args, mp_map_t *kw_arg
 {
     const char *path = NULL;
 
-    if(n_args >= 1)
-        path = mp_obj_str_get_str(args[0]);
 
-    // bool copy_to_fb = py_helper_keyword_int(n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_copy_to_fb), false);
+
+    bool copy_to_fb = py_helper_keyword_int(n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_copy_to_fb), false);
     // if (copy_to_fb) fb_update_jpeg_buffer();
 
     // image_t image = {0};
@@ -5950,13 +5949,21 @@ mp_obj_t py_image_load_image(uint n_args, const mp_obj_t *args, mp_map_t *kw_arg
     //    image.data = MAIN_FB()->pixels;
     // }
 
-    // imlib_load_image(&image, path);
 
     image_t image = {0};
-    image.w = 320;
-    image.h = 240;
-    image.bpp = IMAGE_BPP_RGB565;
-    image.data = img;
+
+    if(n_args >= 1)
+    {
+        path = mp_obj_str_get_str(args[0]);
+        imlib_load_image(&image, path);
+    }
+    else
+    {
+        image.w = 320;
+        image.h = 240;
+        image.bpp = IMAGE_BPP_RGB565;
+        image.data = img;
+    }
     return py_image_from_struct(&image);
 }
 

@@ -1180,66 +1180,84 @@ jpeg_overflow:
 }
 #endif //defined OMV_HARDWARE_JPEG
 
-// // This function inits the geometry values of an image.
-// void jpeg_read_geometry(FIL *fp, image_t *img, const char *path)
-// {
-//     for (;;) {
-//         uint16_t header;
-//         read_word(fp, &header);
-//         header = IM_SWAP16(header);
-//         if ((0xFFD0 <= header) && (header <= 0xFFD9)) {
-//             continue;
-//         } else if (((0xFFC0 <= header) && (header <= 0xFFCF))
-//                 || ((0xFFDA <= header) && (header <= 0xFFDF))
-//                 || ((0xFFE0 <= header) && (header <= 0xFFEF))
-//                 || ((0xFFF0 <= header) && (header <= 0xFFFE)))
-//         {
-//             uint16_t size;
-//             read_word(fp, &size);
-//             size = IM_SWAP16(size);
-//             if (((0xFFC0 <= header) && (header <= 0xFFC3))
-//              || ((0xFFC5 <= header) && (header <= 0xFFC7))
-//              || ((0xFFC9 <= header) && (header <= 0xFFCB))
-//              || ((0xFFCD <= header) && (header <= 0xFFCF)))
-//             {
-//                 read_byte_ignore(fp);
-//                 uint16_t width;
-//                 read_word(fp, &width);
-//                 width = IM_SWAP16(width);
-//                 uint16_t height;
-//                 read_word(fp, &height);
-//                 height = IM_SWAP16(height);
-//                 img->w = width;
-//                 img->h = height;
-//                 img->bpp = f_size(fp);
-//                 return;
-//             } else {
-//                 file_seek(fp, f_tell(fp) + size - 2);
-//             }
-//         } else {
-//             ff_file_corrupted(fp);
-//         }
-//     }
-// }
+// This function inits the geometry values of an image.
+void jpeg_read_geometry(mp_obj_t fp, image_t *img)
+{
+    for (;;) {
+        uint16_t header;
+        read_word_raise(fp, &header);
+        header = IM_SWAP16(header);
+        if ((0xFFD0 <= header) && (header <= 0xFFD9)) {
+            continue;
+        } else if (((0xFFC0 <= header) && (header <= 0xFFCF))
+                || ((0xFFDA <= header) && (header <= 0xFFDF))
+                || ((0xFFE0 <= header) && (header <= 0xFFEF))
+                || ((0xFFF0 <= header) && (header <= 0xFFFE)))
+        {
+            uint16_t size;
+            read_word_raise(fp, &size);
+            size = IM_SWAP16(size);
+            if (((0xFFC0 <= header) && (header <= 0xFFC3))
+             || ((0xFFC5 <= header) && (header <= 0xFFC7))
+             || ((0xFFC9 <= header) && (header <= 0xFFCB))
+             || ((0xFFCD <= header) && (header <= 0xFFCF)))
+            {
+                read_byte_ignore_raise(fp);
+                uint16_t width;
+                read_word_raise(fp, &width);
+                width = IM_SWAP16(width);
+                uint16_t height;
+                read_word_raise(fp, &height);
+                height = IM_SWAP16(height);
+                img->w = width;
+                img->h = height;
+                img->bpp = vfs_internal_size(fp);
+                return;
+            } else {
+                vfs_seek_raise(fp, size - 2, VFS_SEEK_CUR);
+            }
+        } else {
+            vfs_file_corrupted_raise(fp);
+        }
+    }
+}
 
-// // This function reads the pixel values of an image.
-// void jpeg_read_pixels(FIL *fp, image_t *img)
-// {
-//     file_seek(fp, 0);
-//     read_data(fp, img->pixels, img->bpp);
-// }
+// This function reads the pixel values of an image.
+bool jpeg_read_pixels(mp_obj_t fp, image_t *img)
+{
+    int err;
+    printf("jgp seek\n");
+    vfs_internal_seek(fp, 0, VFS_SEEK_SET, &err);
+    if(err != 0)
+        return false;
+    printf("jgp read 2\n");
+    vfs_internal_read(fp, img->pixels, img->bpp, &err);
+    if(err != 0)
+        return false;
+    return true;
+}
 
-// void jpeg_read(image_t *img, const char *path)
-// {
-//     FIL fp;
-//     file_read_open(&fp, path);
-//     // Do not use file_buffer_on() here.
-//     jpeg_read_geometry(&fp, img, path);
-//     if (!img->pixels) img->pixels = xalloc(img->bpp);
-//     jpeg_read_pixels(&fp, img);
-//     // Do not use file_buffer_off() here.
-//     file_close(&fp);
-// }
+void jpeg_read(image_t *img, const char *path)
+{
+    int err;
+
+    printf("jgp open\n");
+    mp_obj_t file = vfs_internal_open(path, "rb", &err);
+    if( file==NULL || err != 0)
+        mp_raise_OSError(err);
+    printf("jgp read 1\n");
+    // Do not use file_buffer_on() here.
+    jpeg_read_geometry(file, img);
+    if (!img->pixels) img->pixels = xalloc(img->bpp);
+    if( !jpeg_read_pixels(file, img))
+    {
+        xfree(img->pixels);
+        mp_raise_OSError(MP_EIO);
+    }
+    printf("jgp close\n");
+    // Do not use file_buffer_off() here.
+    vfs_internal_close(file, &err);
+}
 
 void jpeg_write(image_t *img, const char *path, int quality)
 {

@@ -15,3 +15,165 @@ mp_uint_t vfs_save_data(const char* path, uint8_t* data, mp_uint_t length, int* 
     return len;    
 }
 
+void read_word_raise(mp_obj_t fp, uint16_t* data)
+{
+    int err;
+    vfs_internal_read(fp, (void*)data, 2, &err);
+    if(err != 0)
+    {
+        vfs_internal_close(fp, &err);
+        mp_raise_OSError(err);
+    }
+}
+
+bool read_word(mp_obj_t fp, uint16_t* data, int* err)
+{
+    vfs_internal_read(fp, (void*)data, 2, &err);
+    if(err != 0)
+        return false;
+    return true;
+}
+
+
+void read_word_expect_raise(mp_obj_t fp, uint16_t value)
+{
+    uint16_t compare;
+    int err;
+    read_word_raise(fp, &compare);
+    if (value != compare)
+    {
+        vfs_internal_close(fp, &err);
+        mp_raise_OSError(err);
+    }
+}
+
+bool read_byte_ignore(mp_obj_t fp, int* err)
+{
+    uint8_t tmp;
+
+    vfs_internal_read(fp, (void*)&tmp, 1, &err);
+    if(err != 0)
+        return false;
+    return true;
+}
+
+void read_byte_ignore_raise(mp_obj_t fp)
+{
+    int err;
+    uint8_t tmp;
+
+    vfs_internal_read(fp, (void*)&tmp, 1, &err);
+    if(err != 0)
+    {
+        vfs_internal_close(fp, &err);
+        mp_raise_OSError(err);
+    }
+}
+
+
+void read_word_ignore_raise(mp_obj_t fp)
+{
+    int err;
+    uint8_t tmp;
+
+    vfs_internal_read(fp, (void*)&tmp, 2, &err);
+    if(err != 0)
+    {
+        vfs_internal_close(fp, &err);
+        mp_raise_OSError(err);
+    }
+}
+
+void vfs_file_corrupted_raise(mp_int_t fp)
+{
+    int err;
+    vfs_internal_close(fp, &err);
+    mp_raise_OSError(EINVAL);
+}
+
+mp_uint_t vfs_seek_raise(mp_obj_t fs, mp_int_t offset, uint8_t whence)
+{
+    int err;
+    vfs_internal_seek(fs, offset, whence, &err);
+    if(err != 0)
+    {
+        vfs_internal_close(fs, &err);
+        mp_raise_OSError(err);
+    }
+}
+
+bool read_byte(mp_obj_t fp, uint8_t* value, int* err)
+{
+    vfs_internal_read(fp, (void*)value, 1, &err);
+    if(err != 0)
+        return false;
+    return true;
+}
+
+void read_byte_expect_raise(mp_obj_t fp, uint8_t value)
+{
+    int err;
+    uint8_t tmp;
+
+    vfs_internal_read(fp, (void*)&tmp, 1, &err);
+    if(err != 0)
+    {
+        vfs_internal_close(fp, &err);
+        mp_raise_OSError(err);
+    }
+    if (value != tmp)
+    {
+        vfs_internal_close(fp, &err);
+        mp_raise_ValueError("read not expect");
+    }
+}
+
+
+void read_long_raise(mp_obj_t fp, uint32_t *value)
+{
+    int err;
+    vfs_internal_read(fp, (void*)value, 4, &err);
+    if(err != 0)
+    {
+        vfs_internal_close(fp, &err);
+        mp_raise_OSError(err);
+    }
+}
+
+void read_long_ignore(mp_obj_t fp)
+{
+    uint32_t trash;
+    read_long_raise(fp, &trash);
+}
+
+
+void read_long_expect_raise(mp_obj_t fp, uint32_t value)
+{
+    int err;
+    uint32_t compare;
+    read_long_raise(fp, &compare);
+    if (value != compare)
+    {
+        vfs_internal_close(fp, &err);
+        mp_raise_OSError(err);
+    }
+}
+
+
+NORETURN void vfs_unsupported_format_raise(mp_obj_t fp)
+{
+    int err;
+    if(fp)
+    {
+        vfs_internal_close(fp, &err);
+        mp_raise_ValueError("Unsupported format!");
+    }
+}
+
+bool read_data(mp_obj_t fp, void *data, mp_uint_t size, int* err)
+{
+    vfs_internal_read(fp, data, size, err);
+    if(err != 0)
+        return false;
+    return true;
+}

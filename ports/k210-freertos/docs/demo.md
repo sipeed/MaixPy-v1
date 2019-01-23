@@ -1016,4 +1016,16 @@ img.save("/sd/image.jpg")
 ```
 
 
+### load image
+
+```python
+
+import image
+import lcd
+
+img = image.Image("/sd/img3.bmp")
+lcd.init()
+lcd.display(img)
+
+```
 

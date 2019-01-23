@@ -21,6 +21,7 @@
 #include "fmath.h"
 #include "collections.h"
 #include "imlib_config.h"
+#include "py/obj.h"
 
 #define IM_LOG2_2(x)    (((x) &                0x2ULL) ? ( 2                        ) :             1) // NO ({ ... }) !
 #define IM_LOG2_4(x)    (((x) &                0xCULL) ? ( 2 +  IM_LOG2_2((x) >>  2)) :  IM_LOG2_2(x)) // NO ({ ... }) !
@@ -1153,16 +1154,16 @@ void ppm_read_geometry(FIL *fp, image_t *img, const char *path, ppm_read_setting
 void ppm_read_pixels(FIL *fp, image_t *img, int line_start, int line_end, ppm_read_settings_t *rs);
 void ppm_read(image_t *img, const char *path);
 void ppm_write_subimg(image_t *img, const char *path, rectangle_t *r);
-bool bmp_read_geometry(FIL *fp, image_t *img, const char *path, bmp_read_settings_t *rs);
-void bmp_read_pixels(FIL *fp, image_t *img, int line_start, int line_end, bmp_read_settings_t *rs);
+bool bmp_read_geometry(mp_obj_t fp, image_t *img, bmp_read_settings_t *rs);
+bool bmp_read_pixels(mp_obj_t fp, image_t *img, int line_start, int line_end, bmp_read_settings_t *rs, int* err);
 void bmp_read(image_t *img, const char *path);
 void bmp_write_subimg(image_t *img, const char *path, rectangle_t *r);
 bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc);
-void jpeg_read_geometry(FIL *fp, image_t *img, const char *path);
-void jpeg_read_pixels(FIL *fp, image_t *img);
+void jpeg_read_geometry(mp_obj_t fp, image_t *img);
+bool jpeg_read_pixels(mp_obj_t fp, image_t *img);
 void jpeg_read(image_t *img, const char *path);
 void jpeg_write(image_t *img, const char *path, int quality);
-bool imlib_read_geometry(FIL *fp, image_t *img, const char *path, img_read_settings_t *rs);
+bool imlib_read_geometry(mp_obj_t fp, image_t *img, img_read_settings_t *rs);
 void imlib_image_operation(image_t *img, const char *path, image_t *other, int scalar, line_op_t op, void *data);
 void imlib_load_image(image_t *img, const char *path);
 void imlib_save_image(image_t *img, const char *path, rectangle_t *roi, int quality);

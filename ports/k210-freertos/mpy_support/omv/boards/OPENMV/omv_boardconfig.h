@@ -234,5 +234,12 @@
 
 // For K210
 #define __CLZ(n) __builtin_clz(n)
+/**
+  \brief   Reverse byte order (16 bit)
+  \details Reverses the byte order in two unsigned short values.
+  \param [in]    value  Value to reverse
+  \return               Reversed value
+ */
+#define __REV16          __builtin_bswap16                           /* ToDo:  ARMCC_V6: check if __builtin_bswap16 could be used */
 
 #endif //__OMV_BOARDCONFIG_H__
