@@ -1015,6 +1015,13 @@ img = image.Image()
 img.save("/sd/image.jpg")
 ```
 
+```python
+
+import image
+img = image.Image()
+img.save("/sd/img0.bmp")
+```
+
 
 ### load image
 

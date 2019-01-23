@@ -13,6 +13,7 @@ mp_uint_t vfs_seek_raise(mp_obj_t fs, mp_int_t offset, uint8_t whence);
 bool read_data(mp_obj_t fp, void *data, mp_uint_t size, int* err);
 NORETURN void vfs_unsupported_format_raise(mp_obj_t fp);
 void read_long_expect_raise(mp_obj_t fp, uint32_t value);
+void read_long_expect2_raise(mp_obj_t fp, uint32_t value, uint32_t value2);
 void read_long_ignore(mp_obj_t fp);
 void read_long_raise(mp_obj_t fp, uint32_t *value);
 void read_byte_expect_raise(mp_obj_t fp, uint8_t value);
@@ -25,8 +26,11 @@ bool read_byte_ignore(mp_obj_t fp, int* err);
 void read_word_expect_raise(mp_obj_t fp, uint16_t value);
 bool read_word(mp_obj_t fp, uint16_t* data, int* err);
 void read_word_raise(mp_obj_t fp, uint16_t* data);
-
-
+NORETURN void vfs_no_intersection_raise(mp_obj_t fp);
+NORETURN void vfs_no_intersection_raise(mp_obj_t fp);
+void write_byte_raise(mp_obj_t fp, uint8_t value);
+void write_long_raise(mp_obj_t fp, uint32_t value);
+void write_word_raise(mp_obj_t fp, uint16_t value);
 
 
 #endif

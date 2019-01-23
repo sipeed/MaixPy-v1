@@ -618,18 +618,6 @@ void imlib_load_image(image_t *img, const char *path)
         ppm_read(img, path);
     } else */if ((magic[0]=='B') && (magic[1]=='M')) { // BMP
         bmp_read(img, path);
-        //RGB565 data from BMP Little edian to Big edian
-        mp_uint_t offset;
-        for(mp_uint_t i=0; i<img->h; ++i)
-        {
-            for(mp_uint_t j=0; j<img->w; ++j)
-            {
-                offset = i*640+j*2;
-                tmp = *(uint16_t*)(img->pixels+offset);
-	            tmp = ((tmp>>8)|(tmp<<8)) &0xFFFF;
-                *(uint16_t*)(img->pixels+offset) = tmp;
-            }
-        }
     } else if ((magic[0]==0xFF) && (magic[1]==0xD8)) { // JPEG
         jpeg_read(img, path);
     } else {
@@ -642,9 +630,9 @@ void imlib_save_image(image_t *img, const char *path, rectangle_t *roi, int qual
 {
     switch (imblib_parse_extension(img, path)) {
         //TODO: 
-        // case FORMAT_BMP:
-        //     bmp_write_subimg(img, path, roi);
-        //     break;
+        case FORMAT_BMP:
+            bmp_write_subimg(img, path, roi);
+            break;
         // case FORMAT_PNM:
         //     ppm_write_subimg(img, path, roi);
         //     break;

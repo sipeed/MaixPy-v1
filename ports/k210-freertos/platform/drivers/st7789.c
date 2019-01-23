@@ -323,6 +323,7 @@ void lcd_set_area(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 
 void lcd_draw_point(uint16_t x, uint16_t y, uint16_t color)
 {
+	color = ( (color>>8) | (color<<8) ) & 0xffff;
 	lcd_set_area(x, y, x, y);
 	tft_set_datawidth(16);
 	tft_write_half(&color, 1);
