@@ -331,7 +331,7 @@ static mp_obj_t py_lcd_display(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
     printf("t_pad %d b_pad %d\n",t_pad,b_pad);
     //lcd_set_area(0, 0, 480, 320);
     //lcd_set_area(0, 0, rect.w, rect.h);
-    tft_set_datawidth(8);
+    // tft_set_datawidth(8);
     y_offset = 0;
     switch (type) {
         case LCD_NONE:
@@ -339,14 +339,20 @@ static mp_obj_t py_lcd_display(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
         case LCD_SHIELD:
             //lcd_write_command_byte(0x2C);
             printf("lcd_write_command_byte\n");
-            uint8_t *zero = (uint8_t *)(malloc(width*2*sizeof(uint8_t)));
-            uint16_t *line = (uint16_t *)(malloc(width*sizeof(uint16_t)));
-            memset(zero,BLACK,width*2*sizeof(uint8_t));
+            //uint8_t *zero = (uint8_t *)(malloc(width*2*sizeof(uint8_t)));
+            uint16_t temp_data = BLACK;
+            // uint16_t *line = (uint16_t *)(malloc(width*sizeof(uint16_t)));
+            uint16_t line;
+            // memset(zero,BLACK,width*2*sizeof(uint8_t));
+            lcd_set_area(0, 0, width, height);
+            tft_set_datawidth(16);
             for (int i=0; i<t_pad; i++) {
                 printf("t_pad %d x %d i %d\n",t_pad,x,i);
                 //lcd_write_data(width*2, zero);
+
                 for(x=0; x<width;x++)
-                    lcd_draw_point(x, i, RED);
+                    tft_set_datawidth(16);
+                    tft_write_half(&temp_data, 1);
             }
             y_offset +=t_pad;
             printf("for (int i=0; i<t_pad; i++) \n");
@@ -354,31 +360,57 @@ static mp_obj_t py_lcd_display(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
                 if (l_pad) {
                     //lcd_write_data(l_pad*2, zero); // l_pad < width
                     for(x=0; x<l_pad;x++)
-                        lcd_draw_point(x, y_offset, BLUE);
+                        tft_set_datawidth(16);
+                        tft_write_half(&temp_data, 1);
                 }
-                //printf("i %d\n",i);
+                printf("i %d\n",i);
                 
                 if (IM_IS_GS(arg_img)) {
                     for (int j=0; j<rect.w; j++) {
                         uint8_t pixel = IM_GET_GS_PIXEL(arg_img, (rect.x + j), (rect.y + i));
-                        line[j] = IM_RGB565(IM_R825(pixel),IM_G826(pixel),IM_B825(pixel));
+                        line = IM_RGB565(IM_R825(pixel),IM_G826(pixel),IM_B825(pixel));
+                        tft_set_datawidth(16);
+                        tft_write_half(&line, 1);
                         printf("j %d,line %d\n",j,line);
                     }
                     printf("lcd_write_data line %d\n",line);
-                    for(x=0; x<rect.w;x++)
-                        lcd_draw_point(x+l_pad, y_offset, line[x+l_pad]);
+                    // for(x=0; x<rect.w;x++)
+                    // {
+                    //     tft_set_datawidth(16);
+                    //     tft_write_half(&line, 1);
+                    // }
+
+                        // lcd_draw_point(x+l_pad, y_offset, line[x+l_pad]);
                     //lcd_write_data(rect.w*2, (uint8_t *) line);
                     
-                    for(line_n=0;line_n<rect.w*2;line_n++)
-                    {
-                        printf("line_n %d line %d\n",line_n,*(uint8_t *)(line));
-                    }
+                    // for(line_n=0;line_n<rect.w*2;line_n++)
+                    // {
+                    //     printf("line_n %d line %d\n",line_n,*(uint8_t *)(line));
+                    // }
                     
                 } else {
-                    for(x=0; x<rect.w;x++)
-                        lcd_draw_point(x+l_pad, y_offset, *(uint16_t *)
+                    // for(x=0; x<rect.w;x++)
+                    // {
+                    //     // tft_set_datawidth(16);
+                    //     // tft_write_half(
+                    //     // (((uint16_t *) arg_img->pixels) +
+                    //     // ((rect.y + i) * arg_img->w) + rect.x+l_pad), rect.w);
+                    //     tft_set_datawidth(16);
+                    //     tft_write_half((uint16_t *)
+                    //     (((uint16_t *) arg_img->pixels) +
+                    //     ((rect.y + i) * arg_img->w) + rect.x+x+l_pad), 1);
+                    //     // lcd_draw_point(x+l_pad, y_offset, *(uint16_t *)
+                    //     // (((uint16_t *) arg_img->pixels) +
+                    //     // ((rect.y + i) * arg_img->w) + rect.x+x+l_pad));
+
+                    // }
+                    tft_write_half((uint16_t *)
                         (((uint16_t *) arg_img->pixels) +
-                        ((rect.y + i) * arg_img->w) + rect.x+x+l_pad));
+                        ((rect.y + i) * arg_img->w) + rect.x+l_pad), rect.w);
+
+                        // lcd_draw_point(x+l_pad, y_offset, *(uint16_t *)
+                        // (((uint16_t *) arg_img->pixels) +
+                        // ((rect.y + i) * arg_img->w) + rect.x+x+l_pad));
                     // lcd_write_data(rect.w*2, (uint8_t *)
                     //     (((uint16_t *) arg_img->pixels) +
                     //     ((rect.y + i) * arg_img->w) + rect.x));
@@ -392,7 +424,8 @@ static mp_obj_t py_lcd_display(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
                 if (r_pad) {
                     printf("r_pad %d x %d i %d\n",r_pad,x+l_pad+arg_img->w,i);
                     for(x=0; x<r_pad;x++)
-                        lcd_draw_point(x+l_pad+arg_img->w, y_offset, GREEN);
+                        tft_set_datawidth(16);
+                        tft_write_half(&temp_data, 1);
                     //lcd_write_data(r_pad*2, zero); // r_pad < width
                 }
                 y_offset ++;
@@ -401,10 +434,11 @@ static mp_obj_t py_lcd_display(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
                 // lcd_write_data(width*2, zero);
                 printf("b_pad %d x %d i %d\n",b_pad,x,y_offset+1);
                 for(x=0; x<width;x++)
-                    lcd_draw_point(x, y_offset+i, YELLOW);
+                    tft_set_datawidth(16);
+                    tft_write_half(&temp_data, 1);
             }
-            free(zero);
-            free(line);
+            // free(zero);
+            // free(line);
             return mp_const_none;
     }
     return mp_const_none;

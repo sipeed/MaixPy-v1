@@ -20,8 +20,7 @@
 
 #define UXGA_HSIZE     (1600)
 #define UXGA_VSIZE     (1200)
-
-static const uint8_t ov2640_config[][2] = {
+static const uint8_t ov2640_default[][2] = { //k210 fix
 	{0xff, 0x01},
 	{0x12, 0x80},
 	{0xff, 0x00},
@@ -31,7 +30,7 @@ static const uint8_t ov2640_config[][2] = {
 	{0x3c, 0x32},
 	{0x11, 0x00},
 	{0x09, 0x02},
-	{0x04, 0x58},
+	{0x04, 0xa8},//v flip and h mirro
 	{0x13, 0xe5},
 	{0x14, 0x48},
 	{0x2c, 0x0c},
@@ -41,21 +40,13 @@ static const uint8_t ov2640_config[][2] = {
 	{0x3e, 0x00},
 	{0x43, 0x11},
 	{0x16, 0x10},
-	{0x39, 0x92},
-	{0x35, 0xda},
-	{0x22, 0x1a},
-	{0x37, 0xc3},
+	{0x39, 0x02},//test 92
 	{0x23, 0x00},
-	{0x34, 0xc0},
 	{0x36, 0x1a},
-	{0x06, 0x88},
 	{0x07, 0xc0},
-	{0x0d, 0x87},
-	{0x0e, 0x41},
 	{0x4c, 0x00},
 	{0x48, 0x00},
 	{0x5b, 0x00},
-	{0x42, 0x03},
 	{0x4a, 0x81},
 	{0x21, 0x99},
 	{0x24, 0x40},
@@ -76,14 +67,7 @@ static const uint8_t ov2640_config[][2] = {
 	{0x70, 0x02},
 	{0x71, 0x94},
 	{0x73, 0xc1},
-	{0x3d, 0x34},
 	{0x5a, 0x57},
-	{0x12, 0x40},
-	{0x17, 0x11},
-	{0x18, 0x43},
-	{0x19, 0x00},
-	{0x1a, 0x4b},
-	{0x32, 0x09},
 	{0x37, 0xc0},
 	{0x4f, 0xca},
 	{0x50, 0xa8},
@@ -102,7 +86,7 @@ static const uint8_t ov2640_config[][2] = {
 	{0x4c, 0x00},
 	{0x87, 0xd5},
 	{0x88, 0x3f},
-	{0xd7, 0x03},
+	{0xd7, 0x03},//[pixformat]:
 	{0xd9, 0x10},
 	{0xd3, 0x82},
 	{0xc8, 0x08},
@@ -179,41 +163,57 @@ static const uint8_t ov2640_config[][2] = {
 	{0xb1, 0x94},
 	{0xb2, 0x0f},
 	{0xc4, 0x5c},
-	{0xc0, 0x64},
-	{0xc1, 0x4b},
-	{0x8c, 0x00},
-	{0x86, 0x3d},
-	{0x50, 0x00},
-	{0x51, 0xc8},
-	{0x52, 0x96},
-	{0x53, 0x00},
-	{0x54, 0x00},
-	{0x55, 0x00},
 	{0x5a, 0xc8},
 	{0x5b, 0x96},
 	{0x5c, 0x00},
-	{0xd3, 0x02},
 	{0xc3, 0xed},
 	{0x7f, 0x00},
-	{0xda, 0x08},
+	{0xda, 0x08},//pixformat
 	{0xe5, 0x1f},
-	{0xe1, 0x67},
+	{0xe1, 0x67},//pixformat
 	{0xe0, 0x00},
 	{0xdd, 0x7f},
 	{0x05, 0x00},
-	//[OV2640_OutSize_Set] width:320 height:240
-	{0xff, 0x00},
-	{0xe0, 0x04},
-	{0x5a, 0x50},
-	{0x5b, 0x3c},
-	{0x5c, 0x00},
-	{0xe0, 0x00},
-#if 0 //color bar
+#if 0	//color bar
 	{0xff, 0x01},
 	{0x12, 0x02},
 #endif
 	{0x00, 0x00}
+
 };
+static const uint8_t svga_config[][2] = { //k210 fix
+	{0xff, 0x01},//bank sel
+	{0x35, 0xda},//[SVGA]:
+	{0x22, 0x1a},//[SVGA]:
+	{0x37, 0xc3},//[SVGA]:
+	{0x34, 0xc0},//[SVGA]:
+	{0x06, 0x88},//[SVGA]:
+	{0x0d, 0x87},//[SVGA]:
+	{0x0e, 0x41},//[SVGA]:
+	{0x42, 0x03},//[SVGA]:
+	{0x3d, 0x34},//[SVGA]:
+	{0x12, 0x40},//[SVGA]:  COM7,COM7_RES_SVGA  SVGA
+	{0x03, 0x0f},//[SVGA]:  COM1,0x0F  
+	{0x17, 0x11},//[SVGA]:HSTART
+	{0x18, 0x43},//[SVGA]:HSTOP
+	{0x19, 0x00},//[SVGA]:VSTART
+	{0x1a, 0x4b},//[SVGA]:VSTOP
+	{0x32, 0x09},//[SVGA]:REG32
+	
+	{0xff, 0x00},//bank sel
+	{0xc0, 0x64},//[SVGA]:HSIZE8 SVGA_HSIZE>>3
+	{0xc1, 0x4b},//[SVGA]:VSIZE8 SVGA_VSIZE>>3
+	{0x8c, 0x00},//[SVGA]:SIZEL
+	{0x86, 0x3d},//[SVGA]:
+	{0x50, 0x00},//[SVGA]:CTRLI
+	{0x51, 0xc8},//[SVGA]:HSIZE
+	{0x52, 0x96},//[SVGA]:VSIZE
+	{0x53, 0x00},//[SVGA]:XOFFL
+	{0x54, 0x00},//[SVGA]:YOFFL
+	{0x55, 0x00},//[SVGA]:VHYX
+	{0xd3, 0x02},//[SVGA]:R_DVP_SP	
+};
+
 
 
 static const uint8_t default_regs[][2] = {
@@ -518,21 +518,21 @@ static const uint8_t uxga_regs[][2] = {
 static const uint8_t yuv422_regs[][2] = {
         { BANK_SEL, BANK_SEL_DSP },
         { RESET,   RESET_DVP},
-        { IMAGE_MODE, IMAGE_MODE_YUV422 },
         { 0xD7,     0x01 },
+        { IMAGE_MODE, IMAGE_MODE_YUV422 },
         { 0xE1,     0x67 },
         { RESET,    0x00 },
         {0, 0},
 };
 
 static const uint8_t rgb565_regs[][2] = {
-        { BANK_SEL, BANK_SEL_DSP },
-        { RESET,   RESET_DVP},
+        { BANK_SEL,   BANK_SEL_DSP },
+        { RESET,      RESET_DVP},
+        { 0xD7,       0x03},
         { IMAGE_MODE, IMAGE_MODE_RGB565 },
-        { 0xD7,     0x03 },
-        { 0xE1,     0x77 },
-        { RESET,    0x00 },
-        {0, 0},
+        { 0xE1,       0x77 },
+        { RESET,      0x00 },
+        {0,           0},
 };
 
 static const uint8_t jpeg_regs[][2] = {
@@ -590,21 +590,19 @@ static int reset(sensor_t *sensor)
     mp_hal_delay_ms(10);
 
     i = 0;
-    //regs = default_regs;
-    regs = ov2640_config;
+    regs = ov2640_default;
     /* Write initial regsiters */
     while (regs[i][0]) {
         cambus_writeb(sensor->slv_addr, regs[i][0], regs[i][1]);
         i++;
     }
-	sensor->pixformat = PIXFORMAT_RGB565;
-//    i = 0;
-//    regs = svga_regs;
-//    /* Write DSP input regsiters */
-//    while (regs[i][0]) {
-//        cambus_writeb(sensor->slv_addr, regs[i][0], regs[i][1]);
-//        i++;
-//    }
+    i = 0;
+    regs = svga_config;
+    /* Write DSP input regsiters */
+    while (regs[i][0]) {
+        cambus_writeb(sensor->slv_addr, regs[i][0], regs[i][1]);
+        i++;
+    }
 
     return 0;
 }
@@ -617,18 +615,16 @@ static int set_pixformat(sensor_t *sensor, pixformat_t pixformat)
     /* read pixel format reg */
     switch (pixformat) {
         case PIXFORMAT_RGB565:
-			dvp_set_image_format(DVP_CFG_RGB_FORMAT);
             regs = rgb565_regs;
             break;
         case PIXFORMAT_YUV422:
-			dvp_set_image_format(DVP_CFG_YUV_FORMAT);
         case PIXFORMAT_GRAYSCALE:
             regs = yuv422_regs;
-			dvp_set_image_format(DVP_CFG_Y_FORMAT);
             break;
-//        case PIXFORMAT_JPEG:
-//            regs = jpeg_regs;
-//            break;
+        case PIXFORMAT_JPEG:
+            regs = jpeg_regs;
+
+            break;
         default:
             return -1;
     }
@@ -638,10 +634,22 @@ static int set_pixformat(sensor_t *sensor, pixformat_t pixformat)
         cambus_writeb(sensor->slv_addr, regs[i][0], regs[i][1]);
         i++;
     }
-	
+    switch (pixformat) {
+        case PIXFORMAT_RGB565:
+			dvp_set_image_format(DVP_CFG_RGB_FORMAT);
+            break;
+        case PIXFORMAT_YUV422:
+        case PIXFORMAT_GRAYSCALE:
+			dvp_set_image_format(DVP_CFG_Y_FORMAT);
+            break;
+        case PIXFORMAT_JPEG:
+			dvp_set_image_format(DVP_CFG_RGB_FORMAT);
+            break;
+        default:
+            return -1;
+    }
     /* delay n ms */
     mp_hal_delay_ms(30);
-
     return 0;
 }
 
@@ -657,7 +665,8 @@ static int set_framesize(sensor_t *sensor, framesize_t framesize)
 
     if ((w <= 800) && (h <= 600)) {
         clkrc =0x80;
-        regs = svga_regs;
+        regs = svga_config;
+//		regs = ov2640_config;
     } else {
         clkrc =0x81;
         regs = uxga_regs;
@@ -667,20 +676,24 @@ static int set_framesize(sensor_t *sensor, framesize_t framesize)
     ret |= cambus_writeb(sensor->slv_addr, BANK_SEL, BANK_SEL_DSP);
     ret |= cambus_writeb(sensor->slv_addr, R_BYPASS, R_BYPASS_DSP_BYPAS);
 
-    /* Write output width */
-    ret |= cambus_writeb(sensor->slv_addr, ZMOW, (w>>2)&0xFF); /* OUTW[7:0] (real/4) */
-    ret |= cambus_writeb(sensor->slv_addr, ZMOH, (h>>2)&0xFF); /* OUTH[7:0] (real/4) */
-    ret |= cambus_writeb(sensor->slv_addr, ZMHH, ((h>>8)&0x04)|((w>>10)&0x03)); /* OUTH[8]/OUTW[9:8] */
-
     /* Set CLKRC */
-    ret |= cambus_writeb(sensor->slv_addr, BANK_SEL, BANK_SEL_SENSOR);
-    ret |= cambus_writeb(sensor->slv_addr, CLKRC, clkrc);
+	if(clkrc == 0x81)
+	{
+	    ret |= cambus_writeb(sensor->slv_addr, BANK_SEL, BANK_SEL_SENSOR);
+	    ret |= cambus_writeb(sensor->slv_addr, CLKRC, clkrc);
+	}
 
     /* Write DSP input regsiters */
     while (regs[i][0]) {
         cambus_writeb(sensor->slv_addr, regs[i][0], regs[i][1]);
         i++;
     }
+	 /* Write output width */
+	ret |= cambus_writeb(sensor->slv_addr,0xe0,0x04 ); /* OUTH[8]/OUTW[9:8] */
+    ret |= cambus_writeb(sensor->slv_addr, ZMOW, (w>>2)&0xFF); /* OUTW[7:0] (real/4) */
+    ret |= cambus_writeb(sensor->slv_addr, ZMOH, (h>>2)&0xFF); /* OUTH[7:0] (real/4) */
+    ret |= cambus_writeb(sensor->slv_addr, ZMHH, ((h>>8)&0x04)|((w>>10)&0x03)); /* OUTH[8]/OUTW[9:8] */
+	ret |= cambus_writeb(sensor->slv_addr,0xe0,0x00 ); /* OUTH[8]/OUTW[9:8] */
 
     /* Enable DSP */
     ret |= cambus_writeb(sensor->slv_addr, BANK_SEL, BANK_SEL_DSP);
