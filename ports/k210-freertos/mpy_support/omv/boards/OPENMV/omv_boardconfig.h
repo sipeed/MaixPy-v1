@@ -9,7 +9,10 @@
 #ifndef __OMV_BOARDCONFIG_H__
 #define __OMV_BOARDCONFIG_H__
 
-#define OMV_INIT_RESOLUTION 800*600
+#define OMV_INIT_RESOLUTION 640*480
+#define OMV_k210_width 640
+#define OMV_k210_height 480
+
 #define OMV_INIT_BPP 2
 #define OMV_JPEG_BUF_SIZE 23 * 1024 // IDE JPEG buffer (header + data).
 #define OMV_FB_ALLOC_SIZE 83 * 1024 // minimum fb alloc size

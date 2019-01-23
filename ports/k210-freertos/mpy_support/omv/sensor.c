@@ -89,8 +89,7 @@ static int sensor_irq(void *ctx)
 	} else {
 		dvp_clear_interrupt(DVP_STS_FRAME_START);
 		if (sensor->image_buf.buf_used[sensor->image_buf.buf_sel] == 0)
-		{
-			printk("sensor_irq convert\r\n");
+		{			
 			dvp_start_convert();
 		}
 	}
@@ -249,14 +248,16 @@ int sensor_init1()
 int sensor_init2()
 {
 	
-	void* ptr = NULL;
-	if(ptr == NULL)
+	if(sensor.image_buf.addr[0] == NULL && sensor.image_buf.addr[1] == NULL)
 	{
-		ptr = malloc(sizeof(uint8_t) * 320 * 240 * (2 * 2) + 127);
+		sensor.image_buf.addr[0] = malloc(OMV_INIT_RESOLUTION * OMV_INIT_BPP);
+		sensor.image_buf.addr[1] = malloc(OMV_INIT_RESOLUTION * OMV_INIT_BPP);
 	}
-	MAIN_FB()->pixels = malloc( 320 * 240 * 2);
-	sensor.image_buf.addr[0] = (uint32_t *)(((uint32_t)ptr + 127) & 0xFFFFFF80);
-	sensor.image_buf.addr[1] = (uint32_t *)((uint32_t)sensor.image_buf.addr[0] + 320 * 240 * 2);
+	if(MAIN_FB()->pixels == NULL )
+	{
+		MAIN_FB()->pixels = malloc(OMV_INIT_RESOLUTION  * OMV_INIT_BPP);
+	}
+	
 	sensor.image_buf.buf_used[0] = 0;
 	sensor.image_buf.buf_used[1] = 0;
 	sensor.image_buf.buf_sel = 0;
@@ -269,11 +270,8 @@ int sensor_init2()
 	plic_irq_register(IRQN_DVP_INTERRUPT, sensor_irq, (void*)&sensor);
 	
 	plic_irq_disable(IRQN_DVP_INTERRUPT);
-	//plic_irq_disable(IRQN_DVP_INTERRUPT);
-
 	dvp_clear_interrupt(DVP_STS_FRAME_START | DVP_STS_FRAME_FINISH);
 	dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 1);
-	
 }
 
 int sensor_reset()
@@ -290,7 +288,6 @@ int sensor_reset()
     if (sensor.reset(&sensor) != 0) {
         return -1;
     }
-
     // Disable dvp  IRQ
     sensor_init2();
 
@@ -654,30 +651,23 @@ static void sensor_check_buffsize()
 // DMA transfers the next line to the other half of the line buffer.
 // Note:  For JPEG this function is called once (and ignored) at the end of the transfer.
 
-void Image_CpltUser(uint32_t addr)
+void Image_CpltUser(uint8_t* addr)
 {
     uint8_t *src = (uint8_t*) addr;
     uint8_t *dst = dest_fb;
-
-    uint16_t *src16 = (uint16_t*) addr;
-    uint16_t *dst16 = (uint16_t*) dest_fb;
 
     // Skip lines outside the window.
     if (line >= MAIN_FB()->y && line <= (MAIN_FB()->y + MAIN_FB()->h)) {
         switch (sensor.pixformat) {
             case PIXFORMAT_BAYER:
                 dst += (line - MAIN_FB()->y) * MAIN_FB()->w;
-                for (int i=0; i<MAIN_FB()->w; i++) {
-                    dst[i] = src[MAIN_FB()->x + i];
-                }
+				memcpy(dst ,&src[MAIN_FB()->x], MAIN_FB()->w);
                 break;
             case PIXFORMAT_GRAYSCALE:
                 dst += (line - MAIN_FB()->y) * MAIN_FB()->w;
                 if (sensor.gs_bpp == 1) {
                     // 1BPP GRAYSCALE.
-                    for (int i=0; i<MAIN_FB()->w; i++) {
-                        dst[i] = src[MAIN_FB()->x + i];
-                    }
+                    memcpy(dst ,&src[MAIN_FB()->x], MAIN_FB()->w);
                 } else {
                     // Extract Y channel from YUV.
                     for (int i=0; i<MAIN_FB()->w; i++) {
@@ -687,10 +677,9 @@ void Image_CpltUser(uint32_t addr)
                 break;
             case PIXFORMAT_YUV422:
             case PIXFORMAT_RGB565:
-                dst16 += (line - MAIN_FB()->y) * MAIN_FB()->w;
-                for (int i=0; i<MAIN_FB()->w; i++) {
-                    dst16[i] = src16[MAIN_FB()->x + i];
-                }
+				dst = dst + (line - MAIN_FB()->y) * MAIN_FB()->w * 2;
+				uint32_t x = MAIN_FB()->x;
+				memcpy(dst ,src + x * 2, MAIN_FB()->w * 2);
                 break;
             case PIXFORMAT_JPEG:
                 break;
@@ -705,8 +694,7 @@ void Image_CpltUser(uint32_t addr)
 // This is the default snapshot function, which can be replaced in sensor_init functions. This function
 // uses the DCMI and DMA to capture frames and each line is processed in the DCMI_DMAConvCpltUser function.
 int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_cb)
-{
-	printf("[MaixPy] %s | test\n",__func__);
+{	
     uint32_t frame = 0;
     bool streaming = (streaming_cb != NULL); // Streaming mode.
     bool doublebuf = false; // Use double buffers in streaming mode.
@@ -720,11 +708,7 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
     // Make sure the raw frame fits into the FB. If it doesn't it will be cropped if
     // the format is set to GS, otherwise the pixel format will be swicthed to BAYER.
     sensor_check_buffsize();
-
-    // Set the current frame buffer target used in the DMA line callback
-    // (DCMI_DMAConvCpltUser function), in both snapshot and streaming modes.
-    dest_fb = MAIN_FB()->pixels;
-
+	
     // The user may have changed the MAIN_FB width or height on the last image so we need
     // to restore that here. We don't have to restore bpp because that's taken care of
     // already in the code below. Note that we do the JPEG compression above first to save
@@ -787,40 +771,7 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
             streaming = streaming_cb(image);
         }
 
-        // exchange buffer
-//        plic_irq_disable(IRQN_DVP_INTERRUPT);
-		
-        //get dvp interrupt status
-//        sensor->irq_flag = 0;
-//		tick_start = mp_hal_ticks_ms();
-//        while (sensor->irq_flag == 0) {
-//            // Wait for interrupt
-//            if ((mp_hal_ticks_ms() - tick_start) >= 3000) {
-//                // Sensor timeout, most likely a HW issue.
-//                // Abort the DMA request.
-//                return -1;
-//            }
-//        }
-//		mp_hal_delay_ms(20);
-		
-		//Image_CpltUser(NULL);//TODO
-		while (sensor->image_buf.buf_used[sensor->image_buf.buf_sel] == 0)
-				_ndelay(50);
-//		MAIN_FB()->pixels = sensor->image_buf.addr[sensor->image_buf.buf_sel];
-		memcpy(MAIN_FB()->pixels, sensor->image_buf.addr[sensor->image_buf.buf_sel], 320*240*2);
-		sensor->image_buf.buf_used[sensor->image_buf.buf_sel] = 0;
-
-//		MAIN_FB()->pixels = sensor->image_buf.addr[sensor->image_buf.buf_sel ^ 0x01];
-		
-        // Abort DMA transfer.
-        // Note: In JPEG mode the DMA will still be waiting for data since
-        // the max frame size is set, so we need to abort the DMA transfer.
-        //...
-
-        // Disable DMA IRQ
-        //...
-
-        // Fix the BPP
+	        // Fix the BPP
         switch (sensor->pixformat) {
             case PIXFORMAT_GRAYSCALE:
                 MAIN_FB()->bpp = 1;
@@ -839,7 +790,25 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
             default:
                 break;
         }
-
+		if(MAIN_FB()->bpp > 3)
+		{
+			printf("[MaixPy] %s | bpp error\n",__func__);
+			return -1;
+		}
+		else{
+			
+			while (sensor->image_buf.buf_used[sensor->image_buf.buf_sel] == 0)
+					_ndelay(50);
+			dest_fb = MAIN_FB()->pixels;
+			memset(MAIN_FB()->pixels,0,OMV_INIT_RESOLUTION  * OMV_INIT_BPP);
+			uint8_t* src_addr = sensor->image_buf.addr[sensor->image_buf.buf_sel];
+			uint32_t frame_w = resolution[sensor->framesize][0];
+			for(; line < OMV_k210_height ;)
+			{
+				Image_CpltUser(src_addr + frame_w * 2 * line);
+			}
+			sensor->image_buf.buf_used[sensor->image_buf.buf_sel] = 0;
+		}
         // Set the user image.
         if (image != NULL) {
             image->w = MAIN_FB()->w;

@@ -116,7 +116,6 @@ struct sensor_buf
 typedef struct _sensor sensor_t;
 typedef struct _sensor {
 	uint8_t  buf_num;
-	uint8_t  irq_flag;
 	struct sensor_buf image_buf;
     uint8_t  chip_id;           // Sensor ID.
     uint8_t  slv_addr;          // Sensor I2C slave address.

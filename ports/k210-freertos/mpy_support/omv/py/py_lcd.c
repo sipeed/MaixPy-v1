@@ -23,6 +23,7 @@
 
 #include "sysctl.h"
 
+
 #define printf(...)
 
 // #define RST_PORT            GPIOD
@@ -340,40 +341,41 @@ static mp_obj_t py_lcd_display(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
             //lcd_write_command_byte(0x2C);
             printf("lcd_write_command_byte\n");
             //uint8_t *zero = (uint8_t *)(malloc(width*2*sizeof(uint8_t)));
-            uint16_t temp_data = BLACK;
+            uint16_t temp_data = BLUE;
             // uint16_t *line = (uint16_t *)(malloc(width*sizeof(uint16_t)));
             uint16_t line;
             // memset(zero,BLACK,width*2*sizeof(uint8_t));
             lcd_set_area(0, 0, width, height);
             tft_set_datawidth(16);
             for (int i=0; i<t_pad; i++) {
-                printf("t_pad %d x %d i %d\n",t_pad,x,i);
+                //printf("t_pad %d x %d i %d\n",t_pad,x,i);
                 //lcd_write_data(width*2, zero);
-
+				temp_data = RED;
                 for(x=0; x<width;x++)
-                    tft_set_datawidth(16);
+                    //t_set_datawidth(16);
                     tft_write_half(&temp_data, 1);
             }
             y_offset +=t_pad;
-            printf("for (int i=0; i<t_pad; i++) \n");
+            //printf("for (int i=0; i<t_pad; i++) \n");
             for (int i=0; i<rect.h; i++) {
                 if (l_pad) {
                     //lcd_write_data(l_pad*2, zero); // l_pad < width
+                    temp_data = BLUE;
                     for(x=0; x<l_pad;x++)
-                        tft_set_datawidth(16);
+                        //t_set_datawidth(16);
                         tft_write_half(&temp_data, 1);
                 }
-                printf("i %d\n",i);
+                //intf("i %d\n",i);
                 
                 if (IM_IS_GS(arg_img)) {
                     for (int j=0; j<rect.w; j++) {
                         uint8_t pixel = IM_GET_GS_PIXEL(arg_img, (rect.x + j), (rect.y + i));
                         line = IM_RGB565(IM_R825(pixel),IM_G826(pixel),IM_B825(pixel));
-                        tft_set_datawidth(16);
+                        //t_set_datawidth(16);
                         tft_write_half(&line, 1);
-                        printf("j %d,line %d\n",j,line);
+                        //printf("j %d,line %d\n",j,line);
                     }
-                    printf("lcd_write_data line %d\n",line);
+                    //printf("lcd_write_data line %d\n",line);
                     // for(x=0; x<rect.w;x++)
                     // {
                     //     tft_set_datawidth(16);
@@ -422,9 +424,10 @@ static mp_obj_t py_lcd_display(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
                     // }
                 }
                 if (r_pad) {
-                    printf("r_pad %d x %d i %d\n",r_pad,x+l_pad+arg_img->w,i);
+                    //printf("r_pad %d x %d i %d\n",r_pad,x+l_pad+arg_img->w,i);
+                    temp_data = GREEN;
                     for(x=0; x<r_pad;x++)
-                        tft_set_datawidth(16);
+                        //t_set_datawidth(16);
                         tft_write_half(&temp_data, 1);
                     //lcd_write_data(r_pad*2, zero); // r_pad < width
                 }
@@ -432,9 +435,10 @@ static mp_obj_t py_lcd_display(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
             }
             for (int i=0; i<b_pad; i++) {
                 // lcd_write_data(width*2, zero);
-                printf("b_pad %d x %d i %d\n",b_pad,x,y_offset+1);
+                //printf("b_pad %d x %d i %d\n",b_pad,x,y_offset+1);
+                temp_data = YELLOW;
                 for(x=0; x<width;x++)
-                    tft_set_datawidth(16);
+                    //t_set_datawidth(16);
                     tft_write_half(&temp_data, 1);
             }
             // free(zero);
