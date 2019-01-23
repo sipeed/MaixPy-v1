@@ -12,7 +12,7 @@
   */ 
 
 #define SD_CS_PIN 7
-#define SD_SPI_DEVICE SPI_DEVICE_0
+#define SD_SPI_DEVICE SPI_DEVICE_1
 #define SD_DMA_CH DMAC_CHANNEL0
 #define SD_SS SPI_CHIP_SELECT_1
 typedef struct {
