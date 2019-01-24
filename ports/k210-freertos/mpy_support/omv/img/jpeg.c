@@ -1226,11 +1226,9 @@ void jpeg_read_geometry(mp_obj_t fp, image_t *img)
 bool jpeg_read_pixels(mp_obj_t fp, image_t *img)
 {
     int err;
-    printf("jgp seek\n");
     vfs_internal_seek(fp, 0, VFS_SEEK_SET, &err);
     if(err != 0)
         return false;
-    printf("jgp read 2\n");
     vfs_internal_read(fp, img->pixels, img->bpp, &err);
     if(err != 0)
         return false;
@@ -1241,11 +1239,9 @@ void jpeg_read(image_t *img, const char *path)
 {
     int err;
 
-    printf("jgp open\n");
     mp_obj_t file = vfs_internal_open(path, "rb", &err);
     if( file==NULL || err != 0)
         mp_raise_OSError(err);
-    printf("jgp read 1\n");
     // Do not use file_buffer_on() here.
     jpeg_read_geometry(file, img);
     if (!img->pixels) img->pixels = xalloc(img->bpp);
@@ -1254,7 +1250,6 @@ void jpeg_read(image_t *img, const char *path)
         xfree(img->pixels);
         mp_raise_OSError(MP_EIO);
     }
-    printf("jgp close\n");
     // Do not use file_buffer_off() here.
     vfs_internal_close(file, &err);
 }
