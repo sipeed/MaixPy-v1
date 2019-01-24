@@ -38,7 +38,9 @@ mp_obj_t vfs_internal_spiffs_open(spiffs_user_mount_t* vfs, const char* path, co
     mp_obj_type_t* type = &mp_type_vfs_spiffs_textio;
     
     *error_code = 0;
-
+    uint16_t i = 0;
+    while(path[i] == '/')i++;
+    char* open_name = &path[i];
     while (*mode_s) {
         switch (*mode_s++) {
             case 'r':
@@ -69,7 +71,7 @@ mp_obj_t vfs_internal_spiffs_open(spiffs_user_mount_t* vfs, const char* path, co
     pyb_file_spiffs_obj_t *o = m_new_obj(pyb_file_spiffs_obj_t);
     o->base.type = type;
     spiffs_FILE fp;
-	fp.fd = SPIFFS_open(&vfs->fs,path,mode,0);
+	fp.fd = SPIFFS_open(&vfs->fs,open_name,mode,0);
     fp.fs = &vfs->fs;  
     if(fp.fd <= 0)
     {
@@ -141,6 +143,7 @@ mp_obj_t vfs_internal_fatfs_open(fs_user_mount_t* vfs, const char* path, const c
 mp_obj_t vfs_internal_open(const char* path, const char* mode, int* error_code)
 {
     const char *real_path;
+    *error_code = 0;
     mp_vfs_mount_t *vfs = mp_vfs_lookup_path(path, &real_path);
     if (vfs == MP_VFS_NONE || vfs == MP_VFS_ROOT) {
         return MP_OBJ_NULL;
@@ -148,7 +151,9 @@ mp_obj_t vfs_internal_open(const char* path, const char* mode, int* error_code)
     fs_info_t* fs = (fs_info_t*)vfs->obj;
     if( fs->base.type == &mp_spiffs_vfs_type)
     {
-        return vfs_internal_spiffs_open(fs, real_path, mode, error_code);
+        *error_code =  EPERM;
+        return MP_OBJ_NULL;
+        // return vfs_internal_spiffs_open(fs, real_path, mode, error_code);
     }
     else if( fs->base.type == &mp_fat_vfs_type)
     {

@@ -1240,7 +1240,7 @@ void jpeg_read(image_t *img, const char *path)
     int err;
 
     mp_obj_t file = vfs_internal_open(path, "rb", &err);
-    if( file==NULL || err != 0)
+    if( file == MP_OBJ_NULL || err != 0)
         mp_raise_OSError(err);
     // Do not use file_buffer_on() here.
     jpeg_read_geometry(file, img);

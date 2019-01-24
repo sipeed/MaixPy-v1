@@ -185,7 +185,7 @@ void bmp_read(image_t *img, const char *path)
     bmp_read_settings_t rs;
 
     mp_obj_t file = vfs_internal_open(path, "rb", &err);
-    if( err != 0)
+    if( file == MP_OBJ_NULL || err != 0)
         mp_raise_OSError(err);
     bmp_read_geometry(file, img, &rs);
     if (!img->pixels)
@@ -206,6 +206,8 @@ void bmp_write_subimg(image_t *img, const char *path, rectangle_t *r)
 
     int err;    
     mp_obj_t file = vfs_internal_open(path, "wb", &err);
+    if(file == MP_OBJ_NULL || err != 0)
+        mp_raise_OSError(err);
 
     if (IM_IS_GS(img)) {
         const int row_bytes = (((rect.w * 8) + 31) / 32) * 4;

@@ -605,7 +605,7 @@ void imlib_load_image(image_t *img, const char *path)
     uint16_t tmp;
 
     file = vfs_internal_open(path,"rb", &err);
-    if(file == NULL || err != 0)
+    if(file == MP_OBJ_NULL || err != 0)
         mp_raise_OSError(err);
     vfs_internal_read(file, magic, 2, &err);
     if( err != 0)
