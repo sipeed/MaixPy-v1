@@ -160,14 +160,20 @@ void tft_write_half(uint16_t *data_buf, uint32_t length)
 	spi[SPI_CHANNEL]->ssienr = 0x01;
 	fifo_len = length < 32 ? length : 32;
 	for (index = 0; index < fifo_len; index++)
+	{
+		*data_buf = ( (*data_buf>>8) | (*data_buf<<8) ) & 0xffff;
 		spi[SPI_CHANNEL]->dr[0] = *data_buf++;
+	}
 	length -= fifo_len;
 	spi[SPI_CHANNEL]->ser = 0x01 << SPI_SLAVE_SELECT;
 	while (length) {
 		fifo_len = 32 - spi[SPI_CHANNEL]->txflr;
 		fifo_len = fifo_len < length ? fifo_len : length;
 		for (index = 0; index < fifo_len; index++)
+		{
+			*data_buf = ( (*data_buf>>8) | (*data_buf<<8) ) & 0xffff;
 			spi[SPI_CHANNEL]->dr[0] = *data_buf++;
+		}
 		length -= fifo_len;
 	}
 	while ((spi[SPI_CHANNEL]->sr & 0x05) != 0x04)

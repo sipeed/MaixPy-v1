@@ -1030,9 +1030,26 @@ img.save("/sd/img0.bmp")
 import image
 import lcd
 
-img = image.Image("/sd/img3.bmp")
+img = image.Image("/sd/img6.bmp")
 lcd.init()
 lcd.display(img)
 
+```
+
+### sensor
+
+```python
+
+import sensor  
+import lcd
+lcd.init()  
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.set_vsync_output(sensor)
+i = 0
+while 1:
+    img = sensor.snapshot()
+    lcd.display(img)
 ```
 

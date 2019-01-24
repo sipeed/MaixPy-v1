@@ -494,6 +494,26 @@ static mp_int_t py_image_get_buffer(mp_obj_t self_in, mp_buffer_info_t *bufinfo,
 // // Basic Methods
 // ////////////////
 
+static mp_obj_t py_image_del(mp_obj_t img_obj)
+{
+    //TODO: optimize or delete this function
+    image_t* img = (image_t *) py_image_cobj(img_obj);
+    if( img->data )
+    {
+        if( (MAIN_FB()->pixels != NULL) &&
+            (img->data >= MAIN_FB()->pixels) &&
+            (img->data <  (MAIN_FB()->pixels+OMV_INIT_RESOLUTION  * OMV_INIT_BPP) )
+           )
+        {
+           return mp_const_none;
+        }
+        xfree(img->data);
+    }
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_image_del_obj, py_image_del);
+
 static mp_obj_t py_image_width(mp_obj_t img_obj)
 {
     return mp_obj_new_int(((image_t *) py_image_cobj(img_obj))->w);
@@ -5350,6 +5370,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_save_obj, 2, py_image_save);
 
 static const mp_rom_map_elem_t locals_dict_table[] = {
     /* Basic Methods */
+    {MP_ROM_QSTR(MP_QSTR___del__),             MP_ROM_PTR(&py_image_del_obj)},
     {MP_ROM_QSTR(MP_QSTR_width),               MP_ROM_PTR(&py_image_width_obj)},
     {MP_ROM_QSTR(MP_QSTR_height),              MP_ROM_PTR(&py_image_height_obj)},
     {MP_ROM_QSTR(MP_QSTR_format),              MP_ROM_PTR(&py_image_format_obj)},
@@ -5962,7 +5983,7 @@ mp_obj_t py_image_load_image(uint n_args, const mp_obj_t *args, mp_map_t *kw_arg
         image.w = 320;
         image.h = 240;
         image.bpp = IMAGE_BPP_RGB565;
-        image.data = img;
+        image.data = xalloc(image.w*image.h*2);
     }
     return py_image_from_struct(&image);
 }

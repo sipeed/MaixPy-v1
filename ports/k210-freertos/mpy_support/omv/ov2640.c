@@ -174,7 +174,7 @@ static const uint8_t ov2640_default[][2] = { //k210 fix
 	{0xe0, 0x00},
 	{0xdd, 0x7f},
 	{0x05, 0x00},
-#if 0	//color bar
+#if 1	//color bar
 	{0xff, 0x01},
 	{0x12, 0x02},
 #endif

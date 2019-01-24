@@ -30,9 +30,9 @@ bool bmp_read_geometry(mp_obj_t fp, image_t *img, bmp_read_settings_t *rs)
     
     uint32_t data_size = file_size - header_size;
     // if (data_size % 4) vfs_file_corrupted_raise(fp);
-    if (file_size % 4) vfs_file_corrupted_raise(fp);
-
-    read_long_expect2_raise(fp, 40, 0x38);
+    // if (file_size % 4) vfs_file_corrupted_raise(fp);
+    unsigned long header2_size;
+    read_long_raise(fp, &header2_size);
     read_long_raise(fp, (uint32_t*) &rs->bmp_w);
     read_long_raise(fp, (uint32_t*) &rs->bmp_h);
     if ((rs->bmp_w == 0) || (rs->bmp_h == 0)) vfs_file_corrupted_raise(fp);
@@ -73,6 +73,10 @@ bool bmp_read_geometry(mp_obj_t fp, image_t *img, bmp_read_settings_t *rs)
             read_long_expect_raise(fp, 0xFF);
         }
     }
+    int err;
+    vfs_internal_seek(fp, header_size, VFS_SEEK_SET, &err);
+    if(err != 0)
+        mp_raise_OSError(err);
 
     rs->bmp_row_bytes = (((img->w * rs->bmp_bpp) + 31) / 32) * 4;
     if (data_size < (rs->bmp_row_bytes * img->h)) vfs_file_corrupted_raise(fp);
