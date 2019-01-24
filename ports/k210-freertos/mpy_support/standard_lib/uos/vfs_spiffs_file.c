@@ -197,6 +197,9 @@ STATIC const mp_arg_t file_open_args[] = {
 
 STATIC mp_obj_t file_open(spiffs_user_mount_t *vfs, const mp_obj_type_t *type, mp_arg_val_t *args) {
 	const char* file_name = mp_obj_str_get_str(args[0].u_obj);
+	int i = 0;
+	while(file_name[i] == '/')i++;
+	char* open_name = &file_name[i];
     const char *mode_s = mp_obj_str_get_str(args[1].u_obj);
     uint32_t mode = 0;
     // TODO make sure only one of r, w, x, a, and b, t are specified
@@ -230,7 +233,7 @@ STATIC mp_obj_t file_open(spiffs_user_mount_t *vfs, const mp_obj_type_t *type, m
     pyb_file_obj_t *o = m_new_obj_with_finaliser(pyb_file_obj_t);
     o->base.type = type;
     spiffs_FILE fp;
-	fp.fd = SPIFFS_open(&vfs->fs,file_name,mode,0);
+	fp.fd = SPIFFS_open(&vfs->fs,open_name,mode,0);
     fp.fs = &vfs->fs;  
     if(fp.fd <= 0)
     {
