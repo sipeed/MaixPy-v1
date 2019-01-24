@@ -6,7 +6,7 @@ class fpioa_manager:
         self.fpioa_dict={}
         self.fpioa = FPIOA()
         self.board_info = board_info()
-    def registered(self,pin,function):
+    def register(self,pin,function):
         ret = self.find_dict(pin,function)
         if ret == 1:
             self.board_dict[pin] = function
@@ -15,7 +15,7 @@ class fpioa_manager:
             return 1
         else:
             return 0
-    def unregistered(self,pin,function):
+    def unregister(self,pin,function):
         ret = self.find_dict(pin,function)
         if ret == 0:
             ret_func=self.board_dict.pop(pin)
