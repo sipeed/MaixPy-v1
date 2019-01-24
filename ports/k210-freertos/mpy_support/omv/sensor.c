@@ -141,6 +141,7 @@ int sensor_init1()
     cambus_init(8);
 	 // Initialize dvp interface
 	dvp_set_xclk_rate(24000000);
+	 dvp->cmos_cfg |= DVP_CMOS_CLK_DIV(3) | DVP_CMOS_CLK_ENABLE;
 	dvp_enable_burst();
 	dvp_disable_auto();
 	dvp_set_output_enable(0, 1);
@@ -691,6 +692,33 @@ void Image_CpltUser(uint8_t* addr)
     line++;
 }
 
+int exchang_data_byte(uint8_t* addr,uint32_t length)
+{
+  if(NULL == addr)
+    return -1;
+  uint8_t data = 0;
+  for(int i = 0 ; i < length ;i = i + 2)
+  {
+    data = addr[i];
+    addr[i] = addr[i + 1];
+    addr[i + 1] = data;
+  }
+  return 0;
+}
+int exchang_pixel(uint16_t* addr,uint32_t resoltion)
+{
+  if(NULL == addr)
+    return -1;
+  uint16_t data = 0;
+  for(int i = 0 ; i < resoltion ;i = i + 1)
+  {
+    data = addr[i];
+    addr[i] = addr[i + 1];
+    addr[i + 1] = data;
+  }
+  return 0;
+}
+
 // This is the default snapshot function, which can be replaced in sensor_init functions. This function
 // uses the DCMI and DMA to capture frames and each line is processed in the DCMI_DMAConvCpltUser function.
 int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_cb)
@@ -803,6 +831,10 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
 			memset(MAIN_FB()->pixels,0,OMV_INIT_RESOLUTION  * OMV_INIT_BPP);
 			uint8_t* src_addr = sensor->image_buf.addr[sensor->image_buf.buf_sel];
 			uint32_t frame_w = resolution[sensor->framesize][0];
+			uint32_t frame_h = resolution[sensor->framesize][1];
+			exchang_data_byte(src_addr,frame_w * frame_h * 2);
+			exchang_pixel(src_addr,frame_w * frame_h);
+//			memcpy(MAIN_FB()->pixels,src_addr, frame_w * frame_h * 2);
 			for(; line < OMV_k210_height ;)
 			{
 				Image_CpltUser(src_addr + frame_w * 2 * line);
