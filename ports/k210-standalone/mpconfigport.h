@@ -129,7 +129,7 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_PY_CMATH                    (1)
 #define MICROPY_PY_IO                       (1)
 #define MICROPY_PY_IO_IOBASE                (1)
-#define MICROPY_PY_IO_FILEIO                (0)
+#define MICROPY_PY_IO_FILEIO                (1)
 #define MICROPY_PY_IO_BYTESIO               (1)
 #define MICROPY_PY_IO_BUFFEREDWRITER        (1)
 #define MICROPY_PY_STRUCT                   (1)
@@ -218,6 +218,8 @@ typedef uint64_t mp_uint_t; // must be pointer size
 typedef long mp_off_t;
 
 #define MP_PLAT_PRINT_STRN(str, len) mp_hal_stdout_tx_strn_cooked(str, len)
+#define mp_type_fileio                      mp_type_vfs_spiffs_fileio
+#define mp_type_textio                      mp_type_vfs_spiffs_textio
 
 // extra built in names to add to the global namespace
 #define MICROPY_PORT_BUILTINS \

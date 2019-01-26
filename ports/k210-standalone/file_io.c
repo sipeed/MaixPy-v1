@@ -14,6 +14,8 @@
 #include "spiffs-port.h"
 
 const mp_obj_type_t mp_type_vfs_spiffs_textio;
+const mp_obj_type_t mp_type_vfs_spiffs_fileio;
+
 typedef struct _pyb_file_obj_t {
     mp_obj_base_t base;
     spiffs_file fd;
