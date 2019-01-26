@@ -13,7 +13,14 @@
 // Receive single character
 int mp_hal_stdin_rx_chr(void) {
     unsigned char c = 0;
-    uarths_receive_data(&c,1);
+    for (;;) {
+        int cnt;
+        cnt = read_ringbuff(&c,1);
+        if (cnt > 0) {
+            break;
+        }
+        MICROPY_EVENT_POLL_HOOK
+    }
     return c;
 }
 void mp_hal_debug_tx_strn_cooked(void *env, const char *str, uint32_t len);

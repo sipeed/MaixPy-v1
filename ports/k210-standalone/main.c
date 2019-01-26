@@ -94,6 +94,9 @@ soft_reset:
 	    gc_init(heap, heap + sizeof(heap));
 	    #endif
 	    mp_init();
+        mp_obj_list_init(mp_sys_path, 0);
+        mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR_));
+        mp_obj_list_init(mp_sys_argv, 0);
 	    readline_init0();
 	    readline_process_char(27);
 	    pyexec_frozen_module("boot.py");

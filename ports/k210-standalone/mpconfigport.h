@@ -267,3 +267,10 @@ extern const struct _mp_obj_module_t utime_module;
 
 #define MICROPY_PORT_ROOT_POINTERS \
     const char *readline_hist[8];
+
+#define MICROPY_EVENT_POLL_HOOK \
+    do { \
+        extern void mp_handle_pending(void); \
+        mp_handle_pending(); \
+    } while (0);
+
