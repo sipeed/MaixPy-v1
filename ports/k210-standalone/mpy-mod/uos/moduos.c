@@ -93,20 +93,22 @@ STATIC mp_obj_t os_urandom(mp_obj_t num) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(os_urandom_obj, os_urandom);
 
 mp_import_stat_t mp_vfs_import_stat(const char *path) {
+    int32_t fd;
+    char temp_obj_path[SPIFFS_OBJ_NAME_LEN + 2];
 
-    //if (st_mode & MP_S_IFDIR) {
-    //    return MP_IMPORT_STAT_DIR;
-    //} else {
-    //    return MP_IMPORT_STAT_FILE;
-    //}
-    spiffs_stat st;
-
-    //if (SPIFFS_stat(&fs,path, &st) == 0) {
+    if (path[0] == '/') {
+        strcpy(temp_obj_path, path);
+    } else {
+        strcpy(temp_obj_path, "/");
+        strcat(temp_obj_path, path);
+    }
+    fd = SPIFFS_open(&fs, temp_obj_path, SPIFFS_O_RDONLY, 0);
+    if(fd > 0) {
+        SPIFFS_close(&fs, fd);
         return MP_IMPORT_STAT_FILE;
-    //}else{
-        //return MP_IMPORT_STAT_NO_EXIST;
-    //}
-    
+    } else {
+        return MP_IMPORT_STAT_NO_EXIST;
+    }
 }
 
 #if MICROPY_PY_OS_DUPTERM
