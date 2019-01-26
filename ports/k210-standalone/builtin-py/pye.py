@@ -211,7 +211,7 @@ class Editor:
         if is_linux and not is_micropython:
             signal.signal(signal.SIGWINCH, Editor.signal_handler)
         if is_micropython:
-            # gc.collect()
+            gc.collect()
             if flag:
                 self.message += "{} Bytes Memory available".format(gc.mem_free())
     def get_input(self): 
@@ -794,7 +794,7 @@ def expandtabs(s):
     else:
         return s, False
 def pye(*content, tab_size=4, undo=50, device=0):
-    # gc.collect() 
+    gc.collect() 
     slot = [Editor(tab_size, undo)]
     index = 0
     if content:
