@@ -7,4 +7,4 @@ from fpioa_manager import *
 import pwmc
 board_info=board.board_info()
 if '/init.py' in uos.listdir():
-    import init
+    from init import *
