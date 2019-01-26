@@ -25,6 +25,7 @@
 #include "py/gc.h"
 #include "py/mperrno.h"
 #include "lib/utils/pyexec.h"
+#include "py/mphal.h"
 #include "fpioa.h"
 #include "gpio.h"
 #include "lib/mp-readline/readline.h"
@@ -112,7 +113,17 @@ soft_reset:
                 }
             }
 	    #else
-	        pyexec_friendly_repl();
+            for (;;) {
+                if (pyexec_mode_kind == PYEXEC_MODE_RAW_REPL) {
+                    if (pyexec_raw_repl() != 0) {
+                        break;
+                    }
+                } else {
+                    if (pyexec_friendly_repl() != 0) {
+                        break;
+                    }
+                }
+            }
 	    #endif
 	    mp_deinit();
 	    msleep(1);
