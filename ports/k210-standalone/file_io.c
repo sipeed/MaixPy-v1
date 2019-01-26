@@ -13,7 +13,7 @@
 #include "py/lexer.h"
 #include "spiffs-port.h"
 
-const mp_obj_type_t mp_type_vfs_spiffs_textio;
+extern char *API_FS_FullPath(const char *path);const mp_obj_type_t mp_type_vfs_spiffs_textio;
 const mp_obj_type_t mp_type_vfs_spiffs_fileio;
 
 typedef struct _pyb_file_obj_t {
@@ -149,18 +149,14 @@ STATIC const mp_arg_t file_open_args[] = {
     }
     pyb_file_obj_t *o = m_new_obj_with_finaliser(pyb_file_obj_t);
     o->base.type = type;
-    uint8_t *temp_obj_patch;
+    
     spiffs_file fd;
-    if(file_name[0]!='/')
-    {
-        temp_obj_patch=malloc(strlen(file_name));
-        memset(temp_obj_patch,'\0',strlen(file_name));
-        strcpy(temp_obj_patch+1,file_name);
-        temp_obj_patch[0]='/';
-        fd = SPIFFS_open(&fs,temp_obj_patch,mode,0);
-    }else{
-        fd = SPIFFS_open(&fs,file_name,mode,0);
-    }
+    char *temp_obj_path = API_FS_FullPath(file_name);
+    if (temp_obj_path == NULL) {
+        mp_raise_OSError(MP_EIO);
+    }    
+    fd = SPIFFS_open(&fs, temp_obj_path, mode, 0);
+    free(temp_obj_path);
         
     if(fd <= 0)
         mp_raise_OSError(MP_EIO);
