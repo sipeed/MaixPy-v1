@@ -3,7 +3,6 @@ import uos
 import os
 import machine
 import platform
-import app
 import board
 from fpioa_manager import *
 import pwmc
