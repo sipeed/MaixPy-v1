@@ -86,6 +86,7 @@ int main()
 		}
 		w25qxx_enable_quad_mode();
         printf("[MAIXPY]Flash:0x%02x:0x%02x\n", manuf_id, device_id);
+soft_reset:
 		my_spiffs_init();
 	    int stack_dummy;
 	    stack_top = (char*)&stack_dummy;
@@ -112,7 +113,8 @@ int main()
 	    #endif
 	    mp_deinit();
 	    msleep(1);
-	    printf("prower off\n");
+	    printf("PYB: soft reboot\n");
+	    goto soft_reset;
 	    return 0;
     }
     while (1);
