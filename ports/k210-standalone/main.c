@@ -41,8 +41,7 @@
 #include <malloc.h>
 #define UART_BUF_LENGTH_MAX 269
 #define MPY_HEAP_SIZE 1 * 1024 * 1024
-extern int mp_hal_stdin_rx_chr(void);
-
+extern void API_FS_InitDir(void);
 
 static char *stack_top;
 #if MICROPY_ENABLE_GC
@@ -89,6 +88,7 @@ int main()
         printf("[MAIXPY]Flash:0x%02x:0x%02x\n", manuf_id, device_id);
 soft_reset:
 		my_spiffs_init();
+		API_FS_InitDir();
 	    int stack_dummy;
 	    stack_top = (char*)&stack_dummy;
 	    #if MICROPY_ENABLE_GC

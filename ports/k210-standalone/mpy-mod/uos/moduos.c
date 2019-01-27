@@ -137,6 +137,11 @@ char *API_FS_GetCurDir()
     return current_dir;
 }
 
+void API_FS_InitDir()
+{
+    strcpy(current_dir, "/");
+}
+ 
 void API_FS_ChangeDir(const char *path)
 {
     if (path[0] == '/') {
