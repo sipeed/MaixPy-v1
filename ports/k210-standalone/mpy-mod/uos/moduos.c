@@ -50,6 +50,7 @@ extern const mp_obj_type_t mp_type_vfs_spiffs_textio;
 char current_dir[SPIFFS_OBJ_NAME_LEN + 1] = { "/" }; // default dir
 char *API_FS_FullPath(const char *path);
 extern const mp_obj_type_t mp_fat_vfs_type;
+extern uint32_t yasmarang(void);
 
 STATIC const qstr os_uname_info_fields[] = {
     MP_QSTR_sysname, MP_QSTR_nodename,
@@ -84,7 +85,9 @@ STATIC mp_obj_t os_urandom(mp_obj_t num) {
     uint32_t r = 0;
     for (int i = 0; i < n; i++) {
         if ((i & 3) == 0) {
-            //r = esp_random(); // returns 32-bit hardware random number
+#if MICROPY_PY_URANDOM        
+            r = yasmarang(); // returns 32-bit hardware random number
+#endif
         }
         vstr.buf[i] = r;
         r >>= 8;
