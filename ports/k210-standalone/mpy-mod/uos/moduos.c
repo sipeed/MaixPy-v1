@@ -289,7 +289,7 @@ mp_obj_t mp_vfs_write(size_t n_args, const mp_obj_t *args) {
     mp_get_buffer_raise(args[3], &bufinfo, MP_BUFFER_READ);
     spiffs_file fd;
     fd=SPIFFS_open(&fs,path, SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR, 0);
-    if(fd == -1){
+    if(fd == -1) {
         mp_raise_OSError(MP_EIO);
     }
     s32_t ls_res = SPIFFS_lseek(&fs, fd,offset,mode);
@@ -297,20 +297,20 @@ mp_obj_t mp_vfs_write(size_t n_args, const mp_obj_t *args) {
         printf("[MAIXPY]FS:Lseek err\n");
         mp_raise_OSError(MP_EIO);
     }
-        s32_t w_res = SPIFFS_write(&fs, fd, bufinfo.buf, bufinfo.len);
+    s32_t w_res = SPIFFS_write(&fs, fd, bufinfo.buf, bufinfo.len);
     if(w_res <= 0){
         printf("[MAIXPY]FS:Write err\n");
         mp_raise_OSError(MP_EIO);
     }
-        s32_t f_res = SPIFFS_fflush(&fs, fd);
+    s32_t f_res = SPIFFS_fflush(&fs, fd);
     if(f_res != 0){
         printf("[MAIXPY]FS:Fflush err\n");
         mp_raise_OSError(MP_EIO);
     }
-        SPIFFS_close (&fs, fd);
+    SPIFFS_close (&fs, fd);
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_vfs_write_obj, 0, 4, mp_vfs_write);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_vfs_write_obj, 4, 4, mp_vfs_write);
 
 mp_obj_t mp_vfs_read(size_t n_args, const mp_obj_t *args) {
 
@@ -326,18 +326,18 @@ mp_obj_t mp_vfs_read(size_t n_args, const mp_obj_t *args) {
     }
 
     s32_t ls_res = SPIFFS_lseek(&fs, fd, offset, mode);
-    if(ls_res != 0){
+    if(ls_res != 0) {
         mp_raise_OSError(MP_EIO);
     }
-        s32_t r_res = SPIFFS_read(&fs, fd, bufinfo.buf, bufinfo.len);
+    s32_t r_res = SPIFFS_read(&fs, fd, bufinfo.buf, bufinfo.len);
     if(r_res <  0){
         printf("[MAIXPY]FS:read err %d\n",r_res);
         mp_raise_OSError(MP_EIO);
     }
-        SPIFFS_close (&fs, fd);
+    SPIFFS_close (&fs, fd);
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_vfs_read_obj, 0, 4, mp_vfs_read);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_vfs_read_obj, 4, 4, mp_vfs_read);
 
 
 mp_obj_t mp_vfs_rmdir(mp_obj_t path_in) {
