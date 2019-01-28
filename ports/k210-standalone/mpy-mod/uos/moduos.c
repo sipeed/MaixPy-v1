@@ -387,7 +387,12 @@ mp_obj_t mp_vfs_stat(mp_obj_t path_in) {
         mp_raise_OSError(MP_EIO);
     }
 
-    s32_t ret = SPIFFS_stat(&fs, path, &stat);
+    s32_t ret = 0;
+    if (strcmp(path,"/") == 0) { // the only existing dir.
+        stat = (spiffs_stat){.type = 2, .size = 0, .obj_id = 0};
+    } else {
+        SPIFFS_stat(&fs, path, &stat);
+    }
     free(path);
     if(ret != 0) {
         mp_raise_OSError(MP_EIO);
