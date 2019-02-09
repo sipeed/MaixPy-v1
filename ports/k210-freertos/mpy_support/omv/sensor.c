@@ -6,7 +6,6 @@
  * Sensor abstraction layer.
  *
  */
-
 #include <stdlib.h>
 #include <string.h>
 #include "mp.h"
@@ -710,7 +709,7 @@ int exchang_pixel(uint16_t* addr,uint32_t resoltion)
   if(NULL == addr)
     return -1;
   uint16_t data = 0;
-  for(int i = 0 ; i < resoltion ;i = i + 1)
+  for(int i = 0 ; i < resoltion ;i = i + 2)
   {
     data = addr[i];
     addr[i] = addr[i + 1];

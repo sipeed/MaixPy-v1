@@ -1,69 +1,38 @@
 #
 # Makefile for maixpy
-# ports/k210-freetos/mpy_support/Makefile
+# ports/k210-freertos/platform/Makefile
 #
-.PHONY:all update_mk compile
-CUR_DIR_ADDR := $(shell pwd)/
-###############################################################################
+.PHONY:all include_mk compile
+##############################################################################
+# common.mk, include include.mk & platform.mk
+sinclude $(COMMON_MK)
+##########################################################################
 # USER OPTION
 LIB_NAME ?= platform
-CROSS_COMPILE ?= 
-MK_VALUE := 
-MK_VALUE +="INC += "$(CUR_DIR_ADDR)"include""\n" 
-OUTPUT_STATIC_LIB := $(LIB_NAME).a
-###############################################################################
-# Optional options
-PLATFORM ?=
-###############################################################################
-# COMPILE OPTIONS
-CFLAGS :=
-LDFLAGS :=
-CXXFLAGS :=
-INC :=
-###############################################################################
-define mod_echo_func
-	@echo "\033[;34m"$(1)"\033[;0m";
-endef
-define sub_clean
-	$(MAKE) -C $(1) clean CROSS_COMPILE=$(CROSS_COMPILE) PLATFORM=$(PLATFORM);
-endef
-define sub_make
-	$(call mod_echo_func,$(dir $(1)))
-	$(MAKE) -C $(basename $(patsubst %/,%,$(patsubst ./%,%,$(dir $(1))))) all CROSS_COMPILE=$(CROSS_COMPILE) PLATFORM=$(PLATFORM)
+INCLUDE := -I $(CUR_DIR)/include
 
-endef
-define update_sub_mk
-	if [ "$(dir $(1))" != "./" ] ; \
-	then \
-		$(MAKE) -C $(1) update_mk CROSS_COMPILE=$(CROSS_COMPILE) PLATFORM=$(PLATFORM); \
-	fi;
-endef
-
-sinclude mk
-
-GET_SUBDIRS1 := $(shell find . -maxdepth 1 -type d)
-GET_SUBDIRS2 := $(basename $(patsubst ./%,%,$(GET_SUBDIRS1)))
-SUBDIRS := $(GET_SUBDIRS2)
-
-SRC_C := $(wildcard *.c))
-SRC_CPP := $(wildcard *.cpp)
-
-# AllDirs := $(shell ls -R | grep '^\./.*:$$' | awk '{gsub(":","");print}') .
-FILE_MAKEFILE := $(foreach n,$(SUBDIRS) , $(wildcard $(n)/Makefile))
+##############################################################################
+# USER CONFIG MAKE METHOD
+sinclude $(COMMON_C_MK)
 
 all: compile
-	$(call mod_echo_func,"CUR_DIR "$(CUR_DIR)" ...")
+	$(call echo_info,"CUR_DIR "$(CUR_DIR)" ...")
 
-compile:
-	$(call mod_echo_func,"AllDirs "$(AllDirs)" ...")
-	$(foreach n,$(FILE_MAKEFILE),$(call sub_make,$(n)))
+$(OUTPUT_BIN):$(SRC_C_OUTPUT_OBJ) $(SRC_C_OUTPUT_OBJ)
+	$(Q)$(AR) rcs -o $@ $(SRC_C_OUTPUT_OBJ) $(SRC_C_OUTPUT_OBJ)
 
-update_mk:
-	$(foreach n,$(FILE_MAKEFILE),$(call update_sub_mk, $(dir $(n))))
-	$(shell echo $(MK_VALUE)$(foreach nn,$(foreach n,$(SUBDIRS) , $(wildcard $(n)/mk)),"-include "$(CUR_DIR_ADDR)$(nn)"\n") > mk)
-
+compile: $(OUTPUT_BIN)	
+	$(call echo_info,"Making compile ...")
+	$(foreach n,${SUBDIRS},make -C ${n} compile;)
+	
+include_mk:
+	echo "INCLUDE_ALL += \\" > $(INCLUDE_MK)
+	echo $(INCLUDE)"\\" >> $(INCLUDE_MK)
+	echo " " >> $(INCLUDE_MK)
+	$(foreach n,${SUBDIRS},make -C ${n} include_mk; cat ${n}/include.mk >> ${INCLUDE_MK} ;)
+	cp $(INCLUDE_MK) $(INC_DIR)/$(LIB_NAME).mk
+	
 clean:
-	rm -f mk
-	$(call mod_echo_func,"Cleaning "$(SUBDIRS)" ...")
-	$(foreach n,$(FILE_MAKEFILE),$(call sub_clean, $(dir $(n))))
-
+	$(call echo_info,"Cleaning "$(SUBDIRS)" ...")
+	$(foreach n,${SUBDIRS},make -C ${SUBDIRS} clean)
+	rm -rf $(OUTPUT_DIR)

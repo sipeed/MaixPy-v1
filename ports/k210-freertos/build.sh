@@ -1,5 +1,5 @@
 #!/bin/bash
-
+echo $0
 config_file=config.conf
 if [ ! -f $config_file ]; then
     echo "Please config toolchain path first in config.conf"

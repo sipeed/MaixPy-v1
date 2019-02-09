@@ -24,7 +24,7 @@
  *  line scan direction: forward
  *  inverse: yes
  */
-#include "font.h"
+#include "include/font.h"
 const glyph_t font[95] = {
   // character: ' '
   {8, 10, {0x00,

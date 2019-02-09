@@ -1,56 +1,48 @@
 #
-.PHONY:all update_mk build_env
+# Makefile for maixpy
+# ports/k210-freertos/platform/sdk/Makefile
+#
+.PHONY:all include_mk compile
+###############################################################################
+# common.mk, include include.mk & platform.mk
+sinclude $(COMMON_MK)
 ###################################
 # USER OPTION
 LIB_NAME ?= sdk
-CROSS_COMPILE ?=
-OUTPUT_DIR :=build/
-####################################
-# Optional options
-PLATFORM ?=
-####################################
+OUTPUT_DIR :=build
 SDK_GIT_ADDR := https://github.com/sipeed/kendryte-standalone-sdk.git
 SDK_GIT_BRANCH := Maixpy-dev
-CUR_DIR_ADDR := $(shell pwd)/
 SDK_DIR_NAME :=kendryte-standalone-sdk
-SDK_DIR_ADDR := $(CUR_DIR_ADDR)$(SDK_DIR_NAME)/
+SDK_DIR := $(CUR_DIR)/$(SDK_DIR_NAME)
+INCLUDE := -I "$(SDK_DIR)/lib/bsp/include/" -I "$(SDK_DIR)/lib/drivers/include/" -I "$(SDK_DIR)/lib/bsp/include/" -I "$(SDK_DIR)/lib/bsp/include/" -I "$(SDK_DIR)/lib/freertos/conf/" -I "$(SDK_DIR)/lib/freertos/include/" -I "$(SDK_DIR)/lib/freertos/portable/" -I "$(SDK_DIR)/lib/utils/include/" 
 
-MK_VALUE :=
-MK_VALUE +="INC += "$(SDK_DIR_ADDR)"lib/bsp/include/""\r\n"
-MK_VALUE +="INC += "$(SDK_DIR_ADDR)"lib/drivers/include/""\r\n"
-MK_VALUE +="INC += "$(SDK_DIR_ADDR)"lib/freertos/conf/""\r\n"
-MK_VALUE +="INC += "$(SDK_DIR_ADDR)"lib/freertos/include/""\r\n"
-MK_VALUE +="INC += "$(SDK_DIR_ADDR)"lib/freertos/portable/""\r\n"
-MK_VALUE +="INC += "$(SDK_DIR_ADDR)"lib/utils/include/""\r\n"
-MK_VALUE +="liba-sdk := "$(CUR_DIR_ADDR)$(OUTPUT_DIR)"lib/libkendryte.a""\r\n"
-MK_VALUE +="output-file += "'$$(liba-sdk)'"\r\n"
-MK_VALUE +="platform-lds += "$(CUR_DIR_ADDR)$(SDK_DIR_NAME)"/lds/kendryte.ld""\r\n"
-####################################
-
-define mod_echo_func
-	@echo "\033[;39m"$(1)"\033[;0m";
-endef
-
+##############################################################################
+# USER CONFIG MAKE METHOD
+SUBDIRS :=
 all: build_env compile update_mk
 
 # cd $(SDK_DIR_NAME) && patch -p1 -u < ../freeRTOS.patch && cd -;
 build_env:
-	if [ ! -d $(SDK_DIR_NAME) ] ; \
+	if [ ! -d $(SDK_DIR) ] ; \
 	then \
 	     git clone -b $(SDK_GIT_BRANCH) $(SDK_GIT_ADDR);\
 	fi;
 
-compile:
+compile: build_env
 	-mkdir -p build
 	MAKE_J_NUMBER=`cat /proc/cpuinfo | grep vendor_id | wc -l`
 	cd build && cmake ../$(SDK_DIR_NAME)/ -DPROJ=hello_world -DTOOLCHAIN=$(subst bin/,bin,$(dir $(CROSS_COMPILE))) && make -j${MAKE_J_NUMBER}
+	cp ${CUR_DIR}/${OUTPUT_DIR}/lib/libkendryte.a ${BIN_DIR}/
 
-update_mk: build_env
-	$(call mod_echo_func,"update mk file"" ...")
-	$(shell echo $(MK_VALUE) > mk)
+include_mk: build_env
+	$(call echo_info,"update include mk file ...")
+	echo "INCLUDE_ALL += \\" > $(INCLUDE_MK)
+	echo $(INCLUDE)"\\" >> $(INCLUDE_MK)
+	echo " " >> $(INCLUDE_MK)
+	$(foreach n,${SUBDIRS},make -C ${n} include_mk; cat ${n}/include.mk >> ${INCLUDE_MK} ;)
+	cp $(INCLUDE_MK) $(INC_DIR)/$(LIB_NAME).mk
 
 clean:
 	rm -rf build
-	rm -f mk
 	
 	

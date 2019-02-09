@@ -1,0 +1,242 @@
+Use make V=1 or set BUILD_VERBOSE in your environment to increase build verbosity.
+mkdir -p build/genhdr
+GEN build/genhdr/mpversion.h
+GEN build/genhdr/qstr.i.last
+GEN build/genhdr/qstr.split
+GEN build/genhdr/qstrdefs.collected.h
+QSTR updated
+mkdir -p build/./Maix/
+mkdir -p build/./network/
+mkdir -p build/./omv/
+mkdir -p build/./omv/img/
+mkdir -p build/./omv/py/
+mkdir -p build/./standard_lib/
+mkdir -p build/./standard_lib/machine/
+mkdir -p build/./standard_lib/socket/
+mkdir -p build/./standard_lib/uos/
+mkdir -p build/./standard_lib/utime/
+mkdir -p build/build/
+mkdir -p build/extmod/
+mkdir -p build/lib/embed/
+mkdir -p build/lib/libc/
+mkdir -p build/lib/mp-readline/
+mkdir -p build/lib/netutils/
+mkdir -p build/lib/oofatfs/
+mkdir -p build/lib/timeutils/
+mkdir -p build/lib/utils/
+mkdir -p build/py/
+CC Maix/Maix_fpioa.c
+CC Maix/modMaix.c
+CC Maix/Maix_gpio.c
+CC network/esp8285.c
+CC network/modesp8285.c
+CC network/modnetwork.c
+CC omv/ov2640.c
+CC omv/sensor.c
+CC omv/framebuffer.c
+CC omv/mutex.c
+CC omv/xalloc.c
+CC omv/cambus.c
+CC omv/vfs_wrapper.c
+CC omv/fb_alloc.c
+CC omv/omv.c
+CC omv/array.c
+CC omv/img/rectangle.c
+CC omv/img/rainbow_tab.c
+CC omv/img/bmp.c
+CC omv/img/fmath.c
+CC omv/img/jpeg.c
+CC omv/img/rgb2rgb_tab.c
+CC omv/img/imlib.c
+CC omv/img/font.c
+CC omv/img/pool.c
+CC omv/img/yuv_tab.c
+CC omv/py/image0.c
+CC omv/py/py_lcd.c
+CC omv/py/py_sensor.c
+CC omv/py/py_helper.c
+CC omv/py/py_omv.c
+CC omv/py/py_image.c
+CC standard_lib/mod_test.c
+CC standard_lib/machine/modmachine.c
+CC standard_lib/machine/machine_uart.c
+CC standard_lib/machine/machine_spi.c
+CC standard_lib/machine/machine_pwm.c
+CC standard_lib/machine/machine_i2c.c
+CC standard_lib/machine/machine_sdcard.c
+CC standard_lib/machine/machine_timer.c
+CC standard_lib/socket/modusocket.c
+CC standard_lib/uos/rng.c
+CC standard_lib/uos/vfs_spiffs.c
+CC standard_lib/uos/vfs_internal.c
+CC standard_lib/uos/moduos.c
+CC standard_lib/uos/vfs_spiffs_file.c
+CC standard_lib/uos/vfs_spiffs_io.c
+CC standard_lib/utime/modutime.c
+CC gccollect.c
+CC mphalport.c
+CC help.c
+CC mpthreadport.c
+CC fatfs_port.c
+CC ../../../lib/utils/stdout_helpers.c
+CC ../../../lib/utils/interrupt_char.c
+CC ../../../lib/utils/pyexec.c
+CC ../../../lib/libc/string0.c
+CC ../../../lib/mp-readline/readline.c
+CC ../../../lib/netutils/netutils.c
+CC ../../../lib/timeutils/timeutils.c
+CC ../../../lib/utils/sys_stdio_mphal.c
+CC ../../../lib/oofatfs/ff.c
+MPY builtin-py/fpioa_manager.py
+MPY builtin-py/board.py
+MPY builtin-py/RAMBlockDev.py
+MPY builtin-py/_boot.py
+######GEN build/frozen_mpy.c
+CC build/frozen_mpy.c
+CC ../../../py/mpstate.c
+CC ../../../py/nlr.c
+CC ../../../py/nlrx86.c
+CC ../../../py/nlrx64.c
+CC ../../../py/nlrthumb.c
+CC ../../../py/nlrxtensa.c
+CC ../../../py/nlrsetjmp.c
+CC ../../../py/malloc.c
+CC ../../../py/gc.c
+CC ../../../py/pystack.c
+CC ../../../py/qstr.c
+CC ../../../py/vstr.c
+CC ../../../py/mpprint.c
+CC ../../../py/unicode.c
+CC ../../../py/mpz.c
+CC ../../../py/reader.c
+CC ../../../py/lexer.c
+CC ../../../py/parse.c
+CC ../../../py/scope.c
+CC ../../../py/compile.c
+CC ../../../py/emitcommon.c
+CC ../../../py/emitbc.c
+CC ../../../py/asmbase.c
+CC ../../../py/asmx64.c
+CC ../../../py/emitnx64.c
+CC ../../../py/asmx86.c
+CC ../../../py/emitnx86.c
+CC ../../../py/asmthumb.c
+CC ../../../py/emitnthumb.c
+CC ../../../py/emitinlinethumb.c
+CC ../../../py/asmarm.c
+CC ../../../py/emitnarm.c
+CC ../../../py/asmxtensa.c
+CC ../../../py/emitnxtensa.c
+CC ../../../py/emitinlinextensa.c
+CC ../../../py/formatfloat.c
+CC ../../../py/parsenumbase.c
+CC ../../../py/parsenum.c
+CC ../../../py/emitglue.c
+CC ../../../py/persistentcode.c
+CC ../../../py/runtime.c
+CC ../../../py/runtime_utils.c
+CC ../../../py/scheduler.c
+CC ../../../py/nativeglue.c
+CC ../../../py/stackctrl.c
+CC ../../../py/argcheck.c
+CC ../../../py/warning.c
+CC ../../../py/map.c
+CC ../../../py/obj.c
+CC ../../../py/objarray.c
+CC ../../../py/objattrtuple.c
+CC ../../../py/objbool.c
+CC ../../../py/objboundmeth.c
+CC ../../../py/objcell.c
+CC ../../../py/objclosure.c
+CC ../../../py/objcomplex.c
+CC ../../../py/objdeque.c
+CC ../../../py/objdict.c
+CC ../../../py/objenumerate.c
+CC ../../../py/objexcept.c
+CC ../../../py/objfilter.c
+CC ../../../py/objfloat.c
+CC ../../../py/objfun.c
+CC ../../../py/objgenerator.c
+CC ../../../py/objgetitemiter.c
+CC ../../../py/objint.c
+CC ../../../py/objint_longlong.c
+CC ../../../py/objint_mpz.c
+CC ../../../py/objlist.c
+CC ../../../py/objmap.c
+CC ../../../py/objmodule.c
+CC ../../../py/objobject.c
+CC ../../../py/objpolyiter.c
+CC ../../../py/objproperty.c
+CC ../../../py/objnone.c
+CC ../../../py/objnamedtuple.c
+CC ../../../py/objrange.c
+CC ../../../py/objreversed.c
+CC ../../../py/objset.c
+CC ../../../py/objsingleton.c
+CC ../../../py/objslice.c
+CC ../../../py/objstr.c
+CC ../../../py/objstrunicode.c
+CC ../../../py/objstringio.c
+CC ../../../py/objtuple.c
+CC ../../../py/objtype.c
+CC ../../../py/objzip.c
+CC ../../../py/opmethods.c
+CC ../../../py/sequence.c
+CC ../../../py/stream.c
+CC ../../../py/binary.c
+CC ../../../py/builtinimport.c
+CC ../../../py/builtinevex.c
+CC ../../../py/builtinhelp.c
+CC ../../../py/modarray.c
+CC ../../../py/modbuiltins.c
+CC ../../../py/modcollections.c
+CC ../../../py/modgc.c
+CC ../../../py/modio.c
+CC ../../../py/modmath.c
+CC ../../../py/modcmath.c
+CC ../../../py/modmicropython.c
+CC ../../../py/modstruct.c
+CC ../../../py/modsys.c
+CC ../../../py/moduerrno.c
+CC ../../../py/modthread.c
+CC ../../../py/vm.c
+CC ../../../py/bc.c
+CC ../../../py/showbc.c
+CC ../../../py/repl.c
+CC ../../../py/smallint.c
+CC ../../../py/frozenmod.c
+CC ../../../extmod/moductypes.c
+CC ../../../extmod/modujson.c
+CC ../../../extmod/modure.c
+CC ../../../extmod/moduzlib.c
+CC ../../../extmod/moduheapq.c
+CC ../../../extmod/modutimeq.c
+CC ../../../extmod/moduhashlib.c
+CC ../../../extmod/moducryptolib.c
+CC ../../../extmod/modubinascii.c
+CC ../../../extmod/virtpin.c
+CC ../../../extmod/machine_mem.c
+CC ../../../extmod/machine_pinbase.c
+CC ../../../extmod/machine_signal.c
+CC ../../../extmod/machine_pulse.c
+CC ../../../extmod/machine_i2c.c
+CC ../../../extmod/machine_spi.c
+CC ../../../extmod/modussl_axtls.c
+CC ../../../extmod/modussl_mbedtls.c
+CC ../../../extmod/modurandom.c
+CC ../../../extmod/moduselect.c
+CC ../../../extmod/modwebsocket.c
+CC ../../../extmod/modwebrepl.c
+CC ../../../extmod/modframebuf.c
+CC ../../../extmod/vfs.c
+CC ../../../extmod/vfs_reader.c
+CC ../../../extmod/vfs_posix.c
+CC ../../../extmod/vfs_posix_file.c
+CC ../../../extmod/vfs_fat.c
+CC ../../../extmod/vfs_fat_diskio.c
+CC ../../../extmod/vfs_fat_file.c
+CC ../../../extmod/utime_mphal.c
+CC ../../../extmod/uos_dupterm.c
+CC ../../../lib/embed/abort_.c
+CC ../../../lib/utils/printf.c
+'[1;34m' mpy_support Making compile ...'[0m'
