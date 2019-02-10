@@ -70,6 +70,8 @@
 #define IM_DEG2RAD(x)   (((x)*M_PI)/180)
 #define IM_RAD2DEG(x)   (((x)*180)/M_PI)
 
+#define PI M_PI
+
 /////////////////
 // Point Stuff //
 /////////////////
@@ -1155,7 +1157,7 @@ void ppm_read_pixels(FIL *fp, image_t *img, int line_start, int line_end, ppm_re
 void ppm_read(image_t *img, const char *path);
 void ppm_write_subimg(image_t *img, const char *path, rectangle_t *r);
 bool bmp_read_geometry(mp_obj_t fp, image_t *img, bmp_read_settings_t *rs);
-bool bmp_read_pixels(mp_obj_t fp, image_t *img, int line_start, int line_end, bmp_read_settings_t *rs, int* err);
+bool bmp_read_pixels(mp_obj_t fp, image_t *img, int line_start, int line_end, bmp_read_settings_t *rs);
 void bmp_read(image_t *img, const char *path);
 void bmp_write_subimg(image_t *img, const char *path, rectangle_t *r);
 bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc);
@@ -1163,7 +1165,7 @@ void jpeg_read_geometry(mp_obj_t fp, image_t *img);
 bool jpeg_read_pixels(mp_obj_t fp, image_t *img);
 void jpeg_read(image_t *img, const char *path);
 void jpeg_write(image_t *img, const char *path, int quality);
-bool imlib_read_geometry(mp_obj_t fp, image_t *img, img_read_settings_t *rs);
+bool imlib_read_geometry(mp_obj_t fp, image_t *img, const char *path, img_read_settings_t *rs);
 void imlib_image_operation(image_t *img, const char *path, image_t *other, int scalar, line_op_t op, void *data);
 void imlib_load_image(image_t *img, const char *path);
 void imlib_save_image(image_t *img, const char *path, rectangle_t *roi, int quality);

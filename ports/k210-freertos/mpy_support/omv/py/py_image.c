@@ -12,7 +12,7 @@
 #include "imlib.h"
 #include "array.h"
 #include "sensor.h"
-// #include "ff_wrapper.h"
+#include "vfs_wrapper.h"
 #include "xalloc.h"
 #include "fb_alloc.h"
 #include "framebuffer.h"
@@ -27,7 +27,7 @@
 static const mp_obj_type_t py_cascade_type;
 static const mp_obj_type_t py_image_type;
 
-extern const char *ffs_strerror(FRESULT res);
+//extern const char *ffs_strerror(FRESULT res);
 extern uint32_t systick_current_millis(void);
 
 // Haar Cascade ///////////////////////////////////////////////////////////////
@@ -5662,40 +5662,40 @@ static const mp_obj_type_t py_image_type = {
 // ImageWriter Object //
 typedef struct py_imagewriter_obj {
     mp_obj_base_t base;
-    FIL fp;
+    mp_obj_t fp;
     uint32_t ms;
 } py_imagewriter_obj_t;
 
 static void py_imagewriter_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind)
 {
     py_imagewriter_obj_t *self = self_in;
-    mp_printf(print, "{\"size\":%d}", f_size(&self->fp));
+    mp_printf(print, "{\"size\":%d}", vfs_internal_size(&self->fp));
 }
 
 mp_obj_t py_imagewriter_size(mp_obj_t self_in)
 {
-    return mp_obj_new_int(f_size(&((py_imagewriter_obj_t *) self_in)->fp));
+    return mp_obj_new_int(vfs_internal_size(&((py_imagewriter_obj_t *) self_in)->fp));
 }
 
 mp_obj_t py_imagewriter_add_frame(mp_obj_t self_in, mp_obj_t img_obj)
 {
     // Don't use the file buffer here...
 
-    FIL *fp = &((py_imagewriter_obj_t *) self_in)->fp;
+    mp_obj_t fp = &((py_imagewriter_obj_t *) self_in)->fp;
     PY_ASSERT_TYPE(img_obj, &py_image_type);
     image_t *arg_img = &((py_image_obj_t *) img_obj)->_cobj;
 
     uint32_t ms = systick_current_millis(); // Write out elapsed ms.
-    write_long(fp, ms - ((py_imagewriter_obj_t *) self_in)->ms);
+    write_long_raise(fp, ms - ((py_imagewriter_obj_t *) self_in)->ms);
     ((py_imagewriter_obj_t *) self_in)->ms = ms;
 
-    write_long(fp, arg_img->w);
-    write_long(fp, arg_img->h);
-    write_long(fp, arg_img->bpp);
+    write_long_raise(fp, arg_img->w);
+    write_long_raise(fp, arg_img->h);
+    write_long_raise(fp, arg_img->bpp);
 
     uint32_t size = image_size(arg_img);
 
-    write_data(fp, arg_img->data, size);
+    write_data_raise(fp, arg_img->data, size);
     if (size % 16) write_data(fp, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 16 - (size % 16)); // Pad to multiple of 16 bytes.
     return self_in;
 }
@@ -5729,12 +5729,12 @@ mp_obj_t py_image_imagewriter(mp_obj_t path)
 {
     py_imagewriter_obj_t *obj = m_new_obj(py_imagewriter_obj_t);
     obj->base.type = &py_imagewriter_type;
-    file_write_open(&obj->fp, mp_obj_str_get_str(path));
+    file_write_open_raise(&obj->fp, mp_obj_str_get_str(path));
 
-    write_long(&obj->fp, *((uint32_t *) "OMV ")); // OpenMV
-    write_long(&obj->fp, *((uint32_t *) "IMG ")); // Image
-    write_long(&obj->fp, *((uint32_t *) "STR ")); // Stream
-    write_long(&obj->fp, *((uint32_t *) "V1.0")); // v1.0
+    write_long(obj->fp, *((uint32_t *) "OMV ")); // OpenMV
+    write_long(obj->fp, *((uint32_t *) "IMG ")); // Image
+    write_long(obj->fp, *((uint32_t *) "STR ")); // Stream
+    write_long(obj->fp, *((uint32_t *) "V1.0")); // v1.0
 
     obj->ms = systick_current_millis();
     return obj;
@@ -5751,12 +5751,12 @@ typedef struct py_imagereader_obj {
 static void py_imagereader_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind)
 {
     py_imagereader_obj_t *self = self_in;
-    mp_printf(print, "{\"size\":%d}", f_size(&self->fp));
+    mp_printf(print, "{\"size\":%d}", vfs_internal_size(&self->fp));
 }
 
 mp_obj_t py_imagereader_size(mp_obj_t self_in)
 {
-    return mp_obj_new_int(f_size(&((py_imagereader_obj_t *) self_in)->fp));
+    return mp_obj_new_int(vfs_internal_size(&((py_imagereader_obj_t *) self_in)->fp));
 }
 
 mp_obj_t py_imagereader_next_frame(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
@@ -5774,7 +5774,7 @@ mp_obj_t py_imagereader_next_frame(uint n_args, const mp_obj_t *args, mp_map_t *
             return mp_const_none;
         }
 
-        file_seek(fp, 16); // skip past the header
+        file_seek(fp, 16, 0); // skip past the header
 
         if (f_eof(fp)) { // empty file
             return mp_const_none;
@@ -5845,7 +5845,7 @@ mp_obj_t py_image_imagereader(mp_obj_t path)
 {
     py_imagereader_obj_t *obj = m_new_obj(py_imagereader_obj_t);
     obj->base.type = &py_imagereader_type;
-    file_read_open(&obj->fp, mp_obj_str_get_str(path));
+    file_read_open_raise(&obj->fp, mp_obj_str_get_str(path));
 
     read_long_expect(&obj->fp, *((uint32_t *) "OMV ")); // OpenMV
     read_long_expect(&obj->fp, *((uint32_t *) "IMG ")); // Image
@@ -6028,9 +6028,9 @@ mp_obj_t py_image_load_descriptor(uint n_args, const mp_obj_t *args, mp_map_t *k
     mp_obj_t desc = mp_const_none;
     const char *path = mp_obj_str_get_str(args[0]);
 
-    if ((res = f_open_helper(&fp, path, FA_READ|FA_OPEN_EXISTING)) == FR_OK) {
+    if ((res = file_read_open(&fp, path)) == FR_OK) {
         // Read descriptor type
-        res = f_read(&fp, &desc_type, sizeof(desc_type), &bytes);
+        res = file_read(&fp, &desc_type, sizeof(desc_type), &bytes);
         if (res != FR_OK || bytes  != sizeof(desc_type)) {
             goto error;
         }
@@ -6092,7 +6092,7 @@ mp_obj_t py_image_save_descriptor(uint n_args, const mp_obj_t *args, mp_map_t *k
     uint32_t desc_type;
     const char *path = mp_obj_str_get_str(args[1]);
 
-    if ((res = f_open_helper(&fp, path, FA_WRITE|FA_CREATE_ALWAYS)) == FR_OK) {
+    if ((res = file_write_open(&fp, path)) == FR_OK) {
         // Find descriptor type
         mp_obj_type_t *desc_obj_type = mp_obj_get_type(args[0]);
         if (desc_obj_type ==  &py_lbp_type) {
@@ -6102,7 +6102,7 @@ mp_obj_t py_image_save_descriptor(uint n_args, const mp_obj_t *args, mp_map_t *k
         }
 
         // Write descriptor type
-        res = f_write(&fp, &desc_type, sizeof(desc_type), &bytes);
+        res = file_write(&fp, &desc_type, sizeof(desc_type), &bytes);
         if (res != FR_OK || bytes  !=  sizeof(desc_type)) {
             goto error;
         }
@@ -6222,7 +6222,7 @@ int py_image_descriptor_from_roi(image_t *img, const char *path, rectangle_t *ro
     printf("Save Descriptor: KPTS(%d)\n", array_length(kpts));
 
     if (array_length(kpts)) {
-        if ((res = f_open_helper(&fp, path, FA_WRITE|FA_CREATE_ALWAYS)) == FR_OK) {
+        if ((res = file_write_open(&fp, path)) == FR_OK) {
             res = orb_save_descriptor(&fp, kpts);
             f_close(&fp);
         }

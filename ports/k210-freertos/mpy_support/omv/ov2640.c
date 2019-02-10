@@ -1037,6 +1037,7 @@ static int set_vflip(sensor_t *sensor, int enable)
     return ret;
 }
 
+
 int ov2640_init(sensor_t *sensor)
 {
     // Initialize sensor structure.

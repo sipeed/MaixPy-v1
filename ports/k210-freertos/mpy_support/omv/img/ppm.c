@@ -8,7 +8,7 @@
  */
 #include <stdio.h>
 #include <ff.h>
-#include "ff_wrapper.h"
+#include "vfs_wrapper.h"
 #include "xalloc.h"
 #include "imlib.h"
 
@@ -22,7 +22,7 @@ static void read_int(FIL *fp, uint32_t *i, ppm_read_settings_t *rs)
     enum { EAT_WHITESPACE, EAT_COMMENT, EAT_NUMBER } mode = EAT_WHITESPACE;
     for(*i = 0;;) {
         if (!rs->read_int_c_valid) {
-            if (file_tell_w_buf(fp) == file_size_w_buf(fp)) return;
+            //if (file_tell_w_buf(fp) == file_size_w_buf(fp)) return;
             read_byte(fp, &rs->read_int_c);
             rs->read_int_c_valid = true;
         }
@@ -54,16 +54,16 @@ void ppm_read_geometry(FIL *fp, image_t *img, const char *path, ppm_read_setting
     read_int_reset(rs);
     read_byte_expect(fp, 'P');
     read_byte(fp, &rs->ppm_fmt);
-    if ((rs->ppm_fmt!='2') && (rs->ppm_fmt!='3') && (rs->ppm_fmt!='5') && (rs->ppm_fmt!='6')) ff_unsupported_format(fp);
+    if ((rs->ppm_fmt!='2') && (rs->ppm_fmt!='3') && (rs->ppm_fmt!='5') && (rs->ppm_fmt!='6')) fs_unsupported_format(fp);
     img->bpp = ((rs->ppm_fmt == '2') || (rs->ppm_fmt == '5')) ? 1 : 2;
 
     read_int(fp, (uint32_t *) &img->w, rs);
     read_int(fp, (uint32_t *) &img->h, rs);
-    if ((img->w == 0) || (img->h == 0)) ff_file_corrupted(fp);
+    if ((img->w == 0) || (img->h == 0)) fs_file_corrupted(fp);
 
     uint32_t max;
     read_int(fp, &max, rs);
-    if (max != 255) ff_unsupported_format(fp);
+    if (max != 255) fs_unsupported_format(fp);
 }
 
 // This function reads the pixel values of an image.
@@ -112,7 +112,7 @@ void ppm_read(image_t *img, const char *path)
 {
     FIL fp;
     ppm_read_settings_t rs;
-    file_read_open(&fp, path);
+    file_read_open_raise(&fp, path);
     file_buffer_on(&fp);
     ppm_read_geometry(&fp, img, path, &rs);
     if (!img->pixels) img->pixels = xalloc(img->w * img->h * img->bpp);
@@ -126,7 +126,7 @@ void ppm_write_subimg(image_t *img, const char *path, rectangle_t *r)
     rectangle_t rect;
     if (!rectangle_subimg(img, r, &rect)) ff_no_intersection(NULL);
     FIL fp;
-    file_write_open(&fp, path);
+    file_write_open_raise(&fp, path);
 
     file_buffer_on(&fp);
     if (IM_IS_GS(img)) {

@@ -94,7 +94,7 @@ int imlib_lbp_desc_save(FIL *fp, uint8_t *desc)
 {
     UINT bytes;
     // Write descriptor
-    return f_write(fp, desc, LBP_DESC_SIZE, &bytes);
+    return file_write(fp, desc, LBP_DESC_SIZE, &bytes);
 }
 
 int imlib_lbp_desc_load(FIL *fp, uint8_t **desc)
@@ -106,7 +106,7 @@ int imlib_lbp_desc_load(FIL *fp, uint8_t **desc)
     uint8_t *hist = xalloc(LBP_DESC_SIZE);
 
     // Read descriptor
-    res = f_read(fp, hist, LBP_DESC_SIZE, &bytes);
+    res = file_read(fp, hist, LBP_DESC_SIZE, &bytes);
     if (res != FR_OK || bytes != LBP_DESC_SIZE) {
         *desc = NULL;
         xfree(hist);

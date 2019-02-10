@@ -7,7 +7,7 @@
  *
  */
 #include "fb_alloc.h"
-#include "ff_wrapper.h"
+#include "vfs_wrapper.h"
 #include "imlib.h"
 
 #define SIZE_OFFSET             (1*4)
@@ -117,33 +117,33 @@ void mjpeg_add_frame(FIL *fp, uint32_t *frames, uint32_t *bytes, image_t *img, i
 void mjpeg_close(FIL *fp, uint32_t *frames, uint32_t *bytes, float fps)
 {
     // Needed
-    file_seek(fp, SIZE_OFFSET);
+    file_seek(fp, SIZE_OFFSET, 0);
     write_long(fp, 216 + (*frames * 8) + *bytes);
     // Needed
-    file_seek(fp, MICROS_OFFSET);
+    file_seek(fp, MICROS_OFFSET, 0);
     write_long(fp, (!fast_roundf(fps)) ? 0 :
             fast_roundf(1000000 / fps));
     write_long(fp, (!(*frames)) ? 0 :
             fast_roundf((((*frames * 8) + *bytes) * fps) / *frames));
     // Needed
-    file_seek(fp, FRAMES_OFFSET);
+    file_seek(fp, FRAMES_OFFSET, 0);
     write_long(fp, *frames);
     // Probably not needed but writing it just in case.
-    file_seek(fp, RATE_0_OFFSET);
+    file_seek(fp, RATE_0_OFFSET, 0);
     write_long(fp, fast_roundf(fps * 1000));
     // Probably not needed but writing it just in case.
-    file_seek(fp, LENGTH_0_OFFSET);
+    file_seek(fp, LENGTH_0_OFFSET, 0);
     write_long(fp, (!fast_roundf(fps)) ? 0 :
             fast_roundf((*frames * 1000) / fps));
     // Probably not needed but writing it just in case.
-    file_seek(fp, RATE_1_OFFSET);
+    file_seek(fp, RATE_1_OFFSET, 0);
     write_long(fp, fast_roundf(fps * 1000));
     // Probably not needed but writing it just in case.
-    file_seek(fp, LENGTH_1_OFFSET);
+    file_seek(fp, LENGTH_1_OFFSET, 0);
     write_long(fp, (!fast_roundf(fps)) ? 0 :
             fast_roundf((*frames * 1000) / fps));
     // Needed
-    file_seek(fp, MOVI_OFFSET);
+    file_seek(fp, MOVI_OFFSET, 0);
     write_long(fp, 4 + (*frames * 8) + *bytes);
     file_close(fp);
 }

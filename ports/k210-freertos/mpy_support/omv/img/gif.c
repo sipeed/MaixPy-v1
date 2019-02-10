@@ -8,7 +8,7 @@
  */
 #include <mp.h>
 #include "fb_alloc.h"
-#include "ff_wrapper.h"
+#include "vfs_wrapper.h"
 #include "imlib.h"
 #define BLOCK_SIZE (126) // (2^7) - 2 // (DO NOT CHANGE!)
 

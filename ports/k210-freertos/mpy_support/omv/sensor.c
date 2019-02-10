@@ -136,15 +136,15 @@ int sensor_init1()
     DCMI_PWDN_LOW();
     mp_hal_ticks_ms(10);
 
-    // Initialize the camera bus.
+    // Initialize the camera bus, 8bit reg
     cambus_init(8);
 	 // Initialize dvp interface
 	dvp_set_xclk_rate(24000000);
 	 dvp->cmos_cfg |= DVP_CMOS_CLK_DIV(3) | DVP_CMOS_CLK_ENABLE;
 	dvp_enable_burst();
 	dvp_disable_auto();
-	dvp_set_output_enable(0, 1);
-	dvp_set_output_enable(1, 1);
+	dvp_set_output_enable(0, 1);	//enable to AI
+	dvp_set_output_enable(1, 1);	//enable to lcd
 	dvp_set_image_format(DVP_CFG_RGB_FORMAT);
 	dvp_set_image_size(320, 240);
 
@@ -276,8 +276,8 @@ int sensor_init2()
 
 int sensor_reset()
 {
-	sensor_init0();
-	sensor_init1();
+	sensor_init0();		//init FB
+	sensor_init1();		//init pins
     // Reset the sesnor state
     sensor.sde         = 0;
     sensor.pixformat   = 0;

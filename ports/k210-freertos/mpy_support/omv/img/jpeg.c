@@ -1202,7 +1202,7 @@ void jpeg_read_geometry(mp_obj_t fp, image_t *img)
              || ((0xFFC9 <= header) && (header <= 0xFFCB))
              || ((0xFFCD <= header) && (header <= 0xFFCF)))
             {
-                read_byte_ignore_raise(fp);
+                read_byte_ignore(fp);
                 uint16_t width;
                 read_word_raise(fp, &width);
                 width = IM_SWAP16(width);
@@ -1214,10 +1214,10 @@ void jpeg_read_geometry(mp_obj_t fp, image_t *img)
                 img->bpp = vfs_internal_size(fp);
                 return;
             } else {
-                vfs_seek_raise(fp, size - 2, VFS_SEEK_CUR);
+                file_seek_raise(fp, size - 2, VFS_SEEK_CUR);
             }
         } else {
-            vfs_file_corrupted_raise(fp);
+            file_corrupted_raise(fp);
         }
     }
 }
@@ -1260,7 +1260,7 @@ void jpeg_write(image_t *img, const char *path, int quality)
     mp_uint_t ret;
 
     if (IM_IS_JPEG(img)) {
-        vfs_save_data(path, img->pixels, img->bpp, &err);
+        file_save_data(path, img->pixels, img->bpp, &err);
         if( err != 0)
             mp_raise_OSError(err);
     } else {
@@ -1271,7 +1271,7 @@ void jpeg_write(image_t *img, const char *path, int quality)
         // will try to realloc. MP will detect that the pointer is outside of
         // the heap and return NULL which will cause an out of memory error.
         jpeg_compress(img, &out, quality, false);
-        ret = vfs_save_data(path, out.pixels, out.bpp, &err);
+        ret = file_save_data(path, out.pixels, out.bpp, &err);
         fb_free();
         if(err != 0)
             mp_raise_OSError(err);

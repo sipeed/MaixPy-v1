@@ -11,7 +11,7 @@
 #include <spi.h>
 #include "imlib.h"
 #include "fb_alloc.h"
-#include "ff_wrapper.h"
+#include "vfs_wrapper.h"
 #include "py_assert.h"
 #include "py_helper.h"
 #include "py_image.h"

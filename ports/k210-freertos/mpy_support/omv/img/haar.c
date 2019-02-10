@@ -10,7 +10,7 @@
 #include <stdio.h>
 //#include <arm_math.h>
 #include "ff.h"
-#include "ff_wrapper.h"
+#include "vfs_wrapper.h"
 #include "xalloc.h"
 #include "imlib.h"
 // built-in cascades
@@ -167,7 +167,7 @@ int imlib_load_cascade_from_file(cascade_t *cascade, const char *path)
     FIL fp;
     FRESULT res=FR_OK;
 
-    file_read_open(&fp, path);
+    file_read_open_raise(&fp, path);
     file_buffer_on(&fp);
 
     /* read detection window size */

@@ -10,10 +10,11 @@
 #include <mp.h>
 #include "font.h"
 #include "array.h"
-#include "ff_wrapper.h"
+#include "vfs_wrapper.h"
 #include "imlib.h"
 #include "common.h"
 #include "omv_boardconfig.h"
+#include "sipeed_conv.h"
 
 /////////////////
 // Point Stuff //
@@ -437,9 +438,9 @@ static save_image_format_t imblib_parse_extension(image_t *img, const char *path
     return FORMAT_DONT_CARE;
 }
 
-/*bool imlib_read_geometry(FIL *fp, image_t *img, const char *path, img_read_settings_t *rs)
+bool imlib_read_geometry(mp_obj_t fp, image_t *img, const char *path, img_read_settings_t *rs)
 {
-    file_read_open(fp, path);
+    file_read_open_raise(fp, path);
     char magic[2];
     read_data(fp, &magic, 2);
     file_close(fp);
@@ -449,16 +450,16 @@ static save_image_format_t imblib_parse_extension(image_t *img, const char *path
     && ((magic[1]=='2') || (magic[1]=='3')
     ||  (magic[1]=='5') || (magic[1]=='6'))) { // PPM
         rs->format = FORMAT_PNM;
-        file_read_open(fp, path);
+        file_read_open_raise(fp, path);
         file_buffer_on(fp); // REMEMBER TO TURN THIS OFF LATER!
         ppm_read_geometry(fp, img, path, &rs->ppm_rs);
     } else if ((magic[0]=='B') && (magic[1]=='M')) { // BMP
         rs->format = FORMAT_BMP;
-        file_read_open(fp, path);
+        file_read_open_raise(fp, path);
         file_buffer_on(fp); // REMEMBER TO TURN THIS OFF LATER!
         vflipped = bmp_read_geometry(fp, img, &rs->bmp_rs);
     } else {
-        ff_unsupported_format(NULL);
+        fs_unsupported_format(NULL);
     }
     imblib_parse_extension(img, path); // Enforce extension!
     return vflipped;
@@ -492,7 +493,7 @@ void imlib_image_operation(image_t *img, const char *path, image_t *other, int s
         img_read_settings_t rs;
         bool vflipped = imlib_read_geometry(&fp, &temp, path, &rs);
         if (!IM_EQUAL(img, &temp)) {
-            ff_not_equal(&fp);
+            fs_not_equal(&fp);
         }
         // When processing vertically flipped images the read function will fill
         // the window up from the bottom. The read function assumes that the
@@ -521,7 +522,7 @@ void imlib_image_operation(image_t *img, const char *path, image_t *other, int s
         fb_free();
     } else if (other) {
         if (!IM_EQUAL(img, other)) {
-            ff_not_equal(NULL);
+            fs_not_equal(NULL);
         }
         switch (img->bpp) {
             case IMAGE_BPP_BINARY: {
@@ -595,7 +596,7 @@ void imlib_image_operation(image_t *img, const char *path, image_t *other, int s
             }
         }
     }
-}*/
+}
 
 void imlib_load_image(image_t *img, const char *path)
 {
@@ -638,7 +639,7 @@ void imlib_save_image(image_t *img, const char *path, rectangle_t *roi, int qual
         //     break;
         // case FORMAT_RAW: {
         //     FIL fp;
-        //     file_write_open(&fp, path);
+        //     file_write_open_raise(&fp, path);
         //     write_data(&fp, img->pixels, img->w * img->h);
         //     file_close(&fp);
         //     break;
@@ -655,7 +656,7 @@ void imlib_save_image(image_t *img, const char *path, rectangle_t *roi, int qual
         //     } else if (IM_IS_BAYER(img)) {
         //         FIL fp;
         //         char *new_path = strcat(strcpy(fb_alloc(strlen(path)+5), path), ".raw");
-        //         file_write_open(&fp, new_path);
+        //         file_write_open_raise(&fp, new_path);
         //         write_data(&fp, img->pixels, img->w * img->h);
         //         file_close(&fp);
         //         fb_free();
@@ -839,8 +840,7 @@ int imlib_image_std(image_t *src)
     uint32_t s=0, sq=0;
     for (int i=0; i<n; i+=2) {
         s += data[i+0]+data[i+1];
-        uint32_t tmp = __PKHBT(data[i+0], data[i+1], 16);
-        sq = __SMLAD(tmp, tmp, sq);
+		sq += data[i+0]*data[i+0] + data[i+1]*data[i+1];  //TODO
     }
 
     if (n%2) {
@@ -858,37 +858,24 @@ int imlib_image_std(image_t *src)
     return fast_sqrtf(v);
 }
 
+volatile uint8_t g_ai_done_flag;
+static int kpu_done(void *ctx)
+{
+    g_ai_done_flag = 1;
+    return 0;
+}
+
 void imlib_sepconv3(image_t *img, const int8_t *krn, const float m, const int b)
 {
-    int ksize = 3;
-    // TODO: Support RGB
-    int *buffer = fb_alloc(img->w * 2 * sizeof(*buffer));
-
-    // NOTE: This doesn't deal with borders right now. Adding if
-    // statements in the inner loop will slow it down significantly.
-    for (int y=0; y<img->h-ksize; y++) {
-        for (int x=0; x<img->w-ksize; x+=ksize) {
-            for (int k=0; k<ksize; k++) {
-                int acc=0;
-                //if (IM_X_INSIDE(img, x+k) && IM_Y_INSIDE(img, y+j))
-                acc = __SMLAD(krn[0], IM_GET_GS_PIXEL(img, x+k, y+0), acc);
-                acc = __SMLAD(krn[1], IM_GET_GS_PIXEL(img, x+k, y+1), acc);
-                acc = __SMLAD(krn[2], IM_GET_GS_PIXEL(img, x+k, y+2), acc);
-                buffer[((y%2)*img->w) + x+k] = acc;
-            }
-        }
-        if (y > 0) {
-            // flush buffer
-            for (int x=0; x<img->w-ksize; x++) {
-                int acc = 0;
-                acc = __SMLAD(krn[0], buffer[((y-1)%2) * img->w + x + 0], acc);
-                acc = __SMLAD(krn[1], buffer[((y-1)%2) * img->w + x + 1], acc);
-                acc = __SMLAD(krn[2], buffer[((y-1)%2) * img->w + x + 2], acc);
-                acc = (acc * m) + b; // scale, offset, and clamp
-                acc = IM_MAX(IM_MIN(acc, IM_MAX_GS), 0);
-                IM_SET_GS_PIXEL(img, (x+1), (y), acc);
-            }
-        }
-    }
-    fb_free();
+	float krn_f[9];
+	kpu_task_t task;
+	
+	krn_f[0]=(float)(krn[0]);krn_f[1]=(float)(krn[1]);krn_f[2]=(float)(krn[2]);
+	krn_f[3]=(float)(krn[3]);krn_f[4]=(float)(krn[4]);krn_f[5]=(float)(krn[5]);
+	krn_f[6]=(float)(krn[6]);krn_f[7]=(float)(krn[7]);krn_f[8]=(float)(krn[8]);
+	layer_conv_init(&task, img->w, img->h, 1, 1, krn_f);
+	layer_conv_run(&task, img->pixels, img->pixels, kpu_done);
+	while(!g_ai_done_flag);
+    g_ai_done_flag=0;
+	return;
 }

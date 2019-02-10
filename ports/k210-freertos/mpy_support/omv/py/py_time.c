@@ -7,7 +7,6 @@
  *
  */
 #include <mp.h>
-#include "systick.h"
 #include "py_time.h"
 
 /* Clock Type */

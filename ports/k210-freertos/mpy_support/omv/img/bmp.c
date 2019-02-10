@@ -17,60 +17,60 @@
 // This function inits the geometry values of an image (opens file).
 bool bmp_read_geometry(mp_obj_t fp, image_t *img, bmp_read_settings_t *rs)
 {
-    read_byte_expect_raise(fp, 'B');
-    read_byte_expect_raise(fp, 'M');
+    read_byte_expect(fp, 'B');
+    read_byte_expect(fp, 'M');
     uint32_t file_size;
     read_long_raise(fp, &file_size);
-    read_word_ignore_raise(fp);
-    read_word_ignore_raise(fp);
+    read_word_ignore(fp);
+    read_word_ignore(fp);
 
     uint32_t header_size;
     read_long_raise(fp, &header_size);
-    if (file_size <= header_size) vfs_file_corrupted_raise(fp);
+    if (file_size <= header_size) file_corrupted_raise(fp);
     
     uint32_t data_size = file_size - header_size;
-    // if (data_size % 4) vfs_file_corrupted_raise(fp);
-    // if (file_size % 4) vfs_file_corrupted_raise(fp);
+    // if (data_size % 4) file_corrupted_raise(fp);
+    // if (file_size % 4) file_corrupted_raise(fp);
     unsigned long header2_size;
     read_long_raise(fp, &header2_size);
     read_long_raise(fp, (uint32_t*) &rs->bmp_w);
     read_long_raise(fp, (uint32_t*) &rs->bmp_h);
-    if ((rs->bmp_w == 0) || (rs->bmp_h == 0)) vfs_file_corrupted_raise(fp);
+    if ((rs->bmp_w == 0) || (rs->bmp_h == 0)) file_corrupted_raise(fp);
     img->w = abs(rs->bmp_w);
     img->h = abs(rs->bmp_h);
 
-    read_word_expect_raise(fp, 1);
+    read_word_expect(fp, 1);
     read_word_raise(fp, &rs->bmp_bpp);
-    if ((rs->bmp_bpp != 8) && (rs->bmp_bpp != 16) && (rs->bmp_bpp != 24)) vfs_unsupported_format_raise(fp);
+    if ((rs->bmp_bpp != 8) && (rs->bmp_bpp != 16) && (rs->bmp_bpp != 24)) fs_unsupported_format(fp);
     img->bpp = (rs->bmp_bpp == 8) ? 1 : 2;
 
     read_long_raise(fp, &rs->bmp_fmt);
-    if ((rs->bmp_fmt != 0) && (rs->bmp_fmt != 3)) vfs_unsupported_format_raise(fp);
+    if ((rs->bmp_fmt != 0) && (rs->bmp_fmt != 3)) fs_unsupported_format(fp);
 
-    read_long_expect_raise(fp, data_size);
+    read_long_expect(fp, data_size);
     read_long_ignore(fp);
     read_long_ignore(fp);
     read_long_ignore(fp);
     read_long_ignore(fp);
 
     if (rs->bmp_bpp == 8) {
-        if (rs->bmp_fmt != 0) vfs_unsupported_format_raise(fp);
+        if (rs->bmp_fmt != 0) fs_unsupported_format(fp);
         // Color Table (1024 bytes)
         for (int i = 0; i < 256; i++) {
-            read_long_expect_raise(fp, ((i) << 16) | ((i) << 8) | i);
+            read_long_expect(fp, ((i) << 16) | ((i) << 8) | i);
         }
     } else if (rs->bmp_bpp == 16) {
-        if (rs->bmp_fmt != 3) vfs_unsupported_format_raise(fp);
+        if (rs->bmp_fmt != 3) fs_unsupported_format(fp);
         // Bit Masks (12 bytes)
-        read_long_expect_raise(fp, 0x1F << 11);
-        read_long_expect_raise(fp, 0x3F << 5);
-        read_long_expect_raise(fp, 0x1F);
+        read_long_expect(fp, 0x1F << 11);
+        read_long_expect(fp, 0x3F << 5);
+        read_long_expect(fp, 0x1F);
     } else if (rs->bmp_bpp == 24) {
         if (rs->bmp_fmt == 3) {
             // Bit Masks (12 bytes)
-            read_long_expect_raise(fp, 0xFF << 16);
-            read_long_expect_raise(fp, 0xFF << 8);
-            read_long_expect_raise(fp, 0xFF);
+            read_long_expect(fp, 0xFF << 16);
+            read_long_expect(fp, 0xFF << 8);
+            read_long_expect(fp, 0xFF);
         }
     }
     int err;
@@ -79,19 +79,18 @@ bool bmp_read_geometry(mp_obj_t fp, image_t *img, bmp_read_settings_t *rs)
         mp_raise_OSError(err);
 
     rs->bmp_row_bytes = (((img->w * rs->bmp_bpp) + 31) / 32) * 4;
-    if (data_size < (rs->bmp_row_bytes * img->h)) vfs_file_corrupted_raise(fp);
+    if (data_size < (rs->bmp_row_bytes * img->h)) file_corrupted_raise(fp);
     return (rs->bmp_h >= 0);
 }
 
 // This function reads the pixel values of an image.
-bool bmp_read_pixels(mp_obj_t fp, image_t *img, int line_start, int line_end, bmp_read_settings_t *rs, int* err)
+bool bmp_read_pixels(mp_obj_t fp, image_t *img, int line_start, int line_end, bmp_read_settings_t *rs)
 {
     if (rs->bmp_bpp == 8) {
         if ((rs->bmp_h < 0) && (rs->bmp_w >= 0) && (img->w == rs->bmp_row_bytes)) {
-            if(!read_data(fp, // Super Fast - Zoom, Zoom!
+            if(read_data(fp, // Super Fast - Zoom, Zoom!
                       img->pixels + (line_start * img->w),
-                      (line_end - line_start) * img->w,
-                      err))
+                      (line_end - line_start) * img->w))
             {
                 return false;
             }
@@ -99,7 +98,7 @@ bool bmp_read_pixels(mp_obj_t fp, image_t *img, int line_start, int line_end, bm
             for (int i = line_start; i < line_end; i++) {
                 for (int j = 0; j < rs->bmp_row_bytes; j++) {
                     uint8_t pixel;
-                    if(!read_byte(fp, &pixel, err))
+                    if(!read_byte(fp, &pixel))
                         return false;
                     if (j < img->w) {
                         if (rs->bmp_h < 0) { // vertical flip (BMP file perspective)
@@ -123,7 +122,7 @@ bool bmp_read_pixels(mp_obj_t fp, image_t *img, int line_start, int line_end, bm
         for (int i = line_start; i < line_end; i++) {
             for (int j = 0, jj = rs->bmp_row_bytes / 2; j < jj; j++) {
                 uint16_t pixel;
-                if(! read_word(fp, &pixel, err))
+                if(! read_word(fp, &pixel))
                     return false;
                 pixel = IM_SWAP16(pixel);
                 if (j < img->w) {
@@ -147,11 +146,11 @@ bool bmp_read_pixels(mp_obj_t fp, image_t *img, int line_start, int line_end, bm
         for (int i = line_start; i < line_end; i++) {
             for (int j = 0, jj = rs->bmp_row_bytes / 3; j < jj; j++) {
                 uint8_t r, g, b;
-                if(!read_byte(fp, &r, err))
+                if(!read_byte(fp, &r))
                     return false;
-                if(!read_byte(fp, &g, err))
+                if(!read_byte(fp, &g))
                     return false;
-                if(!read_byte(fp, &b, err))
+                if(!read_byte(fp, &b))
                     return false;
                 uint16_t pixel = IM_RGB565(IM_R825(r), IM_G826(g), IM_B825(b));
                 if (j < img->w) {
@@ -171,7 +170,7 @@ bool bmp_read_pixels(mp_obj_t fp, image_t *img, int line_start, int line_end, bm
                 }
             }
             for (int j = 0, jj = rs->bmp_row_bytes % 3; j < jj; j++) {
-                if(!read_byte_ignore(fp, err))
+                if(!read_byte_ignore(fp))
                     return false;
             }
         }
@@ -190,7 +189,7 @@ void bmp_read(image_t *img, const char *path)
     bmp_read_geometry(file, img, &rs);
     if (!img->pixels)
         img->pixels = xalloc(img->w * img->h * img->bpp);
-    if(!bmp_read_pixels(file, img, 0, img->h, &rs, &err))
+    if(!bmp_read_pixels(file, img, 0, img->h, &rs))
     {
         xfree(img->pixels);
         vfs_internal_close(file, &err);
@@ -202,7 +201,7 @@ void bmp_read(image_t *img, const char *path)
 void bmp_write_subimg(image_t *img, const char *path, rectangle_t *r)
 {
     rectangle_t rect;
-    if (!rectangle_subimg(img, r, &rect)) vfs_no_intersection_raise(NULL);
+    if (!rectangle_subimg(img, r, &rect)) fs_no_intersection(NULL);
 
     int err;    
     mp_obj_t file = vfs_internal_open(path, "wb", &err);

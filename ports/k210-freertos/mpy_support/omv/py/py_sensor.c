@@ -24,15 +24,15 @@ static mp_obj_t py_sensor_reset() {
     return mp_const_none;
 }
 
-//static mp_obj_t py_sensor_sleep(mp_obj_t enable) {
-//    PY_ASSERT_FALSE_MSG(sensor_sleep(mp_obj_is_true(enable)) != 0, "Sleep Failed");
-//    return mp_const_none;
-//}
+static mp_obj_t py_sensor_sleep(mp_obj_t enable) {
+    PY_ASSERT_FALSE_MSG(sensor_sleep(mp_obj_is_true(enable)) != 0, "Sleep Failed");
+    return mp_const_none;
+}
 
-//static mp_obj_t py_sensor_shutdown(mp_obj_t enable) {
-//    PY_ASSERT_FALSE_MSG(sensor_shutdown(mp_obj_is_true(enable)) != 0, "Shutdown Failed");
-//    return mp_const_none;
-//}
+static mp_obj_t py_sensor_shutdown(mp_obj_t enable) {
+    PY_ASSERT_FALSE_MSG(sensor_shutdown(mp_obj_is_true(enable)) != 0, "Shutdown Failed");
+    return mp_const_none;
+}
 
 //static mp_obj_t py_sensor_flush() {
 //    fb_update_jpeg_buffer();

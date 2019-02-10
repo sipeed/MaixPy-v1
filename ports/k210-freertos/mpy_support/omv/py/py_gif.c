@@ -7,7 +7,7 @@
  *
  */
 #include "mp.h"
-#include "ff_wrapper.h"
+#include "vfs_wrapper.h"
 #include "framebuffer.h"
 #include "sensor.h"
 #include "py_assert.h"

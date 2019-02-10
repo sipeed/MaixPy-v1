@@ -8,10 +8,40 @@
  */
 //#include <arm_math.h>
 #include "fb_alloc.h"
-#include "ff_wrapper.h"
+#include "vfs_wrapper.h"
 #include "common.h"
 #include "fft.h"
 // http://processors.wiki.ti.com/index.php/Efficient_FFT_Computation_of_Real_Input
+
+
+#ifndef __RBIT
+inline int __RBIT(int x)
+{
+	int tmp,i;
+	for(i=0,tmp=0;i<32;i++)
+	{
+		tmp+=x%2;
+		tmp<<=1;
+		x>>=1;
+	}
+	return tmp;
+}
+
+#endif
+
+#ifndef __CLZ
+inline int __CLZ(int x)
+{
+	int i;
+	for(i=0;i<32;i++)
+	{
+		if(x&0x80000000) break;
+		x<<=1;
+	}
+	return i;
+}
+
+#endif
 
 const static float fft_cos_table[512] = {
      1.000000f,  0.999981f,  0.999925f,  0.999831f,  0.999699f,  0.999529f,  0.999322f,  0.999078f,
@@ -548,7 +578,7 @@ void fft1d_run_again(fft1d_controller_t *controller)
 void fft2d_alloc(fft2d_controller_t *controller, image_t *img, rectangle_t *r)
 {
     controller->img = img;
-    if (!rectangle_subimg(controller->img, r, &controller->r)) ff_no_intersection(NULL);
+    if (!rectangle_subimg(controller->img, r, &controller->r)) fs_no_intersection(NULL);
 
     controller->w_pow2 = int_clog2(controller->r.w);
     controller->h_pow2 = int_clog2(controller->r.h);
