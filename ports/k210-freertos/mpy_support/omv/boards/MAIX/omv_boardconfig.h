@@ -9,9 +9,9 @@
 #ifndef __OMV_BOARDCONFIG_H__
 #define __OMV_BOARDCONFIG_H__
 
-#define OMV_INIT_RESOLUTION 640*480
-#define OMV_k210_width 640
-#define OMV_k210_height 480
+#define OMV_INIT_RESOLUTION 320*240
+#define OMV_INIT_W 320
+#define OMV_INIT_H 240
 
 #define OMV_INIT_BPP 2
 #define OMV_JPEG_BUF_SIZE 23 * 1024 // IDE JPEG buffer (header + data).
@@ -51,7 +51,7 @@
 #define OMV_BOOTLDR_LED_PORT    (GPIOC)
 
 // RAW buffer size
-#define OMV_RAW_BUF_SIZE        (409600)
+#define OMV_RAW_BUF_SIZE        (OMV_INIT_W * OMV_INIT_H * OMV_INIT_BPP)
 
 // Enable hardware JPEG
 #define OMV_HARDWARE_JPEG       (0)

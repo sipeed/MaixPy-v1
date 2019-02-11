@@ -19,7 +19,7 @@ typedef struct framebuffer {
     int u,v;
     int bpp;
 	uint8_t* pixels;
-//    uint8_t pixels[];
+	uint8_t* pix_ai;
 } framebuffer_t;
 
 typedef struct jpegbuffer {
@@ -28,7 +28,7 @@ typedef struct jpegbuffer {
     int enabled;
     int quality;
     mutex_t lock;
-    uint8_t pixels[];
+    uint8_t* pixels;
 } jpegbuffer_t;
 
 extern jpegbuffer_t *jpeg_fb_framebuffer;

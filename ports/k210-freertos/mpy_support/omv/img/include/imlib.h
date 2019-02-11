@@ -391,6 +391,7 @@ typedef struct image {
         uint8_t *pixels;
         uint8_t *data;
     };
+	uint8_t *pix_ai;	//for MAIX AI speed up
 } image_t;
 
 void image_init(image_t *ptr, int w, int h, int bpp, void *data);

@@ -34,10 +34,10 @@ static mp_obj_t py_sensor_shutdown(mp_obj_t enable) {
     return mp_const_none;
 }
 
-//static mp_obj_t py_sensor_flush() {
-//    fb_update_jpeg_buffer();
-//    return mp_const_none;
-//}
+static mp_obj_t py_sensor_flush(void) {
+    sensor_flush();	//clear old img in buf, allow new img come in
+    return mp_const_none;
+}
 
 static mp_obj_t py_sensor_snapshot(uint n_args, const mp_obj_t *args, mp_map_t *kw_args) {
     // Snapshot image
@@ -106,7 +106,8 @@ static mp_obj_t py_sensor_get_fb()
         .w      = MAIN_FB()->w,
         .h      = MAIN_FB()->h,
         .bpp    = MAIN_FB()->bpp,
-        .pixels = MAIN_FB()->pixels
+        .pixels = MAIN_FB()->pixels,
+		.pix_ai = MAIN_FB()->pix_ai
     };
 
     return py_image_from_struct(&image);
@@ -406,8 +407,8 @@ static mp_obj_t py_sensor_set_windowing(mp_obj_t roi_obj) {
 //    return mp_const_true;
 //}
 
-static mp_obj_t py_sensor_set_vsync_output(mp_obj_t none_obj) {
-    sensor_set_vsync_output();
+static mp_obj_t py_sensor_set_vsync_output(mp_obj_t val) {
+    sensor_set_vsync_output(mp_obj_get_int(val));
     return mp_const_true;
 }
 
@@ -458,6 +459,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_set_windowing_obj,         py_sensor_
 //STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_set_special_effect_obj,  py_sensor_set_special_effect);
 //STATIC MP_DEFINE_CONST_FUN_OBJ_3(py_sensor_set_lens_correction_obj, py_sensor_set_lens_correction);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_set_vsync_output_obj,    py_sensor_set_vsync_output);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_flush_obj,    py_sensor_flush);
 //STATIC MP_DEFINE_CONST_FUN_OBJ_2(py_sensor_write_reg_obj,           py_sensor_write_reg);
 //STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_read_reg_obj,            py_sensor_read_reg);
 
@@ -543,6 +545,7 @@ STATIC const mp_map_elem_t globals_dict_table[] = {
 //    { MP_OBJ_NEW_QSTR(MP_QSTR_set_special_effect),  (mp_obj_t)&py_sensor_set_special_effect_obj },
 //    { MP_OBJ_NEW_QSTR(MP_QSTR_set_lens_correction), (mp_obj_t)&py_sensor_set_lens_correction_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_set_vsync_output),    (mp_obj_t)&py_sensor_set_vsync_output_obj },
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_flush),    (mp_obj_t)&py_sensor_flush_obj },
 //    { MP_OBJ_NEW_QSTR(MP_QSTR___write_reg),         (mp_obj_t)&py_sensor_write_reg_obj },
 //    { MP_OBJ_NEW_QSTR(MP_QSTR___read_reg),          (mp_obj_t)&py_sensor_read_reg_obj },
 };

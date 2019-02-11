@@ -90,4 +90,4 @@ void mp_hal_delay_us(mp_uint_t us) {
 }
 
 
-mp_uint_t systik_current_millis(void) __attribute__((weak, alias("mp_hal_ticks_ms")));
+mp_uint_t systick_current_millis(void) __attribute__((weak, alias("mp_hal_ticks_ms")));

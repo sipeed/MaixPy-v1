@@ -278,7 +278,7 @@ static void py_image_print(const mp_print_t *print, mp_obj_t self_in, mp_print_k
 }
 
 static mp_obj_t py_image_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value)
-{/*
+{
     py_image_obj_t *self = self_in;
     if (value == MP_OBJ_NULL) { // delete
     } else if (value == MP_OBJ_SENTINEL) { // load
@@ -471,7 +471,7 @@ static mp_obj_t py_image_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value
                 return mp_const_none;
             }
         }
-    }*/
+    }
     printf("--------subsrc-------\n");
     return MP_OBJ_NULL; // op not supported
 }

@@ -43,6 +43,7 @@
 #include "uart.h"
 #include "w25qxx.h"
 #include "sdcard.h"
+#include "lcd.h"
 /*****freeRTOS****/
 #include "FreeRTOS.h"
 #include "task.h"
@@ -347,7 +348,7 @@ int main()
 	sysctl_set_power_mode(SYSCTL_POWER_BANK7,SYSCTL_POWER_V33);
 	dmac_init();
 	plic_init();
-    sysctl_enable_irq();
+        sysctl_enable_irq();
 	rtc_init();
 	rtc_timer_set(1970,1, 1,0, 0, 0);
 	uint8_t manuf_id, device_id;
@@ -355,10 +356,8 @@ int main()
 	w25qxx_enable_quad_mode_dma();
 	w25qxx_read_id_dma(&manuf_id, &device_id);
 	printk("[MAIXPY]Flash:0x%02x:0x%02x\r\n", manuf_id, device_id);
-	_fb_base = (uint8_t*)malloc(sizeof(framebuffer_t));
-	_jpeg_buf = (jpegbuffer_t*)malloc(sizeof(jpegbuffer_t) + OMV_JPEG_BUF_SIZE);
-	fb_framebuffer = (framebuffer_t *)_fb_base;
-	jpeg_fb_framebuffer = (jpegbuffer_t *) _jpeg_buf;
+    /* Init SPI IO map and function settings */
+    	sysctl_set_spi0_dvp_data(1);
 #if MICROPY_PY_THREAD 
 	xTaskCreateAtProcessor(0, // processor
 						 mp_task, // function entry
