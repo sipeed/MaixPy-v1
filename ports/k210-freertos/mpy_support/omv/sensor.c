@@ -600,7 +600,19 @@ int sensor_set_lens_correction(int enable, int radi, int coef)
     return 0;
 }
 
-int sensor_set_vsync_output(int enable)
+/*
+int sensor_set_vsync_output(GPIO_TypeDef *gpio, uint32_t pin)
+{
+    sensor.vsync_pin  = pin;
+    sensor.vsync_gpio = gpio;
+    // Enable VSYNC EXTI IRQ
+    NVIC_SetPriority(DCMI_VSYNC_IRQN, IRQ_PRI_EXTINT);
+    HAL_NVIC_EnableIRQ(DCMI_VSYNC_IRQN);
+    return 0;
+}
+*/
+
+int sensor_run(int enable)
 {
 	if(enable)
 	{
@@ -755,8 +767,13 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
 		
 		//wait for new frame
 		g_dvp_finish_flag = 0;
-		while (g_dvp_finish_flag == 0) _ndelay(50);
-		
+        uint32_t start =  systick_current_millis();
+		while (g_dvp_finish_flag == 0)
+        {
+            _ndelay(50);
+            if(systick_current_millis() - start > 300)//wait for 30ms
+                return -1;
+        }
         // Set the user image.
 		image->w = MAIN_FB()->w;
 		image->h = MAIN_FB()->h;

@@ -21,8 +21,8 @@
 
 #define DCMI_RESET_LOW()      dvp->cmos_cfg &= ~DVP_CMOS_RESET
 #define DCMI_RESET_HIGH()     dvp->cmos_cfg |= DVP_CMOS_RESET
-#define DCMI_PWDN_LOW()       dvp->cmos_cfg |= DVP_CMOS_POWER_DOWN
-#define DCMI_PWDN_HIGH()      dvp->cmos_cfg &= ~DVP_CMOS_POWER_DOWN
+#define DCMI_PWDN_LOW()       dvp->cmos_cfg &= ~DVP_CMOS_POWER_DOWN
+#define DCMI_PWDN_HIGH()      dvp->cmos_cfg |= DVP_CMOS_POWER_DOWN
 
 
 // Architecture info
@@ -41,8 +41,8 @@
 #define OMV_XCLK_SOURCE         (OMV_XCLK_TIM)
 
 // Sensor external clock timer frequency.
-#define OMV_XCLK_FREQUENCY      (12000000)
-
+// #define OMV_XCLK_FREQUENCY      (12000000)
+#define OMV_XCLK_FREQUENCY      (24000000)
 // Sensor PLL register value.
 #define OMV_OV7725_PLL_CONFIG   (0x41)  // x4
 

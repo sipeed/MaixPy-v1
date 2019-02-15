@@ -608,6 +608,21 @@ static int reset(sensor_t *sensor)
     return 0;
 }
 
+static int read_reg(sensor_t *sensor, uint8_t reg_addr)
+{
+    uint8_t reg_data;
+    if (cambus_readb(sensor->slv_addr, reg_addr, &reg_data) != 0) {
+        return -1;
+    }
+    return reg_data;
+}
+
+static int write_reg(sensor_t *sensor, uint8_t reg_addr, uint8_t reg_data)
+{
+    return cambus_writeb(sensor->slv_addr, reg_addr, reg_data);
+}
+
+
 static int set_pixformat(sensor_t *sensor, pixformat_t pixformat)
 {
     int i=0;
@@ -817,28 +832,28 @@ static int set_colorbar(sensor_t *sensor, int enable)
 
 static int set_auto_gain(sensor_t *sensor, int enable, float gain_db, float gain_db_ceiling)
 {
-//    uint8_t reg;
-//    int ret = cambus_readb(sensor->slv_addr, BANK_SEL, &reg);
-//    ret |= cambus_writeb(sensor->slv_addr, BANK_SEL, reg | BANK_SEL_SENSOR);
-//    ret |= cambus_readb(sensor->slv_addr, COM8, &reg);
-//    ret |= cambus_writeb(sensor->slv_addr, COM8, (reg & (~COM8_AGC_EN)) | ((enable != 0) ? COM8_AGC_EN : 0));
+   uint8_t reg;
+   int ret = cambus_readb(sensor->slv_addr, BANK_SEL, &reg);
+   ret |= cambus_writeb(sensor->slv_addr, BANK_SEL, reg | BANK_SEL_SENSOR);
+   ret |= cambus_readb(sensor->slv_addr, COM8, &reg);
+   ret |= cambus_writeb(sensor->slv_addr, COM8, (reg & (~COM8_AGC_EN)) | ((enable != 0) ? COM8_AGC_EN : 0));
 
-//    if ((enable == 0) && (!isnanf(gain_db)) && (!isinff(gain_db))) {
-//        float gain = IM_MAX(IM_MIN(fast_expf((gain_db / 20.0) * fast_log(10.0)), 32.0), 1.0);
+   if ((enable == 0) && (!isnanf(gain_db)) && (!isinff(gain_db))) {
+       float gain = IM_MAX(IM_MIN(fast_expf((gain_db / 20.0) * fast_log(10.0)), 32.0), 1.0);
 
-//        int gain_temp = fast_roundf(fast_log2(IM_MAX(gain / 2.0, 1.0)));
-//        int gain_hi = 0xF >> (4 - gain_temp);
-//        int gain_lo = IM_MIN(fast_roundf(((gain / (1 << gain_temp)) - 1.0) * 16.0), 15);
+       int gain_temp = fast_roundf(fast_log2(IM_MAX(gain / 2.0, 1.0)));
+       int gain_hi = 0xF >> (4 - gain_temp);
+       int gain_lo = IM_MIN(fast_roundf(((gain / (1 << gain_temp)) - 1.0) * 16.0), 15);
 
-//        ret |= cambus_writeb(sensor->slv_addr, GAIN, (gain_hi << 4) | (gain_lo << 0));
-//    } else if ((enable != 0) && (!isnanf(gain_db_ceiling)) && (!isinff(gain_db_ceiling))) {
-//        float gain_ceiling = IM_MAX(IM_MIN(fast_expf((gain_db_ceiling / 20.0) * fast_log(10.0)), 128.0), 2.0);
+       ret |= cambus_writeb(sensor->slv_addr, GAIN, (gain_hi << 4) | (gain_lo << 0));
+   } else if ((enable != 0) && (!isnanf(gain_db_ceiling)) && (!isinff(gain_db_ceiling))) {
+       float gain_ceiling = IM_MAX(IM_MIN(fast_expf((gain_db_ceiling / 20.0) * fast_log(10.0)), 128.0), 2.0);
 
-//        ret |= cambus_readb(sensor->slv_addr, COM9, &reg);
-//        ret |= cambus_writeb(sensor->slv_addr, COM9, (reg & 0x1F) | ((fast_ceilf(fast_log2(gain_ceiling)) - 1) << 5));
-//    }
+       ret |= cambus_readb(sensor->slv_addr, COM9, &reg);
+       ret |= cambus_writeb(sensor->slv_addr, COM9, (reg & 0x1F) | ((fast_ceilf(fast_log2(gain_ceiling)) - 1) << 5));
+   }
 
-//    return ret;
+   return ret;
 }
 
 static int get_gain_db(sensor_t *sensor, float *gain_db)
@@ -1044,6 +1059,8 @@ int ov2640_init(sensor_t *sensor)
     // Initialize sensor structure.
     sensor->gs_bpp              = 2;
     sensor->reset               = reset;
+    sensor->read_reg            = read_reg;
+    sensor->write_reg           = write_reg;
     sensor->set_pixformat       = set_pixformat;
     sensor->set_framesize       = set_framesize;
     sensor->set_framerate       = set_framerate;

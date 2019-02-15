@@ -274,7 +274,7 @@ soft_reset:
 		mp_stack_set_limit(MP_TASK_STACK_SIZE - 1024);
 #if MICROPY_ENABLE_GC
 		gc_init(heap, heap + sizeof(heap));
-		printk("heap0=%x\n",heap);
+		printk("heap0=%x\r\n",heap);
 #endif
 		mp_init();
 		mp_obj_list_init(mp_sys_path, 0);
@@ -351,6 +351,7 @@ int main()
     sysctl_pll_set_freq(SYSCTL_PLL0, PLL0_OUTPUT_FREQ);
     sysctl_pll_set_freq(SYSCTL_PLL1, PLL1_OUTPUT_FREQ);
     sysctl_pll_set_freq(SYSCTL_PLL2, PLL2_OUTPUT_FREQ);
+	uarths_init();
 	printk("[MAIXPY]Pll0:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL0));
 	printk("[MAIXPY]Pll1:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL1));
 	printk("[MAIXPY]Pll2:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL2));
