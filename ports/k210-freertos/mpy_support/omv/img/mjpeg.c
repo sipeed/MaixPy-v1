@@ -99,7 +99,7 @@ void mjpeg_add_frame(FIL *fp, uint32_t *frames, uint32_t *bytes, image_t *img, i
         write_data(fp, img->pixels, img->bpp + pad); // reading past okay
         *bytes += img->bpp + pad;
     } else {
-        uint32_t size;
+        uint64_t size;
         uint8_t *buffer = fb_alloc_all(&size);
         image_t out = { .w=img->w, .h=img->h, .bpp=size, .pixels=buffer };
         // When jpeg_compress needs more memory than in currently allocated it

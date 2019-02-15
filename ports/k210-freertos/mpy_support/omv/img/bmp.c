@@ -122,7 +122,7 @@ bool bmp_read_pixels(mp_obj_t fp, image_t *img, int line_start, int line_end, bm
         for (int i = line_start; i < line_end; i++) {
             for (int j = 0, jj = rs->bmp_row_bytes / 2; j < jj; j++) {
                 uint16_t pixel;
-                if(! read_word(fp, &pixel))
+                if(read_word(fp, &pixel) != 0)
                     return false;
                 pixel = IM_SWAP16(pixel);
                 if (j < img->w) {
@@ -185,7 +185,9 @@ void bmp_read(image_t *img, const char *path)
 
     mp_obj_t file = vfs_internal_open(path, "rb", &err);
     if( file == MP_OBJ_NULL || err != 0)
+    {
         mp_raise_OSError(err);
+    }
     bmp_read_geometry(file, img, &rs);
     if (!img->pixels)
         img->pixels = xalloc(img->w * img->h * img->bpp);
@@ -193,7 +195,7 @@ void bmp_read(image_t *img, const char *path)
     {
         xfree(img->pixels);
         vfs_internal_close(file, &err);
-        mp_raise_OSError(err);
+        mp_raise_OSError(MP_EIO);
     }
     vfs_internal_close(file, &err);
 }

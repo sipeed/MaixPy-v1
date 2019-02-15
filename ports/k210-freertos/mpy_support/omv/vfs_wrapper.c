@@ -69,7 +69,7 @@ mp_uint_t file_save_data(const char* path, uint8_t* data, mp_uint_t length, int*
     mp_obj_t file;
 
     file = vfs_internal_open(path, "wb",error_code);
-    if( file == MP_OBJ_NULL || error_code != 0 )
+    if( file == MP_OBJ_NULL || *error_code != 0 )
         return 0;
     len = vfs_internal_write(file, data, length, error_code);
     vfs_internal_close(file, error_code);

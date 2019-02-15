@@ -4,13 +4,7 @@ MAIXPY
 
 ## Compile
 
-1. Edit `config.conf `, set `toolchain_path`
-
-```
-echo "toolchain_path=/opt/kendryte-toolchain/bin" > config.conf
-```
-
-2. Build
+1. Compile MicroPython cross compiler
 
 Build in root path of MaixPy
 ```
@@ -18,10 +12,22 @@ cd MaixPy
 make -C mpy-cross
 ```
 
-Build port
+2. Get toolchain and Edit `config.conf `, set `toolchain_path`
+
+
+* Downlaod toolchain from [kendryte](https://kendryte.com/downloads/) (toolchain V8.2)
+
+* Decompress and copy to somewhere `/opt/kendryte-toolchain` for example , then set path
+
 ```
 cd ports/k210-freertos
-./build.sh clean
+echo "toolchain_path=/opt/kendryte-toolchain" > config.conf
+```
+
+3. Build
+
+Build port
+```
 ./build.sh
 ```
 
@@ -35,7 +41,9 @@ Then we can get bin file(s) in `output` folder
 ./flash.sh install
 ```
 
-2. change settings
+2. Change default settings
+
+Edit `flash.sh`
 
 ```
 ############### SETTINGS #############

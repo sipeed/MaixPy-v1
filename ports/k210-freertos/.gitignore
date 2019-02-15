@@ -6,4 +6,9 @@ kendryte-standalone-sdk
 tools/kflash.py
 config.conf
 .vscode
+*.mk
+!k210.mk
+!common_c.mk
+!common.mk
+
 

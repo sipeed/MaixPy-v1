@@ -1,0 +1,10 @@
+*.o
+mkspiffs
+mkspiffs.exe
+out.*
+*.tar.gz
+
+# eclipse wokspace files and dirs
+.project
+.cproject
+.settings

@@ -5,6 +5,9 @@ SRC_CXX_OBJ := $(SRC_CPP:.cpp=.o)
 SRC_C_OUTPUT_OBJ := $(addprefix $(OUTPUT_DIR)/, $(SRC_C_OBJ))
 SRC_CXX_OUTPUT_OBJ := $(addprefix $(OUTPUT_DIR)/, $(SRC_CXX_OBJ))
 
+$(SRC_C_OUTPUT_OBJ): $(SRC_C_OBJ) 
+$(SRC_CXX_OUTPUT_OBJ): $(SRC_CXX_OBJ)
+
 $(SRC_CXX_OBJ):%.o:%.cpp
 	@mkdir -p $(OUTPUT_DIR)
 	@$(CXX)  -o $(OUTPUT_DIR)/$@ -c $< $(INCLUDE) $(CXXFLAGS) -lstdc++

@@ -45,7 +45,7 @@ elif [[ "x$1" == "xuninstall" ]]; then
 fi
 
 cwd=`pwd`
-bin_file_path="$cwd/output/Maixpy.bin"
+bin_file_path="$cwd/output/maixpy.bin"
 
 if [[ -f $bin_file_path ]]; then
     if [[ $monitor == true ]]; then

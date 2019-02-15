@@ -77,7 +77,8 @@ CXXFLAGS := \
 platform-lds:=$(PROJECT_DIR)/platform/sdk/kendryte-standalone-sdk/lds/kendryte.ld
 toolchain-obj:=$(wildcard $(TOOLCHAIN_LIB_DIR)/*.o)
 lib-file:=$(wildcard $(BIN_DIR)/*.a)
-mainobj:=$(wildcard $(PROJECT_DIR)/build/main.o)
+# mainobj:=$(wildcard $(PROJECT_DIR)/build/main.o)
+mainobj:=$(PROJECT_DIR)/build/main.o
 BIN_LDFLAGS := \
                 -static \
                 -Wl,-static \

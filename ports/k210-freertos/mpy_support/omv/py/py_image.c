@@ -1006,7 +1006,7 @@ static mp_obj_t py_image_compress(uint n_args, const mp_obj_t *args, mp_map_t *k
     int arg_q = py_helper_keyword_int(n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_quality), 50);
     PY_ASSERT_TRUE_MSG((1 <= arg_q) && (arg_q <= 100), "Error: 1 <= quality <= 100!");
 
-    uint32_t size;
+    uint64_t size;
     fb_alloc_mark();
     uint8_t *buffer = fb_alloc_all(&size);
     image_t out = { .w=arg_img->w, .h=arg_img->h, .bpp=size, .data=buffer };
@@ -1031,7 +1031,7 @@ static mp_obj_t py_image_compress_for_ide(uint n_args, const mp_obj_t *args, mp_
     int arg_q = py_helper_keyword_int(n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_quality), 50);
     PY_ASSERT_TRUE_MSG((1 <= arg_q) && (arg_q <= 100), "Error: 1 <= quality <= 100!");
 
-    uint32_t size;
+    uint64_t size;
     fb_alloc_mark();
     uint8_t *buffer = fb_alloc_all(&size);
     image_t out = { .w=arg_img->w, .h=arg_img->h, .bpp=size, .data=buffer };
@@ -1089,7 +1089,7 @@ static mp_obj_t py_image_compressed(uint n_args, const mp_obj_t *args, mp_map_t 
     int arg_q = py_helper_keyword_int(n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_quality), 50);
     PY_ASSERT_TRUE_MSG((1 <= arg_q) && (arg_q <= 100), "Error: 1 <= quality <= 100!");
 
-    uint32_t size;
+    uint64_t size;
     fb_alloc_mark();
     uint8_t *buffer = fb_alloc_all(&size);
     image_t out = { .w=arg_img->w, .h=arg_img->h, .bpp=size, .data=buffer };
@@ -1110,7 +1110,7 @@ static mp_obj_t py_image_compressed_for_ide(uint n_args, const mp_obj_t *args, m
     int arg_q = py_helper_keyword_int(n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_quality), 50);
     PY_ASSERT_TRUE_MSG((1 <= arg_q) && (arg_q <= 100), "Error: 1 <= quality <= 100!");
 
-    uint32_t size;
+    uint64_t size;
     fb_alloc_mark();
     uint8_t *buffer = fb_alloc_all(&size);
     image_t out = { .w=arg_img->w, .h=arg_img->h, .bpp=size, .data=buffer };
@@ -6001,13 +6001,11 @@ mp_obj_t py_image_grayscale_to_rgb(mp_obj_t not_tuple)
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_image_grayscale_to_rgb_obj, py_image_grayscale_to_rgb);
 
-extern const uint8_t img[];
+// extern const uint8_t img[];
 mp_obj_t py_image_load_image(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     const char *path = NULL;
-
-
-
+    
     bool copy_to_fb = py_helper_keyword_int(n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_copy_to_fb), false);
     // if (copy_to_fb) fb_update_jpeg_buffer();
 
