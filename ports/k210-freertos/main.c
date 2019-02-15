@@ -58,6 +58,8 @@
 #include "framebuffer.h"
 #include "sensor.h"
 #include "omv.h"
+#include "sipeed_conv.h"
+
 #define UART_BUF_LENGTH_MAX 269
 #define MPY_HEAP_SIZE  2* 1024 * 1024
 
@@ -65,7 +67,7 @@ uint8_t* _fb_base;
 uint8_t* _jpeg_buf;
 
 #if MICROPY_ENABLE_GC
-static char heap[MPY_HEAP_SIZE];
+static char heap[MPY_HEAP_SIZE] __attribute__((aligned(8))); 
 #endif
 
 #if MICROPY_PY_THREAD 
@@ -272,6 +274,7 @@ soft_reset:
 		mp_stack_set_limit(MP_TASK_STACK_SIZE - 1024);
 #if MICROPY_ENABLE_GC
 		gc_init(heap, heap + sizeof(heap));
+		printk("heap0=%x\n",heap);
 #endif
 		mp_init();
 		mp_obj_list_init(mp_sys_path, 0);
@@ -340,24 +343,32 @@ soft_reset:
 		// sysctl->soft_reset.soft_reset = 1;
 }
 
+#define PLL0_OUTPUT_FREQ 800000000UL
+#define PLL1_OUTPUT_FREQ 400000000UL
+#define PLL2_OUTPUT_FREQ 45158400UL
 int main()
 {		
+    sysctl_pll_set_freq(SYSCTL_PLL0, PLL0_OUTPUT_FREQ);
+    sysctl_pll_set_freq(SYSCTL_PLL1, PLL1_OUTPUT_FREQ);
+    sysctl_pll_set_freq(SYSCTL_PLL2, PLL2_OUTPUT_FREQ);
 	printk("[MAIXPY]Pll0:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL0));
 	printk("[MAIXPY]Pll1:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL1));
+	printk("[MAIXPY]Pll2:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL2));
+	sysctl_clock_enable(SYSCTL_CLOCK_AI);
 	sysctl_set_power_mode(SYSCTL_POWER_BANK6,SYSCTL_POWER_V33);
 	sysctl_set_power_mode(SYSCTL_POWER_BANK7,SYSCTL_POWER_V33);
 	dmac_init();
 	plic_init();
-        sysctl_enable_irq();
+    sysctl_enable_irq();
 	rtc_init();
-	rtc_timer_set(1970,1, 1,0, 0, 0);
+	rtc_timer_set(2019,1, 1,0, 0, 0);
 	uint8_t manuf_id, device_id;
 	w25qxx_init_dma(3, 0);
 	w25qxx_enable_quad_mode_dma();
 	w25qxx_read_id_dma(&manuf_id, &device_id);
 	printk("[MAIXPY]Flash:0x%02x:0x%02x\r\n", manuf_id, device_id);
     /* Init SPI IO map and function settings */
-    	sysctl_set_spi0_dvp_data(1);
+    sysctl_set_spi0_dvp_data(1);
 #if MICROPY_PY_THREAD 
 	xTaskCreateAtProcessor(0, // processor
 						 mp_task, // function entry

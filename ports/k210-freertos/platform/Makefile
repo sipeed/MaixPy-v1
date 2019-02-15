@@ -34,5 +34,5 @@ include_mk:
 	
 clean:
 	$(call echo_info,"Cleaning "$(SUBDIRS)" ...")
-	$(foreach n,${SUBDIRS},make -C ${SUBDIRS} clean)
+	$(foreach n,${SUBDIRS},make -C ${n} clean;)
 	rm -rf $(OUTPUT_DIR)

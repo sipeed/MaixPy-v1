@@ -66,7 +66,7 @@ void tft_write_half(uint16_t *data_buf, uint32_t length)
     spi_send_data_normal_dma(SPI_DMA_CH, SPI_CHANNEL, SPI_SLAVE_SELECT, data_buf, length, SPI_TRANS_SHORT);
 }
 
-void tft_write_word(uint32_t *data_buf, uint32_t length, uint32_t flag)
+void tft_write_word(uint32_t *data_buf, uint32_t length)
 {
     set_dcx_data();
     spi_init(SPI_CHANNEL, SPI_WORK_MODE_0, SPI_FF_OCTAL, 32, 0);

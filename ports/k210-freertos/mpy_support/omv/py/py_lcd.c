@@ -25,6 +25,7 @@
 
 
 #define printf(...)
+extern uint8_t g_lcd_buf[];
 
 #define LCD_W 320
 #define LCD_H 240
@@ -230,6 +231,33 @@ static mp_obj_t py_lcd_clear()
     return mp_const_none;
 }
 
+//x0,y0,string,font color,bg color
+static char str_buf[LCD_W/8*16*8];
+static char str_cut[LCD_W/8+1];
+STATIC mp_obj_t py_lcd_draw_string(uint n_args, const mp_obj_t *args)
+{
+    uint16_t x0 = mp_obj_get_int(args[0]);
+	uint16_t y0 = mp_obj_get_int(args[1]);
+	char* str  = mp_obj_str_get_str(args[2]);
+	uint16_t fontc = RED;
+	uint16_t bgc = BLACK;
+	if(str == NULL) return mp_const_none;
+	if(x0 < 0 || x0 >= LCD_W || y0 < 0 || y0 > LCD_H-16) return mp_const_none;
+	int len = strlen(str);
+	int width,height;
+    if(n_args >= 4) fontc = mp_obj_get_int(args[3]);
+	if(n_args >= 5) bgc = mp_obj_get_int(args[4]);
+	if(len>(LCD_W-x0)/8) len = (LCD_W-x0)/8;
+	if(len <= 0) return mp_const_none;
+	memcpy(str_cut,str,len);
+	str_cut[len]=0;
+	width = len*8; height = 16;
+	lcd_ram_draw_string(str_cut, str_buf, fontc, bgc);
+	lcd_draw_picture(x0, y0, width, height, str_buf);
+	return mp_const_none;
+}
+
+
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_lcd_init_obj, 0, py_lcd_init);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_lcd_deinit_obj, py_lcd_deinit);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_lcd_width_obj, py_lcd_width);
@@ -240,6 +268,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_lcd_get_backlight_obj, py_lcd_get_backlight)
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_lcd_display_obj, 1, py_lcd_display);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_lcd_clear_obj, py_lcd_clear);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_lcd_direction_obj, py_lcd_direction);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_draw_string_obj, 3, 5, py_lcd_draw_string);
 static const mp_map_elem_t globals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__),        MP_OBJ_NEW_QSTR(MP_QSTR_lcd) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_init),            (mp_obj_t)&py_lcd_init_obj          },
@@ -251,7 +280,8 @@ static const mp_map_elem_t globals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_backlight),   (mp_obj_t)&py_lcd_get_backlight_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_display),         (mp_obj_t)&py_lcd_display_obj       },
     { MP_OBJ_NEW_QSTR(MP_QSTR_clear),           (mp_obj_t)&py_lcd_clear_obj         },
-	{ MP_OBJ_NEW_QSTR(MP_QSTR_direction),           (mp_obj_t)&py_lcd_direction_obj         },
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_direction),       (mp_obj_t)&py_lcd_direction_obj     },
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_draw_string),     (mp_obj_t)&py_lcd_draw_string_obj   },
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_XY_RLUD),  MP_OBJ_NEW_SMALL_INT(DIR_XY_RLUD)}, 
     { MP_OBJ_NEW_QSTR(MP_QSTR_YX_RLUD),  MP_OBJ_NEW_SMALL_INT(DIR_YX_RLUD)}, 
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_XY_LRUD),  MP_OBJ_NEW_SMALL_INT(DIR_XY_LRUD)}, 
@@ -260,6 +290,26 @@ static const mp_map_elem_t globals_dict_table[] = {
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_YX_RLDU),  MP_OBJ_NEW_SMALL_INT(DIR_YX_RLDU)}, 
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_XY_LRDU),  MP_OBJ_NEW_SMALL_INT(DIR_XY_LRDU)}, 
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_YX_LRDU),  MP_OBJ_NEW_SMALL_INT(DIR_YX_LRDU)},
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_BLACK      ),  MP_OBJ_NEW_SMALL_INT(BLACK      )},
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_NAVY       ),  MP_OBJ_NEW_SMALL_INT(NAVY       )},
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_DARKGREEN  ),  MP_OBJ_NEW_SMALL_INT(DARKGREEN  )},
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_DARKCYAN   ),  MP_OBJ_NEW_SMALL_INT(DARKCYAN   )},
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_MAROON     ),  MP_OBJ_NEW_SMALL_INT(MAROON     )},
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_PURPLE     ),  MP_OBJ_NEW_SMALL_INT(PURPLE     )},
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_OLIVE      ),  MP_OBJ_NEW_SMALL_INT(OLIVE      )},
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_LIGHTGREY  ),  MP_OBJ_NEW_SMALL_INT(LIGHTGREY  )},
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_DARKGREY   ),  MP_OBJ_NEW_SMALL_INT(DARKGREY   )},
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_BLUE       ),  MP_OBJ_NEW_SMALL_INT(BLUE       )},
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_GREEN      ),  MP_OBJ_NEW_SMALL_INT(GREEN      )},
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_CYAN       ),  MP_OBJ_NEW_SMALL_INT(CYAN       )},
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_RED        ),  MP_OBJ_NEW_SMALL_INT(RED        )},
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_MAGENTA    ),  MP_OBJ_NEW_SMALL_INT(MAGENTA    )},
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_YELLOW     ),  MP_OBJ_NEW_SMALL_INT(YELLOW     )},
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_WHITE      ),  MP_OBJ_NEW_SMALL_INT(WHITE      )},
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_ORANGE     ),  MP_OBJ_NEW_SMALL_INT(ORANGE     )},
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_GREENYELLOW),  MP_OBJ_NEW_SMALL_INT(GREENYELLOW)},
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_PINK       ),  MP_OBJ_NEW_SMALL_INT(PINK       )},
+	
     { NULL, NULL },
 };
 

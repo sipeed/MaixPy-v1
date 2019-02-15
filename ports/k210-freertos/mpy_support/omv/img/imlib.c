@@ -874,8 +874,8 @@ void imlib_sepconv3(image_t *img, const int8_t *krn, const float m, const int b)
 	krn_f[0]=(float)(krn[0]);krn_f[1]=(float)(krn[1]);krn_f[2]=(float)(krn[2]);
 	krn_f[3]=(float)(krn[3]);krn_f[4]=(float)(krn[4]);krn_f[5]=(float)(krn[5]);
 	krn_f[6]=(float)(krn[6]);krn_f[7]=(float)(krn[7]);krn_f[8]=(float)(krn[8]);
-	layer_conv_init(&task, img->w, img->h, 1, 1, krn_f);
-	layer_conv_run(&task, img->pixels, img->pixels, kpu_done);
+	sipeed_conv_init(&task, img->w, img->h, 1, 1, krn_f);
+	sipeed_conv_run(&task, img->pixels, img->pixels, kpu_done);
 	while(!_ai_done_flag);
     _ai_done_flag=0;
 	return;

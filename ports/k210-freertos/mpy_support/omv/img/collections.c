@@ -54,7 +54,7 @@ void lifo_alloc(lifo_t *ptr, size_t size, size_t data_len)
 
 void lifo_alloc_all(lifo_t *ptr, size_t *size, size_t data_len)
 {
-    uint32_t tmp_size;
+    uint64_t tmp_size;
     ptr->data = (char *) fb_alloc_all(&tmp_size);
     ptr->data_len = data_len;
     ptr->size = tmp_size / data_len;
@@ -131,7 +131,7 @@ void fifo_alloc(fifo_t *ptr, size_t size, size_t data_len)
 
 void fifo_alloc_all(fifo_t *ptr, size_t *size, size_t data_len)
 {
-    uint32_t tmp_size;
+    uint64_t tmp_size;
     ptr->data = (char *) fb_alloc_all(&tmp_size);
     ptr->data_len = data_len;
     ptr->size = tmp_size / data_len;

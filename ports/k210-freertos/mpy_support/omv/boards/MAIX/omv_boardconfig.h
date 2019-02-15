@@ -15,7 +15,7 @@
 
 #define OMV_INIT_BPP 2
 #define OMV_JPEG_BUF_SIZE 23 * 1024 // IDE JPEG buffer (header + data).
-#define OMV_FB_ALLOC_SIZE 83 * 1024 // minimum fb alloc size
+#define OMV_FB_ALLOC_SIZE 620 * 1024 // minimum fb alloc size
 #define OMV_FB_SIZE 301 * 1024
 #define OMV_LINE_BUF_SIZE 3 * 1024 // Image line buffer round(640 * 2BPP * 2 buffers).
 

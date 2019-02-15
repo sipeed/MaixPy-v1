@@ -5370,6 +5370,65 @@ static mp_obj_t py_image_selective_search(uint n_args, const mp_obj_t *args, mp_
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_selective_search_obj, 1, py_image_selective_search);
 #endif // IMLIB_ENABLE_SELECTIVE_SEARCH
 
+static mp_obj_t py_image_dump_roi(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
+{
+    image_t *arg_img = py_helper_arg_to_image_mutable(args[0]);
+    const mp_obj_t *arg_vec;
+    uint offset = py_helper_consume_array(n_args, args, 1, 4, &arg_vec);
+    int x0 = mp_obj_get_int(arg_vec[0]);
+    int y0 = mp_obj_get_int(arg_vec[1]);
+    int w = mp_obj_get_int(arg_vec[2]);
+	int h = mp_obj_get_int(arg_vec[3]);
+	int x,y;
+	uint8_t* ptr=arg_img->pixels;
+	uint16_t width = arg_img->w;
+	for(y=y0;y<y0+h;y++)
+	{
+		for(x=x0;x<x0+w;x++) //TODO:pixel format
+		{
+			printf("0x%02x 0x%02x; ",ptr[2*width*y+2*x], ptr[2*width*y+2*x+1]);
+			if((x-x0)%8==7) printf("\n");
+		}
+		printf("\n");
+	}
+	printf("\n");
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_dump_roi_obj, 2, py_image_dump_roi);
+
+static mp_obj_t py_image_conv3(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
+{
+	image_t *arg_img = py_helper_arg_to_image_mutable(args[0]);
+    mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_kern), MP_MAP_LOOKUP);
+	float krn[9];
+	int i;
+	
+    if (kw_arg) {
+        mp_obj_t *arg_conv3;
+        mp_obj_get_array_fixed_n(kw_arg->value, 9, &arg_conv3);
+		for(i=0; i<9; i++)
+		{
+			krn[i] = mp_obj_get_float(arg_conv3[i]);
+		}
+    } else if (n_args > 1) {
+        mp_obj_t *arg_conv3;
+        mp_obj_get_array_fixed_n(args[1], 9, &arg_conv3);
+		for(i=0; i<9; i++)
+		{
+			krn[i] = mp_obj_get_float(arg_conv3[i]);
+		}
+	} else 
+	{
+		printf("please input 9 kern parm!\n");
+		return mp_const_none;
+	}
+	imlib_conv3(arg_img, krn);
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_conv3_obj, 2, py_image_conv3);
+
+
+
 static const mp_rom_map_elem_t locals_dict_table[] = {
     /* Basic Methods */
     {MP_ROM_QSTR(MP_QSTR___del__),             MP_ROM_PTR(&py_image_del_obj)},
@@ -5646,6 +5705,8 @@ static const mp_rom_map_elem_t locals_dict_table[] = {
 #else
     {MP_ROM_QSTR(MP_QSTR_selective_search),    MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
+	{MP_ROM_QSTR(MP_QSTR_dump_roi),    MP_ROM_PTR(&py_image_dump_roi_obj)},
+	{MP_ROM_QSTR(MP_QSTR_conv3),    MP_ROM_PTR(&py_image_conv3_obj)},
 };
 
 STATIC MP_DEFINE_CONST_DICT(locals_dict, locals_dict_table);
@@ -6234,6 +6295,7 @@ int py_image_descriptor_from_roi(image_t *img, const char *path, rectangle_t *ro
     return 0;
 }
 
+
 static const mp_rom_map_elem_t globals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__),            MP_OBJ_NEW_QSTR(MP_QSTR_image)},
     {MP_ROM_QSTR(MP_QSTR_SEARCH_EX),           MP_ROM_INT(SEARCH_EX)},
@@ -6278,7 +6340,7 @@ static const mp_rom_map_elem_t globals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_HaarCascade),         MP_ROM_PTR(&py_image_load_cascade_obj)},
     {MP_ROM_QSTR(MP_QSTR_load_descriptor),     MP_ROM_PTR(&py_image_load_descriptor_obj)},
     {MP_ROM_QSTR(MP_QSTR_save_descriptor),     MP_ROM_PTR(&py_image_save_descriptor_obj)},
-    {MP_ROM_QSTR(MP_QSTR_match_descriptor),    MP_ROM_PTR(&py_image_match_descriptor_obj)}
+    {MP_ROM_QSTR(MP_QSTR_match_descriptor),    MP_ROM_PTR(&py_image_match_descriptor_obj)},
 };
 
 STATIC MP_DEFINE_CONST_DICT(globals_dict, globals_dict_table);

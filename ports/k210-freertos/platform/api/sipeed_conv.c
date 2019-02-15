@@ -1,5 +1,5 @@
 #include "sipeed_conv.h"
-
+#define _P(...) //printf(__VA_ARGS__)
 //激活函数折点表，设置为y=x，即直接输出卷积结果
 //y=(uint8_t)((((uint64_t)(x - x_start) * y_mul) >> shift) + bias);
  
@@ -89,34 +89,37 @@ static float max(float* data, uint32_t len)
 //global var: la, active_addr, bwsx_base_addr
 static void conv_float2u16(float* data, uint16_t* data_u16, int len)
 {
-	float dmin, drange,scale,arg_x;
+	float dmin, drange,arg_x;
+	volatile float scale;
 	uint16_t bias,y_mul;
-	int i, shift_number;
+	int i, j, shift_number;
 	dmin=min(data,len);
 	drange=max(data,len)-dmin;
 	scale = (65535.0/drange);
+
 	//scale conv
-	printf("convert conv parm: -------------\r\n");
+	_P("convert conv parm: -------------\r\n");
 	for(i=0;i<len;i++)
 	{
+		//float tmp =(float)((double)(data[i]-dmin)*scale);
 		data_u16[i]=(uint16_t)((data[i]-dmin)*scale);
-		printf("0x%04x\t",data_u16[i]);
-		if(i%9==8) printf("\r\n");
+		_P("0x%04x\t",data_u16[i]);
+		if(i%9==8) _P("\r\n");
 	}
 	//set arg_x & shr_x
-	printf("set arg_x & shr_x: -------------\r\n");
+	_P("set arg_x & shr_x: -------------\r\n");
 	arg_x=scale*(dmin>=0?dmin:-dmin);
 	for(i=0;(arg_x<(float)(0x400000)) && (arg_x!=0);i++)
 	{
 		arg_x*=2;
-		//printf("argx=%f, shrx=%d\r\n", arg_x, i);
+		//_P("argx=%f, shrx=%d\r\n", arg_x, i);
 	}
 	la.conv_value.data.arg_x = dmin>=0 ? (uint32_t)(arg_x) : (uint32_t)(0x1000000-(uint32_t)arg_x);
 	la.conv_value.data.shr_x = i;
-	printf("arg_x=0x%x, shr_x=%d\r\n",la.conv_value.data.arg_x, la.conv_value.data.shr_x);
+	_P("arg_x=0x%x, shr_x=%d\r\n",la.conv_value.data.arg_x, la.conv_value.data.shr_x);
 	//set act table
-	printf("set act table: -------------\r\n");
-	printf("origin scale=%f\r\n",scale);
+	_P("set act table: -------------\r\n");
+	_P("origin scale=%f\r\n",scale);
 	scale=1.0/scale;
 	for(i=0;scale<=16383.0;i++)
 	{
@@ -124,7 +127,7 @@ static void conv_float2u16(float* data, uint16_t* data_u16, int len)
 	}
 	shift_number=i;
 	y_mul=(uint16_t)(scale);
-	printf("shift_number=%d, y_mul=%d\r\n", shift_number, y_mul);
+	_P("shift_number=%d, y_mul=%d\r\n", shift_number, y_mul);
 	for(i=1;i<16;i++)
 	{
 		active_addr.activate_para[i].data.shift_number=shift_number;
@@ -134,12 +137,10 @@ static void conv_float2u16(float* data, uint16_t* data_u16, int len)
 	return;
 }
 
-void layer_conv_init(kpu_task_t* task, uint16_t w, uint16_t h, uint8_t ch_in, uint8_t ch_out, float* conv_data) 
+void sipeed_conv_init(kpu_task_t* task, uint16_t w, uint16_t h, uint8_t ch_in, uint8_t ch_out, float* conv_data) 
 {
 int tmp;
-
 conv_float2u16(conv_data, conv_data_u16, 9*ch_in*ch_out);	//3x3 kernel
-
 la.kernel_offset.data.coef_row_offset = 0;					//固定为0
 la.kernel_offset.data.coef_column_offset = 0;				//固定为0
 //激活函数配置-
@@ -152,7 +153,6 @@ la.kernel_calc_type_cfg.data.row_switch_addr = (w+63)/64;	//图像宽度占用�
 la.kernel_calc_type_cfg.data.channel_switch_addr = (w+63)/64*h; 	
 la.kernel_calc_type_cfg.data.coef_size = 0; 				//固定为0
 la.kernel_calc_type_cfg.data.coef_group = 1; 		
- 
 //中断设置--
 la.interrupt_enabe.data.depth_wise_layer = 0; 				//常规卷积层
 la.interrupt_enabe.data.int_en = 1;							//使能中断
@@ -205,17 +205,17 @@ la.kernel_load_cfg.data.load_coor = 1;						//允许加载卷积参数
 la.image_addr.data.image_src_addr=(uint64_t)0x0;			//一个为0
 la.image_addr.data.image_dst_addr=(uint64_t)(AI_MEM_SIZE/64-(w+63)/64*h*ch_out);	
 
-
 /* init kpu task*/
 task->layers = &la;
 task->layers_length = 1;    								//单层
 task->eight_bit_mode = 0;   								//16bit模式
 task->output_scale = 1.0;   								//输出的缩放
 task->output_bias = 0;										//输出的偏置
+
 return;	
 }
 
-void layer_conv_run(kpu_task_t* task, uint8_t* img_src, uint8_t* img_dst, plic_irq_callback_t callback)
+void sipeed_conv_run(kpu_task_t* task, uint8_t* img_src, uint8_t* img_dst, plic_irq_callback_t callback)
 {
 /* start to calculate */
 kpu_run(task, DMAC_CHANNEL5, img_src, img_dst, callback);

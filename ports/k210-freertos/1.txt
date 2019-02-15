@@ -1,0 +1,279 @@
+../../py/unicode.h:mp_uint_t utf8_ptr_to_index(const byte *s, const byte *ptr);
+../../py/parse.h:    return (mp_parse_node_t)(MP_PARSE_NODE_SMALL_INT | ((mp_uint_t)val << 1));
+../../py/parse.h:    return (mp_parse_node_t)(kind | ((mp_uint_t)arg << 4));
+../../py/qstr.h:mp_uint_t qstr_compute_hash(const byte *data, size_t len);
+../../py/qstr.h:mp_uint_t qstr_hash(qstr q);
+../../py/emitglue.h:    mp_uint_t kind : 3; // of type mp_raw_code_kind_t
+../../py/emitglue.h:    mp_uint_t scope_flags : 7;
+../../py/emitglue.h:    mp_uint_t n_pos_args : 11;
+../../py/emitglue.h:            const mp_uint_t *const_table;
+../../py/emitglue.h:            mp_uint_t bc_len;
+../../py/emitglue.h:            const mp_uint_t *const_table;
+../../py/emitglue.h:            mp_uint_t type_sig; // for viper, compressed as 2-bit types; ret is MSB, then arg0, arg1, etc
+../../py/emitglue.h:    const mp_uint_t *const_table,
+../../py/emitglue.h:    mp_uint_t scope_flags);
+../../py/emitglue.h:void mp_emit_glue_assign_native(mp_raw_code_t *rc, mp_raw_code_kind_t kind, void *fun_data, mp_uint_t fun_len, const mp_uint_t *const_table, mp_uint_t n_pos_args, mp_uint_t scope_flags, mp_uint_t type_sig);
+../../py/emitglue.h:mp_obj_t mp_make_closure_from_raw_code(const mp_raw_code_t *rc, mp_uint_t n_closed_over, const mp_obj_t *args);
+../../py/scope.h:scope_t *scope_new(scope_kind_t kind, mp_parse_node_t pn, qstr source_file, mp_uint_t emit_options);
+../../py/mphal.h:void mp_hal_delay_ms(mp_uint_t ms);
+../../py/mphal.h:void mp_hal_delay_us(mp_uint_t us);
+../../py/mphal.h:mp_uint_t mp_hal_ticks_ms(void);
+../../py/mphal.h:mp_uint_t mp_hal_ticks_us(void);
+../../py/mphal.h:mp_uint_t mp_hal_ticks_cpu(void);
+../../py/obj.h:#define MP_OBJ_NEW_SMALL_INT(small_int) ((mp_obj_t)((((mp_uint_t)(small_int)) << 1) | 1))
+../../py/obj.h:#define MP_OBJ_QSTR_VALUE(o) (((mp_uint_t)(o)) >> 2)
+../../py/obj.h:#define MP_OBJ_NEW_QSTR(qst) ((mp_obj_t)((((mp_uint_t)(qst)) << 2) | 2))
+../../py/obj.h:#define MP_OBJ_NEW_SMALL_INT(small_int) ((mp_obj_t)((((mp_uint_t)(small_int)) << 2) | 1))
+../../py/obj.h:#define MP_OBJ_QSTR_VALUE(o) (((mp_uint_t)(o)) >> 2)
+../../py/obj.h:#define MP_OBJ_NEW_QSTR(qst) ((mp_obj_t)((((mp_uint_t)(qst)) << 2) | 3))
+../../py/obj.h:#define MP_OBJ_NEW_SMALL_INT(small_int) ((mp_obj_t)((((mp_uint_t)(small_int)) << 1) | 1))
+../../py/obj.h:    { return (((mp_uint_t)(o)) & 3) == 2 && (((mp_uint_t)(o)) & 0xff800007) != 0x00000006; }
+../../py/obj.h:        mp_uint_t u;
+../../py/obj.h:    } num = {.u = ((mp_uint_t)o - 0x80800000) & ~3};
+../../py/obj.h:        mp_uint_t u;
+../../py/obj.h:    { return (((mp_uint_t)(o)) & 0xff800007) == 0x00000006; }
+../../py/obj.h:#define MP_OBJ_QSTR_VALUE(o) (((mp_uint_t)(o)) >> 3)
+../../py/obj.h:#define MP_OBJ_NEW_QSTR(qst) ((mp_obj_t)((((mp_uint_t)(qst)) << 3) | 0x00000006))
+../../py/obj.h:#define MP_OBJ_NEW_QSTR(qst) ((mp_obj_t)((((mp_uint_t)(qst)) << 1) | 0x0002000000000001))
+../../py/obj.h:    mp_int_t (*get_buffer)(mp_obj_t obj, mp_buffer_info_t *bufinfo, mp_uint_t flags);
+../../py/obj.h:bool mp_get_buffer(mp_obj_t obj, mp_buffer_info_t *bufinfo, mp_uint_t flags);
+../../py/obj.h:void mp_get_buffer_raise(mp_obj_t obj, mp_buffer_info_t *bufinfo, mp_uint_t flags);
+../../py/obj.h:mp_obj_t mp_obj_new_int_from_uint(mp_uint_t value);
+../../py/obj.h:mp_obj_t mp_obj_new_fun_bc(mp_obj_t def_args, mp_obj_t def_kw_args, const byte *code, const mp_uint_t *const_table);
+../../py/obj.h:mp_obj_t mp_obj_new_fun_native(mp_obj_t def_args_in, mp_obj_t def_kw_args, const void *fun_data, const mp_uint_t *const_table);
+../../py/obj.h:mp_obj_t mp_obj_new_fun_viper(size_t n_args, void *fun_data, mp_uint_t type_sig);
+../../py/obj.h:mp_obj_t mp_obj_new_fun_asm(size_t n_args, void *fun_data, mp_uint_t type_sig);
+../../py/obj.h:    mp_uint_t start;
+../../py/obj.h:    mp_uint_t stop;
+../../py/obj.h:bool mp_seq_get_fast_slice_indexes(mp_uint_t len, mp_obj_t slice, mp_bound_slice_t *indexes);
+../../py/obj.h:bool mp_seq_cmp_bytes(mp_uint_t op, const byte *data1, size_t len1, const byte *data2, size_t len2);
+../../py/obj.h:bool mp_seq_cmp_objs(mp_uint_t op, const mp_obj_t *items1, size_t len1, const mp_obj_t *items2, size_t len2);
+../../py/runtime.h:void mp_handle_pending_tail(mp_uint_t atomic_state);
+../../py/runtime.h:mp_uint_t mp_convert_obj_to_native(mp_obj_t obj, mp_uint_t type);
+../../py/runtime.h:mp_obj_t mp_convert_native_to_obj(mp_uint_t val, mp_uint_t type);
+../../py/mpconfig.h:#define BYTES_PER_WORD (sizeof(mp_uint_t))
+../../py/mpconfig.h:#define WORD_MSBIT_HIGH (((mp_uint_t)1) << (BYTES_PER_WORD * 8 - 1))
+../../py/mpstate.h:    mp_uint_t mp_optimise_value;
+../../py/asmx86.h:void asm_x86_setcc_r8(asm_x86_t* as, mp_uint_t jcc_type, int dest_r8);
+../../py/asmx86.h:void asm_x86_jmp_label(asm_x86_t* as, mp_uint_t label);
+../../py/asmx86.h:void asm_x86_jcc_label(asm_x86_t* as, mp_uint_t jcc_type, mp_uint_t label);
+../../py/asmx86.h:void asm_x86_mov_reg_pcrel(asm_x86_t *as, int dest_r64, mp_uint_t label);
+../../py/asmx86.h:void asm_x86_call_ind(asm_x86_t* as, size_t fun_id, mp_uint_t n_args, int temp_r32);
+../../py/binary.h:size_t mp_binary_get_size(char struct_type, char val_type, mp_uint_t *palign);
+../../py/binary.h:mp_obj_t mp_binary_get_val_array(char typecode, void *p, mp_uint_t index);
+../../py/binary.h:void mp_binary_set_val_array(char typecode, void *p, mp_uint_t index, mp_obj_t val_in);
+../../py/binary.h:void mp_binary_set_val_array_from_int(char typecode, void *p, mp_uint_t index, mp_int_t val);
+../../py/binary.h:long long mp_binary_get_int(mp_uint_t size, bool is_signed, bool big_endian, const byte *src);
+../../py/binary.h:void mp_binary_set_int(mp_uint_t val_sz, bool big_endian, byte *dest, mp_uint_t val);
+../../py/reader.h:#define MP_READER_EOF ((mp_uint_t)(-1))
+../../py/reader.h:    mp_uint_t (*readbyte)(void *data);
+../../py/mpz.h:void mpz_shl_inpl(mpz_t *dest, const mpz_t *lhs, mp_uint_t rhs);
+../../py/mpz.h:void mpz_shr_inpl(mpz_t *dest, const mpz_t *lhs, mp_uint_t rhs);
+../../py/mpz.h:bool mpz_as_uint_checked(const mpz_t *z, mp_uint_t *value);
+../../py/objstringio.h:    mp_uint_t pos;
+../../py/objfun.h:    const mp_uint_t *const_table;   // constant table
+../../py/stackctrl.h:mp_uint_t mp_stack_usage(void);
+../../py/stackctrl.h:void mp_stack_set_limit(mp_uint_t limit);
+../../py/bc.h:mp_uint_t mp_decode_uint(const byte **ptr);
+../../py/bc.h:mp_uint_t mp_decode_uint_value(const byte *ptr);
+../../py/bc.h:void mp_bytecode_print(const void *descr, const byte *code, mp_uint_t len, const mp_uint_t *const_table);
+../../py/bc.h:void mp_bytecode_print2(const byte *code, size_t len, const mp_uint_t *const_table);
+../../py/misc.h:mp_uint_t unichar_xdigit_value(unichar c);
+../../py/misc.h:extern mp_uint_t mp_verbose_flag;
+../../py/asmthumb.h:void asm_thumb_mov_reg_i32(asm_thumb_t *as, uint reg_dest, mp_uint_t i32_src); // convenience
+../../py/emit.h:    void (*local)(emit_t *emit, qstr qst, mp_uint_t local_num, int kind);
+../../py/emit.h:    void (*set_source_line)(emit_t *emit, mp_uint_t line);
+../../py/emit.h:    void (*label_assign)(emit_t *emit, mp_uint_t l);
+../../py/emit.h:    void (*jump)(emit_t *emit, mp_uint_t label);
+../../py/emit.h:    void (*pop_jump_if)(emit_t *emit, bool cond, mp_uint_t label);
+../../py/emit.h:    void (*jump_if_or_pop)(emit_t *emit, bool cond, mp_uint_t label);
+../../py/emit.h:    void (*unwind_jump)(emit_t *emit, mp_uint_t label, mp_uint_t except_depth);
+../../py/emit.h:    void (*setup_block)(emit_t *emit, mp_uint_t label, int kind);
+../../py/emit.h:    void (*with_cleanup)(emit_t *emit, mp_uint_t label);
+../../py/emit.h:    void (*for_iter)(emit_t *emit, mp_uint_t label);
+../../py/emit.h:    void (*build)(emit_t *emit, mp_uint_t n_args, int kind);
+../../py/emit.h:    void (*store_comp)(emit_t *emit, scope_kind_t kind, mp_uint_t set_stack_index);
+../../py/emit.h:    void (*unpack_sequence)(emit_t *emit, mp_uint_t n_args);
+../../py/emit.h:    void (*unpack_ex)(emit_t *emit, mp_uint_t n_left, mp_uint_t n_right);
+../../py/emit.h:    void (*make_function)(emit_t *emit, scope_t *scope, mp_uint_t n_pos_defaults, mp_uint_t n_kw_defaults);
+../../py/emit.h:    void (*make_closure)(emit_t *emit, scope_t *scope, mp_uint_t n_closed_over, mp_uint_t n_pos_defaults, mp_uint_t n_kw_defaults);
+../../py/emit.h:    void (*call_function)(emit_t *emit, mp_uint_t n_positional, mp_uint_t n_keyword, mp_uint_t star_flags);
+../../py/emit.h:    void (*call_method)(emit_t *emit, mp_uint_t n_positional, mp_uint_t n_keyword, mp_uint_t star_flags);
+../../py/emit.h:    void (*raise_varargs)(emit_t *emit, mp_uint_t n_args);
+../../py/emit.h:emit_t *emit_native_x64_new(mp_obj_t *error_slot, uint *label_slot, mp_uint_t max_num_labels);
+../../py/emit.h:emit_t *emit_native_x86_new(mp_obj_t *error_slot, uint *label_slot, mp_uint_t max_num_labels);
+../../py/emit.h:emit_t *emit_native_thumb_new(mp_obj_t *error_slot, uint *label_slot, mp_uint_t max_num_labels);
+../../py/emit.h:emit_t *emit_native_arm_new(mp_obj_t *error_slot, uint *label_slot, mp_uint_t max_num_labels);
+../../py/emit.h:emit_t *emit_native_xtensa_new(mp_obj_t *error_slot, uint *label_slot, mp_uint_t max_num_labels);
+../../py/emit.h:void emit_bc_set_max_num_labels(emit_t* emit, mp_uint_t max_num_labels);
+../../py/emit.h:void mp_emit_bc_set_source_line(emit_t *emit, mp_uint_t line);
+../../py/emit.h:void mp_emit_bc_load_local(emit_t *emit, qstr qst, mp_uint_t local_num, int kind);
+../../py/emit.h:void mp_emit_bc_store_local(emit_t *emit, qstr qst, mp_uint_t local_num, int kind);
+../../py/emit.h:void mp_emit_bc_delete_local(emit_t *emit, qstr qst, mp_uint_t local_num, int kind);
+../../py/emit.h:void mp_emit_bc_label_assign(emit_t *emit, mp_uint_t l);
+../../py/emit.h:void mp_emit_bc_jump(emit_t *emit, mp_uint_t label);
+../../py/emit.h:void mp_emit_bc_pop_jump_if(emit_t *emit, bool cond, mp_uint_t label);
+../../py/emit.h:void mp_emit_bc_jump_if_or_pop(emit_t *emit, bool cond, mp_uint_t label);
+../../py/emit.h:void mp_emit_bc_unwind_jump(emit_t *emit, mp_uint_t label, mp_uint_t except_depth);
+../../py/emit.h:void mp_emit_bc_setup_block(emit_t *emit, mp_uint_t label, int kind);
+../../py/emit.h:void mp_emit_bc_with_cleanup(emit_t *emit, mp_uint_t label);
+../../py/emit.h:void mp_emit_bc_for_iter(emit_t *emit, mp_uint_t label);
+../../py/emit.h:void mp_emit_bc_build(emit_t *emit, mp_uint_t n_args, int kind);
+../../py/emit.h:void mp_emit_bc_store_comp(emit_t *emit, scope_kind_t kind, mp_uint_t list_stack_index);
+../../py/emit.h:void mp_emit_bc_unpack_sequence(emit_t *emit, mp_uint_t n_args);
+../../py/emit.h:void mp_emit_bc_unpack_ex(emit_t *emit, mp_uint_t n_left, mp_uint_t n_right);
+../../py/emit.h:void mp_emit_bc_make_function(emit_t *emit, scope_t *scope, mp_uint_t n_pos_defaults, mp_uint_t n_kw_defaults);
+../../py/emit.h:void mp_emit_bc_make_closure(emit_t *emit, scope_t *scope, mp_uint_t n_closed_over, mp_uint_t n_pos_defaults, mp_uint_t n_kw_defaults);
+../../py/emit.h:void mp_emit_bc_call_function(emit_t *emit, mp_uint_t n_positional, mp_uint_t n_keyword, mp_uint_t star_flags);
+../../py/emit.h:void mp_emit_bc_call_method(emit_t *emit, mp_uint_t n_positional, mp_uint_t n_keyword, mp_uint_t star_flags);
+../../py/emit.h:void mp_emit_bc_raise_varargs(emit_t *emit, mp_uint_t n_args);
+../../py/emit.h:    void (*end_pass)(emit_inline_asm_t *emit, mp_uint_t type_sig);
+../../py/emit.h:    mp_uint_t (*count_params)(emit_inline_asm_t *emit, mp_uint_t n_params, mp_parse_node_t *pn_params);
+../../py/emit.h:    bool (*label)(emit_inline_asm_t *emit, mp_uint_t label_num, qstr label_id);
+../../py/emit.h:    void (*op)(emit_inline_asm_t *emit, qstr op, mp_uint_t n_args, mp_parse_node_t *pn_args);
+../../py/emit.h:emit_inline_asm_t *emit_inline_thumb_new(mp_uint_t max_num_labels);
+../../py/emit.h:emit_inline_asm_t *emit_inline_xtensa_new(mp_uint_t max_num_labels);
+../../py/objstr.h:    mp_uint_t hash;
+../../py/objstr.h:    mp_uint_t str_hash; if (MP_OBJ_IS_QSTR(str_obj_in)) \
+../../py/objstr.h:mp_int_t mp_obj_str_get_buffer(mp_obj_t self_in, mp_buffer_info_t *bufinfo, mp_uint_t flags);
+../../py/asmx64.h:void asm_x64_jmp_label(asm_x64_t* as, mp_uint_t label);
+../../py/asmx64.h:void asm_x64_jcc_label(asm_x64_t* as, int jcc_type, mp_uint_t label);
+../../py/asmx64.h:void asm_x64_mov_reg_pcrel(asm_x64_t *as, int dest_r64, mp_uint_t label);
+../../py/stream.h:#define MP_STREAM_ERROR ((mp_uint_t)-1)
+../../py/stream.h:    mp_uint_t (*read)(mp_obj_t obj, void *buf, mp_uint_t size, int *errcode);
+../../py/stream.h:    mp_uint_t (*write)(mp_obj_t obj, const void *buf, mp_uint_t size, int *errcode);
+../../py/stream.h:    mp_uint_t (*ioctl)(mp_obj_t obj, mp_uint_t request, uintptr_t arg, int *errcode);
+../../py/stream.h:    mp_uint_t is_text : 1; // default is bytes, set this for text stream
+../../py/stream.h:mp_uint_t mp_stream_rw(mp_obj_t stream, void *buf, mp_uint_t size, int *errcode, byte flags);
+../../mpy-cross/mpconfigport.h:typedef unsigned long mp_uint_t; // must be pointer size
+../../mpy-cross/mpconfigport.h:typedef unsigned __int64 mp_uint_t;
+../../mpy-cross/mpconfigport.h:typedef unsigned int mp_uint_t; // must be pointer size
+../../mpy-cross/build/genhdr/qstrdefs.preprocessed.h:typedef unsigned long mp_uint_t;
+../../lib/netutils/netutils.h:mp_obj_t netutils_format_inet_addr(uint8_t *ip, mp_uint_t port, netutils_endian_t endian);
+../../lib/netutils/netutils.h:mp_uint_t netutils_parse_inet_addr(mp_obj_t addr_in, uint8_t *out_ip, netutils_endian_t endian);
+../../lib/upytesthelper/upytesthelper.h:void upytest_output(const char *str, mp_uint_t len);
+../../lib/timeutils/timeutils.h:bool timeutils_is_leap_year(mp_uint_t year);
+../../lib/timeutils/timeutils.h:mp_uint_t timeutils_days_in_month(mp_uint_t year, mp_uint_t month);
+../../lib/timeutils/timeutils.h:mp_uint_t timeutils_year_day(mp_uint_t year, mp_uint_t month, mp_uint_t date);
+../../lib/timeutils/timeutils.h:void timeutils_seconds_since_2000_to_struct_time(mp_uint_t t,
+../../lib/timeutils/timeutils.h:mp_uint_t timeutils_seconds_since_2000(mp_uint_t year, mp_uint_t month,
+../../lib/timeutils/timeutils.h:    mp_uint_t date, mp_uint_t hour, mp_uint_t minute, mp_uint_t second);
+../../lib/timeutils/timeutils.h:mp_uint_t timeutils_mktime(mp_uint_t year, mp_int_t month, mp_int_t mday,
+../../extmod/machine_pulse.h:mp_uint_t machine_time_pulse_us(mp_hal_pin_obj_t pin, int pulse_level, mp_uint_t timeout_us);
+../../extmod/virtpin.h:    mp_uint_t (*ioctl)(mp_obj_t obj, mp_uint_t request, uintptr_t arg, int *errcode);
+../../examples/embedding/mpconfigport_minimal.h:typedef unsigned long mp_uint_t; // must be pointer size
+../../examples/embedding/mpconfigport_minimal.h:typedef unsigned int mp_uint_t; // must be pointer size
+../../examples/embedding/mpconfigport.h:typedef unsigned long mp_uint_t; // must be pointer size
+../../examples/embedding/mpconfigport.h:typedef unsigned int mp_uint_t; // must be pointer size
+../../ports/esp8266/mpconfigport.h:#define MICROPY_MAKE_POINTER_CALLABLE(p) ((void*)((mp_uint_t)(p)))
+../../ports/esp8266/mpconfigport.h:typedef uint32_t mp_uint_t; // must be pointer size
+../../ports/windows/mpconfigport.h:typedef unsigned long mp_uint_t; // must be pointer size
+../../ports/windows/mpconfigport.h:typedef unsigned __int64 mp_uint_t;
+../../ports/windows/mpconfigport.h:typedef unsigned __int64 mp_uint_t;
+../../ports/windows/mpconfigport.h:typedef unsigned int mp_uint_t; // must be pointer size
+../../ports/windows/windows_mphal.h:mp_uint_t mp_hal_ticks_cpu(void);
+../../ports/unix/mpconfigport_minimal.h:typedef unsigned long mp_uint_t; // must be pointer size
+../../ports/unix/mpconfigport_minimal.h:typedef unsigned int mp_uint_t; // must be pointer size
+../../ports/unix/mpconfigport.h:    #define MICROPY_MAKE_POINTER_CALLABLE(p) ((void*)((mp_uint_t)(p) | 1))
+../../ports/unix/mpconfigport.h:typedef unsigned long mp_uint_t; // must be pointer size
+../../ports/unix/mpconfigport.h:typedef unsigned int mp_uint_t; // must be pointer size
+../../ports/unix/mpconfigport_nanbox.h:typedef uint64_t mp_uint_t;
+../../ports/unix/mphalport.h:static inline void mp_hal_delay_ms(mp_uint_t ms) { usleep((ms) * 1000); }
+../../ports/unix/mphalport.h:static inline void mp_hal_delay_us(mp_uint_t us) { usleep(us); }
+../../ports/stm32/irq.h:static inline mp_uint_t query_irq(void) {
+../../ports/stm32/mpconfigport.h:#define MICROPY_MAKE_POINTER_CALLABLE(p) ((void*)((mp_uint_t)(p) | 1))
+../../ports/stm32/mpconfigport.h:typedef unsigned int mp_uint_t; // must be pointer size
+../../ports/stm32/mpconfigport.h:static inline void enable_irq(mp_uint_t state) {
+../../ports/stm32/mpconfigport.h:static inline mp_uint_t disable_irq(void) {
+../../ports/stm32/mpconfigport.h:    mp_uint_t state = __get_PRIMASK();
+../../ports/stm32/storage.h:mp_uint_t storage_read_blocks(uint8_t *dest, uint32_t block_num, uint32_t num_blocks);
+../../ports/stm32/storage.h:mp_uint_t storage_write_blocks(const uint8_t *src, uint32_t block_num, uint32_t num_blocks);
+../../ports/stm32/usb.h:extern mp_uint_t pyb_usb_flags;
+../../ports/stm32/modnetwork.h:    int (*gethostbyname)(mp_obj_t nic, const char *name, mp_uint_t len, uint8_t *ip_out);
+../../ports/stm32/modnetwork.h:    int (*bind)(struct _mod_network_socket_obj_t *socket, byte *ip, mp_uint_t port, int *_errno);
+../../ports/stm32/modnetwork.h:    int (*accept)(struct _mod_network_socket_obj_t *socket, struct _mod_network_socket_obj_t *socket2, byte *ip, mp_uint_t *port, int *_errno);
+../../ports/stm32/modnetwork.h:    int (*connect)(struct _mod_network_socket_obj_t *socket, byte *ip, mp_uint_t port, int *_errno);
+../../ports/stm32/modnetwork.h:    mp_uint_t (*send)(struct _mod_network_socket_obj_t *socket, const byte *buf, mp_uint_t len, int *_errno);
+../../ports/stm32/modnetwork.h:    mp_uint_t (*recv)(struct _mod_network_socket_obj_t *socket, byte *buf, mp_uint_t len, int *_errno);
+../../ports/stm32/modnetwork.h:    mp_uint_t (*sendto)(struct _mod_network_socket_obj_t *socket, const byte *buf, mp_uint_t len, byte *ip, mp_uint_t port, int *_errno);
+../../ports/stm32/modnetwork.h:    mp_uint_t (*recvfrom)(struct _mod_network_socket_obj_t *socket, byte *buf, mp_uint_t len, byte *ip, mp_uint_t *port, int *_errno);
+../../ports/stm32/modnetwork.h:    int (*setsockopt)(struct _mod_network_socket_obj_t *socket, mp_uint_t level, mp_uint_t opt, const void *optval, mp_uint_t optlen, int *_errno);
+../../ports/stm32/modnetwork.h:    int (*settimeout)(struct _mod_network_socket_obj_t *socket, mp_uint_t timeout_ms, int *_errno);
+../../ports/stm32/modnetwork.h:    int (*ioctl)(struct _mod_network_socket_obj_t *socket, mp_uint_t request, mp_uint_t arg, int *_errno);
+../../ports/stm32/modnetwork.h:        mp_uint_t u_state;
+../../ports/stm32/i2c.h:void i2c_ev_irq_handler(mp_uint_t i2c_id);
+../../ports/stm32/i2c.h:void i2c_er_irq_handler(mp_uint_t i2c_id);
+../../ports/stm32/sdcard.h:mp_uint_t sdcard_read_blocks(uint8_t *dest, uint32_t block_num, uint32_t num_blocks);
+../../ports/stm32/sdcard.h:mp_uint_t sdcard_write_blocks(const uint8_t *src, uint32_t block_num, uint32_t num_blocks);
+../../ports/stm32/pin.h:const pin_af_obj_t *pin_find_af_by_index(const pin_obj_t *pin, mp_uint_t af_idx);
+../../ports/stm32/uart.h:void uart_irq_handler(mp_uint_t uart_id);
+../../ports/stm32/uart.h:mp_uint_t uart_rx_any(pyb_uart_obj_t *uart_obj);
+../../ports/stm32/mphalport.h:static inline mp_uint_t mp_hal_ticks_cpu(void) {
+../../ports/esp32/mpconfigport.h:#define MICROPY_MAKE_POINTER_CALLABLE(p) ((void*)((mp_uint_t)(p)))
+../../ports/esp32/mpconfigport.h:typedef uint32_t mp_uint_t; // must be pointer size
+../../ports/minimal/mpconfigport.h:#define MICROPY_MAKE_POINTER_CALLABLE(p) ((void*)((mp_uint_t)(p) | 1))
+../../ports/minimal/mpconfigport.h:typedef unsigned mp_uint_t; // must be pointer size
+../../ports/minimal/mphalport.h:static inline mp_uint_t mp_hal_ticks_ms(void) { return 0; }
+../../ports/k210-freertos/mpy_support/standard_lib/include/vfs_internal.h:mp_uint_t vfs_internal_write(mp_obj_t fs, void* data, mp_uint_t length, int* error_code);
+../../ports/k210-freertos/mpy_support/standard_lib/include/vfs_internal.h:mp_uint_t vfs_internal_read(mp_obj_t fs, void* data, mp_uint_t length, int* error_code);
+../../ports/k210-freertos/mpy_support/standard_lib/include/vfs_internal.h:mp_uint_t vfs_internal_seek(mp_obj_t fs, mp_int_t offset, uint8_t whence, int* err);
+../../ports/k210-freertos/mpy_support/standard_lib/include/vfs_internal.h:mp_uint_t vfs_internal_size(mp_obj_t fp);
+../../ports/k210-freertos/mpy_support/standard_lib/include/machine_timer.h:	mp_uint_t              period;    //(0,2^32)
+../../ports/k210-freertos/mpy_support/network/include/modnetwork.h:    int (*gethostbyname)(mp_obj_t nic, const char *name, mp_uint_t len, uint8_t *ip_out);
+../../ports/k210-freertos/mpy_support/network/include/modnetwork.h:    int (*bind)(struct _mod_network_socket_obj_t *socket, byte *ip, mp_uint_t port, int *_errno);
+../../ports/k210-freertos/mpy_support/network/include/modnetwork.h:    int (*accept)(struct _mod_network_socket_obj_t *socket, struct _mod_network_socket_obj_t *socket2, byte *ip, mp_uint_t *port, int *_errno);
+../../ports/k210-freertos/mpy_support/network/include/modnetwork.h:    int (*connect)(struct _mod_network_socket_obj_t *socket, byte *ip, mp_uint_t port, int *_errno);
+../../ports/k210-freertos/mpy_support/network/include/modnetwork.h:    mp_uint_t (*send)(struct _mod_network_socket_obj_t *socket, const byte *buf, mp_uint_t len, int *_errno);
+../../ports/k210-freertos/mpy_support/network/include/modnetwork.h:    mp_uint_t (*recv)(struct _mod_network_socket_obj_t *socket, byte *buf, mp_uint_t len, int *_errno);
+../../ports/k210-freertos/mpy_support/network/include/modnetwork.h:    mp_uint_t (*sendto)(struct _mod_network_socket_obj_t *socket, const byte *buf, mp_uint_t len, byte *ip, mp_uint_t port, int *_errno);
+../../ports/k210-freertos/mpy_support/network/include/modnetwork.h:    mp_uint_t (*recvfrom)(struct _mod_network_socket_obj_t *socket, byte *buf, mp_uint_t len, byte *ip, mp_uint_t *port, int *_errno);
+../../ports/k210-freertos/mpy_support/network/include/modnetwork.h:    int (*setsockopt)(struct _mod_network_socket_obj_t *socket, mp_uint_t level, mp_uint_t opt, const void *optval, mp_uint_t optlen, int *_errno);
+../../ports/k210-freertos/mpy_support/network/include/modnetwork.h:    int (*settimeout)(struct _mod_network_socket_obj_t *socket, mp_uint_t timeout_ms, int *_errno);
+../../ports/k210-freertos/mpy_support/network/include/modnetwork.h:    int (*ioctl)(struct _mod_network_socket_obj_t *socket, mp_uint_t request, mp_uint_t arg, int *_errno);
+../../ports/k210-freertos/mpy_support/network/include/modnetwork.h:        mp_uint_t u_state;
+../../ports/k210-freertos/mpy_support/mpconfigport.h:#define MICROPY_MAKE_POINTER_CALLABLE(p) ((void*)((mp_uint_t)(p) | 1))
+../../ports/k210-freertos/mpy_support/mpconfigport.h:typedef uint64_t mp_uint_t; // must be pointer size
+../../ports/k210-freertos/mpy_support/build/genhdr/qstrdefs.preprocessed.h:typedef uint64_t mp_uint_t;
+../../ports/k210-freertos/mpy_support/omv/include/vfs_wrapper.h:mp_uint_t file_save_data(const char* path, uint8_t* data, mp_uint_t length, int* error_code);
+../../ports/k210-freertos/mpy_support/omv/include/vfs_wrapper.h:mp_uint_t file_size(mp_obj_t fp);
+../../ports/k210-freertos/mpy_support/omv/include/vfs_wrapper.h:int read_data(mp_obj_t fp, void *data, mp_uint_t size);
+../../ports/k210-freertos/mpy_support/omv/include/vfs_wrapper.h:int read_data_raise(mp_obj_t fp, void *data, mp_uint_t size);
+../../ports/k210-freertos/mpy_support/omv/include/vfs_wrapper.h:int write_data(mp_obj_t fp, const void *data, mp_uint_t size);
+../../ports/k210-freertos/mpy_support/omv/include/vfs_wrapper.h:int write_data_raise(mp_obj_t fp, const void *data, mp_uint_t size);
+../../ports/k210-freertos/mpy_support/omv/include/vfs_wrapper.h:int file_write(mp_obj_t fp, void *data, mp_uint_t size, mp_uint_t* size_out);
+../../ports/k210-freertos/mpy_support/omv/include/vfs_wrapper.h:int read_data_raise(mp_obj_t fp, void *data, mp_uint_t size);
+../../ports/k210-freertos/mpy_support/mphalport.h:void mp_hal_delay_us(mp_uint_t us);
+../../ports/k210-freertos/mpy_support/mphalport.h:void mp_hal_delay_ms(mp_uint_t ms);
+../../ports/cc3200/hal/cc3200_asm.h:static inline void enable_irq(mp_uint_t state) {
+../../ports/cc3200/hal/cc3200_asm.h:static inline mp_uint_t disable_irq(void) {
+../../ports/cc3200/hal/cc3200_asm.h:    mp_uint_t state = __get_PRIMASK();
+../../ports/cc3200/mpconfigport.h:#define MICROPY_MAKE_POINTER_CALLABLE(p)            ((void*)((mp_uint_t)(p) | 1))
+../../ports/cc3200/mpconfigport.h:typedef unsigned int    mp_uint_t;                  // must be pointer size
+../../ports/cc3200/util/gchelper.h:extern mp_uint_t gc_helper_get_sp(void);
+../../ports/cc3200/util/gchelper.h:extern mp_uint_t gc_helper_get_regs_and_sp(mp_uint_t *regs);
+../../ports/qemu-arm/mpconfigport.h:#define MICROPY_MAKE_POINTER_CALLABLE(p) ((void*)((mp_uint_t)(p) | 1))
+../../ports/qemu-arm/mpconfigport.h:typedef uint32_t mp_uint_t; // must be pointer size
+../../ports/zephyr/mpconfigport_minimal.h:typedef unsigned mp_uint_t; // must be pointer size
+../../ports/zephyr/mpconfigport.h:typedef unsigned mp_uint_t; // must be pointer size
+../../ports/zephyr/mphalport.h:static inline mp_uint_t mp_hal_ticks_us(void) {
+../../ports/zephyr/mphalport.h:static inline mp_uint_t mp_hal_ticks_ms(void) {
+../../ports/zephyr/mphalport.h:static inline mp_uint_t mp_hal_ticks_cpu(void) {
+../../ports/zephyr/mphalport.h:static inline void mp_hal_delay_us(mp_uint_t delay) {
+../../ports/zephyr/mphalport.h:static inline void mp_hal_delay_ms(mp_uint_t delay) {
+../../ports/pic16bit/mpconfigport.h:#define MICROPY_MAKE_POINTER_CALLABLE(p) ((void*)((mp_uint_t)(p)))
+../../ports/pic16bit/mpconfigport.h:typedef unsigned int mp_uint_t; // must be pointer size
+../../ports/bare-arm/mpconfigport.h:#define MICROPY_MAKE_POINTER_CALLABLE(p) ((void*)((mp_uint_t)(p) | 1))
+../../ports/bare-arm/mpconfigport.h:typedef uint32_t mp_uint_t; // must be pointer size
+../../ports/teensy/reg.h:    mp_uint_t   offset;
+../../ports/teensy/reg.h:mp_obj_t reg_cmd(void *base, reg_t *reg, mp_uint_t num_reg, uint n_args, const mp_obj_t *args);
+../../ports/teensy/mpconfigport.h:typedef unsigned int mp_uint_t; // must be pointer size
+../../ports/teensy/mpconfigport.h:__attribute__(( always_inline )) static inline void enable_irq(mp_uint_t state) {
+../../ports/teensy/mpconfigport.h:__attribute__(( always_inline )) static inline mp_uint_t disable_irq(void) {
+../../ports/teensy/mpconfigport.h:    mp_uint_t state = __get_PRIMASK();
+../../ports/nrf/mpconfigport.h:#define MICROPY_MAKE_POINTER_CALLABLE(p) ((void*)((mp_uint_t)(p) | 1))
+../../ports/nrf/mpconfigport.h:typedef unsigned int mp_uint_t; // must be pointer size
+../../ports/nrf/modules/machine/pin.h:const pin_af_obj_t *pin_find_af_by_index(const pin_obj_t *pin, mp_uint_t af_idx);
+../../ports/nrf/modules/machine/uart.h:void uart_irq_handler(mp_uint_t uart_id);
+../../ports/nrf/boards/microbit/modules/microbitimage.h:mp_obj_t scrolling_string_image_iterable(const char* str, mp_uint_t len, mp_obj_t ref, bool monospace, bool repeat);
+../../ports/nrf/mphalport.h:void mp_hal_delay_ms(mp_uint_t ms);
+../../ports/nrf/mphalport.h:void mp_hal_delay_us(mp_uint_t us);

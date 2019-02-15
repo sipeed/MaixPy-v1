@@ -249,6 +249,7 @@ extern const uint8_t g826_table[256];
 #define COLOR_RGB565_TO_G8(pixel) COLOR_G6_TO_G8(COLOR_RGB565_TO_G6(pixel))
 #define COLOR_RGB565_TO_B8(pixel) COLOR_B5_TO_B8(COLOR_RGB565_TO_B5(pixel))
 
+//old OPENMV config
 #define COLOR_R5_G6_B5_TO_RGB565(r5, g6, b5) \
 ({ \
     __typeof__ (r5) _r5 = (r5); \
@@ -256,6 +257,14 @@ extern const uint8_t g826_table[256];
     __typeof__ (b5) _b5 = (b5); \
     (_r5 << 3) | (_g6 >> 3) | ((_g6 & 0x7) << 13) | (_b5 << 8); \
 })
+//fix MAIX config
+/*#define COLOR_R5_G6_B5_TO_RGB565(r5, g6, b5) \
+({ \
+    __typeof__ (r5) _r5 = (r5); \
+    __typeof__ (g6) _g6 = (g6); \
+    __typeof__ (b5) _b5 = (b5); \
+    ((_r5<<11) | (_g6<<5) | (_b5)); \
+})*/
 
 #define COLOR_R8_G8_B8_TO_RGB565(r8, g8, b8) COLOR_R5_G6_B5_TO_RGB565(COLOR_R8_TO_R5(r8), COLOR_G8_TO_G6(g8), COLOR_B8_TO_B5(b8))
 
@@ -1370,4 +1379,9 @@ void imlib_phasecorrelate(image_t *img0, image_t *img1, rectangle_t *roi0, recta
                           float *x_translation, float *y_translation, float *rotation, float *scale, float *response);
 
 array_t *imlib_selective_search(image_t *src, float t, int min_size, float a1, float a2, float a3);
+
+// MAIX conv acc
+void imlib_conv3(image_t *img, float *krn);
+
+
 #endif //__IMLIB_H__

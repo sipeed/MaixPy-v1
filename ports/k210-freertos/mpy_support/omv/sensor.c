@@ -28,8 +28,7 @@ extern volatile dvp_t* const dvp;
 #define systick_sleep mp_hal_delay_ms
 
 sensor_t  sensor     = {0};
-volatile uint8_t g_dvp_finish_flag = 0;
-volatile uint8_t g_ai_done_flag;
+volatile static uint8_t g_dvp_finish_flag = 0;
 
 
 static volatile int line = 0;
@@ -121,6 +120,7 @@ void sensor_init_fb()
 	JPEG_FB()->size=0;JPEG_FB()->enabled=0;
 	JPEG_FB()->quality=0;
 	JPEG_FB()->pixels = &g_jpg_buf;
+	//printf("pixels=0x%x, pix_ai=0x%x, jpg=0x%x\n", MAIN_FB()->pixels, MAIN_FB()->pix_ai, JPEG_FB()->pixels);
     // Set default quality
     JPEG_FB()->quality = 35;
 
@@ -672,20 +672,34 @@ int exchang_pixel(uint16_t* addr,uint32_t resoltion)
   return 0;
 }
 
+int reverse_u32pixel(uint32_t* addr,uint32_t length)
+{
+  if(NULL == addr)
+    return -1;
+
+  uint32_t data;
+  uint32_t* pend = addr+length;
+  for(;addr<pend;addr++)
+  {
+	  data = *(addr);
+	  *(addr) = ((data & 0x000000FF) << 24) | ((data & 0x0000FF00) << 8) | 
+                ((data & 0x00FF0000) >> 8) | ((data & 0xFF000000) >> 24) ;
+  }  //1.7ms
+  
+  
+  return 0;
+}
+
 void sensor_flush(void)
 {	//flush old frame, let dvp capture new image
 	//use it when you don't snap for a while.
 	g_dvp_finish_flag = 0;
-	return 0;
+	return ;
 }
 
 int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_cb)
 {	
-    uint32_t frame = 0;
     bool streaming = (streaming_cb != NULL); // Streaming mode.
-    bool doublebuf = false; // Use double buffers in streaming mode.
-    uint32_t length;
-	uint64_t tick_start;
 	if(image == NULL) return -1;
     // Compress the framebuffer for the IDE preview, only if it's not the first frame,
     // the framebuffer is enabled and the image sensor does not support JPEG encoding.
@@ -702,11 +716,6 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
     // the FB of whatever the user set it to and now we restore.
     MAIN_FB()->w = MAIN_FB()->u;
     MAIN_FB()->h = MAIN_FB()->v;
-
-    // We use the stored frame size to read the whole frame. Note that cropping is
-    // done in the line function using the diemensions stored in MAIN_FB()->x,y,w,h.
-    uint32_t w = resolution[sensor->framesize][0];
-    uint32_t h = resolution[sensor->framesize][1];
 
     if (streaming_cb) {
         image->pixels = NULL;
@@ -754,8 +763,14 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
 		image->bpp = MAIN_FB()->bpp;
 		image->pixels = MAIN_FB()->pixels;
 		image->pix_ai = MAIN_FB()->pix_ai;
-		//printf("%x\n",image->pixels);
-		//exchang_data_byte((uint8_t*)(image->pixels), 153600);
+		//as data come in is in u32 LE format, we need exchange its order
+		//unsigned long t0,t1;
+		//t0=read_cycle();
+		//exchang_data_byte((image->pixels), (MAIN_FB()->w)*(MAIN_FB()->h)*2);
+		//exchang_pixel((image->pixels), (MAIN_FB()->w)*(MAIN_FB()->h)); //cost 3ms@400M
+		reverse_u32pixel((image->pixels), (MAIN_FB()->w)*(MAIN_FB()->h)/2);
+		//t1=read_cycle();
+		//printf("%ld-%ld=%ld, %ld us!\r\n",t1,t0,(t1-t0),((t1-t0)*1000000/400000000)); 
 		if (streaming_cb) {
 			// In streaming mode, either switch frame buffers in double buffer mode,
 			// or call the streaming callback with the main FB in single buffer mode.

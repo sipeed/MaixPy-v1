@@ -105,7 +105,7 @@ void lcd_set_area(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 void lcd_draw_point(uint16_t x, uint16_t y, uint16_t color)
 {
     lcd_set_area(x, y, x, y);
-    tft_write_half(&color, 1);
+    tft_write_byte(&color, 2);
 }
 
 void lcd_draw_char(uint16_t x, uint16_t y, char c, uint16_t color)
@@ -157,18 +157,18 @@ void lcd_ram_draw_string(char *str, uint32_t *ptr, uint16_t font_color, uint16_t
             for (j = 0; j < 4; j++)
             {
                 switch (data >> 6)
-                {
+                {	
                     case 0:
-                        *pixel = ((uint32_t)bg_color << 16) | bg_color;
-                        break;
-                    case 1:
-                        *pixel = ((uint32_t)bg_color << 16) | font_color;
+                        *pixel =  bg_color | ((uint32_t)bg_color << 16);
                         break;
                     case 2:
-                        *pixel = ((uint32_t)font_color << 16) | bg_color;
+                        *pixel = font_color | ((uint32_t)bg_color << 16) ;
+                        break;
+                    case 1:
+                        *pixel = bg_color | ((uint32_t)font_color << 16) ;
                         break;
                     case 3:
-                        *pixel = ((uint32_t)font_color << 16) | font_color;
+                        *pixel = font_color | ((uint32_t)font_color << 16) ;
                         break;
                     default:
                         *pixel = 0;
@@ -211,19 +211,19 @@ void lcd_draw_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint
         *p++ = data;
 
     lcd_set_area(x1, y1, x2, y1 + width - 1);
-    tft_write_word(data_buf, ((x2 - x1 + 1) * width + 1) / 2, 0);
+    tft_write_byte(data_buf, ((x2 - x1 + 1) * width + 1)*2 );
     lcd_set_area(x1, y2 - width + 1, x2, y2);
-    tft_write_word(data_buf, ((x2 - x1 + 1) * width + 1) / 2, 0);
+    tft_write_byte(data_buf, ((x2 - x1 + 1) * width + 1)*2 );
     lcd_set_area(x1, y1, x1 + width - 1, y2);
-    tft_write_word(data_buf, ((y2 - y1 + 1) * width + 1) / 2, 0);
+    tft_write_byte(data_buf, ((y2 - y1 + 1) * width + 1)*2 );
     lcd_set_area(x2 - width + 1, y1, x2, y2);
-    tft_write_word(data_buf, ((y2 - y1 + 1) * width + 1) / 2, 0);
+    tft_write_byte(data_buf, ((y2 - y1 + 1) * width + 1)*2 );
 }
 
 void lcd_draw_picture(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height, uint32_t *ptr)
 {
     lcd_set_area(x1, y1, x1 + width - 1, y1 + height - 1);
-    tft_write_word(ptr, width * height / 2, lcd_ctl.mode ? 2 : 0);
+    tft_write_byte(ptr, width * height*2);// lcd_ctl.mode ? 2 : 0);
 }
 
 //draw pic's roi on (x,y)
@@ -236,7 +236,7 @@ void lcd_draw_pic_roi(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t r
 	{	//draw line by line
 		p = (uint8_t *)(ptr) + w*2*(y_oft+ry) + 2*rx;
 		lcd_set_area(x, y+y_oft, x + rw - 1, y+y_oft);
-		tft_write_word((uint32_t*)p, rw/2, lcd_ctl.mode ? 2 : 0);
+		tft_write_byte((uint32_t*)p, rw*2);//, lcd_ctl.mode ? 2 : 0);
 	}
 	return;
 }
@@ -250,7 +250,7 @@ void lcd_draw_pic_gray(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height
     lcd_set_area(x1, y1, x1 + width - 1, y1 + height - 1);
 	for(i=0;i<width*height;i++)
 	{
-		tft_write_half(gray2rgb565+(i>>2), 1);
+		tft_write_byte(gray2rgb565+(i>>2), 2);
 	}
 }
 
@@ -265,5 +265,17 @@ void lcd_draw_pic_grayroi(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16
 	}
 	return;
 }
+
+void lcd_ram_cpyimg(char* lcd, int lcdw, char* img, int imgw, int imgh, int x, int y)
+{
+	int i;
+	for(i=0;i<imgh;i++)
+	{
+		memcpy(lcd+lcdw*2*(y+i)+x*2,img+imgw*2*i,imgw*2);
+	}
+	return;
+}
+
+
 
 
