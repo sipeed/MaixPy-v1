@@ -66,7 +66,7 @@ $(CXX_OBJ):%.o:%.cpp
 	$(Q)$(CXX)  -o $(OUTPUT_DIR)/$@ -c $< -I$(INC) $(CXXFLAGS) -lstdc++
 
 # $(HEADER_BUILD)/qstr.i.last $(HEADER_BUILD)/qstrdefs.generated.h $(BUILD)/_frozen_mpy.c
-compile: mkbuild $(OUTPUT_BIN)
+compile: $(BUILD)/genhdr/qstrdefs.generated.h mkbuild $(OUTPUT_BIN)
 	$(call echo_info,"Making compile ...")
 	$(foreach n,${SUBDIRS},make -C ${n} compile;)
 	

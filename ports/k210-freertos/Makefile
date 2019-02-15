@@ -22,17 +22,17 @@ CFLAGS += -DFFCONF_H=\"lib/oofatfs/ffconf.h\"
 sinclude $(COMMON_C_MK)
 
 ALL_LIBS := $(wildcard $(BIN_DIR)/*.a)
+# BIN_LDFLAGS += $(SRC_C_OUTPUT_OBJ) $(SRC_CXX_OUTPUT_OBJ)
 
-all: compile out print_size
-#BIN_LDFLAGS += $(SRC_C_OUTPUT_OBJ) $(SRC_CXX_OUTPUT_OBJ)
+all: include_mk compile out print_size	
 
 print_size:
-	$(SIZE) $(LIB_NAME)
-	
+	$(SIZE) $(OUTPUT_ELF)
+
 $(OUTPUT_ELF): $(SRC_C_OUTPUT_OBJ) $(SRC_C_OUTPUT_OBJ) $(ALL_LIBS)
 	@mkdir -p $(BIN_DIR)
 	@echo $(BIN_LDFLAGS)
-	@$(CC) $(BIN_LDFLAGS) $(CFLAGS) -o $@ 
+	@$(CC) $(BIN_LDFLAGS) $(CFLAGS) -o $@
 
 out:$(OUTPUT_ELF)
 	$(OBJCOPY) --output-format=binary $(OUTPUT_ELF) $(OUTPUT_BIN)
@@ -42,7 +42,7 @@ subcompile:
 	$(call echo_info,"Making compile ...")
 	$(foreach n,${SUBDIRS},make -C ${n} compile;)
 
-compile:subcompile $(SRC_C_OBJ) $(CXX_OBJ)
+compile:subcompile
 
 include_mk:
 	$(call echo_info,"update include mk file ...")
@@ -58,3 +58,12 @@ clean:
 	$(foreach n,${SUBDIRS},make -C ${n} clean;)
 	rm -rf $(OUTPUT_DIR) $(BIN_DIR)
 	rm -f $(INCLUDE_MK)
+	find ./ -name "include\.mk" | xargs rm -f
+	rm -f inc/*
+
+
+
+
+
+
+
