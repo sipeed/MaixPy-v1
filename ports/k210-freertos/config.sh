@@ -1,9 +1,10 @@
 #!/bin/bash
-export PROJECT_DIR=/home/zepan/develop/MAIX/MaixPy/ports/k210-freertos
-export TOOLCHAIN_PATH=/opt/riscv-toolchain
+export PROJECT_DIR=/media/neucrack/data/main/work/sipeed/k210/code/MaixPy_Internal/ports/k210-freertos
+export TOOLCHAIN_PATH=/media/neucrack/data/main/work/sipeed/k210/tools/toolchain/kendryte-toolchain
 export PLATFORM=k210
 export BIN_DIR=`pwd`/output
 export INC_DIR=`pwd`/inc
+export SHELL=/bin/bash
 
 # don't edit
 export PLATFORM_MK=`pwd`/${PLATFORM}.mk

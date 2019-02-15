@@ -1046,10 +1046,28 @@ lcd.init()
 sensor.reset()
 sensor.set_pixformat(sensor.RGB565)
 sensor.set_framesize(sensor.QVGA)
-sensor.set_vsync_output(sensor)
+sensor.set_vsync_output(1)
 i = 0
 while 1:
     img = sensor.snapshot()
     lcd.display(img)
 ```
+
+
+### save snapshot image
+
+```python
+import sensor  
+import lcd
+lcd.init()  
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.set_vsync_output(1)
+img = sensor.snapshot()
+lcd.display(img)
+img.save("/sd/img.jpg")
+```
+
+
 

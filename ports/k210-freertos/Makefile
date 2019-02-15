@@ -48,6 +48,7 @@ include_mk:
 	$(call echo_info,"update include mk file ...")
 	@echo " " > ${INCLUDE_MK}
 	@echo ${SUBDIRS}
+	mkdir -p ${INC_DIR}
 	$(foreach n,${SUBDIRS},make -C ${n} include_mk; cat ${n}/include.mk >> ${INCLUDE_MK} ;)
 	cp ${INCLUDE_MK} ${INC_DIR}/${LIB_NAME}.mk
 	$(call echo_info,"update include mk ok!")
