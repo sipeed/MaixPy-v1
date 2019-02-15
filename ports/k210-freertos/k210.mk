@@ -1,4 +1,9 @@
 # SHELL:=/bin/bash
+CC = $(CROSS_COMPILE)gcc
+CXX = $(CROSS_COMPILE)c++
+AR = $(CROSS_COMPILE)ar
+OBJCOPY = $(CROSS_COMPILE)objcopy
+SIZE = $(CROSS_COMPILE)size
 
 CFLAGS = \
 	-DCONFIG_LOG_COLORS \
@@ -68,5 +73,30 @@ CXXFLAGS := \
 	-g \
 	-Wno-error=format= \
 	-Wno-error=pointer-sign
+
+platform-lds:=$(PROJECT_DIR)/platform/sdk/kendryte-standalone-sdk/lds/kendryte.ld
+toolchain-obj:=$(wildcard $(TOOLCHAIN_LIB_DIR)/*.o)
+lib-file:=$(wildcard $(BIN_DIR)/*.a)
+mainobj:=$(wildcard $(PROJECT_DIR)/build/main.o)
+BIN_LDFLAGS := \
+                -static \
+                -Wl,-static \
+		-nostartfiles\
+		-Wl,--gc-sections \
+		-Wl,-EL \
+		-T $(platform-lds) \
+		$(mainobj) \
+		$(BIN_DIR)/mpy_support.a \
+		$(BIN_DIR)/spiffs.a \
+		$(BIN_DIR)/drivers.a \
+		$(BIN_DIR)/api.a \
+		$(BIN_DIR)/libkendryte.a \
+		-lm -latomic -lc -lstdc++ \
+		-Wl,--start-group \
+		-lc \
+		-lstdc++ \
+		$(BIN_DIR)/libkendryte.a \
+		-Wl,--end-group \
+
 
 

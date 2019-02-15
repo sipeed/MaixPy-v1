@@ -35,6 +35,8 @@
 #include "py/mpthread.h"
 #include "gccollect.h"
 
+#define K210_NUM_AREGS 32
+
 
 uintptr_t get_sp(void) {
     uintptr_t result;
@@ -42,15 +44,30 @@ uintptr_t get_sp(void) {
     return result;
 }
 
+static void gc_collect_inner(int level)
+{
+    if (level < K210_NUM_AREGS) {
+        gc_collect_inner(level + 1);
+        if (level != 0) return;
+    }
+
+    if (level == K210_NUM_AREGS) {
+        // collect on stack
+        volatile void *stack_p = 0;
+        volatile void *sp = &stack_p;
+        gc_collect_root((void**)sp, ((mp_uint_t)MP_STATE_THREAD(stack_top) - (mp_uint_t)sp) / sizeof(void*));
+        return;
+    }
+
+    // Trace root pointers from other threads
+    //int n_th = mp_thread_gc_others();
+}
+
+
 void gc_collect(void) {
     // start the GC
     gc_collect_start();
-
-    // Get stack pointer
-    uintptr_t sp = get_sp();
-
-    // trace the stack, including the registers (since they live on the stack in this function)
-    gc_collect_root((void**)sp, ((mp_uint_t)MP_STATE_THREAD(stack_top) - sp) / sizeof(uint32_t));
+	gc_collect_inner(0);
 #if MICROPY_PY_THREAD
     mp_thread_gc_others();
 #endif

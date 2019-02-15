@@ -70,6 +70,8 @@
 #define IM_DEG2RAD(x)   (((x)*M_PI)/180)
 #define IM_RAD2DEG(x)   (((x)*180)/M_PI)
 
+#define PI M_PI
+
 /////////////////
 // Point Stuff //
 /////////////////
@@ -247,6 +249,7 @@ extern const uint8_t g826_table[256];
 #define COLOR_RGB565_TO_G8(pixel) COLOR_G6_TO_G8(COLOR_RGB565_TO_G6(pixel))
 #define COLOR_RGB565_TO_B8(pixel) COLOR_B5_TO_B8(COLOR_RGB565_TO_B5(pixel))
 
+//old OPENMV config
 #define COLOR_R5_G6_B5_TO_RGB565(r5, g6, b5) \
 ({ \
     __typeof__ (r5) _r5 = (r5); \
@@ -254,6 +257,14 @@ extern const uint8_t g826_table[256];
     __typeof__ (b5) _b5 = (b5); \
     (_r5 << 3) | (_g6 >> 3) | ((_g6 & 0x7) << 13) | (_b5 << 8); \
 })
+//fix MAIX config
+/*#define COLOR_R5_G6_B5_TO_RGB565(r5, g6, b5) \
+({ \
+    __typeof__ (r5) _r5 = (r5); \
+    __typeof__ (g6) _g6 = (g6); \
+    __typeof__ (b5) _b5 = (b5); \
+    ((_r5<<11) | (_g6<<5) | (_b5)); \
+})*/
 
 #define COLOR_R8_G8_B8_TO_RGB565(r8, g8, b8) COLOR_R5_G6_B5_TO_RGB565(COLOR_R8_TO_R5(r8), COLOR_G8_TO_G6(g8), COLOR_B8_TO_B5(b8))
 
@@ -389,6 +400,7 @@ typedef struct image {
         uint8_t *pixels;
         uint8_t *data;
     };
+	uint8_t *pix_ai;	//for MAIX AI speed up
 } image_t;
 
 void image_init(image_t *ptr, int w, int h, int bpp, void *data);
@@ -1155,7 +1167,7 @@ void ppm_read_pixels(FIL *fp, image_t *img, int line_start, int line_end, ppm_re
 void ppm_read(image_t *img, const char *path);
 void ppm_write_subimg(image_t *img, const char *path, rectangle_t *r);
 bool bmp_read_geometry(mp_obj_t fp, image_t *img, bmp_read_settings_t *rs);
-bool bmp_read_pixels(mp_obj_t fp, image_t *img, int line_start, int line_end, bmp_read_settings_t *rs, int* err);
+bool bmp_read_pixels(mp_obj_t fp, image_t *img, int line_start, int line_end, bmp_read_settings_t *rs);
 void bmp_read(image_t *img, const char *path);
 void bmp_write_subimg(image_t *img, const char *path, rectangle_t *r);
 bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc);
@@ -1163,7 +1175,7 @@ void jpeg_read_geometry(mp_obj_t fp, image_t *img);
 bool jpeg_read_pixels(mp_obj_t fp, image_t *img);
 void jpeg_read(image_t *img, const char *path);
 void jpeg_write(image_t *img, const char *path, int quality);
-bool imlib_read_geometry(mp_obj_t fp, image_t *img, img_read_settings_t *rs);
+bool imlib_read_geometry(mp_obj_t fp, image_t *img, const char *path, img_read_settings_t *rs);
 void imlib_image_operation(image_t *img, const char *path, image_t *other, int scalar, line_op_t op, void *data);
 void imlib_load_image(image_t *img, const char *path);
 void imlib_save_image(image_t *img, const char *path, rectangle_t *roi, int quality);
@@ -1367,4 +1379,9 @@ void imlib_phasecorrelate(image_t *img0, image_t *img1, rectangle_t *roi0, recta
                           float *x_translation, float *y_translation, float *rotation, float *scale, float *response);
 
 array_t *imlib_selective_search(image_t *src, float t, int min_size, float a1, float a2, float a3);
+
+// MAIX conv acc
+void imlib_conv3(image_t *img, float *krn);
+
+
 #endif //__IMLIB_H__

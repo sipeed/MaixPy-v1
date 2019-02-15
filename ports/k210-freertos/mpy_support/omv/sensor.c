@@ -6,7 +6,6 @@
  * Sensor abstraction layer.
  *
  */
-
 #include <stdlib.h>
 #include <string.h>
 #include "mp.h"
@@ -29,6 +28,8 @@ extern volatile dvp_t* const dvp;
 #define systick_sleep mp_hal_delay_ms
 
 sensor_t  sensor     = {0};
+volatile static uint8_t g_dvp_finish_flag = 0;
+
 
 static volatile int line = 0;
 uint8_t _line_buf;
@@ -81,24 +82,26 @@ void _ndelay(uint32_t ns)
 static int sensor_irq(void *ctx)
 {
 	sensor_t *sensor = ctx;
-	if (dvp_get_interrupt(DVP_STS_FRAME_FINISH)) {
+	if (dvp_get_interrupt(DVP_STS_FRAME_FINISH)) {	//frame end
 		dvp_clear_interrupt(DVP_STS_FRAME_FINISH);
-		sensor->image_buf.buf_used[sensor->image_buf.buf_sel] = 1;
-		sensor->image_buf.buf_sel ^= 0x01;
-		dvp_set_display_addr((uint32_t)sensor->image_buf.addr[sensor->image_buf.buf_sel]);	
-	} else {
+		g_dvp_finish_flag = 1;
+	} else {	//frame start
+        if(g_dvp_finish_flag == 0)  //only we finish the convert, do transmit again
+            dvp_start_convert();	//so we need deal img ontime, or skip one framebefore next
 		dvp_clear_interrupt(DVP_STS_FRAME_START);
-		if (sensor->image_buf.buf_used[sensor->image_buf.buf_sel] == 0)
-		{			
-			dvp_start_convert();
-		}
 	}
 
 	return 0;
 }
 
+ 
+extern uint8_t* g_ai_buf_in;
+extern uint8_t* g_ai_buf_out;
+extern uint8_t* g_dvp_buf;
+extern uint8_t* g_lcd_buf;
+extern uint8_t* g_jpg_buf;
 
-void sensor_init0()
+void sensor_init_fb()
 {
     // Init FB mutex
     mutex_init(&JPEG_FB()->lock);
@@ -107,9 +110,17 @@ void sensor_init0()
     int fb_enabled = JPEG_FB()->enabled;
 
     // Clear framebuffers
-    memset(MAIN_FB(), 0, sizeof(framebuffer_t));
-    memset(JPEG_FB(), 0, sizeof(jpegbuffer_t) + OMV_JPEG_BUF_SIZE);
-
+	MAIN_FB()->x=0;MAIN_FB()->y=0;
+	MAIN_FB()->w=0;MAIN_FB()->h=0;
+	MAIN_FB()->u=0;MAIN_FB()->v=0;
+	MAIN_FB()->bpp=0;
+	MAIN_FB()->pixels = &g_dvp_buf;
+	MAIN_FB()->pix_ai = &g_ai_buf_in;
+	JPEG_FB()->w=0;JPEG_FB()->h=0;
+	JPEG_FB()->size=0;JPEG_FB()->enabled=0;
+	JPEG_FB()->quality=0;
+	JPEG_FB()->pixels = &g_jpg_buf;
+	//printf("pixels=0x%x, pix_ai=0x%x, jpg=0x%x\n", MAIN_FB()->pixels, MAIN_FB()->pix_ai, JPEG_FB()->pixels);
     // Set default quality
     JPEG_FB()->quality = 35;
 
@@ -117,7 +128,7 @@ void sensor_init0()
     JPEG_FB()->enabled = fb_enabled;
 }
 
-int sensor_init1()
+int sensor_init_dvp()
 {
     int init_ret = 0;
 	
@@ -137,18 +148,19 @@ int sensor_init1()
     DCMI_PWDN_LOW();
     mp_hal_ticks_ms(10);
 
-    // Initialize the camera bus.
+    // Initialize the camera bus, 8bit reg
     cambus_init(8);
 	 // Initialize dvp interface
 	dvp_set_xclk_rate(24000000);
 	 dvp->cmos_cfg |= DVP_CMOS_CLK_DIV(3) | DVP_CMOS_CLK_ENABLE;
 	dvp_enable_burst();
 	dvp_disable_auto();
-	dvp_set_output_enable(0, 1);
-	dvp_set_output_enable(1, 1);
+	dvp_set_output_enable(0, 1);	//enable to AI
+	dvp_set_output_enable(1, 1);	//enable to lcd
 	dvp_set_image_format(DVP_CFG_RGB_FORMAT);
-	dvp_set_image_size(320, 240);
-
+	dvp_set_image_size(OMV_INIT_W, OMV_INIT_H);	//set QVGA default
+	dvp_set_ai_addr(MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + OMV_INIT_W * OMV_INIT_H), (uint32_t)(MAIN_FB()->pix_ai + OMV_INIT_W * OMV_INIT_H * 2));
+	dvp_set_display_addr(MAIN_FB()->pixels);
     /* Some sensors have different reset polarities, and we can't know which sensor
        is connected before initializing cambus and probing the sensor, which in turn
        requires pulling the sensor out of the reset state. So we try to probe the
@@ -202,6 +214,7 @@ int sensor_init1()
 
     // Set default snapshot function.
     sensor.snapshot = sensor_snapshot;
+	sensor.flush = sensor_flush;
     if (sensor.slv_addr == LEPTON_ID) {
         sensor.chip_id = LEPTON_ID;
 		/*set LEPTON xclk rate*/
@@ -246,26 +259,9 @@ int sensor_init1()
 	printf("exit sensor_init\n");
     return 0;
 }
-int sensor_init2()
+int sensor_init_irq()
 {
-	
-	if(sensor.image_buf.addr[0] == NULL && sensor.image_buf.addr[1] == NULL)
-	{
-		sensor.image_buf.addr[0] = malloc(OMV_INIT_RESOLUTION * OMV_INIT_BPP);
-		sensor.image_buf.addr[1] = malloc(OMV_INIT_RESOLUTION * OMV_INIT_BPP);
-	}
-	if(MAIN_FB()->pixels == NULL )
-	{
-		MAIN_FB()->pixels = malloc(OMV_INIT_RESOLUTION  * OMV_INIT_BPP);
-	}
-	
-	sensor.image_buf.buf_used[0] = 0;
-	sensor.image_buf.buf_used[1] = 0;
-	sensor.image_buf.buf_sel = 0;
-	
-	// Disable IRQ
 	dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 0);
-	dvp_set_display_addr((uint32_t)sensor.image_buf.addr[sensor.image_buf.buf_sel]);
 	plic_set_priority(IRQN_DVP_INTERRUPT, 2);
     /* set irq handle */
 	plic_irq_register(IRQN_DVP_INTERRUPT, sensor_irq, (void*)&sensor);
@@ -273,12 +269,14 @@ int sensor_init2()
 	plic_irq_disable(IRQN_DVP_INTERRUPT);
 	dvp_clear_interrupt(DVP_STS_FRAME_START | DVP_STS_FRAME_FINISH);
 	dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 1);
+	
+	return 0;
 }
 
 int sensor_reset()
 {
-	sensor_init0();
-	sensor_init1();
+	sensor_init_fb();		//init FB
+	sensor_init_dvp();		//init pins, scan I2C, do ov2640 init
     // Reset the sesnor state
     sensor.sde         = 0;
     sensor.pixformat   = 0;
@@ -286,11 +284,11 @@ int sensor_reset()
     sensor.framerate   = 0;
     sensor.gainceiling = 0;
     // Call sensor-specific reset function
-    if (sensor.reset(&sensor) != 0) {
+    if (sensor.reset(&sensor) != 0) {	//rst reg, set default cfg.
         return -1;
     }
-    // Disable dvp  IRQ
-    sensor_init2();
+    // Disable dvp  IRQ before all cfg done 
+    sensor_init_irq();
 
 	printf("exit sensor_reset\n");
     return 0;
@@ -350,19 +348,15 @@ int sensor_set_pixformat(pixformat_t pixformat)
         // No change
         return 0;
     }
-
     if (sensor.set_pixformat == NULL
         || sensor.set_pixformat(&sensor, pixformat) != 0) {
         // Operation not supported
         return -1;
     }
-
     // Set pixel format
     sensor.pixformat = pixformat;
-
     // Skip the first frame.
     MAIN_FB()->bpp = -1;
-
     return 0;
 }
 
@@ -372,24 +366,19 @@ int sensor_set_framesize(framesize_t framesize)
         // No change
         return 0;
     }
-
     // Call the sensor specific function
     if (sensor.set_framesize == NULL
         || sensor.set_framesize(&sensor, framesize) != 0) {
         // Operation not supported
         return -1;
     }
-
     // Set framebuffer size
     sensor.framesize = framesize;
-
     // Skip the first frame.
     MAIN_FB()->bpp = -1;
-
     // Set MAIN FB x, y offset.
     MAIN_FB()->x = 0;
     MAIN_FB()->y = 0;
-
     // Set MAIN FB width and height.
     MAIN_FB()->w = resolution[framesize][0];
     MAIN_FB()->h = resolution[framesize][1];
@@ -421,7 +410,7 @@ int sensor_set_framerate(framerate_t framerate)
 }
 
 int sensor_set_windowing(int x, int y, int w, int h)
-{
+{	//TODO： set camera windows
     MAIN_FB()->x = x;
     MAIN_FB()->y = y;
     MAIN_FB()->w = MAIN_FB()->u = w;
@@ -611,11 +600,19 @@ int sensor_set_lens_correction(int enable, int radi, int coef)
     return 0;
 }
 
-int sensor_set_vsync_output()
+int sensor_set_vsync_output(int enable)
 {
-	dvp_clear_interrupt(DVP_STS_FRAME_START | DVP_STS_FRAME_FINISH);
-	plic_irq_enable(IRQN_DVP_INTERRUPT);
-	dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 1);
+	if(enable)
+	{
+		dvp_clear_interrupt(DVP_STS_FRAME_START | DVP_STS_FRAME_FINISH);
+		plic_irq_enable(IRQN_DVP_INTERRUPT);
+		dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 1);
+	}
+	else{
+		plic_irq_disable(IRQN_DVP_INTERRUPT);
+		dvp_clear_interrupt(DVP_STS_FRAME_START | DVP_STS_FRAME_FINISH);
+		dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 1);
+	}
     return 0;
 }
 
@@ -635,7 +632,8 @@ static void sensor_check_buffsize()
             break;
     }
 
-    if ((MAIN_FB()->w * MAIN_FB()->h * bpp) > OMV_RAW_BUF_SIZE) {
+    if ((MAIN_FB()->w * MAIN_FB()->h * bpp) > (OMV_INIT_W * OMV_INIT_H * OMV_INIT_BPP)) {
+		printf("%s: Image size too big to fit into buf!\n", __func__);
         if (sensor.pixformat == PIXFORMAT_GRAYSCALE) {
             // Crop higher GS resolutions to QVGA
             sensor_set_windowing(190, 120, 320, 240);
@@ -645,51 +643,6 @@ static void sensor_check_buffsize()
         }
     }
 
-}
-
-// This function is called back after each line transfer is complete,
-// with a pointer to the line buffer that was used. At this point the
-// DMA transfers the next line to the other half of the line buffer.
-// Note:  For JPEG this function is called once (and ignored) at the end of the transfer.
-
-void Image_CpltUser(uint8_t* addr)
-{
-    uint8_t *src = (uint8_t*) addr;
-    uint8_t *dst = dest_fb;
-
-    // Skip lines outside the window.
-    if (line >= MAIN_FB()->y && line <= (MAIN_FB()->y + MAIN_FB()->h)) {
-        switch (sensor.pixformat) {
-            case PIXFORMAT_BAYER:
-                dst += (line - MAIN_FB()->y) * MAIN_FB()->w;
-				memcpy(dst ,&src[MAIN_FB()->x], MAIN_FB()->w);
-                break;
-            case PIXFORMAT_GRAYSCALE:
-                dst += (line - MAIN_FB()->y) * MAIN_FB()->w;
-                if (sensor.gs_bpp == 1) {
-                    // 1BPP GRAYSCALE.
-                    memcpy(dst ,&src[MAIN_FB()->x], MAIN_FB()->w);
-                } else {
-                    // Extract Y channel from YUV.
-                    for (int i=0; i<MAIN_FB()->w; i++) {
-                        dst[i] = src[MAIN_FB()->x * 2 + i * 2];
-                    }
-                }
-                break;
-            case PIXFORMAT_YUV422:
-            case PIXFORMAT_RGB565:
-				dst = dst + (line - MAIN_FB()->y) * MAIN_FB()->w * 2;
-				uint32_t x = MAIN_FB()->x;
-				memcpy(dst ,src + x * 2, MAIN_FB()->w * 2);
-                break;
-            case PIXFORMAT_JPEG:
-                break;
-            default:
-                break;
-        }
-    }
-
-    line++;
 }
 
 int exchang_data_byte(uint8_t* addr,uint32_t length)
@@ -710,7 +663,7 @@ int exchang_pixel(uint16_t* addr,uint32_t resoltion)
   if(NULL == addr)
     return -1;
   uint16_t data = 0;
-  for(int i = 0 ; i < resoltion ;i = i + 1)
+  for(int i = 0 ; i < resoltion ;i = i + 2)
   {
     data = addr[i];
     addr[i] = addr[i + 1];
@@ -719,15 +672,35 @@ int exchang_pixel(uint16_t* addr,uint32_t resoltion)
   return 0;
 }
 
-// This is the default snapshot function, which can be replaced in sensor_init functions. This function
-// uses the DCMI and DMA to capture frames and each line is processed in the DCMI_DMAConvCpltUser function.
+int reverse_u32pixel(uint32_t* addr,uint32_t length)
+{
+  if(NULL == addr)
+    return -1;
+
+  uint32_t data;
+  uint32_t* pend = addr+length;
+  for(;addr<pend;addr++)
+  {
+	  data = *(addr);
+	  *(addr) = ((data & 0x000000FF) << 24) | ((data & 0x0000FF00) << 8) | 
+                ((data & 0x00FF0000) >> 8) | ((data & 0xFF000000) >> 24) ;
+  }  //1.7ms
+  
+  
+  return 0;
+}
+
+void sensor_flush(void)
+{	//flush old frame, let dvp capture new image
+	//use it when you don't snap for a while.
+	g_dvp_finish_flag = 0;
+	return ;
+}
+
 int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_cb)
 {	
-    uint32_t frame = 0;
     bool streaming = (streaming_cb != NULL); // Streaming mode.
-    bool doublebuf = false; // Use double buffers in streaming mode.
-    uint32_t addr, length;
-	uint64_t tick_start;
+	if(image == NULL) return -1;
     // Compress the framebuffer for the IDE preview, only if it's not the first frame,
     // the framebuffer is enabled and the image sensor does not support JPEG encoding.
     // Note: This doesn't run unless the IDE is connected and the framebuffer is enabled.
@@ -744,62 +717,17 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
     MAIN_FB()->w = MAIN_FB()->u;
     MAIN_FB()->h = MAIN_FB()->v;
 
-    // We use the stored frame size to read the whole frame. Note that cropping is
-    // done in the line function using the diemensions stored in MAIN_FB()->x,y,w,h.
-    uint32_t w = resolution[sensor->framesize][0];
-    uint32_t h = resolution[sensor->framesize][1];
-
-    // Setup the size and address of the transfer
-    switch (sensor->pixformat) {
-        case PIXFORMAT_RGB565:
-        case PIXFORMAT_YUV422:
-            // RGB/YUV read 2 bytes per pixel.
-            length = (w * h * 2);
-            addr = (uint32_t) &_line_buf;
-            break;
-        case PIXFORMAT_BAYER:
-            // BAYER/RAW: 1 byte per pixel
-            length = (w * h * 1);
-            addr = (uint32_t) &_line_buf;
-            break;
-        case PIXFORMAT_GRAYSCALE:
-            // 1/2BPP Grayscale.
-            length = (w * h * sensor->gs_bpp);
-            addr = (uint32_t) &_line_buf;
-            break;
-        case PIXFORMAT_JPEG:
-            // Sensor has hardware JPEG set max frame size.
-            length = MAX_XFER_SIZE;
-            addr = (uint32_t) (MAIN_FB()->pixels);
-            break;
-        default:
-            return -1;
-    }
-
     if (streaming_cb) {
         image->pixels = NULL;
     }
 
-    // If two frames fit in ram, use double buffering in streaming mode.
-    doublebuf = ((length*2) <= OMV_RAW_BUF_SIZE);
-
     do {
-        // Clear line counter
-        line = 0;
-        // Snapshot start tick      
-        if (sensor->pixformat == PIXFORMAT_JPEG) {
-            // Start a regular transfer
-        } else {
-            // Start a multibuffer transfer (line by line)
-        }
-
-        if (streaming_cb && doublebuf && image->pixels != NULL) {
+        if (streaming_cb  && image->pixels != NULL) {  //&& doublebuf
             // Call streaming callback function with previous frame.
             // Note: Image pointer should Not be NULL in streaming mode.
             streaming = streaming_cb(image);
         }
-
-	        // Fix the BPP
+	    // Fix the BPP
         switch (sensor->pixformat) {
             case PIXFORMAT_GRAYSCALE:
                 MAIN_FB()->bpp = 1;
@@ -818,57 +746,37 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
             default:
                 break;
         }
+		//
 		if(MAIN_FB()->bpp > 3)
 		{
 			printf("[MaixPy] %s | bpp error\n",__func__);
 			return -1;
 		}
-		else{
-			
-			while (sensor->image_buf.buf_used[sensor->image_buf.buf_sel] == 0)
-					_ndelay(50);
-			dest_fb = MAIN_FB()->pixels;
-			memset(MAIN_FB()->pixels,0,OMV_INIT_RESOLUTION  * OMV_INIT_BPP);
-			uint8_t* src_addr = sensor->image_buf.addr[sensor->image_buf.buf_sel];
-			uint32_t frame_w = resolution[sensor->framesize][0];
-			uint32_t frame_h = resolution[sensor->framesize][1];
-			exchang_data_byte(src_addr,frame_w * frame_h * 2);
-			exchang_pixel(src_addr,frame_w * frame_h);
-//			memcpy(MAIN_FB()->pixels,src_addr, frame_w * frame_h * 2);
-			for(; line < OMV_k210_height ;)
-			{
-				Image_CpltUser(src_addr + frame_w * 2 * line);
-			}
-			sensor->image_buf.buf_used[sensor->image_buf.buf_sel] = 0;
-		}
+		
+		//wait for new frame
+		g_dvp_finish_flag = 0;
+		while (g_dvp_finish_flag == 0) _ndelay(50);
+		
         // Set the user image.
-        if (image != NULL) {
-            image->w = MAIN_FB()->w;
-            image->h = MAIN_FB()->h;
-            image->bpp = MAIN_FB()->bpp;
-            image->pixels = MAIN_FB()->pixels;
-
-            if (streaming_cb) {
-                // In streaming mode, either switch frame buffers in double buffer mode,
-                // or call the streaming callback with the main FB in single buffer mode.
-                if (doublebuf == false) {
-                    // In single buffer mode, call streaming callback.
-                    streaming = streaming_cb(image);
-                } else {
-                    // In double buffer mode, switch frame buffers.
-                    if (frame == 0) {
-                        image->pixels = MAIN_FB()->pixels;
-                        // Next frame will be transfered to the second half.
-                        dest_fb = MAIN_FB()->pixels + length;
-                    } else {
-                        image->pixels = MAIN_FB()->pixels + length;
-                        // Next frame will be transfered to the first half.
-                        dest_fb = MAIN_FB()->pixels;
-                    }
-                    frame ^= 1; // Switch frame buffers.
-                }
-            }
-        }
+		image->w = MAIN_FB()->w;
+		image->h = MAIN_FB()->h;
+		image->bpp = MAIN_FB()->bpp;
+		image->pixels = MAIN_FB()->pixels;
+		image->pix_ai = MAIN_FB()->pix_ai;
+		//as data come in is in u32 LE format, we need exchange its order
+		//unsigned long t0,t1;
+		//t0=read_cycle();
+		//exchang_data_byte((image->pixels), (MAIN_FB()->w)*(MAIN_FB()->h)*2);
+		//exchang_pixel((image->pixels), (MAIN_FB()->w)*(MAIN_FB()->h)); //cost 3ms@400M
+		reverse_u32pixel((image->pixels), (MAIN_FB()->w)*(MAIN_FB()->h)/2);
+		//t1=read_cycle();
+		//printf("%ld-%ld=%ld, %ld us!\r\n",t1,t0,(t1-t0),((t1-t0)*1000000/400000000)); 
+		if (streaming_cb) {
+			// In streaming mode, either switch frame buffers in double buffer mode,
+			// or call the streaming callback with the main FB in single buffer mode.
+				// In single buffer mode, call streaming callback.
+				streaming = streaming_cb(image);
+		}
     } while (streaming == true);
 
     return 0;

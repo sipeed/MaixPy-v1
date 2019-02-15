@@ -106,17 +106,9 @@ typedef enum {
 
 typedef bool (*streaming_cb_t)(image_t *image);
 
-struct sensor_buf
-{
-	uint8_t* addr[2];
-	uint8_t buf_used[2];
-	uint8_t buf_sel;
-};
 
 typedef struct _sensor sensor_t;
 typedef struct _sensor {
-	uint8_t  buf_num;
-	struct sensor_buf image_buf;
     uint8_t  chip_id;           // Sensor ID.
     uint8_t  slv_addr;          // Sensor I2C slave address.
     uint16_t gs_bpp;            // Grayscale bytes per pixel.
@@ -158,6 +150,7 @@ typedef struct _sensor {
     int  (*set_special_effect)  (sensor_t *sensor, sde_t sde);
     int  (*set_lens_correction) (sensor_t *sensor, int enable, int radi, int coef);
     int  (*snapshot)            (sensor_t *sensor, image_t *image, streaming_cb_t streaming_cb);
+	int  (*flush)				(void);
 /*
 	GPIO_TypeDef *vsync_gpio;   // VSYNC GPIO output port.
 */
@@ -166,11 +159,7 @@ typedef struct _sensor {
 // Resolution table
 extern const int resolution[][2];
 
-// Initialize the sensor hardware and probe the image sensor.
-int sensor_init();
-
-// Initialize the sensor state.
-void sensor_init0();
+void sensor_flush(void);
 
 // Reset the sensor to its default state.
 int sensor_reset();

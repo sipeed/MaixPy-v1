@@ -2,43 +2,26 @@
 # Makefile for maixpy
 # ports/k210-freetos/mpy_support/Makefile
 #
-.PHONY:all update_mk compile rm_genhdr_qstrdefs_generated_h
-CUR_DIR_ADDR := $(shell pwd)/
-###############################################################################
+.PHONY:all include_mk compile 
+##############################################################################
+# common.mk, include include.mk & platform.mk
+sinclude $(COMMON_MK)
+CFLAGS += -DFFCONF_H=\"lib/oofatfs/ffconf.h\"
+include ../../../py/mkenv.mk
+QSTR_DEFS = qstrdefsport.h
+include ../../../py/py.mk
+CFLAGS += -I build/
+######################################################################
 # USER OPTIONS
 LIB_NAME ?= mpy_support
-CROSS_COMPILE ?= 
-OUTPUT_DIR := build/
+OUTPUT_DIR := build
+OUTPUT_BIN := $(BIN_DIR)/$(LIB_NAME).a
 FROZEN_MPY_DIR ?= builtin-py
-MK_VALUE :="INC += "$(CUR_DIR_ADDR)"\n"
-MK_VALUE +="INC += "$(CUR_DIR_ADDR)"Maix/include/""\n"
-MK_VALUE +="INC += "$(CUR_DIR_ADDR)"network/include/""\n"
-MK_VALUE +="INC += "$(CUR_DIR_ADDR)"standard_lib/include/""\n"
-MK_VALUE +="INC += "$(CUR_DIR_ADDR)"../../../""\n"
-MK_VALUE +="INC += "$(CUR_DIR_ADDR)$(OUTPUT_DIR)"\n"
-MK_VALUE +="INC += "$(CUR_DIR_ADDR)"omv/include/""\n"
-MK_VALUE +="INC += "$(CUR_DIR_ADDR)"omv/py/include/""\n"
-MK_VALUE +="INC += "$(CUR_DIR_ADDR)"omv/boards/OPENMV/""\n"
-MK_VALUE +="INC += "$(CUR_DIR_ADDR)"omv/img/include/""\n"
-MK_VALUE +="INC += "$(CUR_DIR_ADDR)"../../../lib/oofatfs/""\n"
-MK_VALUE +="INC += "$(CUR_DIR_ADDR)"../../../py/""\n"
-MK_VALUE +="INC += "$(CUR_DIR_ADDR)"../../../lib/mp-readline/""\n"
-MK_VALUE +="liba-mpy += "$(CUR_DIR_ADDR)$(OUTPUT_DIR)"mpy_support.a""\n"
-MK_VALUE +="output-file += "'$$(liba-mpy)'"\r\n"
+INCLUDE := -I $(CUR_DIR) -I $(CUR_DIR)/Maix/include -I $(CUR_DIR)/network/include/ -I $(CUR_DIR)/standard_lib/include/ -I $(CUR_DIR)/../../../  -I $(CUR_DIR)/omv/include/ -I $(CUR_DIR)/omv/py/include/ -I $(CUR_DIR)/omv/boards/MAIX/ -I $(CUR_DIR)/omv/img/include/ -I $(CUR_DIR)/../../../lib/oofatfs/ -I $(CUR_DIR)/../../../py/ -I $(CUR_DIR)/../../../lib/mp-readline/ -I $(CUR_DIR)/$(OUTPUT_DIR) 
 
-OUTPUT_STATIC_LIB := $(LIB_NAME).a
-CXX ?= $(CROSS_COMPILE)c++
-AR ?= $(CROSS_COMPILE)AR
-
-###############################################################################
+######################################################################
 # MPY OPTIONS
-# include ../../../py/mkenv.mk需要比较靠前
-include ../../../py/mkenv.mk
-# qstr definitions (must come before including py.mk)
-QSTR_DEFS = qstrdefsport.h
-# include py core make definitionsvers/uarths.c
-include ../../../py/py.mk
-
+sinclude $(INC_DIR)/sdk.mk
 MPY_EXT_SRC_C := \
 		lib/utils/stdout_helpers.c \
 		lib/utils/interrupt_char.c \
@@ -49,97 +32,61 @@ MPY_EXT_SRC_C := \
 		lib/timeutils/timeutils.c \
 		lib/utils/sys_stdio_mphal.c \
 		lib/oofatfs/ff.c 
-
-###############################################################################
-# Optional options
-PLATFORM ?=
-###############################################################################
-# COMPILE OPTIONS
-# CFLAGS :=
-# LDFLAGS :=
-CXXFLAGS :=
-INC :=
-output-file :=
-###############################################################################
-# IMPORT MK FILE       s32_t f_res = SPIFFS_fflush(&fs, fd);
-# sinclude mk MICROPYTHON NEED OTHER MK,SO I INCLUDE THE MK WHERE IS IN ROOT DIR
-sinclude ../mk
-###############################################################################
-# IMPORT PLATFORM OPTIONS
-sinclude $(PLATFORM).mk
-###############################################################################
-# SOME FUNCTIONS
-define mod_echo_func
-	@echo "\033[;34m"$(1)"\033[;0m";
-endef
-define sub_clean
-	$(MAKE) -C $(1) clean CROSS_COMPILE=$(CROSS_COMPILE) PLATFORM=$(PLATFORM);
-endef
-define sub_make
-	$(call mod_echo_func,$(dir $(1)))
-	$(MAKE) -C $(basename $(patsubst %/,%,$(patsubst ./%,%,$(dir $(1))))) all CROSS_COMPILE=$(CROSS_COMPILE) PLATFORM=$(PLATFORM)
-endef
-define update_sub_mk
-	if [ "$(dir $(1))" != "./" ] ; \
-	then \
-		$(MAKE) -C $(1) update_mk CROSS_COMPILE=$(CROSS_COMPILE) PLATFORM=$(PLATFORM); \
-	fi;
-endef
-###############################################################################
-GET_SUBDIRS1 := $(shell find . -maxdepth 1 -type d)
-GET_SUBDIRS2 := $(basename $(patsubst ./%,%,$(GET_SUBDIRS1)))
-SUBDIRS := $(GET_SUBDIRS2)
-
 AllDirs := $(shell ls -R | grep '^\./.*:$$' | awk '{gsub(":","");print}') .
-FILE_MAKEFILE := $(foreach n,$(SUBDIRS) , $(wildcard $(n)/Makefile))
 
-# $(BUILD)/_frozen_mpy.c: frozentest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
-# $(ECHO) "MISC freezing bytecode"
-# $(Q)$(TOP)/tools/mpy-tool.py -f -q $(BUILD)/genhdr/qstrdefs.preprocessed.h -mlongint-impl=none $< > $@
+#$(BUILD)/_frozen_mpy.c:  $(BUILD)/genhdr/qstrdefs.generated.h
+#	$(ECHO) "MISC freezing bytecode"
+#	$(ECHO) $<
+#	$(Q)$(TOP)/tools/mpy-tool.py -f -q $(BUILD)/genhdr/qstrdefs.preprocessed.h -mlongint-impl=mpz $< frozentest.mpy > $@
 
-all: compile
 
-###############################################################################
+######################################################################
 # COMPILE CUR SRC FILE
+sinclude $(INC_DIR)/sdk.mk
+sinclude $(INC_DIR)/spiffs.mk
+sinclude $(INC_DIR)/platform.mk
+CFLAGS+=$(INCLUDE) $(INCLUDE_ALL)
 TEMP_DIRS := $(subst build,,$(AllDirs))
 SRC_C := $(foreach n,$(TEMP_DIRS) , $(wildcard $(n)/*.c))
 SRC_CPP := $(foreach n,$(TEMP_DIRS) , $(wildcard $(n)/*.cpp))
-SRC_C += $(MPY_EXT_SRC_C)
-########################
-
-C_OBJ := $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
-OBJ += $(PY_O) $(C_OBJ)
-# USE MPY COMPILE SRICPT COMPILE SRC FILE
-CXX_OBJ := $(addprefix $(BUILD)/, $(SRC_CPP:.cpp=.o))
-INCLUDE_FLAGS := $(addprefix -I, $(INC))
-CFLAGS += $(INCLUDE_FLAGS)
-CFLAGS += $(CFLAGS_MOD)# test
-# List of sources for qstr extraction
+SRC_C += $(MPY_EXT_SRC_C) 
 SRC_QSTR += $(SRC_C)
+SRC_C_ALL := $(SRC_C)
+SRC_C_ALL += $(BUILD)/frozen_mpy.c 
+C_OBJ := $(addprefix $(OUTPUT_DIR)/, $(SRC_C_ALL:.c=.o))
+OBJ := $(C_OBJ) $(PY_O) 
+# USE MPY COMPILE SRICPT COMPILE SRC FILE
+CXX_OBJ := $(addprefix $(OUTPUT_DIR)/, $(SRC_CPP:.cpp=.o))
+CFLAGS += $(CFLAGS_MOD)
+# List of sources for qstr extraction
 # Append any auto-generated sources that are needed by sources listed in SRC_QSTR
 SRC_QSTR_AUTO_DEPS +=
 
 $(CXX_OBJ):%.o:%.cpp
-	@mkdir -p $(dir $(OUTPUT_DIR))
 	$(Q)$(CXX)  -o $(OUTPUT_DIR)/$@ -c $< -I$(INC) $(CXXFLAGS) -lstdc++
 
 # $(HEADER_BUILD)/qstr.i.last $(HEADER_BUILD)/qstrdefs.generated.h $(BUILD)/_frozen_mpy.c
-compile: sub_compile $(OUTPUT_STATIC_LIB)
+compile: mkbuild $(OUTPUT_BIN)
+	$(call echo_info,"Making compile ...")
+	$(foreach n,${SUBDIRS},make -C ${n} compile;)
+	
+$(OUTPUT_BIN): $(OBJ) $(CXX_OBJ) 
+	@$(AR) rcs -o $@ $(CXX_OBJ) $(OBJ) $(LIBS) $(LDFLAGS)
 
-$(OUTPUT_STATIC_LIB): $(OBJ) $(CXX_OBJ) 
-	@$(AR) rcs -o $(OUTPUT_DIR)$@ $(CXX_OBJ) $(OBJ) $(LIBS) $(LDFLAGS)
-###############################################################################
+mkbuild:
+	@mkdir -p $(BUILD)
 
-sub_compile:
-	$(foreach n,$(FILE_MAKEFILE),$(call sub_make,$(n)))
-
-update_mk:
-	$(foreach n,$(FILE_MAKEFILE),$(call update_sub_mk, $(dir $(n))))
-	$(shell echo $(MK_VALUE)$(foreach nn,$(foreach n,$(SUBDIRS) , $(wildcard $(n)/mk)),"-include "$(CUR_DIR_ADDR)$(nn)"\n") > mk)
+all: compile
+	
+include_mk:
+	echo "INCLUDE_ALL += \\" > $(INCLUDE_MK)
+	echo $(INCLUDE)"\\" >> $(INCLUDE_MK)
+	echo " " >> $(INCLUDE_MK)
+	$(foreach n,${SUBDIRS},make -C ${n} include_mk; cat ${n}/include.mk >> ${INCLUDE_MK} ;)
+	cp $(INCLUDE_MK) $(INC_DIR)/$(LIB_NAME).mk
 
 clean_all: clean
-	rm -f mk
 	$(call mod_echo_func,"Cleaning "$(SUBDIRS)" ...")
-	$(foreach n,$(FILE_MAKEFILE),$(call sub_clean, $(n)))
+	$(foreach n,$(SUBDIRS),make -C ${n} clean;))
 
 include $(TOP)/py/mkrules.mk

@@ -401,6 +401,7 @@ static const uint8_t default_regs[][2] = {
     { 0x00,     0x00 }
 };
 
+
 static const uint8_t svga_regs[][2] = {
         { BANK_SEL, BANK_SEL_SENSOR },
         /* DSP input image resoultion and window size control */
@@ -1036,6 +1037,7 @@ static int set_vflip(sensor_t *sensor, int enable)
 
     return ret;
 }
+
 
 int ov2640_init(sensor_t *sensor)
 {

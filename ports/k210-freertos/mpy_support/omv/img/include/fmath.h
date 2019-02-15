@@ -6,21 +6,23 @@
  * Fast approximate math functions.
  *
  */
-#ifndef __FMATH_H__
-#define __FMATH_H__
+#ifndef __FMATH_H
+#define __FMATH_H
 #include <stdint.h>
-float fast_sqrtf(float x);
-int fast_floorf(float x);
-int fast_ceilf(float x);
-int fast_roundf(float x);
-float fast_atanf(float x);
-float fast_atan2f(float y, float x);
-float fast_expf(float x);
-float fast_cbrtf(float d);
-float fast_fabsf(float d);
-float fast_log(float x);
-float fast_log2(float x);
-float fast_powf(float a, float b);
+
+extern  float fast_sqrtf(float x);
+extern  int fast_floorf(float x);
+extern  int fast_ceilf(float x);
+extern  int fast_roundf(float x);
+extern  float fast_atanf(float x);
+extern  float fast_atan2f(float y, float x);
+extern  float fast_expf(float x);
+extern  float fast_cbrtf(float d);
+extern  float fast_fabsf(float d);
+extern  float fast_log(float x);
+extern  float fast_log2(float x);
+extern  float fast_powf(float a, float b);
+
 extern const float cos_table[360];
 extern const float sin_table[360];
-#endif // __FMATH_H__
+#endif // __FMATH_H

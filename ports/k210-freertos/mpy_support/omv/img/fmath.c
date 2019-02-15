@@ -13,7 +13,7 @@
 // #define M_PI_2  1.57079632f
 // #define M_PI_4  0.78539816f
 
-// const float __atanf_lut[4] = {
+// const float atanf_lut[4] = {
 //     -0.0443265554792128f,    //p7
 //     -0.3258083974640975f,    //p3
 //     +0.1555786518463281f,    //p5
@@ -201,62 +201,64 @@
 #include "fmath.h"
 
 
-float fast_sqrtf(float x)
+
+inline float fast_sqrtf(float x)
 {
-    return sqrtf(x);
+	asm ("fsqrt.d %0, %1" : "=f" (x) : "f" (x));
+	return x;
 }
 
 
-int fast_floorf(float x)
+inline int fast_floorf(float x)
 {
     return floorf(x);
 }
 
-int fast_ceilf(float x)
+inline int fast_ceilf(float x)
 {
     return ceilf(x);
 }
 
-int fast_roundf(float x)
+inline int fast_roundf(float x)
 {
     return roundf(x);
 }
 
-float fast_atanf(float x)
+inline float fast_atanf(float x)
 {
     return atanf(x);
 }
 
-float fast_atan2f(float y, float x)
+inline float fast_atan2f(float y, float x)
 {
     return atan2f(y, x);
 }
 
-float fast_expf(float x)
+inline float fast_expf(float x)
 {
     return expf(x);
 }
 
-float fast_cbrtf(float d)
+inline float fast_cbrtf(float d)
 {
     return cbrtf(d);
 }
 
-float fast_fabsf(float d)
+inline float fast_fabsf(float d)
 {
     return fabsf(d);
 }
 
-float fast_log(float x)
+inline float fast_log(float x)
 {
     return log(x);
 }
-float fast_log2(float x)
+inline float fast_log2(float x)
 {
     return log2(x);
 }
 
-float fast_powf(float a, float b)
+inline float fast_powf(float a, float b)
 {
     return powf(a, b);
 }
