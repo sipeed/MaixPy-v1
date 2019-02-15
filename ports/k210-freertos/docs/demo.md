@@ -1069,5 +1069,71 @@ lcd.display(img)
 img.save("/sd/img.jpg")
 ```
 
+### simple camera run
+
+```python
+import sensor
+import image
+import lcd
+import time
+lcd.init()
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.set_vsync_output(1)
+while True:
+	img=sensor.snapshot()
+	lcd.display(img)
+```
+	
+### camera run with convolution accelerate, you can choose different conv kernel to see effect
+
+```python
+import sensor
+import image
+import lcd
+import time
+lcd.init()
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.set_vsync_output(1)
+origin = (0,0,0, 0,1,0, 0,0,0)
+edge = (-1,-1,-1,-1,8,-1,-1,-1,-1)
+sharp = (-1,-1,-1,-1,9,-1,-1,-1,-1)
+relievo = (2,0,0,0,-1,0,0,0,-1)
+while True:
+	img=sensor.snapshot()
+	img.conv3(edge)
+	lcd.display(img)
+```
+
+
+### find color blob
+
+```python
+import sensor
+import image
+import lcd
+import time
+lcd.init()
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.set_vsync_output(1)
+green_threshold   = (0,   80,  -70,   -10,   -0,   30)
+while True:
+	img=sensor.snapshot()
+	blobs = img.find_blobs([green_threshold])
+	if blobs:	
+		for b in blobs:
+			tmp=img.draw_rectangle(b[0:4]) 
+			tmp=img.draw_cross(b[5], b[6]) 
+			c=img.get_pixel(b[5], b[6])
+	lcd.display(img)
+```
+
+
+
 
 
