@@ -24,7 +24,13 @@ cd ports/k210-freertos
 echo "toolchain_path=/opt/kendryte-toolchain" > config.conf
 ```
 
-3. Build
+* Install dependence
+
+```
+sudo apt install cmake
+```
+
+1. Build
 
 Build port
 ```

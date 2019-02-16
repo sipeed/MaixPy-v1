@@ -59,7 +59,7 @@ clean:
 	rm -rf $(OUTPUT_DIR) $(BIN_DIR)
 	rm -f $(INCLUDE_MK)
 	find ./ -name "include\.mk" | xargs rm -f
-	rm -f inc/*
+	rm -f inc/*.mk
 
 
 
