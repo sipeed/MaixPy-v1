@@ -8,7 +8,9 @@
  */
 #include <mp.h>
 #include "py_time.h"
+#include "mphalport.h"
 
+#define systick_sleep mp_hal_delay_ms 
 /* Clock Type */
 typedef struct _py_clock_obj_t {
     mp_obj_base_t base;
