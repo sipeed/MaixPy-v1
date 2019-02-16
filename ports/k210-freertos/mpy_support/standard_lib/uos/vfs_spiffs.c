@@ -243,7 +243,10 @@ STATIC mp_obj_t spiffs_vfs_remove_internal(mp_obj_t vfs_in, mp_obj_t path_in, mp
 STATIC mp_obj_t spiffs_vfs_remove(mp_obj_t vfs_in, mp_obj_t path_in) {
 	spiffs_user_mount_t* vfs = MP_OBJ_TO_PTR(vfs_in);
 	const char *path = mp_obj_str_get_str(path_in);
-	int res = SPIFFS_remove(&vfs->fs, path); 
+    int i = 0;
+	while(path[i] == '/')i++;
+	char* open_name = &path[i];
+	int res = SPIFFS_remove(&vfs->fs, open_name); 
     if (res != SPIFFS_OK) {
 	   	printf("[MaixPy]:SPIFFS Error Code %d\n",res);
 		mp_raise_OSError(SPIFFS_errno_table[GET_ERR_CODE(res)]);
@@ -265,12 +268,18 @@ STATIC mp_obj_t spiffs_vfs_rename(mp_obj_t vfs_in, mp_obj_t path_in, mp_obj_t pa
     spiffs_user_mount_t *self = MP_OBJ_TO_PTR(vfs_in);
     const char *old_path = mp_obj_str_get_str(path_in);
     const char *new_path = mp_obj_str_get_str(path_out);
-    int res = SPIFFS_rename(&self->fs, old_path, new_path);
+    int i = 0;
+	while(old_path[i] == '/')i++;
+	char* old_name = &old_path[i];
+    i = 0;
+	while(new_path[i] == '/')i++;
+	char* new_name = &new_path[i];    
+    int res = SPIFFS_rename(&self->fs, old_name, new_name);
     if (res == SPIFFS_ERR_CONFLICTING_NAME){
-        // if new_path exists then try removing it (but only if it's a file)
-        res = SPIFFS_remove(&self->fs, new_path);//remove file
+        // if new_name exists then try removing it (but only if it's a file)
+        res = SPIFFS_remove(&self->fs, new_name);//remove file
         // try to rename again
-        res = SPIFFS_rename(&self->fs, old_path, new_path);
+        res = SPIFFS_rename(&self->fs, old_name, new_name);
     }
     if (res == SPIFFS_OK) {
         return mp_const_none;
@@ -396,7 +405,8 @@ STATIC mp_obj_t spiffs_vfs_statvfs(mp_obj_t vfs_in, mp_obj_t path_in) {
     t->items[0] = MP_OBJ_NEW_SMALL_INT(SPIFFS_CFG_LOG_BLOCK_SZ()); // file system block size
     t->items[1] = t->items[0]; //  fragment size
     t->items[2] = MP_OBJ_NEW_SMALL_INT(total/SPIFFS_CFG_LOG_BLOCK_SZ()); // size of fs in f_frsize units
-    t->items[3] = MP_OBJ_NEW_SMALL_INT((total-used)/SPIFFS_CFG_LOG_BLOCK_SZ()); // f_bfree
+    t->items[3] = MP_OBJ_NEW_SMALL_INT((total-used)/SPIFFS_CFG_LOG_BLOCK_SZ()
+); // f_bfree
     t->items[4] = t->items[3]; // f_bavail
     t->items[5] = MP_OBJ_NEW_SMALL_INT(0); // f_files
     t->items[6] = MP_OBJ_NEW_SMALL_INT(0); // f_ffree
