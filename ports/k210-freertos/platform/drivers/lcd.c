@@ -146,6 +146,9 @@ void lcd_ram_draw_string(char *str, uint32_t *ptr, uint16_t font_color, uint16_t
     uint16_t width = 0;
     uint32_t *pixel = NULL;
 
+    font_color = (font_color<<8) | (font_color>>8&0x00ff);
+    bg_color   = (bg_color<<8)   | (bg_color>>8&0x00ff);
+
     width = 4 * strlen(str);
     while (*str)
     {
