@@ -365,7 +365,7 @@ int main()
 	w25qxx_read_id_dma(&manuf_id, &device_id);
 	printk("[MAIXPY]Flash:0x%02x:0x%02x\r\n", manuf_id, device_id);
     /* Init SPI IO map and function settings */
-    // sysctl_set_spi0_dvp_data(1);
+    sysctl_set_spi0_dvp_data(1);
 #if MICROPY_PY_THREAD 
 	xTaskCreateAtProcessor(0, // processor
 						 mp_task, // function entry
