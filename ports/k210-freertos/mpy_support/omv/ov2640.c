@@ -20,7 +20,7 @@
 
 #define UXGA_HSIZE     (1600)
 #define UXGA_VSIZE     (1200)
-static const uint8_t ov2640_default[][2] = { //k210 fix
+static const uint8_t ov2640_default[][2] = { //k210 
 	{0xff, 0x01},
 	{0x12, 0x80},
 	{0xff, 0x00},
@@ -181,7 +181,7 @@ static const uint8_t ov2640_default[][2] = { //k210 fix
 	{0x00, 0x00}
 
 };
-static const uint8_t svga_config[][2] = { //k210 fix
+static const uint8_t svga_config[][2] = { //k210 
 	{0xff, 0x01},//bank sel
 	{0x35, 0xda},//[SVGA]:
 	{0x22, 0x1a},//[SVGA]:
@@ -591,14 +591,14 @@ static int reset(sensor_t *sensor)
     mp_hal_delay_ms(10);
 
     i = 0;
-    regs = ov2640_default;
+    regs = ov2640_default;//default_regs,ov2640_default
     /* Write initial regsiters */
     while (regs[i][0]) {
         cambus_writeb(sensor->slv_addr, regs[i][0], regs[i][1]);
         i++;
     }
     i = 0;
-    regs = svga_config;
+    regs = svga_config;//svga_regs,svga_config
     /* Write DSP input regsiters */
     while (regs[i][0]) {
         cambus_writeb(sensor->slv_addr, regs[i][0], regs[i][1]);

@@ -1086,9 +1086,21 @@ while True:
 	lcd.display(img)
 ```
 	
-### camera run with convolution accelerate, you can choose different conv kernel to see effect
+# simple camera run
+import sensor
+import image
+import lcd
+import time
+lcd.init()
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.run(1)
+while True:
+	img=sensor.snapshot()
+	lcd.display(img)	
 
-```python
+	# camera run with convolution accelerate, you can choose different conv kernel to see effect
 import sensor
 import image
 import lcd
@@ -1106,12 +1118,8 @@ while True:
 	img=sensor.snapshot()
 	img.conv3(edge)
 	lcd.display(img)
-```
-
-
-### find color blob
-
-```python
+	
+# find color blob
 import sensor
 import image
 import lcd
@@ -1131,6 +1139,255 @@ while True:
 			tmp=img.draw_cross(b[5], b[6]) 
 			c=img.get_pixel(b[5], b[6])
 	lcd.display(img)
+
+# color bar
+import sensor
+import image
+import lcd
+import time
+lcd.init()
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.set_colorbar(True)
+sensor.run(1)
+while True:
+	img=sensor.snapshot()
+	lcd.display(img)
+
+# shutdown  
+import sensor
+import image
+import lcd
+import time
+lcd.init()
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.run(1)
+sensor.shutdown(Ture)
+while True:
+	img=sensor.snapshot()
+	lcd.display(img)
+
+# skip_frames
+import sensor
+import image
+import lcd
+import time
+lcd.init()
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.run(1)
+sensor.skip_frames(30)
+while True:
+	img=sensor.snapshot()
+	lcd.display(img)
+
+#sensor.get_fb()
+import sensor
+import image
+import lcd
+import time
+lcd.init()
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.run(1)
+sensor.skip_frames(30)
+image_fb = sensor.get_fb()
+lcd.display(image_fb)
+	
+#set_pixformat
+
+#set_framesize
+
+#sensor.width()
+
+#sensor.height()
+	
+#set_contrast
+import sensor
+import image
+import lcd
+import time
+lcd.init()
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.run(1)
+flag = 1
+while True:
+	if flag == 1:
+		sensor.set_contrast(2)
+	else:
+		sensor.set_contrast(-2)
+	img=sensor.snapshot()
+	lcd.display(img)
+	flag = ~flag
+	time.sleep(1)
+
+#set_brightness
+import sensor
+import image
+import lcd
+import time
+lcd.init()
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.run(1)
+sensor.skip_frames(30)
+flag = 1
+while True:
+	if flag == 1:
+		sensor.set_brightness(2)
+	else:
+		sensor.set_brightness(-2)
+	img=sensor.snapshot()
+	lcd.display(img)
+	flag = ~flag
+	time.sleep(1)
+
+#set_saturation
+import sensor
+import image
+import lcd
+import time
+lcd.init()
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.run(1)
+sensor.skip_frames(30)
+flag = 1
+while True:
+	if flag == 1:
+		sensor.set_saturation(2)
+	else:
+		sensor.set_saturation(-2)
+	img=sensor.snapshot()
+	lcd.display(img)
+	flag = ~flag
+	time.sleep(1)
+
+#set_auto_gain
+import sensor
+import image
+import lcd
+import time
+lcd.init()
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.run(1)
+sensor.set_auto_gain(False)
+sensor.skip_frames(30)
+gain_db = 0
+while True:
+	img=sensor.snapshot()
+	lcd.display(img)
+	gain_db = (gain_db + 1) % 32
+	sensor.set_auto_gain(False,gain_db)
+
+#sensor.get_gain_db()
+	
+#sensor.set_auto_exposure() , can turn off/on auto exposure function , but can not set time of exposure, 
+#this may be casued problem of lcd
+import sensor
+import image
+import lcd
+import time
+lcd.init()
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.run(1)
+sensor.set_auto_exposure(False,0xfff00)//if exposure_us > 202299,get_exposure_us can not work
+sensor.skip_frames(30)
+test_eu = sensor.get_exposure_us()
+while 1:
+	img=sensor.snapshot()
+	lcd.display(img)
+
+#set_auto_whitebal  can not work
+import sensor
+import image
+import lcd
+import time
+lcd.init()
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.run(1)
+sensor.set_auto_whitebal(False,[0,255,255])#[r,g,b]
+sensor.skip_frames(30)
+while 1:
+	img=sensor.snapshot()
+	lcd.display(img)
+
+#set_hmirror
+import sensor
+import image
+import lcd
+import time
+lcd.init()
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.run(1)
+sensor.skip_frames(30)
+enable = True
+while 1:
+	img=sensor.snapshot()
+	lcd.display(img)
+	sensor.set_hmirror(enable)
+	time.sleep(1)
+	if enable == True:
+		enable = False
+	else:
+		enable = True
+
+#set_vflip it will make image display error
+import sensor
+import image
+import lcd
+import utime
+lcd.init()
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.run(1)
+sensor.skip_frames(40)
+enable = True
+while 1:
+	img=sensor.snapshot()
+	lcd.display(img)
+	sensor.set_vflip(enable)
+	time.sleep(1)
+	if enable == True:
+		enable = False
+	else:
+		enable = True
+	utime.sleep_ms(500)
+		
+#clock fps
+import sensor
+import image
+import lcd
+import time
+clock = time.clock()
+lcd.init()
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.run(1)
+sensor.skip_frames(30)
+while True:
+	clock.tick()
+	img = sensor.snapshot()
+	print("fps = ",clock.fps())
 ```
 
 

@@ -150,6 +150,8 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_PY_THREAD_GIL               (1)
 #define MICROPY_PY_THREAD_GIL_VM_DIVISOR    (32)
 
+#define MICROPY_FATFS_ENABLE_LFN            (1)
+#define MICROPY_FATFS_LFN_CODE_PAGE         (437) /* 1=SFN/ANSI 437=LFN/U.S.(OEM) */
 #define mp_type_fileio                      mp_type_vfs_spiffs_fileio
 #define mp_type_textio                      mp_type_vfs_spiffs_textio
 #define MICROPY_VFS                         (1)
@@ -240,6 +242,7 @@ extern const struct _mp_obj_module_t socket_module;
 extern const struct _mp_obj_module_t image_module;
 extern const struct _mp_obj_module_t sensor_module;
 extern const struct _mp_obj_module_t lcd_module;
+extern const struct _mp_obj_module_t time_module;
 
 #define MICROPY_PORT_BUILTIN_MODULES \
     { MP_OBJ_NEW_QSTR(MP_QSTR_uos), (mp_obj_t)&uos_module }, \
@@ -252,6 +255,8 @@ extern const struct _mp_obj_module_t lcd_module;
     { MP_OBJ_NEW_QSTR(MP_QSTR_image), (mp_obj_t)&image_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_sensor), (mp_obj_t)&sensor_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_lcd), (mp_obj_t)&lcd_module }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_time), (mp_obj_t)&time_module }, \
+    
 
 #define MICROPY_PORT_BUILTIN_MODULE_WEAK_LINKS \
     { MP_OBJ_NEW_QSTR(MP_QSTR_binascii), (mp_obj_t)&mp_module_ubinascii }, \
@@ -264,7 +269,6 @@ extern const struct _mp_obj_module_t lcd_module;
     { MP_OBJ_NEW_QSTR(MP_QSTR_random), (mp_obj_t)&mp_module_urandom }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_re), (mp_obj_t)&mp_module_ure }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_struct), (mp_obj_t)&mp_module_ustruct }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_time), (mp_obj_t)&utime_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_zlib), (mp_obj_t)&mp_module_uzlib }, \
 
 #define MICROPY_PY_MACHINE                  (1)

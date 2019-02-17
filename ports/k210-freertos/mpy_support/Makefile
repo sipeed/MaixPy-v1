@@ -31,7 +31,8 @@ MPY_EXT_SRC_C := \
 		lib/netutils/netutils.c \
 		lib/timeutils/timeutils.c \
 		lib/utils/sys_stdio_mphal.c \
-		lib/oofatfs/ff.c 
+		lib/oofatfs/ff.c \
+		lib/oofatfs/option/ccsbcs.c
 AllDirs := $(shell ls -R | grep '^\./.*:$$' | awk '{gsub(":","");print}') .
 
 #$(BUILD)/_frozen_mpy.c:  $(BUILD)/genhdr/qstrdefs.generated.h
