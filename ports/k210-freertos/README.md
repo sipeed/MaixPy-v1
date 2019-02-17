@@ -34,6 +34,7 @@ sudo apt install cmake
 
 Build port
 ```
+chmod +x build.sh
 ./build.sh
 ```
 
