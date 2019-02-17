@@ -4,7 +4,7 @@
  */
 
 #include "imlib.h"
-#define _D printf("###%d\n",__LINE__);
+
 #ifdef IMLIB_ENABLE_QRCODES
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //////// "quirc.h"
@@ -2807,7 +2807,7 @@ quirc_decode_error_t quirc_decode(const struct quirc_code *code,
     if (data->version < 1 ||
         data->version > QUIRC_MAX_VERSION)
         { fb_free(); return QUIRC_ERROR_INVALID_VERSION; }
-printf("##ver=%d\n", data->version);
+
     /* Read format information -- try both locations */
     err = read_format(code, data, 0);
     if (err)
@@ -2818,11 +2818,11 @@ printf("##ver=%d\n", data->version);
     read_data(code, data, ds);
     err = codestream_ecc(data, ds);
     if (err)
-        { fb_free(); _D;return err; }
+        { fb_free(); ;return err; }
 
     err = decode_payload(data, ds);
     if (err)
-        { fb_free(); _D;return err; }
+        { fb_free(); ;return err; }
 
     fb_free(); return QUIRC_SUCCESS;
 }
@@ -2970,7 +2970,7 @@ void imlib_find_qrcodes(list_t *out, image_t *ptr, rectangle_t *roi)
     list_init(out, sizeof(find_qrcodes_list_lnk_data_t));
 
     for (int i = 0, j = quirc_count(controller); i < j; i++) {
-		printf("##grid=%d\n",quirc_count(controller));
+		
         struct quirc_code *code = fb_alloc(sizeof(struct quirc_code));
         struct quirc_data *data = fb_alloc(sizeof(struct quirc_data));
         quirc_extract(controller, i, code);
@@ -2978,7 +2978,7 @@ void imlib_find_qrcodes(list_t *out, image_t *ptr, rectangle_t *roi)
         if(quirc_decode(code, data) == QUIRC_SUCCESS) {
             find_qrcodes_list_lnk_data_t lnk_data;
             rectangle_init(&(lnk_data.rect), code->corners[0].x + roi->x, code->corners[0].y + roi->y, 0, 0);
-_D;
+
             for (size_t k = 1, l = (sizeof(code->corners) / sizeof(code->corners[0])); k < l; k++) {
                 rectangle_t temp;
                 rectangle_init(&temp, code->corners[k].x + roi->x, code->corners[k].y + roi->y, 0, 0);

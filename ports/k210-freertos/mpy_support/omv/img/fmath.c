@@ -200,12 +200,9 @@
 #include "math.h"
 #include "fmath.h"
 
-
-
 inline float fast_sqrtf(float x)
 {
-	asm ("fsqrt.d %0, %1" : "=f" (x) : "f" (x));
-	return x;
+	return sqrtf(x);
 }
 
 

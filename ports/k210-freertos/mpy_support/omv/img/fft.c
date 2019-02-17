@@ -14,34 +14,6 @@
 // http://processors.wiki.ti.com/index.php/Efficient_FFT_Computation_of_Real_Input
 
 
-#ifndef __RBIT
-inline int __RBIT(int x)
-{
-	int tmp,i;
-	for(i=0,tmp=0;i<32;i++)
-	{
-		tmp+=x%2;
-		tmp<<=1;
-		x>>=1;
-	}
-	return tmp;
-}
-
-#endif
-
-#ifndef __CLZ
-inline int __CLZ(int x)
-{
-	int i;
-	for(i=0;i<32;i++)
-	{
-		if(x&0x80000000) break;
-		x<<=1;
-	}
-	return i;
-}
-
-#endif
 
 const static float fft_cos_table[512] = {
      1.000000f,  0.999981f,  0.999925f,  0.999831f,  0.999699f,  0.999529f,  0.999322f,  0.999078f,
@@ -310,10 +282,9 @@ static void pack_fft(float *in, float *out, int N_pow2)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-
 ALWAYS_INLINE static int int_flog2(int x) // floor log 2
 {
-    return 31 - __CLZ(x);
+    return 31 - __builtin_clz(x);
 }
 
 ALWAYS_INLINE static int int_clog2(int x) // ceiling log 2
@@ -326,6 +297,24 @@ ALWAYS_INLINE static int int_clog2(int x) // ceiling log 2
 
 // Input even numbered index
 // Output even numbered index
+
+static inline uint32_t __RBIT(uint32_t value)
+{
+  uint32_t result;
+
+  int32_t s = 4 /*sizeof(v)*/ * 8 - 1; /* extra shift needed at end */
+
+  result = value;                      /* r will be reversed bits of v; first get LSB of v */
+  for (value >>= 1U; value; value >>= 1U)
+  {
+    result <<= 1U;
+    result |= value & 1U;
+    s--;
+  }
+  result <<= s;                        /* shift when v's highest bits are zero */
+  return(result);
+}
+
 ALWAYS_INLINE static int bit_reverse(int index, int N_pow2)
 {
     return __RBIT(index) >> (30 - N_pow2);
