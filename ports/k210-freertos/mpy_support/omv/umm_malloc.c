@@ -100,7 +100,7 @@ NORETURN  void umm_alloc_fail()
 UMM_H_ATTPACKPRE typedef struct umm_ptr_t {
   unsigned short int next;
   unsigned short int prev;
-} UMM_H_ATTPACKSUF umm_ptr;
+} __attribute__((packed, aligned(8))) umm_ptr;
 
 
 UMM_H_ATTPACKPRE typedef struct umm_block_t {
@@ -111,7 +111,7 @@ UMM_H_ATTPACKPRE typedef struct umm_block_t {
     umm_ptr free;
     unsigned char data[16];
   } body;
-} UMM_H_ATTPACKSUF umm_block;
+} __attribute__((packed, aligned(8))) umm_block;
 
 #define UMM_FREELIST_MASK (0x8000)
 #define UMM_BLOCKNO_MASK  (0x7FFF)

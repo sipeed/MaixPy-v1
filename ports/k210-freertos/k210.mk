@@ -19,7 +19,8 @@ CFLAGS = \
 	-fdata-sections \
 	-fstrict-volatile-bitfields \
 	-fno-zero-initialized-in-bss \
-	-O2 \
+	-Os \
+	-ffloat-store \
 	-ggdb \
 	-std=gnu11 \
 	-Wall \
