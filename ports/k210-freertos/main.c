@@ -63,6 +63,11 @@
 #define UART_BUF_LENGTH_MAX 269
 #define MPY_HEAP_SIZE  2* 1024 * 1024
 
+uint8_t CPU_freq = 0;
+uint8_t PLL0_freq = 0;
+uint8_t PLL1_freq = 0;
+uint8_t PLL2_freq = 0;
+
 uint8_t* _fb_base;
 uint8_t* _jpeg_buf;
 
@@ -251,10 +256,8 @@ soft_reset:
 		mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR_));
 		mp_obj_list_init(mp_sys_argv, 0);//append agrv here
     	readline_init0();
-
 		// module init
 		omv_init();
-
 		// initialise peripherals
 		bool mounted_sdcard = false;
 		bool mounted_flash= false;
@@ -282,7 +285,6 @@ soft_reset:
 #else
 		MP_STATE_PORT(Maix_stdio_uart) = NULL;
 #endif
-
 		// run boot-up scripts
 		mp_hal_set_interrupt_char(CHAR_CTRL_C);
 		pyexec_frozen_module("_boot.py");
@@ -313,33 +315,57 @@ soft_reset:
 		// sysctl->soft_reset.soft_reset = 1;
 }
 
-#define PLL0_OUTPUT_FREQ 800000000UL
-#define PLL1_OUTPUT_FREQ 400000000UL
-#define PLL2_OUTPUT_FREQ 45158400UL
+
+#define CPU 0
+#define KPU 1
+#define I2S 2
 int main()
-{		
-    sysctl_pll_set_freq(SYSCTL_PLL0, PLL0_OUTPUT_FREQ);
-    sysctl_pll_set_freq(SYSCTL_PLL1, PLL1_OUTPUT_FREQ);
-    sysctl_pll_set_freq(SYSCTL_PLL2, PLL2_OUTPUT_FREQ);
+{	
+	uint8_t manuf_id, device_id;
+	sysctl_pll_set_freq(SYSCTL_PLL0, PLL0_MAX_OUTPUT_FREQ);
+	sysctl_pll_set_freq(SYSCTL_PLL1, PLL1_MAX_OUTPUT_FREQ);
+	sysctl_pll_set_freq(SYSCTL_PLL2, PLL2_MAX_OUTPUT_FREQ);
 	uarths_init();
+	uint32_t store_freq[3] = {0};
+	uint32_t max_freq[3] = {0};
+	store_freq[0] = CPU_MAX_FREQ;//0 -> PLL0
+	store_freq[1] = KPU_MAX_FREQ;//1 -> PLL1
+	store_freq[2] = I2S_MAX_FREQ;//2 -> PLL2
+	max_freq[0] = CPU_MAX_FREQ;//0 -> PLL0
+	max_freq[1] = KPU_MAX_FREQ;//1 -> PLL1
+	max_freq[2] = I2S_MAX_FREQ;//2 -> PLL2
+	w25qxx_init_dma(3, 0);
+	w25qxx_enable_quad_mode_dma();
+	w25qxx_read_id_dma(&manuf_id, &device_id);
+	uint32_t res = 0;
+	for(int i = 0; i < FREQ_READ_NUM; i++)
+	{
+		res = sys_spiffs_read(FREQ_STORE_ADDR + i * 4 ,4,(uint8_t* )(&store_freq[i]));
+		store_freq[i] = store_freq[i] > max_freq[i] ? max_freq[i] : store_freq[i];
+		store_freq[i] = store_freq[i] < 26000000 ? max_freq[i] : store_freq[i];
+	}
+	sysctl_cpu_set_freq(store_freq[CPU]);
+	uarths_init();
+	sysctl_clock_set_threshold(SYSCTL_THRESHOLD_AI, (PLL1_MAX_OUTPUT_FREQ / store_freq[KPU]) / 2);
 	printk("[MAIXPY]Pll0:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL0));
 	printk("[MAIXPY]Pll1:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL1));
 	printk("[MAIXPY]Pll2:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL2));
+	printk("[MAIXPY]cpu:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_CPU));
+	printk("[MAIXPY]kpu:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_AI));
 	sysctl_clock_enable(SYSCTL_CLOCK_AI);
-	sysctl_set_power_mode(SYSCTL_POWER_BANK6,SYSCTL_POWER_V33);
-	sysctl_set_power_mode(SYSCTL_POWER_BANK7,SYSCTL_POWER_V33);
+	sysctl_set_power_mode(SYSCTL_POWER_BANK6,SYSCTL_POWER_V18);
+	sysctl_set_power_mode(SYSCTL_POWER_BANK7,SYSCTL_POWER_V18);
 	dmac_init();
 	plic_init();
     sysctl_enable_irq();
 	rtc_init();
 	rtc_timer_set(2019,1, 1,0, 0, 0);
-	uint8_t manuf_id, device_id;
 	w25qxx_init_dma(3, 0);
 	w25qxx_enable_quad_mode_dma();
 	w25qxx_read_id_dma(&manuf_id, &device_id);
 	printk("[MAIXPY]Flash:0x%02x:0x%02x\r\n", manuf_id, device_id);
     /* Init SPI IO map and function settings */
-    sysctl_set_spi0_dvp_data(1);
+    // sysctl_set_spi0_dvp_data(1);
 #if MICROPY_PY_THREAD 
 	xTaskCreateAtProcessor(0, // processor
 						 mp_task, // function entry
