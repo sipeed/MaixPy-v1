@@ -5,6 +5,7 @@ import sys
 import machine
 from board import board_info
 from fpioa_manager import *
+from pye import pye
 
 board_info=board_info()
 sys.path.append('.')
