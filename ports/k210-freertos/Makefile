@@ -40,7 +40,7 @@ out:$(OUTPUT_ELF)
 subcompile:
 	@mkdir -p $(BIN_DIR)
 	$(call echo_info,"Making compile ...")
-	$(foreach n,${SUBDIRS},make -C ${n} compile;)
+	$(foreach n,${SUBDIRS},make -C ${n} compile || exit "$$?";)
 
 compile:subcompile
 

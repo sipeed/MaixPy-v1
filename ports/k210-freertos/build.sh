@@ -1,6 +1,8 @@
 #!/bin/bash
 echo $0
 
+set -e
+
 source config.sh
 
 function help()

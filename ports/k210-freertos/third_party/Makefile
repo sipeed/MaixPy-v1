@@ -15,7 +15,7 @@ all: compile
 
 compile:
 	$(call echo_info,"Making compile ...")
-	$(foreach n,${SUBDIRS},make -C ${n} compile)
+	$(foreach n,${SUBDIRS},make -C ${n} compile || exit "$$?";)
 
 include_mk:
 	echo "INCLUDE_ALL += \\" > $(INCLUDE_MK)

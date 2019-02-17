@@ -69,7 +69,7 @@ $(CXX_OBJ):%.o:%.cpp
 # $(HEADER_BUILD)/qstr.i.last $(HEADER_BUILD)/qstrdefs.generated.h $(BUILD)/_frozen_mpy.c
 compile: $(BUILD)/genhdr/qstrdefs.generated.h mkbuild $(OUTPUT_BIN)
 	$(call echo_info,"Making compile ...")
-	$(foreach n,${SUBDIRS},make -C ${n} compile;)
+	$(foreach n,${SUBDIRS},make -C ${n} compile || exit "$$?";)
 	
 $(OUTPUT_BIN): $(OBJ) $(CXX_OBJ) 
 	@$(AR) rcs -o $@ $(CXX_OBJ) $(OBJ) $(LIBS) $(LDFLAGS)

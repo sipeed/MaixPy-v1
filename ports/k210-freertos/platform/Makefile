@@ -23,7 +23,7 @@ $(OUTPUT_BIN):$(SRC_C_OUTPUT_OBJ) $(SRC_C_OUTPUT_OBJ)
 
 compile: $(OUTPUT_BIN)	
 	$(call echo_info,"Making compile ...")
-	$(foreach n,${SUBDIRS},make -C ${n} compile;)
+	$(foreach n,${SUBDIRS},make -C ${n} compile || exit "$$?";)
 	
 include_mk:
 	echo "INCLUDE_ALL += \\" > $(INCLUDE_MK)
