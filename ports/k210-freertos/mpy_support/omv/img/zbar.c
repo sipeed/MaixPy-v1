@@ -119,7 +119,7 @@
 typedef enum zbar_color_e {
     ZBAR_SPACE = 0,    /**< light area or space between bars */
     ZBAR_BAR = 1,      /**< dark area or colored bar segment */
-} zbar_color_t;
+} __attribute__((aligned(8)))zbar_color_t;
 
 /** decoded symbol type. */
 typedef enum zbar_symbol_type_e {
@@ -164,7 +164,7 @@ typedef enum zbar_symbol_type_e {
      * or ::ZBAR_EAN5
      */
     ZBAR_ADDON       = 0x0700,
-} zbar_symbol_type_t;
+}__attribute__((aligned(8))) zbar_symbol_type_t;
 
 /** decoded symbol coarse orientation.
  * @since 0.11
@@ -175,7 +175,7 @@ typedef enum zbar_orientation_e {
     ZBAR_ORIENT_RIGHT,          /**< sideways, read top to bottom */
     ZBAR_ORIENT_DOWN,           /**< upside-down, read right to left */
     ZBAR_ORIENT_LEFT,           /**< sideways, read bottom to top */
-} zbar_orientation_t;
+} __attribute__((aligned(8)))zbar_orientation_t;
 
 /** decoder configuration options.
  * @since 0.4
@@ -196,7 +196,7 @@ typedef enum zbar_config_e {
 
     ZBAR_CFG_X_DENSITY = 0x100, /**< image scanner vertical scan density */
     ZBAR_CFG_Y_DENSITY,         /**< image scanner horizontal scan density */
-} zbar_config_t;
+}__attribute__((aligned(8))) zbar_config_t;
 
 /** decoder symbology modifier flags.
  * @since 0.11
@@ -215,7 +215,7 @@ typedef enum zbar_modifier_e {
 
     /** number of modifiers */
     ZBAR_MOD_NUM,
-} zbar_modifier_t;
+} __attribute__((aligned(8)))zbar_modifier_t;
 
 /** retrieve string name for symbol encoding.
  * @param sym symbol type encoding
@@ -1036,7 +1036,7 @@ struct zbar_image_s {
 
     unsigned seq;               /* page/frame sequence number */
     zbar_symbol_set_t *syms;    /* decoded result set */
-};
+}__attribute__((aligned(8)));
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //////// "refcnt.h"
@@ -1139,14 +1139,14 @@ void _zbar_refcnt_init ()
 
 typedef struct zbar_point_s {
     int x, y;
-} zbar_point_t;
+} __attribute__((aligned(8)))zbar_point_t;
 
 struct zbar_symbol_set_s {
     refcnt_t refcnt;
     int nsyms;                  /* number of filtered symbols */
     zbar_symbol_t *head;        /* first of decoded symbol results */
     zbar_symbol_t *tail;        /* last of unfiltered symbol results */
-};
+}__attribute__((aligned(8)));
 
 struct zbar_symbol_s {
     zbar_symbol_type_t type;    /* symbol type */
@@ -1167,7 +1167,7 @@ struct zbar_symbol_s {
     unsigned long time;         /* relative symbol capture time */
     int cache_count;            /* cache state */
     int quality;                /* relative symbol reliability metric */
-};
+}__attribute__((aligned(8)));
 
 extern int _zbar_get_symbol_hash(zbar_symbol_type_t);
 
@@ -1563,7 +1563,7 @@ extern void _zbar_image_scanner_recycle_syms(zbar_image_scanner_t*,
 typedef struct recycle_bucket_s {
     int nsyms;
     zbar_symbol_t *head;
-} recycle_bucket_t;
+}__attribute__((aligned(8))) recycle_bucket_t;
 
 /* image scanner state */
 struct zbar_image_scanner_s {
@@ -1600,7 +1600,7 @@ struct zbar_image_scanner_s {
     int stat_sym_new;
     int stat_sym_recycle[RECYCLE_BUCKETS];
 #endif
-};
+}__attribute__((aligned(8)));
 
 void _zbar_image_scanner_recycle_syms (zbar_image_scanner_t *iscn,
                                        zbar_symbol_t *sym)
@@ -2419,7 +2419,7 @@ typedef struct ean_pass_s {
 #define STATE_IDX   0x3f        /*   element offset into symbol */
     unsigned width;             /* width of last character */
     unsigned char raw[7];       /* decode in process */
-} ean_pass_t;
+} __attribute__((aligned(8)))ean_pass_t;
 
 /* EAN/UPC specific decode state */
 typedef struct ean_decoder_s {
@@ -2439,7 +2439,7 @@ typedef struct ean_decoder_s {
     unsigned isbn13_config;
     unsigned ean5_config;
     unsigned ean2_config;
-} ean_decoder_t;
+}__attribute__((aligned(8))) ean_decoder_t;
 
 /* reset EAN/UPC pass specific state */
 static inline void ean_new_scan (ean_decoder_t *ean)
@@ -2513,7 +2513,7 @@ typedef struct i25_decoder_s {
 
     unsigned config;
     int configs[NUM_CFGS];      /* int valued configurations */
-} i25_decoder_t;
+}__attribute__((aligned(8))) i25_decoder_t;
 
 /* reset interleaved 2 of 5 specific state */
 static inline void i25_reset (i25_decoder_t *i25)
@@ -2569,7 +2569,7 @@ typedef struct databar_segment_s {
     unsigned check : 8;         /* bar checksum */
     signed short data;          /* decoded character data */
     unsigned short width;       /* measured width of finder (14 modules) */
-} databar_segment_t;
+}__attribute__((aligned(8))) databar_segment_t;
 
 /* DataBar specific decode state */
 typedef struct databar_decoder_s {
@@ -2581,7 +2581,7 @@ typedef struct databar_decoder_s {
 
     databar_segment_t *segs;    /* active segment list */
     signed char chars[16];      /* outstanding character indices */
-} databar_decoder_t;
+} __attribute__((aligned(8)))databar_decoder_t;
 
 /* reset DataBar segment decode state */
 static inline void databar_new_scan (databar_decoder_t *db)
@@ -2646,7 +2646,7 @@ typedef struct codabar_decoder_s {
 
     unsigned config;
     int configs[NUM_CFGS];      /* int valued configurations */
-} codabar_decoder_t;
+}__attribute__((aligned(8))) codabar_decoder_t;
 
 /* reset Codabar specific state */
 static inline void codabar_reset (codabar_decoder_t *codabar)
@@ -2697,7 +2697,7 @@ typedef struct code39_decoder_s {
 
     unsigned config;
     int configs[NUM_CFGS];      /* int valued configurations */
-} code39_decoder_t;
+} __attribute__((aligned(8)))code39_decoder_t;
 
 /* reset Code 39 specific state */
 static inline void code39_reset (code39_decoder_t *dcode39)
@@ -2748,7 +2748,7 @@ typedef struct code93_decoder_s {
 
     unsigned config;
     int configs[NUM_CFGS];      /* int valued configurations */
-} code93_decoder_t;
+}__attribute__((aligned(8))) code93_decoder_t;
 
 /* reset Code 93 specific state */
 static inline void code93_reset (code93_decoder_t *dcode93)
@@ -2799,7 +2799,7 @@ typedef struct code128_decoder_s {
 
     unsigned config;
     int configs[NUM_CFGS];      /* int valued configurations */
-} code128_decoder_t;
+} __attribute__((aligned(8)))code128_decoder_t;
 
 /* reset Code 128 specific state */
 static inline void code128_reset (code128_decoder_t *dcode128)
@@ -2849,7 +2849,7 @@ typedef struct pdf417_decoder_s {
 
     unsigned config;
     int configs[NUM_CFGS];      /* int valued configurations */
-} pdf417_decoder_t;
+} __attribute__((aligned(8)))pdf417_decoder_t;
 
 /* reset PDF417 specific state */
 static inline void pdf417_reset (pdf417_decoder_t *pdf417)
@@ -2961,7 +2961,8 @@ struct zbar_decoder_s {
 #ifdef ENABLE_QRCODE
     qr_finder_t qrf;                    /* QR Code finder state */
 #endif
-};
+}__attribute__((aligned(8)));
+
 
 /* return current element color */
 static inline char get_color (const zbar_decoder_t *dcode)
@@ -3150,7 +3151,7 @@ static inline char size_buf (zbar_decoder_t *dcode,
 typedef enum symbol_partial_e {
     EAN_LEFT   = 0x0000,
     EAN_RIGHT  = 0x1000,
-} symbol_partial_t;
+} __attribute__((aligned(8)))symbol_partial_t;
 
 /* convert compact encoded D2E1E2 to character (bit4 is parity) */
 static const unsigned char digits[] = {  /* E1   E2 */
@@ -4608,7 +4609,7 @@ struct group_s {
     unsigned char wmax;
     unsigned char todd;
     unsigned char teven;
-} groups[] = {
+} __attribute__((aligned(8)))groups[] = {
     /* (17,4) DataBar Expanded character groups */
     {    0, 7,  87,   4 },
     {  348, 5,  52,  20 },
@@ -5909,7 +5910,7 @@ static const unsigned char code39_hi[32] = {
 
 typedef struct char39_s {
     unsigned char chk, rev, fwd;
-} char39_t;
+}__attribute__((aligned(8))) char39_t;
 
 static const char39_t code39_encodings[NUM_CHARS] = {
     { 0x07, 0x1a, 0x20 }, /* 00 */
@@ -6619,7 +6620,7 @@ typedef enum code128_char_e {
     STOP_FWD    = 0x6a,
     STOP_REV    = 0x6b,
     FNC4        = 0x6c,
-} code128_char_t;
+} __attribute__((aligned(8)))code128_char_t;
 
 static const unsigned char characters[NUM_CHARS] = {
     0x5c, 0xbf, 0xa1,                                           /* [00] 00 */
@@ -8460,11 +8461,11 @@ struct zbar_scanner_s {
     unsigned cur_edge;      /* interpolated position of tracking edge */
     unsigned last_edge;     /* interpolated position of last located edge */
     unsigned width;         /* last element width */
-};
+}__attribute__((aligned(8)));
 
 zbar_scanner_t *zbar_scanner_create (zbar_decoder_t *dcode)
 {
-    zbar_scanner_t *scn = malloc(sizeof(zbar_scanner_t));
+    zbar_scanner_t *scn = (zbar_scanner_t*)malloc(sizeof(zbar_scanner_t));
     scn->decoder = dcode;
     scn->y1_min_thresh = ZBAR_SCANNER_THRESH_MIN;
     zbar_scanner_reset(scn);
