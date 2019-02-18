@@ -282,7 +282,7 @@ extern const struct _mp_obj_module_t cpufreq_module;
 
 #define MICROPY_HW_BOARD_NAME "Sipeed_M1"
 #define MICROPY_HW_MCU_NAME "kendryte-k210"
-#define MICROPY_PY_SYS_PLATFORM "Sipeed_M1"
+#define MICROPY_PY_SYS_PLATFORM "MaixPy"
 
 #ifdef __linux__
 #define MICROPY_MIN_USE_STDOUT (1)
