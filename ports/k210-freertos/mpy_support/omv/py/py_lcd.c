@@ -225,7 +225,7 @@ static mp_obj_t py_lcd_clear()
         case LCD_NONE:
             return mp_const_none;
         case LCD_SHIELD:
-            lcd_clear(BLUE);
+            lcd_clear(BLACK);
             return mp_const_none;
     }
     return mp_const_none;
