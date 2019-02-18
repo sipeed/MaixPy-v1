@@ -21,8 +21,8 @@
 
 #define DCMI_RESET_LOW()      dvp->cmos_cfg &= ~DVP_CMOS_RESET
 #define DCMI_RESET_HIGH()     dvp->cmos_cfg |= DVP_CMOS_RESET
-#define DCMI_PWDN_LOW()       dvp->cmos_cfg &= ~DVP_CMOS_POWER_DOWN
-#define DCMI_PWDN_HIGH()      dvp->cmos_cfg |= DVP_CMOS_POWER_DOWN
+#define DCMI_PWDN_LOW()       dvp->cmos_cfg |= DVP_CMOS_POWER_DOWN
+#define DCMI_PWDN_HIGH()      dvp->cmos_cfg &= ~DVP_CMOS_POWER_DOWN
 
 
 // Architecture info
