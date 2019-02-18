@@ -85,9 +85,9 @@ TaskHandle_t mp_main_task_handle;
 #endif
 
 #define FORMAT_FS_FORCE 0
-static u8_t spiffs_work_buf[SPIFFS_CFG_LOG_PAGE_SZ(fs)*2];
-static u8_t spiffs_fds[32*4];
-static u8_t spiffs_cache_buf[(SPIFFS_CFG_LOG_PAGE_SZ(fs)+32)*4];
+// u8_t spiffs_work_buf[SPIFFS_CFG_LOG_PAGE_SZ(fs)*2];
+// u8_t spiffs_fds[32*4];
+// u8_t spiffs_cache_buf[(SPIFFS_CFG_LOG_PAGE_SZ(fs)+32)*4];
 spiffs_user_mount_t spiffs_user_mount_handle;
 
 void do_str(const char *src, mp_parse_input_kind_t input_kind);

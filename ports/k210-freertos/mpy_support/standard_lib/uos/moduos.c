@@ -47,17 +47,17 @@
 #include "extmod/vfs.h"
 #endif
 #include "genhdr/mpversion.h"
-#if MICROPY_VFS_SPIFFS
-#include "vfs_spiffs.h"
+#if MICROPY_spiffs
+#include "spiffs.h"
 #endif
 #include "spiffs-port.h"
 #include "spiffs_configport.h"
 #include "rng.h"
 #include "machine_uart.h"
-
+#include "vfs_spiffs.h"
 
 //extern mp_obj_t file_open(const char* file_name, const mp_obj_type_t *type, mp_arg_val_t *args);
-extern const mp_obj_type_t mp_type_vfs_spiffs_textio;
+extern const mp_obj_type_t mp_type_spiffs_textio;
 unsigned char current_dir[FS_PATCH_LENGTH];
 
 STATIC const qstr os_uname_info_fields[] = {
@@ -146,6 +146,45 @@ STATIC mp_obj_t os_sync(void) {
 }
 MP_DEFINE_CONST_FUN_OBJ_0(mod_os_sync_obj, os_sync);
 
+STATIC mp_obj_t mod_os_flash_format(void) {
+
+    spiffs_user_mount_t* spiffs = NULL;
+    mp_vfs_mount_t *m = MP_STATE_VM(vfs_mount_table);
+    for(;NULL != m->next ; m = m->next)
+    {
+        if(0 == strcmp(m->str,"/flash"))
+        {
+            spiffs = MP_OBJ_TO_PTR(m->obj);
+            break;
+        }
+    }
+    SPIFFS_unmount(&spiffs->fs);
+    printf("[MAIXPY]:Spiffs Unmount.\n");
+    printf("[MAIXPY]:Spiffs Formating...\n");
+    uint32_t format_res=SPIFFS_format(&spiffs->fs);
+    printf("[MAIXPY]:Spiffs Format %s \n",format_res?"failed":"successful");
+    if(0 != format_res)
+    {
+        return mp_const_false;
+    }
+    uint32_t res = 0;
+
+    res = SPIFFS_mount(&spiffs->fs,
+        &spiffs->cfg,
+        spiffs_work_buf,
+        spiffs_fds,
+        sizeof(spiffs_fds),
+        spiffs_cache_buf,
+        sizeof(spiffs_cache_buf),
+        0);
+    printf("[MAIXPY]:Spiffs Mount %s \n", res?"failed":"successful");
+    if(!res)
+    {
+        return mp_const_true;
+    }
+}
+MP_DEFINE_CONST_FUN_OBJ_0(mod_os_flash_format_obj, mod_os_flash_format);
+
 STATIC const mp_rom_map_elem_t os_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_uos) },
     { MP_ROM_QSTR(MP_QSTR_uname), MP_ROM_PTR(&os_uname_obj) },
@@ -170,8 +209,9 @@ STATIC const mp_rom_map_elem_t os_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_mount), MP_ROM_PTR(&mp_vfs_mount_obj) },
     { MP_ROM_QSTR(MP_QSTR_umount), MP_ROM_PTR(&mp_vfs_umount_obj) },
     { MP_ROM_QSTR(MP_QSTR_sync), MP_ROM_PTR(&mod_os_sync_obj) },
+    { MP_ROM_QSTR(MP_QSTR_flash_format), MP_ROM_PTR(&mod_os_flash_format_obj) },
     #endif
-	#if MICROPY_VFS_SPIFFS
+	#if MICROPY_spiffs
 	{ MP_ROM_QSTR(MP_QSTR_VfsSpiffs), MP_ROM_PTR(&mp_spiffs_vfs_type) },
 	{ MP_ROM_QSTR(MP_QSTR_VfsFat), MP_ROM_PTR(&mp_fat_vfs_type) },
 	#endif

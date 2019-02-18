@@ -91,6 +91,11 @@ typedef enum {
 	ERR_SEEK_BOUNDS          ,
 }SPIFFS_ERR;
 
+
+extern u8_t spiffs_work_buf[SPIFFS_CFG_LOG_PAGE_SZ(fs)*2];
+extern u8_t spiffs_fds[32*4];
+extern u8_t spiffs_cache_buf[(SPIFFS_CFG_LOG_PAGE_SZ(fs)+32)*4];
+
 extern const byte SPIFFS_errno_table[43];
 extern const mp_obj_type_t mp_spiffs_vfs_type;
 extern const mp_obj_type_t mp_type_vfs_spiffs_fileio;

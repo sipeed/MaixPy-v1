@@ -52,6 +52,9 @@
 #define GET_ERR_CODE(res) ((-res)-10000+1)
 #define mp_obj_spiffs_vfs_t spiffs_user_mount_t
 const mp_obj_type_t mp_spiffs_vfs_type;
+u8_t spiffs_work_buf[SPIFFS_CFG_LOG_PAGE_SZ(fs)*2];
+u8_t spiffs_fds[32*4];
+u8_t spiffs_cache_buf[(SPIFFS_CFG_LOG_PAGE_SZ(fs)+32)*4];
 
 STATIC mp_import_stat_t spiffs_vfs_import_stat(void *vfs_in,const char *path) {
     spiffs_user_mount_t *vfs = vfs_in;

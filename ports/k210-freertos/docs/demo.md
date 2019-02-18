@@ -19,7 +19,7 @@ tim.start()
 
 ### Demo 2
 ```
-import utime
+import time
 from machine import Timer
 
 def on_timer(timer,param):
@@ -29,11 +29,11 @@ def on_timer(timer,param):
 tim = Timer(Timer.TIMER0, Timer.CHANNEL0, mode=Timer.MODE_PERIODIC, period=1, unit=Timer.UNIT_S, callback=on_timer, arg=on_timer, start=False, priority=1, div=0)
 print("period:",tim.period())
 tim.start()
-utime.sleep(5)
+time.sleep(5)
 tim.stop()
-utime.sleep(5)
+time.sleep(5)
 tim.restart()
-utime.sleep(5)
+time.sleep(5)
 tim.stop()
 del tim
 ```
@@ -52,7 +52,7 @@ del tim
 
 ```
 from machine import Timer,PWM
-import utime
+import time
 
 tim = Timer(Timer.TIMER0, Timer.CHANNEL0, mode=Timer.MODE_PWM)
 ch = PWM(tim, freq=500000, duty=50, pin=board_info.LED_G)
@@ -69,7 +69,7 @@ while True:
     elif duty<0:
         duty = 0
         dir = True
-    utime.sleep(0.05)
+    time.sleep(0.05)
     ch.duty(duty)
 ```
 
@@ -1100,7 +1100,7 @@ while True:
 	img=sensor.snapshot()
 	lcd.display(img)	
 
-	# camera run with convolution accelerate, you can choose different conv kernel to see effect
+# camera run with convolution accelerate, you can choose different conv kernel to see effect
 import sensor
 import image
 import lcd
@@ -1304,7 +1304,7 @@ sensor.reset()
 sensor.set_pixformat(sensor.RGB565)
 sensor.set_framesize(sensor.QVGA)
 sensor.run(1)
-sensor.set_auto_exposure(False,0xfff00)//if exposure_us > 202299,get_exposure_us can not work
+sensor.set_auto_exposure(False,0xfff00) #if exposure_us > 202299,get_exposure_us can not work 
 sensor.skip_frames(30)
 test_eu = sensor.get_exposure_us()
 while 1:
@@ -1365,7 +1365,7 @@ while 1:
 	img=sensor.snapshot()
 	lcd.display(img)
 	sensor.set_vflip(enable)
-	time.sleep(1)
+	utime.sleep_ms(500)
 	if enable == True:
 		enable = False
 	else:
@@ -1376,8 +1376,8 @@ while 1:
 import sensor
 import image
 import lcd
-import time
-clock = time.clock()
+import clock
+clock = clock.clock()
 lcd.init()
 sensor.reset()
 sensor.set_pixformat(sensor.RGB565)

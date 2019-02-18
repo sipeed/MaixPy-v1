@@ -75,7 +75,7 @@ mp_uint_t inline mp_hal_ticks_us(void)
 
 mp_uint_t inline mp_hal_ticks_ms(void)
 {
-    return (unsigned int)(read_csr(mcycle)/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU)/1000));
+    return (unsigned long)(read_csr(mcycle)/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU)/1000));
 }
 
 void mp_hal_delay_ms(mp_uint_t ms) 
