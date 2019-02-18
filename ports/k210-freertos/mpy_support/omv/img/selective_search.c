@@ -20,24 +20,24 @@ typedef struct {
     uint16_t h;
     uint16_t x;
     uint16_t w;
-} region;
+} __attribute__((aligned(8)))region;
 
 typedef struct {
     uint16_t p;
     uint16_t rank;
     uint16_t size;
-} uni_elt;
+} __attribute__((aligned(8)))uni_elt;
 
 typedef struct {
     int num;
     uni_elt *elts;
-} universe;
+} __attribute__((aligned(8)))universe;
 
 typedef struct {
     float    w;
     uint16_t a;
     uint16_t b;
-} edge;
+} __attribute__((aligned(8)))edge;
 
 inline int min (int a, int b) { return (a < b) ? a : b; }
 inline int max (int a, int b) { return (a > b) ? a : b; }

@@ -13,6 +13,6 @@ typedef struct {
     int w;
     int h;
     uint8_t data[10];
-} glyph_t;
+}__attribute__((aligned(8))) glyph_t;
 extern const glyph_t font[95];
 #endif // __FONT_H__

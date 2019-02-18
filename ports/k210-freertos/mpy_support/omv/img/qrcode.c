@@ -63,7 +63,7 @@ void quirc_end(struct quirc *q);
 struct quirc_point {
     int x;
     int y;
-};
+}__attribute__((aligned(8)));
 
 /* This enum describes the various decoder errors which may occur. */
 typedef enum {
@@ -130,7 +130,7 @@ struct quirc_code {
      */
     int                 size;
     uint8_t             cell_bitmap[QUIRC_MAX_BITMAP];
-};
+}__attribute__((aligned(8)));
 
 /* This structure holds the decoded QR-code data */
 struct quirc_data {
@@ -154,7 +154,7 @@ struct quirc_data {
 
     /* ECI assignment number */
     uint32_t    eci;
-};
+}__attribute__((aligned(8)));
 
 /* Return the number of QR-codes identified in the last processed
  * image.
@@ -214,7 +214,7 @@ struct quirc_region {
     struct quirc_point  seed;
     int                 count;
     int                 capstone;
-};
+}__attribute__((aligned(8)));
 
 struct quirc_capstone {
     int                 ring;
@@ -225,7 +225,7 @@ struct quirc_capstone {
     float               c[QUIRC_PERSPECTIVE_PARAMS];
 
     int                 qr_grid;
-};
+}__attribute__((aligned(8)));
 
 struct quirc_grid {
     /* Capstone indices */
@@ -243,7 +243,7 @@ struct quirc_grid {
     /* Grid size and perspective transform */
     int                 grid_size;
     float               c[QUIRC_PERSPECTIVE_PARAMS];
-};
+}__attribute__((aligned(8)));
 
 struct quirc {
     uint8_t                 *image;
@@ -259,7 +259,7 @@ struct quirc {
 
     int                     num_grids;
     struct quirc_grid       grids[QUIRC_MAX_GRIDS];
-};
+}__attribute__((aligned(8)));
 
 /************************************************************************
  * QR-code version information database
@@ -272,13 +272,13 @@ struct quirc_rs_params {
     uint8_t bs; /* Small block size */
     uint8_t dw; /* Small data words */
     uint8_t ns; /* Number of small blocks */
-};
+}__attribute__((aligned(8)));
 
 struct quirc_version_info {
     uint16_t                data_bytes;
     uint8_t                 apat[QUIRC_MAX_ALIGNMENT];
     struct quirc_rs_params  ecc[4];
-};
+}__attribute__((aligned(8)));
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //////// "version_db.c"
@@ -831,7 +831,7 @@ typedef void (*span_func_t)(void *user_data, int y, int left, int right);
 typedef struct xylf
 {
     int16_t x, y, l, r;
-}
+}__attribute__((aligned(8)))
 xylf_t;
 
 //计算该区域的面积，from是像素颜色，to是区块标号，user_data是申请的区块结构体，func是计算面积的函数
@@ -1036,7 +1036,7 @@ struct polygon_score_data {
 
     int                 scores[4];
     struct quirc_point  *corners;
-};
+}__attribute__((aligned(8)));
 
 static void find_one_corner(void *user_data, int y, int left, int right)
 {
@@ -1747,12 +1747,12 @@ fail:
 struct neighbour {
     int     index;
     float   distance;
-};
+}__attribute__((aligned(8)));
 
 struct neighbour_list {
     struct neighbour    n[QUIRC_MAX_CAPSTONES];
     int                 count;
-};
+}__attribute__((aligned(8)));
 
 static void test_neighbours(struct quirc *q, int i,
                             const struct neighbour_list *hlist,
@@ -1937,7 +1937,7 @@ struct galois_field {
     int             p;
     const uint8_t   *log;
     const uint8_t   *exp;
-};
+}__attribute__((aligned(8)));
 
 static const uint8_t gf16_exp[16] = {
     0x01, 0x02, 0x04, 0x08, 0x03, 0x06, 0x0c, 0x0b,
@@ -2312,7 +2312,7 @@ struct datastream {
     int     ptr;
 
     uint8_t data[QUIRC_MAX_PAYLOAD];
-};
+}__attribute__((aligned(8)));
 
 static inline int grid_bit(const struct quirc_code *code, int x, int y)
 {

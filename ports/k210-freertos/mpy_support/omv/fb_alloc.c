@@ -39,7 +39,7 @@ void fb_alloc_init0()
 
 uint64_t fb_avail()
 {
-    int32_t temp = pointer - fballoc_start - sizeof(uint64_t);
+    int64_t temp = pointer - fballoc_start - sizeof(uint64_t);
 
     return (temp < sizeof(uint64_t)) ? 0 : temp;
 }

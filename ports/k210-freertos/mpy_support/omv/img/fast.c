@@ -14,7 +14,7 @@ typedef struct {
     uint16_t x;
     uint16_t y;
     uint16_t score;
-} corner_t;
+} __attribute__((aligned(8)))corner_t;
 
 static int pixel[16];
 static corner_t *fast9_detect(image_t *image, rectangle_t *roi, int *n_corners, int b);

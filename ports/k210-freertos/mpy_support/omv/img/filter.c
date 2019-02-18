@@ -5,6 +5,7 @@
 
 #include "fsort.h"
 #include "imlib.h"
+#include <stdio.h>
 
 void imlib_histeq(image_t *img, image_t *mask)
 {
@@ -121,7 +122,7 @@ void imlib_mean_filter(image_t *img, const int ksize, bool threshold, int offset
     buf.h = brows;
     buf.bpp = img->bpp;
 
-    float over_n = 1.0f / (((ksize*2)+1)*((ksize*2)+1));
+    volatile float over_n = 1.0f / (((ksize*2)+1)*((ksize*2)+1));
 
     switch(img->bpp) {
         case IMAGE_BPP_BINARY: {
@@ -1423,7 +1424,7 @@ void imlib_bilateral_filter(image_t *img, const int ksize, float color_sigma, fl
 #ifdef IMLIB_ENABLE_CARTOON
 typedef struct imlib_cartoon_filter_mean_state {
     int r_acc, g_acc, b_acc, pixels;
-} imlib_cartoon_filter_mean_state_t;
+} __attribute__((aligned(8)))imlib_cartoon_filter_mean_state_t;
 
 static void imlib_cartoon_filter_mean(image_t *img, int line, int l, int r, void *data)
 {
@@ -1465,7 +1466,7 @@ static void imlib_cartoon_filter_mean(image_t *img, int line, int l, int r, void
 
 typedef struct imlib_cartoon_filter_fill_state {
     int mean;
-} imlib_cartoon_filter_fill_state_t;
+} __attribute__((aligned(8)))imlib_cartoon_filter_fill_state_t;
 
 static void imlib_cartoon_filter_fill(image_t *img, int line, int l, int r, void *data)
 {

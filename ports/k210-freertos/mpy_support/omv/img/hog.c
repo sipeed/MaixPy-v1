@@ -18,7 +18,7 @@
 typedef struct bin {
     int d;
     int m;
-} bin_t;
+} __attribute__((aligned(8)))bin_t;
 
 int bin_array_comp(const void *obj0, const void *obj1)
 {

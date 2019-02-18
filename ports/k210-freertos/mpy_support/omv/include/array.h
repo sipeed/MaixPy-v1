@@ -18,7 +18,7 @@ typedef struct {
     int length;
     void **data;
     array_dtor_t dtor;
-} array_t;
+} __attribute__((aligned(32))) array_t;
 void array_alloc(array_t **a, array_dtor_t dtor);
 void array_alloc_init(array_t **a, array_dtor_t dtor, int size);
 void array_clear(array_t *array);

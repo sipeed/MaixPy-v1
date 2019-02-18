@@ -24,7 +24,7 @@
 typedef struct {
     int x;
     int y;
-} sample_point_t;
+} __attribute__((aligned(8))) sample_point_t;
 
 const static int u_max[] = {
     15, 15, 15, 15, 14, 14, 14, 13,
