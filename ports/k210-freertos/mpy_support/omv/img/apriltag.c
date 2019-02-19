@@ -42,7 +42,9 @@ The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of The University of Michigan.
 */
-#define printf(format, ...)
+#include "systick.h"
+#include "stdio.h"
+//#define printf(format, ...)
 #define fprintf(format, ...)
 #define free(ptr) ({ umm_free(ptr); })
 #define malloc(size) ({ void *_r = umm_malloc(size); if(!_r) umm_alloc_fail(); _r; })
@@ -78,8 +80,199 @@ either expressed or implied, of the Regents of The University of Michigan.
 #define log2(x) fast_log2(x)
 #undef log2f
 #define log2f(x) fast_log2(x)
-//#define sin(x) arm_sin_f32(x)
-//#define cos(x) arm_cos_f32(x)
+
+typedef float float32_t;
+#define FAST_MATH_TABLE_SIZE  512
+const float32_t sinTable_f32[FAST_MATH_TABLE_SIZE + 1] = {
+   0.00000000f, 0.01227154f, 0.02454123f, 0.03680722f, 0.04906767f, 0.06132074f,
+   0.07356456f, 0.08579731f, 0.09801714f, 0.11022221f, 0.12241068f, 0.13458071f,
+   0.14673047f, 0.15885814f, 0.17096189f, 0.18303989f, 0.19509032f, 0.20711138f,
+   0.21910124f, 0.23105811f, 0.24298018f, 0.25486566f, 0.26671276f, 0.27851969f,
+   0.29028468f, 0.30200595f, 0.31368174f, 0.32531029f, 0.33688985f, 0.34841868f,
+   0.35989504f, 0.37131719f, 0.38268343f, 0.39399204f, 0.40524131f, 0.41642956f,
+   0.42755509f, 0.43861624f, 0.44961133f, 0.46053871f, 0.47139674f, 0.48218377f,
+   0.49289819f, 0.50353838f, 0.51410274f, 0.52458968f, 0.53499762f, 0.54532499f,
+   0.55557023f, 0.56573181f, 0.57580819f, 0.58579786f, 0.59569930f, 0.60551104f,
+   0.61523159f, 0.62485949f, 0.63439328f, 0.64383154f, 0.65317284f, 0.66241578f,
+   0.67155895f, 0.68060100f, 0.68954054f, 0.69837625f, 0.70710678f, 0.71573083f,
+   0.72424708f, 0.73265427f, 0.74095113f, 0.74913639f, 0.75720885f, 0.76516727f,
+   0.77301045f, 0.78073723f, 0.78834643f, 0.79583690f, 0.80320753f, 0.81045720f,
+   0.81758481f, 0.82458930f, 0.83146961f, 0.83822471f, 0.84485357f, 0.85135519f,
+   0.85772861f, 0.86397286f, 0.87008699f, 0.87607009f, 0.88192126f, 0.88763962f,
+   0.89322430f, 0.89867447f, 0.90398929f, 0.90916798f, 0.91420976f, 0.91911385f,
+   0.92387953f, 0.92850608f, 0.93299280f, 0.93733901f, 0.94154407f, 0.94560733f,
+   0.94952818f, 0.95330604f, 0.95694034f, 0.96043052f, 0.96377607f, 0.96697647f,
+   0.97003125f, 0.97293995f, 0.97570213f, 0.97831737f, 0.98078528f, 0.98310549f,
+   0.98527764f, 0.98730142f, 0.98917651f, 0.99090264f, 0.99247953f, 0.99390697f,
+   0.99518473f, 0.99631261f, 0.99729046f, 0.99811811f, 0.99879546f, 0.99932238f,
+   0.99969882f, 0.99992470f, 1.00000000f, 0.99992470f, 0.99969882f, 0.99932238f,
+   0.99879546f, 0.99811811f, 0.99729046f, 0.99631261f, 0.99518473f, 0.99390697f,
+   0.99247953f, 0.99090264f, 0.98917651f, 0.98730142f, 0.98527764f, 0.98310549f,
+   0.98078528f, 0.97831737f, 0.97570213f, 0.97293995f, 0.97003125f, 0.96697647f,
+   0.96377607f, 0.96043052f, 0.95694034f, 0.95330604f, 0.94952818f, 0.94560733f,
+   0.94154407f, 0.93733901f, 0.93299280f, 0.92850608f, 0.92387953f, 0.91911385f,
+   0.91420976f, 0.90916798f, 0.90398929f, 0.89867447f, 0.89322430f, 0.88763962f,
+   0.88192126f, 0.87607009f, 0.87008699f, 0.86397286f, 0.85772861f, 0.85135519f,
+   0.84485357f, 0.83822471f, 0.83146961f, 0.82458930f, 0.81758481f, 0.81045720f,
+   0.80320753f, 0.79583690f, 0.78834643f, 0.78073723f, 0.77301045f, 0.76516727f,
+   0.75720885f, 0.74913639f, 0.74095113f, 0.73265427f, 0.72424708f, 0.71573083f,
+   0.70710678f, 0.69837625f, 0.68954054f, 0.68060100f, 0.67155895f, 0.66241578f,
+   0.65317284f, 0.64383154f, 0.63439328f, 0.62485949f, 0.61523159f, 0.60551104f,
+   0.59569930f, 0.58579786f, 0.57580819f, 0.56573181f, 0.55557023f, 0.54532499f,
+   0.53499762f, 0.52458968f, 0.51410274f, 0.50353838f, 0.49289819f, 0.48218377f,
+   0.47139674f, 0.46053871f, 0.44961133f, 0.43861624f, 0.42755509f, 0.41642956f,
+   0.40524131f, 0.39399204f, 0.38268343f, 0.37131719f, 0.35989504f, 0.34841868f,
+   0.33688985f, 0.32531029f, 0.31368174f, 0.30200595f, 0.29028468f, 0.27851969f,
+   0.26671276f, 0.25486566f, 0.24298018f, 0.23105811f, 0.21910124f, 0.20711138f,
+   0.19509032f, 0.18303989f, 0.17096189f, 0.15885814f, 0.14673047f, 0.13458071f,
+   0.12241068f, 0.11022221f, 0.09801714f, 0.08579731f, 0.07356456f, 0.06132074f,
+   0.04906767f, 0.03680722f, 0.02454123f, 0.01227154f, 0.00000000f, -0.01227154f,
+   -0.02454123f, -0.03680722f, -0.04906767f, -0.06132074f, -0.07356456f,
+   -0.08579731f, -0.09801714f, -0.11022221f, -0.12241068f, -0.13458071f,
+   -0.14673047f, -0.15885814f, -0.17096189f, -0.18303989f, -0.19509032f, 
+   -0.20711138f, -0.21910124f, -0.23105811f, -0.24298018f, -0.25486566f, 
+   -0.26671276f, -0.27851969f, -0.29028468f, -0.30200595f, -0.31368174f, 
+   -0.32531029f, -0.33688985f, -0.34841868f, -0.35989504f, -0.37131719f, 
+   -0.38268343f, -0.39399204f, -0.40524131f, -0.41642956f, -0.42755509f, 
+   -0.43861624f, -0.44961133f, -0.46053871f, -0.47139674f, -0.48218377f, 
+   -0.49289819f, -0.50353838f, -0.51410274f, -0.52458968f, -0.53499762f, 
+   -0.54532499f, -0.55557023f, -0.56573181f, -0.57580819f, -0.58579786f, 
+   -0.59569930f, -0.60551104f, -0.61523159f, -0.62485949f, -0.63439328f, 
+   -0.64383154f, -0.65317284f, -0.66241578f, -0.67155895f, -0.68060100f, 
+   -0.68954054f, -0.69837625f, -0.70710678f, -0.71573083f, -0.72424708f, 
+   -0.73265427f, -0.74095113f, -0.74913639f, -0.75720885f, -0.76516727f, 
+   -0.77301045f, -0.78073723f, -0.78834643f, -0.79583690f, -0.80320753f, 
+   -0.81045720f, -0.81758481f, -0.82458930f, -0.83146961f, -0.83822471f, 
+   -0.84485357f, -0.85135519f, -0.85772861f, -0.86397286f, -0.87008699f, 
+   -0.87607009f, -0.88192126f, -0.88763962f, -0.89322430f, -0.89867447f, 
+   -0.90398929f, -0.90916798f, -0.91420976f, -0.91911385f, -0.92387953f, 
+   -0.92850608f, -0.93299280f, -0.93733901f, -0.94154407f, -0.94560733f, 
+   -0.94952818f, -0.95330604f, -0.95694034f, -0.96043052f, -0.96377607f, 
+   -0.96697647f, -0.97003125f, -0.97293995f, -0.97570213f, -0.97831737f, 
+   -0.98078528f, -0.98310549f, -0.98527764f, -0.98730142f, -0.98917651f, 
+   -0.99090264f, -0.99247953f, -0.99390697f, -0.99518473f, -0.99631261f, 
+   -0.99729046f, -0.99811811f, -0.99879546f, -0.99932238f, -0.99969882f, 
+   -0.99992470f, -1.00000000f, -0.99992470f, -0.99969882f, -0.99932238f, 
+   -0.99879546f, -0.99811811f, -0.99729046f, -0.99631261f, -0.99518473f, 
+   -0.99390697f, -0.99247953f, -0.99090264f, -0.98917651f, -0.98730142f, 
+   -0.98527764f, -0.98310549f, -0.98078528f, -0.97831737f, -0.97570213f, 
+   -0.97293995f, -0.97003125f, -0.96697647f, -0.96377607f, -0.96043052f, 
+   -0.95694034f, -0.95330604f, -0.94952818f, -0.94560733f, -0.94154407f, 
+   -0.93733901f, -0.93299280f, -0.92850608f, -0.92387953f, -0.91911385f, 
+   -0.91420976f, -0.90916798f, -0.90398929f, -0.89867447f, -0.89322430f, 
+   -0.88763962f, -0.88192126f, -0.87607009f, -0.87008699f, -0.86397286f, 
+   -0.85772861f, -0.85135519f, -0.84485357f, -0.83822471f, -0.83146961f, 
+   -0.82458930f, -0.81758481f, -0.81045720f, -0.80320753f, -0.79583690f, 
+   -0.78834643f, -0.78073723f, -0.77301045f, -0.76516727f, -0.75720885f, 
+   -0.74913639f, -0.74095113f, -0.73265427f, -0.72424708f, -0.71573083f, 
+   -0.70710678f, -0.69837625f, -0.68954054f, -0.68060100f, -0.67155895f, 
+   -0.66241578f, -0.65317284f, -0.64383154f, -0.63439328f, -0.62485949f, 
+   -0.61523159f, -0.60551104f, -0.59569930f, -0.58579786f, -0.57580819f, 
+   -0.56573181f, -0.55557023f, -0.54532499f, -0.53499762f, -0.52458968f, 
+   -0.51410274f, -0.50353838f, -0.49289819f, -0.48218377f, -0.47139674f, 
+   -0.46053871f, -0.44961133f, -0.43861624f, -0.42755509f, -0.41642956f, 
+   -0.40524131f, -0.39399204f, -0.38268343f, -0.37131719f, -0.35989504f, 
+   -0.34841868f, -0.33688985f, -0.32531029f, -0.31368174f, -0.30200595f, 
+   -0.29028468f, -0.27851969f, -0.26671276f, -0.25486566f, -0.24298018f, 
+   -0.23105811f, -0.21910124f, -0.20711138f, -0.19509032f, -0.18303989f, 
+   -0.17096189f, -0.15885814f, -0.14673047f, -0.13458071f, -0.12241068f, 
+   -0.11022221f, -0.09801714f, -0.08579731f, -0.07356456f, -0.06132074f, 
+   -0.04906767f, -0.03680722f, -0.02454123f, -0.01227154f, -0.00000000f
+};
+
+float32_t riscv_sin_f32(
+  float32_t x)
+{
+  float32_t sinVal, fract, in;                           /* Temporary variables for input, output */
+  uint16_t index;                                        /* Index variable */
+  float32_t a, b;                                        /* Two nearest output values */
+  int32_t n;
+  float32_t findex;
+
+  /* input x is in radians */
+  /* Scale the input to [0 1] range from [0 2*PI] , divide input by 2*pi */
+  in = x * 0.159154943092f;
+
+  /* Calculation of floor value of input */
+  n = (int32_t) in;
+
+  /* Make negative values towards -infinity */
+  if(x < 0.0f)
+  {
+    n--;
+  }
+
+  /* Map input value to [0 1] */
+  in = in - (float32_t) n;
+
+  /* Calculation of index of the table */
+  findex = (float32_t) FAST_MATH_TABLE_SIZE * in;
+  if (findex >= 512.0f) {
+    findex -= 512.0f;
+  }
+
+  index = ((uint16_t)findex) & 0x1ff;
+
+  /* fractional value calculation */
+  fract = findex - (float32_t) index;
+
+  /* Read two nearest values of input value from the sin table */
+  a = sinTable_f32[index];
+  b = sinTable_f32[index+1];
+
+  /* Linear interpolation process */
+  sinVal = (1.0f-fract)*a + fract*b;
+
+  /* Return the output value */
+  return (sinVal);
+}
+
+float32_t riscv_cos_f32(
+  float32_t x)
+{
+  float32_t cosVal, fract, in;                   /* Temporary variables for input, output */
+  uint16_t index;                                /* Index variable */
+  float32_t a, b;                                /* Two nearest output values */
+  int32_t n;
+  float32_t findex;
+
+  /* input x is in radians */
+  /* Scale the input to [0 1] range from [0 2*PI] , divide input by 2*pi, add 0.25 (pi/2) to read sine table */
+  in = x * 0.159154943092f + 0.25f;
+
+  /* Calculation of floor value of input */
+  n = (int32_t) in;
+
+  /* Make negative values towards -infinity */
+  if(in < 0.0f)
+  {
+    n--;
+  }
+
+  /* Map input value to [0 1] */
+  in = in - (float32_t) n;
+
+  /* Calculation of index of the table */
+  findex = (float32_t) FAST_MATH_TABLE_SIZE * in;
+  index = ((uint16_t)findex) & 0x1ff;
+
+  /* fractional value calculation */
+  fract = findex - (float32_t) index;
+
+  /* Read two nearest values of input value from the cos table */
+  a = sinTable_f32[index];
+  b = sinTable_f32[index+1];
+
+  /* Linear interpolation process */
+  cosVal = (1.0f-fract)*a + fract*b;
+
+  /* Return the output value */
+  return (cosVal);
+}
+
+
+#define sin(x) riscv_sin_f32(x)
+#define cos(x) riscv_cos_f32(x)
 #define fmin(a, b) ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a < _b ? _a : _b; })
 #define fminf(a, b) ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a < _b ? _a : _b; })
 #define fmax(a, b) ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _a : _b; })
@@ -100,7 +293,7 @@ struct zarray
     int size; // how many elements?
     int alloc; // we've allocated storage for how many elements?
     char *data;
-};
+}__attribute__((aligned(8)));
 
 /**
  * Creates and returns a variable array structure capable of holding elements of
@@ -1041,7 +1234,7 @@ typedef struct
     unsigned int nrows, ncols;
     double data[];
 //    double *data;
-} matd_t;
+} __attribute__((aligned(8)))matd_t;
 
 #define MATD_ALLOC(name, nrows, ncols) double name ## _storage [nrows*ncols]; matd_t name = { .nrows = nrows, .ncols = ncols, .data = &name ## _storage };
 
@@ -1353,7 +1546,7 @@ typedef struct
     matd_t *U;
     matd_t *S;
     matd_t *V;
-} matd_svd_t;
+} __attribute__((aligned(8)))matd_svd_t;
 
 /** Compute a complete SVD of a matrix. The SVD exists for all
  * matrices. For a matrix MxN, we will have:
@@ -1393,7 +1586,7 @@ typedef struct
     // users: it contains the L and U information all smushed
     // together.
     matd_t *lu; // combined L and U matrices, permuted so they can be triangular.
-} matd_plu_t;
+} __attribute__((aligned(8)))matd_plu_t;
 
 matd_plu_t *matd_plu(const matd_t *a);
 void matd_plu_destroy(matd_plu_t *mlu);
@@ -1420,7 +1613,7 @@ typedef struct
 {
     int is_spd;
     matd_t *u;
-} matd_chol_t;
+} __attribute__((aligned(8)))matd_chol_t;
 
 matd_chol_t *matd_chol(matd_t *A);
 matd_t *matd_chol_solve(const matd_chol_t *chol, const matd_t *b);
@@ -2539,7 +2732,7 @@ static matd_svd_t matd_svd_tall(matd_t *A, int flags)
     assert(maxiters > 0); // reassure clang
     int iter;
 
-    double maxv; // maximum non-zero value being reduced this iteration
+    double maxv = 0; // maximum non-zero value being reduced this iteration
 
     double tol = 1E-5; // 1E-10;
 
@@ -4037,7 +4230,7 @@ typedef struct
     // the direction of the line (u).
     double p[2];
     double u[2]; // always a unit vector
-} g2d_line_t;
+}__attribute__((aligned(8))) g2d_line_t;
 
 // initialize a line object.
 void g2d_line_init_from_points(g2d_line_t *line, const double p0[2], const double p1[2]);
@@ -4058,7 +4251,7 @@ typedef struct
 {
     g2d_line_t line;
     double p1[2];
-} g2d_line_segment_t;
+}__attribute__((aligned(8))) g2d_line_segment_t;
 
 void g2d_line_segment_init_from_points(g2d_line_segment_t *seg, const double p0[2], const double p1[2]);
 
@@ -4391,7 +4584,7 @@ int g2d_polygon_contains_point(const zarray_t *poly, double q[2])
     int psz = zarray_size(poly);
     assert(psz > 0);
 
-    int last_quadrant;
+    int last_quadrant = 0;
     int quad_acc = 0;
 
     for (int i = 0; i <= psz; i++) {
@@ -4995,7 +5188,7 @@ struct image_u8
     int32_t stride;
 
     uint8_t *buf;
-};
+}__attribute__((aligned(8)));
 
 typedef struct image_u8x3 image_u8x3_t;
 struct image_u8x3
@@ -5005,7 +5198,7 @@ struct image_u8x3
     const int32_t stride; // bytes per line
 
     uint8_t *buf;
-};
+}__attribute__((aligned(8)));
 
 typedef struct image_u8x4 image_u8x4_t;
 struct image_u8x4
@@ -5015,7 +5208,7 @@ struct image_u8x4
     const int32_t stride; // bytes per line
 
     uint8_t *buf;
-};
+}__attribute__((aligned(8)));
 
 typedef struct image_f32 image_f32_t;
 struct image_f32
@@ -5025,7 +5218,7 @@ struct image_f32
     const int32_t stride; // floats per line
 
     float *buf; // indexed as buf[y*stride + x]
-};
+}__attribute__((aligned(8)));
 
 typedef struct image_u32 image_u32_t;
 struct image_u32
@@ -5035,7 +5228,7 @@ struct image_u32
     const int32_t stride; // int32_ts per line
 
     uint32_t *buf; // indexed as buf[y*stride + x]
-};
+}__attribute__((aligned(8)));
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //////// "apriltag_math.h"
@@ -5123,7 +5316,7 @@ struct quad
     // H: tag coordinates ([-1,1] at the black corners) to pixels
     // Hinv: pixels to tag
     matd_t *H, *Hinv;
-};
+}__attribute__((aligned(8)));
 
 // Represents a tag family. Every tag belongs to a tag family. Tag
 // families are generated by the Java tool
@@ -5146,7 +5339,7 @@ struct apriltag_family
 
     // The codes in the family.
     uint64_t codes[];
-};
+}__attribute__((aligned(8)));
 
 struct apriltag_quad_thresh_params
 {
@@ -5177,7 +5370,7 @@ struct apriltag_quad_thresh_params
     // should the thresholded image be deglitched? Only useful for
     // very noisy images
     int deglitch;
-};
+}__attribute__((aligned(8)));
 
 // Represents a detector object. Upon creating a detector, all fields
 // are set to reasonable values, but can be overridden by accessing
@@ -5230,7 +5423,7 @@ struct apriltag_detector
     // between multiple users. The user should ultimately destroy the
     // tag family passed into the constructor.
     zarray_t *tag_families;
-};
+}__attribute__((aligned(8)));
 
 // Represents the detection of a tag. These are returned to the user
 // and must be individually destroyed by the user.
@@ -5275,7 +5468,7 @@ struct apriltag_detection
     // The corners of the tag in image pixel coordinates. These always
     // wrap counter-clock wise around the tag.
     double p[4][2];
-};
+}__attribute__((aligned(8)));
 
 // don't forget to add a family!
 apriltag_detector_t *apriltag_detector_create();
@@ -9128,16 +9321,16 @@ typedef struct unionfind unionfind_t;
 struct unionfind
 {
     struct ufrec *data;
-};
+}__attribute__((aligned(8)));
 
 struct ufrec
 {
     // the parent of this node. If a node's parent is its own index,
     // then it is a root.
     uint16_t parent;
-};
+}__attribute__((aligned(8)));
 
-static inline unionfind_t *unionfind_create(uint16_t maxid)
+static inline unionfind_t *unionfind_create(uint32_t maxid)
 {
     unionfind_t *uf = (unionfind_t*) fb_alloc(sizeof(unionfind_t));
     uf->data = (struct ufrec*) fb_alloc((maxid+1) * sizeof(struct ufrec));
@@ -9197,6 +9390,7 @@ static inline uint16_t unionfind_get_representative(unionfind_t *uf, uint16_t id
 
 static inline uint16_t unionfind_connect(unionfind_t *uf, uint16_t aid, uint16_t bid)
 {
+
     uint16_t aroot = unionfind_get_representative(uf, aid);
     uint16_t broot = unionfind_get_representative(uf, bid);
 
@@ -9229,7 +9423,7 @@ struct uint32_zarray_entry
     zarray_t *cluster;
 
     struct uint32_zarray_entry *next;
-};
+}__attribute__((aligned(8)));
 
 #ifndef M_PI
 # define M_PI 3.141592653589793238462643383279502884196
@@ -9241,7 +9435,7 @@ struct pt
     uint16_t x, y;
     float theta;
     int16_t gx, gy;
-};
+}__attribute__((aligned(8)));
 
 struct remove_vertex
 {
@@ -9249,7 +9443,7 @@ struct remove_vertex
     int left, right; // left vertex, right vertex
 
     double err;
-};
+}__attribute__((aligned(8)));
 
 struct segment
 {
@@ -9258,14 +9452,14 @@ struct segment
     // always greater than zero, but right can be > size, which denotes
     // a wrap around back to the beginning of the points. and left < right.
     int left, right;
-};
+}__attribute__((aligned(8)));
 
 struct line_fit_pt
 {
     double Mx, My;
     double Mxx, Myy, Mxy;
     double W; // total weight
-};
+}__attribute__((aligned(8)));
 
 static inline void ptsort(struct pt *pts, int sz)
 {
@@ -10397,7 +10591,7 @@ zarray_t *apriltag_quad_thresh(apriltag_detector_t *td, image_u8_t *im, bool ove
     for (int y = 0; y < h - 1; y++) {
         do_unionfind_line(uf, threshim, h, w, ts, y);
     }
-
+	
     uint64_t nclustermap;
     struct uint32_zarray_entry **clustermap = fb_alloc0_all(&nclustermap);
     nclustermap /= sizeof(struct uint32_zarray_entry*);
@@ -10593,7 +10787,7 @@ struct graymodel
     double A[3][3];
     double B[3];
     double C[3];
-};
+}__attribute__((aligned(8)));
 
 void graymodel_init(struct graymodel *gm)
 {
@@ -10632,13 +10826,13 @@ struct quick_decode_entry
     uint16_t id;      // the tag ID (a small integer)
     uint8_t hamming;  // how many errors corrected?
     uint8_t rotation; // number of rotations [0, 3]
-};
+}__attribute__((aligned(8)));
 
 struct quick_decode
 {
     int nentries;
     struct quick_decode_entry *entries;
-};
+}__attribute__((aligned(8)));
 
 /** if the bits in w were arranged in a d*d grid and that grid was
  * rotated, what would the new bits in w be?
@@ -10827,7 +11021,7 @@ struct evaluate_quad_ret
 
     int decode_status;
     struct quick_decode_entry e;
-};
+}__attribute__((aligned(8)));
 
 // returns non-zero if an error occurs (i.e., H has no inverse)
 int quad_update_homographies(struct quad *quad)

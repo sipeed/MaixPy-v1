@@ -44,7 +44,7 @@ typedef struct _jpeg_enc {
         uint8_t  *pixels8;
         uint16_t *pixels16;
     };
-} jpeg_enc_t;
+} __attribute__((aligned(8))) jpeg_enc_t;
 
 static uint8_t mcubuf[512];
 static jpeg_enc_t jpeg_enc;
@@ -214,7 +214,7 @@ typedef struct {
     int bitc, bitb;
     bool realloc;
     bool overflow;
-} jpeg_buf_t;
+} __attribute__((aligned(8))) jpeg_buf_t;
 
 // Quantization tables
 static float fdtbl_Y[64], fdtbl_UV[64];

@@ -20,7 +20,7 @@ typedef struct {
     SemaphoreHandle_t lock;
     StaticSemaphore_t buffer;
 	uint32_t tid;
-} mutex_t;
+} __attribute__((aligned(8))) mutex_t;
 void mutex_init(mutex_t *mutex);
 void mutex_lock(mutex_t *mutex, uint32_t tid);
 int mutex_try_lock(mutex_t *mutex, uint32_t tid);

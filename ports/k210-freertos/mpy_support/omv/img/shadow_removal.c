@@ -17,7 +17,7 @@ typedef struct imlib_remove_shadows_line_op_state {
     uint16_t *other_lines[imlib_remove_shadows_kernel_size];
     uint16_t *out_lines[imlib_remove_shadows_kernel_size];
     int lines_processed;
-} imlib_remove_shadows_line_op_state_t;
+} __attribute__((aligned(8)))imlib_remove_shadows_line_op_state_t;
 
 static void imlib_remove_shadows_sub_sub_line_op(image_t *img, int line, void *data, bool vflipped)
 {

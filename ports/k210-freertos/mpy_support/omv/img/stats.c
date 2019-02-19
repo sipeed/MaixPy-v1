@@ -10,7 +10,7 @@ typedef struct imlib_similatiry_line_op_state {
     int *sumBucketsOfX, *sumBucketsOfY, *sum2BucketsOfX, *sum2BucketsOfY, *sum2Buckets;
     float similarity_sum, similarity_sum_2, similarity_min, similarity_max;
     int lines_processed;
-} imlib_similatiry_line_op_state_t;
+}__attribute__((aligned(8))) imlib_similatiry_line_op_state_t;
 
 void imlib_similarity_line_op(image_t *img, int line, void *other, void *data, bool vflipped)
 {
@@ -863,7 +863,7 @@ bool imlib_get_regression(find_lines_list_lnk_data_t *out, image_t *ptr, rectang
         long long *x_delta_histogram = fb_alloc0((2 * ptr->w) * sizeof(long long)); // Not roi so we don't have to adjust, we can burn the RAM.
         long long *y_delta_histogram = fb_alloc0((2 * ptr->h) * sizeof(long long)); // Not roi so we don't have to adjust, we can burn the RAM.
 
-        uint64_t size;
+        uint32_t size;
         point_t *points = (point_t *) fb_alloc_all(&size);
         size_t points_max = size / sizeof(point_t);
         size_t points_count = 0;

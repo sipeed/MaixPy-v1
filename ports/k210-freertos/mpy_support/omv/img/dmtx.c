@@ -6,9 +6,7 @@
 #include <float.h>
 #include "imlib.h"
 #ifdef IMLIB_ENABLE_DATAMATRICES
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -122,7 +120,7 @@ typedef enum {
    DmtxSchemeX12,
    DmtxSchemeEdifact,
    DmtxSchemeBase256
-} DmtxScheme;
+} __attribute__((aligned(8)))DmtxScheme;
 
 typedef enum {
    DmtxSymbolRectAuto        = -3,
@@ -158,7 +156,7 @@ typedef enum {
    DmtxSymbol12x36,
    DmtxSymbol16x36,
    DmtxSymbol16x48
-} DmtxSymbolSize;
+}__attribute__((aligned(8))) DmtxSymbolSize;
 
 typedef enum {
    DmtxDirNone               = 0x00,
@@ -170,7 +168,7 @@ typedef enum {
    DmtxDirVertical           = DmtxDirUp    | DmtxDirDown,
    DmtxDirRightUp            = DmtxDirRight | DmtxDirUp,
    DmtxDirLeftDown           = DmtxDirLeft  | DmtxDirDown
-} DmtxDirection;
+}__attribute__((aligned(8))) DmtxDirection;
 
 typedef enum {
    DmtxSymAttribSymbolRows,
@@ -187,7 +185,7 @@ typedef enum {
    DmtxSymAttribSymbolDataWords,
    DmtxSymAttribSymbolErrorWords,
    DmtxSymAttribSymbolMaxCorrectable
-} DmtxSymAttribute;
+}__attribute__((aligned(8))) DmtxSymAttribute;
 
 typedef enum {
    /* Encoding properties */
@@ -218,7 +216,7 @@ typedef enum {
    DmtxPropYmin,
    DmtxPropYmax,
    DmtxPropScale
-} DmtxProperty;
+}__attribute__((aligned(8))) DmtxProperty;
 
 typedef enum {
    /* Custom format */
@@ -245,13 +243,13 @@ typedef enum {
    DmtxPack32bppBGRX,
    DmtxPack32bppXBGR,
    DmtxPack32bppCMYK
-} DmtxPackOrder;
+}__attribute__((aligned(8))) DmtxPackOrder;
 
 typedef enum {
   DmtxFlipNone               = 0x00,
   DmtxFlipX                  = 0x01 << 0,
   DmtxFlipY                  = 0x01 << 1
-} DmtxFlip;
+} __attribute__((aligned(8)))DmtxFlip;
 
 typedef double DmtxMatrix3[3][3];
 
@@ -262,7 +260,7 @@ typedef double DmtxMatrix3[3][3];
 typedef struct DmtxPixelLoc_struct {
    int X;
    int Y;
-} DmtxPixelLoc;
+}__attribute__((aligned(8))) DmtxPixelLoc;
 
 /**
  * @struct DmtxVector2
@@ -271,7 +269,7 @@ typedef struct DmtxPixelLoc_struct {
 typedef struct DmtxVector2_struct {
    double          X;
    double          Y;
-} DmtxVector2;
+} __attribute__((aligned(8)))DmtxVector2;
 
 /**
  * @struct DmtxRay2
@@ -282,7 +280,7 @@ typedef struct DmtxRay2_struct {
    double          tMax;
    DmtxVector2     p;
    DmtxVector2     v;
-} DmtxRay2;
+}__attribute__((aligned(8))) DmtxRay2;
 
 typedef unsigned char DmtxByte;
 
@@ -298,7 +296,7 @@ struct DmtxByteList_struct
    int length;
    int capacity;
    DmtxByte *b;
-};
+}__attribute__((aligned(8)));
 
 /**
  * @struct DmtxImage
@@ -317,7 +315,7 @@ typedef struct DmtxImage_struct {
    int             channelStart[4];
    int             bitsPerChannel[4];
    unsigned char  *pxl;
-} DmtxImage;
+}__attribute__((aligned(8))) DmtxImage;
 
 /**
  * @struct DmtxPointFlow
@@ -329,7 +327,7 @@ typedef struct DmtxPointFlow_struct {
    int             depart;
    int             mag;
    DmtxPixelLoc    loc;
-} DmtxPointFlow;
+}__attribute__((aligned(8))) DmtxPointFlow;
 
 /**
  * @struct DmtxBestLine
@@ -347,7 +345,7 @@ typedef struct DmtxBestLine_struct {
    DmtxPixelLoc    locBeg;
    DmtxPixelLoc    locPos;
    DmtxPixelLoc    locNeg;
-} DmtxBestLine;
+}__attribute__((aligned(8))) DmtxBestLine;
 
 /**
  * @struct DmtxRegion
@@ -400,7 +398,7 @@ typedef struct DmtxRegion_struct {
    /* Transform values */
    DmtxMatrix3     raw2fit;       /* 3x3 transformation from raw image to fitted barcode grid */
    DmtxMatrix3     fit2raw;       /* 3x3 transformation from fitted barcode grid to raw image */
-} DmtxRegion;
+}__attribute__((aligned(8))) DmtxRegion;
 
 /**
  * @struct DmtxMessage
@@ -415,7 +413,7 @@ typedef struct DmtxMessage_struct {
    unsigned char  *array;         /* Pointer to internal representation of Data Matrix modules */
    unsigned char  *code;          /* Pointer to internal storage of code words (data and error) */
    unsigned char  *output;        /* Pointer to internal storage of decoded output */
-} DmtxMessage;
+} __attribute__((aligned(8)))DmtxMessage;
 
 /**
  * @struct DmtxScanGrid
@@ -443,7 +441,7 @@ typedef struct DmtxScanGrid_struct {
    int             pixelCount;    /* Progress (pixel count) within current cross pattern */
    int             xCenter;       /* X center of current cross pattern */
    int             yCenter;       /* Y center of current cross pattern */
-} DmtxScanGrid;
+} __attribute__((aligned(8)))DmtxScanGrid;
 
 /**
  * @struct DmtxDecode
@@ -470,7 +468,7 @@ typedef struct DmtxDecode_struct {
    unsigned char  *cache;
    DmtxImage      *image;
    DmtxScanGrid    grid;
-} DmtxDecode;
+}__attribute__((aligned(8))) DmtxDecode;
 
 /* dmtxdecode.c */
 extern DmtxDecode *dmtxDecodeCreate(DmtxImage *img, int scale);
@@ -619,14 +617,14 @@ typedef enum {
    DmtxRangeGood,
    DmtxRangeBad,
    DmtxRangeEnd
-} DmtxRange;
+} __attribute__((aligned(8)))DmtxRange;
 
 typedef enum {
    DmtxEdgeTop               = 0x01 << 0,
    DmtxEdgeBottom            = 0x01 << 1,
    DmtxEdgeLeft              = 0x01 << 2,
    DmtxEdgeRight             = 0x01 << 3
-} DmtxEdge;
+}__attribute__((aligned(8))) DmtxEdge;
 
 typedef enum {
    DmtxMaskBit8              = 0x01 << 0,
@@ -637,7 +635,7 @@ typedef enum {
    DmtxMaskBit3              = 0x01 << 5,
    DmtxMaskBit2              = 0x01 << 6,
    DmtxMaskBit1              = 0x01 << 7
-} DmtxMaskBit;
+}__attribute__((aligned(8))) DmtxMaskBit;
 
 /**
  * @struct DmtxFollow
@@ -648,7 +646,7 @@ typedef struct DmtxFollow_struct {
    unsigned char   neighbor;
    int             step;
    DmtxPixelLoc    loc;
-} DmtxFollow;
+} __attribute__((aligned(8)))DmtxFollow;
 
 /**
  * @struct DmtxBresLine
@@ -668,12 +666,12 @@ typedef struct DmtxBresLine_struct {
    DmtxPixelLoc    loc;
    DmtxPixelLoc    loc0;
    DmtxPixelLoc    loc1;
-} DmtxBresLine;
+}__attribute__((aligned(8))) DmtxBresLine;
 
 typedef struct C40TextState_struct {
    int             shift;
    DmtxBoolean     upperShift;
-} C40TextState;
+}__attribute__((aligned(8))) C40TextState;
 
 /* dmtxregion.c */
 static double RightAngleTrueness(DmtxVector2 c0, DmtxVector2 c1, DmtxVector2 c2, double angle);
@@ -821,7 +819,6 @@ static int rHvY[] =
 #ifndef CALLBACK_FINAL
 #define CALLBACK_FINAL(a,b)
 #endif
-
 extern char *
 dmtxVersion(void)
 {
@@ -1316,7 +1313,7 @@ dmtxDecodeCreateDiagnostic(DmtxDecode *dec, int *totalBytes, int *headerBytes, i
    int width, height;
    int widthDigits, heightDigits;
    int count, channelCount;
-   int rgb[3];
+   int rgb[3]={0,0,0};
    double shade;
    unsigned char *pnm, *output, *cache;
 
@@ -1324,8 +1321,7 @@ dmtxDecodeCreateDiagnostic(DmtxDecode *dec, int *totalBytes, int *headerBytes, i
    height = dmtxDecodeGetProp(dec, DmtxPropHeight);
    channelCount = dmtxImageGetProp(dec->image, DmtxPropChannelCount);
 
-   style = 1; /* this doesn't mean anything yet */
-
+   
    /* Count width digits */
    for(widthDigits = 0, i = width; i > 0; i /= 10)
       widthDigits++;
@@ -2650,11 +2646,11 @@ dmtxRegionUpdateCorners(DmtxDecode *dec, DmtxRegion *reg, DmtxVector2 p00,
 
    return DmtxPass;
 }
-
 /**
  *
  *
  */
+
 extern DmtxPassFail
 dmtxRegionUpdateXfrms(DmtxDecode *dec, DmtxRegion *reg)
 {
@@ -2776,7 +2772,7 @@ ReadModuleColor(DmtxDecode *dec, DmtxRegion *reg, int symbolRow, int symbolCol,
    int err;
    int i;
    int symbolRows, symbolCols;
-   int color, colorTmp;
+   int color, colorTmp=0;
    double sampleX[] = { 0.5, 0.4, 0.5, 0.6, 0.5 };
    double sampleY[] = { 0.5, 0.5, 0.4, 0.5, 0.6 };
    DmtxVector2 p;
@@ -2806,6 +2802,7 @@ ReadModuleColor(DmtxDecode *dec, DmtxRegion *reg, int symbolRow, int symbolCol,
  * \param  reg
  * \return DmtxPass | DmtxFail
  */
+
 static DmtxPassFail
 MatrixRegionFindSize(DmtxDecode *dec, DmtxRegion *reg)
 {
@@ -3471,8 +3468,8 @@ FindBestSolidLine(DmtxDecode *dec, DmtxRegion *reg, int step0, int step1, int st
    char *houghTest = malloc(DMTX_HOUGH_RES); // [DMTX_HOUGH_RES];
    int i;
    int step;
-   int sign;
-   int tripSteps;
+   int sign=0;
+   int tripSteps=0;
    int angleBest;
    int hOffset, hOffsetBest;
    int xDiff, yDiff;
@@ -6386,5 +6383,6 @@ void imlib_find_datamatrices(list_t *out, image_t *ptr, rectangle_t *roi, int ef
     if (ptr->bpp != IMAGE_BPP_GRAYSCALE) fb_free(); // grayscale_image;
 }
 
-#pragma GCC diagnostic pop
+
+
 #endif //IMLIB_ENABLE_DATAMATRICES

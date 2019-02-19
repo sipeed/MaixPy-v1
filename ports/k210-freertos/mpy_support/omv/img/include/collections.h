@@ -17,7 +17,7 @@ typedef struct bitmap
     size_t size;
     char *data;
 }
-bitmap_t;
+__attribute__((aligned(8)))bitmap_t;
 
 void bitmap_alloc(bitmap_t *ptr, size_t size);
 void bitmap_free(bitmap_t *ptr);
@@ -36,7 +36,7 @@ typedef struct lifo
     size_t len, size, data_len;
     char *data;
 }
-lifo_t;
+__attribute__((aligned(8)))lifo_t;
 
 void lifo_alloc(lifo_t *ptr, size_t size, size_t data_len);
 void lifo_alloc_all(lifo_t *ptr, size_t *size, size_t data_len);
@@ -59,7 +59,7 @@ typedef struct fifo
     size_t head_ptr, tail_ptr, len, size, data_len;
     char *data;
 }
-fifo_t;
+__attribute__((aligned(8)))fifo_t;
 
 void fifo_alloc(fifo_t *ptr, size_t size, size_t data_len);
 void fifo_alloc_all(fifo_t *ptr, size_t *size, size_t data_len);
@@ -82,14 +82,14 @@ typedef struct list_lnk
     struct list_lnk *next_ptr, *prev_ptr;
     char data[];
 }
-list_lnk_t;
+__attribute__((aligned(8)))list_lnk_t;
 
 typedef struct list
 {
     list_lnk_t *head_ptr, *tail_ptr;
     size_t size, data_len;
 }
-list_t;
+__attribute__((aligned(8)))list_t;
 
 void list_init(list_t *ptr, size_t data_len);
 void list_copy(list_t *dst, list_t *src);

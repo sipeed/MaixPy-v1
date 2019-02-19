@@ -97,8 +97,8 @@ typedef unsigned __int64 mp_uint_t;
 #else
 // These are definitions for machines where sizeof(int) == sizeof(void*),
 // regardless for actual size.
-typedef int mp_int_t; // must be pointer size
-typedef unsigned int mp_uint_t; // must be pointer size
+typedef long mp_int_t; // must be pointer size
+typedef unsigned long mp_uint_t; // must be pointer size
 #endif
 
 // Cannot include <sys/types.h>, as it may lead to symbol name clashes

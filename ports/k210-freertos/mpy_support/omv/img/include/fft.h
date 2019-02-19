@@ -15,7 +15,7 @@ typedef struct fft1d_controller {
     int d_len;
     int pow2;
     float *data;
-} fft1d_controller_t;
+} __attribute__((aligned(8)))fft1d_controller_t;
 void fft1d_alloc(fft1d_controller_t *controller, uint8_t *buf, int len);
 void fft1d_dealloc();
 void fft1d_run(fft1d_controller_t *controller);
@@ -31,7 +31,7 @@ typedef struct fft2d_controller {
     rectangle_t r;
     int w_pow2, h_pow2;
     float *data;
-} fft2d_controller_t;
+} __attribute__((aligned(8)))fft2d_controller_t;
 void fft2d_alloc(fft2d_controller_t *controller, image_t *img, rectangle_t *r);
 void fft2d_dealloc();
 void fft2d_run(fft2d_controller_t *controller);

@@ -79,7 +79,7 @@
 typedef struct point {
     int16_t x;
     int16_t y;
-} point_t;
+} __attribute__((aligned(8))) point_t;
 
 void point_init(point_t *ptr, int x, int y);
 void point_copy(point_t *dst, point_t *src);
@@ -95,7 +95,7 @@ typedef struct line {
     int16_t y1;
     int16_t x2;
     int16_t y2;
-} line_t;
+} __attribute__((aligned(8))) line_t;
 
 bool lb_clip_line(line_t *l, int x, int y, int w, int h);
 
@@ -108,7 +108,7 @@ typedef struct rectangle {
     int16_t y;
     int16_t w;
     int16_t h;
-} rectangle_t;
+} __attribute__((aligned(8))) rectangle_t;
 
 void rectangle_init(rectangle_t *ptr, int x, int y, int w, int h);
 void rectangle_copy(rectangle_t *dst, rectangle_t *src);
@@ -126,7 +126,7 @@ typedef struct color_thresholds_list_lnk_data
     uint8_t LMin, LMax; // or grayscale
     int8_t AMin, AMax;
     int8_t BMin, BMax;
-}
+}__attribute__((aligned(8)))
 color_thresholds_list_lnk_data_t;
 
 #define COLOR_THRESHOLD_BINARY(pixel, threshold, invert) \
@@ -401,7 +401,7 @@ typedef struct image {
         uint8_t *data;
     };
 	uint8_t *pix_ai;	//for MAIX AI speed up
-} image_t;
+} __attribute__((aligned(8)))image_t;
 
 void image_init(image_t *ptr, int w, int h, int bpp, void *data);
 void image_copy(image_t *dst, image_t *src);
@@ -902,13 +902,13 @@ typedef struct simple_color {
         int8_t B;       // LAB B
         uint8_t blue;   // RGB888 Blue
     };
-} simple_color_t;
+} __attribute__((aligned(8))) simple_color_t;
 
 typedef struct integral_image {
     int w;
     int h;
     uint32_t *data;
-} i_image_t;
+} __attribute__((aligned(8))) i_image_t;
 
 typedef struct {
     int w;
@@ -918,19 +918,19 @@ typedef struct {
     int y_ratio;
     uint32_t **data;
     uint32_t **swap;
-} mw_image_t;
+} __attribute__((aligned(8))) mw_image_t;
 
 typedef struct _vector {
     float x;
     float y;
     float m;
     uint16_t cx,cy;
-} vec_t;
+} __attribute__((aligned(8))) vec_t;
 
 typedef struct cluster {
     int x, y, w, h;
     array_t *points;
-} cluster_t;
+} __attribute__((aligned(8))) cluster_t;
 
 // Return the distance between a cluster centroid and some object.
 typedef float (*cluster_dist_t)(int cx, int cy, void *obj);
@@ -944,12 +944,12 @@ typedef struct kp {
     uint16_t angle;
     uint16_t matched;
     uint8_t desc[32];
-} kp_t;
+} __attribute__((aligned(8))) kp_t;
 
 typedef struct size {
     int w;
     int h;
-} wsize_t;
+} __attribute__((aligned(8))) wsize_t;
 
 /* Haar cascade struct */
 typedef struct cascade {
@@ -972,7 +972,7 @@ typedef struct cascade {
     int8_t *num_rectangles_array;   // Number of rectangles per features (1 per feature).
     int8_t *weights_array;          // Rectangles weights (1 per rectangle).
     int8_t *rectangles_array;       // Rectangles array.
-} cascade_t;
+} __attribute__((aligned(8))) cascade_t;
 
 typedef struct bmp_read_settings {
     int32_t bmp_w;
@@ -980,13 +980,13 @@ typedef struct bmp_read_settings {
     uint16_t bmp_bpp;
     uint32_t bmp_fmt;
     uint32_t bmp_row_bytes;
-} bmp_read_settings_t;
+} __attribute__((aligned(8))) bmp_read_settings_t;
 
 typedef struct ppm_read_settings {
     uint8_t read_int_c;
     bool read_int_c_valid;
     uint8_t ppm_fmt;
-} ppm_read_settings_t;
+} __attribute__((aligned(8))) ppm_read_settings_t;
 
 typedef enum save_image_format {
     FORMAT_DONT_CARE,
@@ -994,7 +994,7 @@ typedef enum save_image_format {
     FORMAT_PNM,
     FORMAT_JPG,
     FORMAT_RAW,
-} save_image_format_t;
+} __attribute__((aligned(8))) save_image_format_t;
 
 typedef struct img_read_settings {
     union
@@ -1003,7 +1003,7 @@ typedef struct img_read_settings {
         ppm_read_settings_t ppm_rs;
     };
     save_image_format_t format;
-} img_read_settings_t;
+} __attribute__((aligned(8))) img_read_settings_t;
 
 typedef void (*line_op_t)(image_t*, int, void*, void*, bool);
 typedef void (*flood_fill_call_back_t)(image_t *, int, int, int, void *);
@@ -1011,23 +1011,23 @@ typedef void (*flood_fill_call_back_t)(image_t *, int, int, int, void *);
 typedef enum descriptor_type {
     DESC_LBP,
     DESC_ORB,
-} descriptor_t;
+} __attribute__((aligned(8))) descriptor_t;
 
 typedef enum edge_detector_type {
    EDGE_CANNY,
    EDGE_SIMPLE,
-} edge_detector_t;
+} __attribute__((aligned(8))) edge_detector_t;
 
 typedef enum template_match {
     SEARCH_EX,  // Exhaustive search
     SEARCH_DS,  // Diamond search
-} template_match_t;
+} __attribute__((aligned(8))) template_match_t;
 
 typedef enum  jpeg_subsample {
     JPEG_SUBSAMPLE_1x1 = 0x11,  // 1x1 chroma subsampling (No subsampling)
     JPEG_SUBSAMPLE_2x1 = 0x21,  // 2x2 chroma subsampling
     JPEG_SUBSAMPLE_2x2 = 0x22,  // 2x2 chroma subsampling
-} jpeg_subsample_t;
+} __attribute__((aligned(8))) jpeg_subsample_t;
 
 typedef enum corner_detector_type {
     CORNER_FAST,
@@ -1041,7 +1041,7 @@ typedef struct histogram {
     float *ABins;
     int BBinCount;
     float *BBins;
-} histogram_t;
+} __attribute__((aligned(8))) histogram_t;
 
 typedef struct percentile {
     uint8_t LValue;
@@ -1053,13 +1053,13 @@ typedef struct threshold {
     uint8_t LValue;
     int8_t AValue;
     int8_t BValue;
-} threshold_t;
+} __attribute__((aligned(8))) threshold_t;
 
 typedef struct statistics {
     uint8_t LMean, LMedian, LMode, LSTDev, LMin, LMax, LLQ, LUQ;
     int8_t AMean, AMedian, AMode, ASTDev, AMin, AMax, ALQ, AUQ;
     int8_t BMean, BMedian, BMode, BSTDev, BMin, BMax, BLQ, BUQ;
-} statistics_t;
+} __attribute__((aligned(8))) statistics_t;
 
 typedef struct find_blobs_list_lnk_data {
     rectangle_t rect;
@@ -1067,24 +1067,24 @@ typedef struct find_blobs_list_lnk_data {
     point_t centroid;
     float rotation;
     uint16_t code, count;
-} find_blobs_list_lnk_data_t;
+} __attribute__((aligned(8))) find_blobs_list_lnk_data_t;
 
 typedef struct find_lines_list_lnk_data {
     line_t line;
     uint32_t magnitude;
     int16_t theta, rho;
-} find_lines_list_lnk_data_t;
+} __attribute__((aligned(8)))find_lines_list_lnk_data_t;
 
 typedef struct find_circles_list_lnk_data {
     point_t p;
     uint32_t r, magnitude;
-} find_circles_list_lnk_data_t;
+} __attribute__((aligned(8))) find_circles_list_lnk_data_t;
 
 typedef struct find_rects_list_lnk_data {
     point_t corners[4];
     rectangle_t rect;
     uint32_t magnitude;
-} find_rects_list_lnk_data_t;
+} __attribute__((aligned(8))) find_rects_list_lnk_data_t;
 
 typedef struct find_qrcodes_list_lnk_data {
     point_t corners[4];
@@ -1093,7 +1093,7 @@ typedef struct find_qrcodes_list_lnk_data {
     char *payload;
     uint8_t version, ecc_level, mask, data_type;
     uint32_t eci;
-} find_qrcodes_list_lnk_data_t;
+} __attribute__((aligned(8))) find_qrcodes_list_lnk_data_t;
 
 typedef enum apriltag_families {
     TAG16H5 = 1,
@@ -1102,7 +1102,7 @@ typedef enum apriltag_families {
     TAG36H10 = 8,
     TAG36H11 = 16,
     ARTOOLKIT = 32
-} apriltag_families_t;
+} __attribute__((aligned(8))) apriltag_families_t;
 
 typedef struct find_apriltags_list_lnk_data {
     point_t corners[4];
@@ -1113,7 +1113,7 @@ typedef struct find_apriltags_list_lnk_data {
     float goodness, decision_margin;
     float x_translation, y_translation, z_translation;
     float x_rotation, y_rotation, z_rotation;
-} find_apriltags_list_lnk_data_t;
+} __attribute__((aligned(8))) find_apriltags_list_lnk_data_t;
 
 typedef struct find_datamatrices_list_lnk_data {
     point_t corners[4];
@@ -1123,7 +1123,7 @@ typedef struct find_datamatrices_list_lnk_data {
     uint16_t rotation;
     uint8_t rows, columns;
     uint16_t capacity, padding;
-} find_datamatrices_list_lnk_data_t;
+} __attribute__((aligned(8))) find_datamatrices_list_lnk_data_t;
 
 typedef enum barcodes {
     BARCODE_EAN2,
@@ -1151,7 +1151,7 @@ typedef struct find_barcodes_list_lnk_data {
     char *payload;
     uint16_t type, rotation;
     int quality;
-} find_barcodes_list_lnk_data_t;
+} __attribute__((aligned(8))) find_barcodes_list_lnk_data_t;
 
 /* Color space functions */
 void imlib_rgb_to_lab(simple_color_t *rgb, simple_color_t *lab);
