@@ -150,7 +150,7 @@ STATIC mp_obj_t mod_os_flash_format(void) {
 
     spiffs_user_mount_t* spiffs = NULL;
     mp_vfs_mount_t *m = MP_STATE_VM(vfs_mount_table);
-    for(;NULL != m->next ; m = m->next)
+    for(;NULL != m ; m = m->next)
     {
         if(0 == strcmp(m->str,"/flash"))
         {
