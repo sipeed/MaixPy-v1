@@ -107,7 +107,6 @@ static mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *args, mp_map_t *kw_args
 			fpioa_set_function(39, FUNC_SPI0_SCLK);
 			lcd_init();
 			lcd_clear(BLACK);
-			vTaskDelay(120/portTICK_PERIOD_MS);
 			return mp_const_none;
         }
     }

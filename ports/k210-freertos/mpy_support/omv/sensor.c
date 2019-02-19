@@ -104,7 +104,8 @@ extern uint8_t* g_jpg_buf;
 void sensor_init_fb()
 {
     // Init FB mutex
-    mutex_init(&JPEG_FB()->lock);
+    //TODO:
+    // mutex_init(&JPEG_FB()->lock);
 
     // Save fb_enabled flag state
     int fb_enabled = JPEG_FB()->enabled;
