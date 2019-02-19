@@ -1044,8 +1044,10 @@ static int set_vflip(sensor_t *sensor, int enable)
 
     if (enable) {
         reg |= REG04_VFLIP_IMG;
+        reg |= REG04_VREF_EN;
     } else {
         reg &= ~REG04_VFLIP_IMG;
+        reg &= ~REG04_VREF_EN;
     }
 
     ret |= cambus_writeb(sensor->slv_addr, REG04, reg);

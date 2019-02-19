@@ -45,93 +45,55 @@ class board_info:
         self.DVP_PCLK = 47
         self.pin_name=['WIFI_TX ','WIFI_RX ','WIFI_EN ','PIN9','PIN10','PIN11','LED_B','LED_G','LED_R','PIN15','BOOT_KEY','PIN17','MIC_ARRAY_BCK','MIC_ARRAY_WS ','MIC_ARRAY_DATA3','MIC_ARRAY_DATA2','MIC_ARRAY_DATA1','MIC_ARRAY_DATA0','MIC_ARRAY_LED','SPI0_CS1','SPI0_MISO','SPI0_CLK ','SPI0_MOSI','SPI0_CS0','MIC0_WS','MIC0_DATA','MIC0_BCK','I2S_WS','I2S_DA','I2S_BCK','LCD_CS','LCD_RST','LCD_DC','LCD_WR ','DVP_SDA','DVP_SCL','DVP_RST','DVP_VSYNC','DVP_PWDN','DVP_HSYNC','DVP_XCLK','DVP_PCLK']
     def pin_map(self,Pin = None):
-        if Pin == None:
-            print("+---Pin----+----Function----------+\n\
-|   6      |     WIFI_TX          |\n\
-+——————————|——————————————————————+\n\
-|   7      |     WIFI_RX          |\n\
-+——————————|——————————————————————+\n\
-|   8      |     WIFI_EN          |\n\
-+——————————|——————————————————————+\n\
-|   9      |     Pin9             |\n\
-+——————————|——————————————————————+\n\
-|   10     |     Pin10            |\n\
-+——————————|——————————————————————+\n\
-|   11     |     Pin11            |\n\
-+——————————|——————————————————————+\n\
-|   12     |     LED_B            |\n\
-+——————————|——————————————————————+\n\
-|   13     |     LED_G            |\n\
-+——————————|——————————————————————+\n\
-|   14     |     LED_R            |\n\
-+——————————|——————————————————————+\n\
-|   15     |     Pin15            |\n\
-+——————————|——————————————————————+\n\
-|   16     |     BOOT_KEY         |\n\
-+——————————|——————————————————————+\n\
-|   17     |     Pin17            |\n\
-+——————————|——————————————————————+\n\
-|   18     |     MIC_ARRAY_BCK    |\n\
-+——————————|——————————————————————+\n\
-|   19     |     MIC_ARRAY_WS     |\n\
-+——————————|——————————————————————+\n\
-|   20     |     MIC_ARRAY_DATA3  |\n\
-+——————————|——————————————————————+\n\
-|   21     |     MIC_ARRAY_DATA2  |\n\
-+——————————|——————————————————————+\n\
-|   22     |     MIC_ARRAY_DATA1  |\n\
-+——————————|——————————————————————+\n\
-|   23     |     MIC_ARRAY_DATA0  |\n\
-+——————————|——————————————————————+\n\
-|   24     |     MIC_ARRAY_LED    |\n\
-+——————————|——————————————————————+\n\
-|   25     |     SPI0_CS1         |\n\
-+——————————|——————————————————————+\n\
-|   26     |     SPI0_MISO        |\n\
-+——————————|——————————————————————+\n\
-|   27     |     SPI0_CLK         |\n\
-+——————————|——————————————————————+\n\
-|   28     |     SPI0_MOSI        |\n\
-+——————————|——————————————————————+\n\
-|   29     |     SPI0_CS0         |\n\
-+——————————|——————————————————————+\n\
-|   30     |     MIC0_WS          |\n\
-+——————————|——————————————————————+\n\
-|   31     |     MIC0_DATA        |\n\
-+——————————|——————————————————————+\n\
-|   32     |     MIC0_BCK         |\n\
-+——————————|——————————————————————+\n\
-|   33     |     I2S_WS           |\n\
-+——————————|——————————————————————+\n\
-|   34     |     I2S_DA           |\n\
-+——————————|——————————————————————+\n\
-|   35     |     I2S_BCK          |\n\
-+——————————|——————————————————————+\n\
-|   36     |     LCD_CS           |\n\
-+——————————|——————————————————————+\n\
-|   37     |     LCD_RST          |\n\
-+——————————|——————————————————————+\n\
-|   38     |     LCD_DC           |\n\
-+——————————|——————————————————————+\n\
-|   39     |     LCD_WR           |\n\
-+——————————|——————————————————————+\n\
-|   40     |     DVP_SDA          |\n\
-+——————————|——————————————————————+\n\
-|   41     |     DVP_SCL          |\n\
-+——————————|——————————————————————+\n\
-|   42     |     DVP_RST          |\n\
-+——————————|——————————————————————+\n\
-|   43     |     DVP_VSYNC        |\n\
-+——————————|——————————————————————+\n\
-|   44     |     DVP_PWDN         |\n\
-+——————————|——————————————————————+\n\
-|   45     |     DVP_HSYNC        |\n\
-+——————————|——————————————————————+\n\
-|   46     |     DVP_XCLK         |\n\
-+——————————|——————————————————————+\n\
-|   47     |     DVP_PCLK         |\n\
-+——————————|——————————————————————+")
-        elif Pin < 6 or Pin > 47:
+        num_len = 10
+        str_len = 23
+        if Pin == None :
+            num_sum_length = num_len
+            str_sum_length = str_len
+            Pin_str_obj = "Pin"
+            Pin_str_obj_length = len(Pin_str_obj)
+            Pin_str_obj_front = 3
+            Pin_str_obj_rear = num_sum_length - Pin_str_obj_front - Pin_str_obj_front
+            fun_str_obj = "Function"
+            fun_str_obj_length = len(fun_str_obj)
+            fun_str_obj_front = 5
+            fun_str_obj_rear = str_sum_length - fun_str_obj_front - fun_str_obj_length
+            print("|%s%s%s|%s%s%s|"%(str(Pin_str_obj_front * '-'),Pin_str_obj,str(Pin_str_obj_rear * '-'),str(fun_str_obj_front * '-'),fun_str_obj,str(fun_str_obj_rear*'-')))
+            for i in range(6,6+len(self.pin_name)):
+                num = str(i)
+                num_length = len(num)
+                num_front = 3
+                num_rear = num_sum_length - num_front - num_length
+                str_length = len(self.pin_name[i-6])
+                str_front = 5
+                str_rear = str_sum_length - str_front - str_length
+                print("|%s%d%s|%s%s%s|"%(str(num_front * ' '),i,str(num_rear * ' '),str(str_front * ' '),self.pin_name[i-6],str(str_rear*' ')))
+                print("+%s|%s+"%(str(num_sum_length*'-'),str(str_sum_length*'-')))
+        elif isinstance(Pin,int) and Pin < 6 or Pin > 47:
             print("Pin num must greater than 6 or less than 47")
+            return False
+        elif isinstance(Pin,int):
+            Pin_sum_length = num_len
+            string_sum_length = str_len
+            pin_str_obj = "Pin"
+            pin_str_obj_length = len(pin_str_obj)
+            pin_str_obj_front = 3
+            pin_str_obj_rear = Pin_sum_length - pin_str_obj_front - pin_str_obj_front
+            Fun_str_obj = "Function"
+            Fun_str_obj_length = len(Fun_str_obj)
+            Fun_str_obj_front = 5
+            Fun_str_obj_rear = string_sum_length - Fun_str_obj_front - Fun_str_obj_length
+            print("|%s%s%s|%s%s%s|"%(str(pin_str_obj_front * '-'),pin_str_obj,str(pin_str_obj_rear * '-'),str(Fun_str_obj_front * '-'),Fun_str_obj,str(Fun_str_obj_rear*'-')))
+            Pin_str = str(Pin)
+            Pin_length = len(Pin_str)
+            Pin_front = 3
+            Pin_rear = Pin_sum_length - Pin_front - Pin_length
+            string_length = len(self.pin_name[Pin-6])
+            string_front = 5
+            string_rear = string_sum_length - string_front - string_length
+            print("|%s%d%s|%s%s%s|"%(str(Pin_front * ' '),Pin,str(Pin_rear * ' '),str(string_front * ' '),self.pin_name[Pin-6],str(string_rear*' ')))
+            print("+%s|%s+"%(str(Pin_sum_length*'-'),str(string_sum_length*'-')))
         else:
-            print("Pin",Pin,"-->",self.pin_name[Pin-6])   
+            print("Unknow error")
+            return False
+

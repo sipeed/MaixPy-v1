@@ -211,7 +211,7 @@ STATIC const mp_rom_map_elem_t os_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_sync), MP_ROM_PTR(&mod_os_sync_obj) },
     { MP_ROM_QSTR(MP_QSTR_flash_format), MP_ROM_PTR(&mod_os_flash_format_obj) },
     #endif
-	#if MICROPY_spiffs
+	#if MICROPY_VFS_SPIFFS
 	{ MP_ROM_QSTR(MP_QSTR_VfsSpiffs), MP_ROM_PTR(&mp_spiffs_vfs_type) },
 	{ MP_ROM_QSTR(MP_QSTR_VfsFat), MP_ROM_PTR(&mp_fat_vfs_type) },
 	#endif
