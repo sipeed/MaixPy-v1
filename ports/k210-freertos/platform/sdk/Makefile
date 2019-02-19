@@ -31,7 +31,7 @@ build_env:
 compile: build_env
 	-mkdir -p build
 	MAKE_J_NUMBER=`cat /proc/cpuinfo | grep vendor_id | wc -l`
-	cd build && cmake ../$(SDK_DIR_NAME)/ -DPROJ=hello_world -DTOOLCHAIN=$(subst bin/,bin,$(dir $(CROSS_COMPILE))) && make -j${MAKE_J_NUMBER}
+	cd build && cmake ../$(SDK_DIR_NAME)/ -DPROJ=hello_world -DTOOLCHAIN=$(patsubst %/,%,$(dir $(CROSS_COMPILE))) && make -j${MAKE_J_NUMBER}
 	cp ${CUR_DIR}/${OUTPUT_DIR}/lib/libkendryte.a ${BIN_DIR}/
 
 include_mk: build_env
