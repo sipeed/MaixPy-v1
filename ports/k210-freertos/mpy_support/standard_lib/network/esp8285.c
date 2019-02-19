@@ -988,7 +988,7 @@ bool eINIT(esp8285_obj* nic)
 //    }
 //}
 
-//bool ESP8266::setOprToStationSoftAP(void)
+//bool setOprToStationSoftAP(void)
 //{
 //    uint8_t mode;
 //    if (!qATCWMODE(&mode)) {
@@ -1005,7 +1005,7 @@ bool eINIT(esp8285_obj* nic)
 //    }
 //}
 
-//String ESP8266::getAPList(void)
+//String getAPList(void)
 //{
 //    String list;
 //    eATCWLAP(list);
@@ -1025,7 +1025,7 @@ bool eINIT(esp8285_obj* nic)
 //    return list;
 //}
 
-//bool ESP8266::eATCWLAP(String &list)
+//bool eATCWLAP(String &list)
 //{
 //    String data;
 //    rx_empty();
@@ -1034,7 +1034,7 @@ bool eINIT(esp8285_obj* nic)
 //}
 
 
-//bool ESP8266::sATCWSAP(String ssid, String pwd, uint8_t chl, uint8_t ecn)
+//bool sATCWSAP(String ssid, String pwd, uint8_t chl, uint8_t ecn)
 //{
 //    String data;
 //    rx_empty();
@@ -1054,7 +1054,7 @@ bool eINIT(esp8285_obj* nic)
 //    return false;
 //}
 
-//bool ESP8266::eATCWLIF(String &list)
+//bool eATCWLIF(String &list)
 //{
 //    String data;
 //    rx_empty();
