@@ -56,5 +56,5 @@ See [build doc](ports/k210-freertos/README.md)
 
 ## License
 
-See [LICENSE](LICENSE) file
+See [LICENSE](LICENSE.md) file
 
