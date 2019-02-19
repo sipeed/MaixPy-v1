@@ -248,38 +248,51 @@ STATIC void machine_hw_spi_init(mp_obj_base_t *self_in, size_t n_args, const mp_
     int cs[4] = {-1, -1, -1, -1};
     int d[8] = {-1,-1,-1,-1,-1,-1,-1,-1};
     int ret;
-    bool valid;
+    bool valid = false;
+    bool is_set_fpioa = false;
     sck   = check_pin(args[ARG_sck].u_obj);
     cs[0] = check_pin(args[ARG_cs0].u_obj);
     cs[1] = check_pin(args[ARG_cs1].u_obj);
     cs[2] = check_pin(args[ARG_cs2].u_obj);
     cs[3] = check_pin(args[ARG_cs3].u_obj);
-    valid = ( sck >=0 && (cs[0]>=0 || cs[1]>=0 || cs[2]>=0 || cs[3]>=0) );
+    if( sck >=0 && (cs[0]>=0 || cs[1]>=0 || cs[2]>=0 || cs[3]>=0) ) // sck and cs set
+    {
+        valid = true;
+        is_set_fpioa = true;
+    }
+    if( sck < 0 && cs[0]<0 && cs[1]<0 && cs[2]<0 && cs[3]<0 ) // not set
+        valid = true; 
     if(!valid)
-        mp_raise_ValueError("[MAIXPY]SPI: sck and cs(n) pin should be set");
+        mp_raise_ValueError("[MAIXPY]SPI: sck and cs(n) pin should be set or all not set");
     //check data pins
     if( args[ARG_mode].u_int == MACHINE_SPI_MODE_MASTER)// standard spi mode
     {
-        ret = check_pin(args[ARG_mosi].u_obj);
-        if(ret >= 0)//has mosi
+        if(is_set_fpioa)
         {
-            d[0] = ret;
-            ret = check_pin(args[ARG_miso].u_obj);
-            if(ret >= 0)
-            {
-                d[1] = ret;
-            }
-        }
-        else// no mosi, check d0 
-        {
-            ret = check_pin(args[ARG_d0].u_obj);
-            if(ret >= 0)
+            is_set_fpioa = false;
+            ret = check_pin(args[ARG_mosi].u_obj);
+            if(ret >= 0)//has mosi
             {
                 d[0] = ret;
-                ret = check_pin(args[ARG_d1].u_obj);
+                ret = check_pin(args[ARG_miso].u_obj);
                 if(ret >= 0)
                 {
                     d[1] = ret;
+                    is_set_fpioa = true;
+                }
+            }
+            else// no mosi, check d0 
+            {
+                ret = check_pin(args[ARG_d0].u_obj);
+                if(ret >= 0)
+                {
+                    d[0] = ret;
+                    ret = check_pin(args[ARG_d1].u_obj);
+                    if(ret >= 0)
+                    {
+                        d[1] = ret;
+                        is_set_fpioa = true;
+                    }
                 }
             }
         }
@@ -305,32 +318,35 @@ STATIC void machine_hw_spi_init(mp_obj_base_t *self_in, size_t n_args, const mp_
     // Init SPI
     if(  self->mode == MACHINE_SPI_MODE_MASTER)// standard spi mode
     {
-        if(self->id  == SPI_DEVICE_0)
+        if(is_set_fpioa)
         {
-            fpioa_set_function(sck, FUNC_SPI0_SCLK);
-            for(uint8_t i=0; i<4; ++i)
+            if(self->id  == SPI_DEVICE_0)
             {
-                if(self->pin_cs[i] >= 0)
-                    fpioa_set_function(self->pin_cs[i], FUNC_SPI0_SS0+i);
+                fpioa_set_function(sck, FUNC_SPI0_SCLK);
+                for(uint8_t i=0; i<4; ++i)
+                {
+                    if(self->pin_cs[i] >= 0)
+                        fpioa_set_function(self->pin_cs[i], FUNC_SPI0_SS0+i);
+                }
+                for(uint8_t i=0; i<2; ++i)
+                {
+                    if(self->pin_d[i] >= 0)
+                        fpioa_set_function(self->pin_d[i], FUNC_SPI0_D0+i);
+                }
             }
-            for(uint8_t i=0; i<2; ++i)
+            else if( self->id == SPI_DEVICE_1)
             {
-                if(self->pin_d[i] >= 0)
-                    fpioa_set_function(self->pin_d[i], FUNC_SPI0_D0+i);
-            }
-        }
-        else if( self->id == SPI_DEVICE_1)
-        {
-            fpioa_set_function(self->pin_sck, FUNC_SPI1_SCLK);
-            for(uint8_t i=0; i<4; ++i)
-            {
-                if(self->pin_cs[i] >= 0)
-                    fpioa_set_function(self->pin_cs[i], FUNC_SPI1_SS0+i);
-            }
-            for(uint8_t i=0; i<2; ++i)
-            {
-                if(self->pin_d[i] >= 0)
-                    fpioa_set_function(self->pin_d[i], FUNC_SPI1_D0+i);
+                fpioa_set_function(self->pin_sck, FUNC_SPI1_SCLK);
+                for(uint8_t i=0; i<4; ++i)
+                {
+                    if(self->pin_cs[i] >= 0)
+                        fpioa_set_function(self->pin_cs[i], FUNC_SPI1_SS0+i);
+                }
+                for(uint8_t i=0; i<2; ++i)
+                {
+                    if(self->pin_d[i] >= 0)
+                        fpioa_set_function(self->pin_d[i], FUNC_SPI1_D0+i);
+                }
             }
         }
         int work_mode = self->phase|(self->polarity<<1);
