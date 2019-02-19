@@ -1,0 +1,3 @@
+MaixPy is a project based on openmv and Micropython and uses spiffs. 
+Please find the modified file in the commit history. 
+Modified files follow Apache 2.0
