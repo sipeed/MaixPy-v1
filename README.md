@@ -45,9 +45,13 @@ while True:
     lcd.display(img)
 ```
 
+## Release
+
+See [Releases page](https://github.com/sipeed/MaixPy/releases)
+
 ## Documentation
 
-Refer to [maixpy.sipeed.com](https://maixpy.sipeed.com)
+Doc refer to [maixpy.sipeed.com](https://maixpy.sipeed.com)
 
 
 ## Build From Source

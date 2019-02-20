@@ -73,4 +73,9 @@ more parameters use
 ./flash.sh help
 ```
 
+## For contribute developer
+
+* tag name must start with `v`, e.g. `v1.2.3`, or we can not get version in `MaixPy` by command `sys.implementation.version`
+
+
 

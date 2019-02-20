@@ -1,5 +1,6 @@
 mk
 build
+output
 Maixpy
 Maixpy.bin
 kendryte-standalone-sdk
