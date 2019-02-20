@@ -61,7 +61,10 @@
 #include "sipeed_conv.h"
 
 #define UART_BUF_LENGTH_MAX 269
-#define MPY_HEAP_SIZE  2* 1024 * 1024
+
+// #define MPY_HEAP_SIZE  2* 1024 * 1024
+
+#define MPY_HEAP_SIZE  512* 1024 
 
 uint8_t CPU_freq = 0;
 uint8_t PLL0_freq = 0;
