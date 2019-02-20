@@ -75,7 +75,18 @@ more parameters use
 
 ## For contribute developer
 
-* tag name must start with `v`, e.g. `v1.2.3`, or we can not get version in `MaixPy` by command `sys.implementation.version`
+### Release
 
+* Create a tag: tag name must start with `v`, e.g. `v1.2.3`, or we can not get version in `MaixPy` by command `sys.implementation.version`
+
+* Execute `./build.sh clean`
+
+* Execute `./build.sh`
+
+* Tests
+
+* Upload to [Releases page](https://github.com/sipeed/MaixPy/releases)
+
+* Edit release infomation
 
 
