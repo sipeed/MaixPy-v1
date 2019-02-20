@@ -77,16 +77,30 @@ more parameters use
 
 ### Release
 
+* Must commit all changes and rebuild 
+
+* Tests
+ 
+* Push to remote
+
 * Create a tag: tag name must start with `v`, e.g. `v1.2.3`, or we can not get version in `MaixPy` by command `sys.implementation.version`
+
+```
+git tag -a v0.1.1 -m "release 0.1.1 (beta) describe....."
+git push origin --tags 
+```
 
 * Execute `./build.sh clean`
 
 * Execute `./build.sh`
 
-* Tests
+* Flash to board, type `sys.implementation.version`, the output should be like:
 
-* Upload to [Releases page](https://github.com/sipeed/MaixPy/releases)
+```
+>>> sys.implementation.version
+(0, 1, 1)
+```
 
-* Edit release infomation
+* Upload to [Releases page](https://github.com/sipeed/MaixPy/releases) and edit release infomation
 
 
