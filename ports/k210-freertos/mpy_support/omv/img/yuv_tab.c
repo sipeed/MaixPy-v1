@@ -1,5 +1,35 @@
 #include <stdint.h>
-//const int8_t yuv_table[1] = {0};
+#include "imlib_config.h"
+
+#ifdef IMLIB_ENABLE_YUV_LAB_FUNC
+
+#include "math.h"
+
+// https://github.com/openmv/openmv/blob/master/tools/gen_rgb2yuv.py
+int8_t yuv_table(uint32_t idx)
+{
+    int8_t y = 0, u = 0, v = 0;
+    float r = 0, g = 0, b = 0;
+
+    uint16_t pixel;
+    uint8_t yuv;
+
+    pixel = idx / 3;
+    yuv = idx % 3;
+
+    r = (uint8_t)(((((pixel >> 3) & 31) * 255) + 15.5) / 31);
+    g = (uint8_t)((((((pixel & 7) << 3) | (pixel >> 13)) * 255) + 31.5) / 63);
+    b = (uint8_t)(((((pixel >> 8) & 31) * 255) + 15.5) / 31);
+
+    //  https://en.wikipedia.org/wiki/YCbCr (ITU-R BT.601 conversion)
+    y = (int8_t)((r * 0.299) + (g * 0.587) + (b * 0.114) - 128);
+    u = (int8_t)((-(r * 0.168736)) - (g * 0.331264) + (b * 0.5));
+    v = (int8_t)((r * 0.5) - (g * 0.418688) - (b * 0.081312));
+
+    return (int8_t)(yuv == 0) ? y : (yuv == 1) ? u : (yuv == 2) ? v : 0;
+}
+
+#else
 const int8_t yuv_table[196608] = {
     -128,    0,    0,     -110,  -10,  -13,      -90,  -21,  -27,      -72,  -32,  -40,
      -52,  -43,  -54,      -33,  -53,  -67,      -15,  -64,  -81,        5,  -75,  -95,
@@ -16386,3 +16416,4 @@ const int8_t yuv_table[196608] = {
       -7,   75,   95,       13,   64,   81,       31,   53,   67,       50,   43,   54,
       70,   32,   40,       88,   21,   27,      108,   10,   13,      127,    0,    0
 };
+#endif

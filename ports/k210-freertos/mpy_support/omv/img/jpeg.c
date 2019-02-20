@@ -17,6 +17,7 @@
 #include "vfs_wrapper.h"
 #include "imlib.h"
 #include "omv_boardconfig.h"
+#include "imlib_config.h"
 
 #define TIME_JPEG   (0)
 
@@ -49,6 +50,13 @@ typedef struct _jpeg_enc {
 static uint8_t mcubuf[512];
 static jpeg_enc_t jpeg_enc;
 
+// RGB565 to YUV table
+#ifdef IMLIB_ENABLE_YUV_LAB_FUNC
+extern int8_t yuv_table(uint32_t idx);
+#else
+extern const int8_t yuv_table[196608];
+#endif
+
 static uint8_t *get_mcu()
 {
     uint8_t *Y0 = mcubuf;
@@ -75,9 +83,15 @@ static uint8_t *get_mcu()
             for (int y=jpeg_enc.y_offset, idx=0; y<(jpeg_enc.y_offset + MCU_H); y++) {
                 for (int x=jpeg_enc.x_offset; x<(jpeg_enc.x_offset + MCU_W); x++, idx++) {
                     int ofs = y * jpeg_enc.img_w + x;
+                    #ifdef IMLIB_ENABLE_YUV_LAB_FUNC
+                    Y0[idx] = yuv_table(jpeg_enc.pixels16[ofs] * 3 + 0) - 128;
+                    CB[idx] = yuv_table(jpeg_enc.pixels16[ofs] * 3 + 1) - 128;
+                    CR[idx] = yuv_table(jpeg_enc.pixels16[ofs] * 3 + 2) - 128;
+                    #else
                     Y0[idx] = yuv_table[jpeg_enc.pixels16[ofs] * 3 + 0] - 128;
                     CB[idx] = yuv_table[jpeg_enc.pixels16[ofs] * 3 + 1] - 128;
                     CR[idx] = yuv_table[jpeg_enc.pixels16[ofs] * 3 + 2] - 128;
+                    #endif
                 }
             }
             break;
@@ -87,9 +101,15 @@ static uint8_t *get_mcu()
             imlib_bayer_to_rgb565(jpeg_enc.img, 8, 8, jpeg_enc.x_offset, jpeg_enc.y_offset, rgbbuf); 
             for (int y=0, idx=0; y<8; y++) {
                 for (int x=0; x<8; x++, idx++) {
+                    #ifdef IMLIB_ENABLE_YUV_LAB_FUNC
+                    Y0[idx] = yuv_table(rgbbuf[idx] * 3 + 0) - 128;
+                    CB[idx] = yuv_table(rgbbuf[idx] * 3 + 1) - 128;
+                    CR[idx] = yuv_table(rgbbuf[idx] * 3 + 2) - 128;
+                    #else
                     Y0[idx] = yuv_table[rgbbuf[idx] * 3 + 0] - 128;
                     CB[idx] = yuv_table[rgbbuf[idx] * 3 + 1] - 128;
                     CR[idx] = yuv_table[rgbbuf[idx] * 3 + 2] - 128;
+                    #endif
                 }
             }
             break;
@@ -220,8 +240,7 @@ typedef struct {
 static float fdtbl_Y[64], fdtbl_UV[64];
 static uint8_t YTable[64], UVTable[64];
 
-// RGB565 to YUV table
-extern const int8_t yuv_table[196608];
+
 
 static const uint8_t s_jpeg_ZigZag[] = {
     0,  1,   5,  6, 14, 15, 27, 28,
@@ -815,9 +834,15 @@ bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc)
                     for (int x=0; x<src->w; x+=8) {
                         jpeg_get_mcu(src, 8, 8, x, y, src->bpp, MCU);
                         for (int ofs=0; ofs<8*8; ofs++) {
+                            #ifdef IMLIB_ENABLE_YUV_LAB_FUNC
+                            YDU[ofs] = yuv_table(MCU[ofs] * 3 + 0);
+                            UDU[ofs] = yuv_table(MCU[ofs] * 3 + 1);
+                            VDU[ofs] = yuv_table(MCU[ofs] * 3 + 2);
+                             #else
                             YDU[ofs] = yuv_table[MCU[ofs] * 3 + 0];
                             UDU[ofs] = yuv_table[MCU[ofs] * 3 + 1];
                             VDU[ofs] = yuv_table[MCU[ofs] * 3 + 2];
+                            #endif
                         }
 
                         DCY = jpeg_processDU(&jpeg_buf, YDU, fdtbl_Y, DCY, YDC_HT, YAC_HT);
@@ -837,6 +862,44 @@ bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc)
                     for (int x=0; x<src->w; x+=16) {
                         jpeg_get_mcu(src, 16, 8, x, y, src->bpp, pixels);
                         for (int idx=0, ofs=0; ofs<128; ofs+=16, idx+=8) {
+                            #ifdef IMLIB_ENABLE_YUV_LAB_FUNC
+                            YDU[idx + 0] = yuv_table(pixels[ofs + 0] * 3 + 0);
+                            YDU[idx + 1] = yuv_table(pixels[ofs + 1] * 3 + 0);
+                            YDU[idx + 2] = yuv_table(pixels[ofs + 2] * 3 + 0);
+                            YDU[idx + 3] = yuv_table(pixels[ofs + 3] * 3 + 0);
+                            YDU[idx + 4] = yuv_table(pixels[ofs + 4] * 3 + 0);
+                            YDU[idx + 5] = yuv_table(pixels[ofs + 5] * 3 + 0);
+                            YDU[idx + 6] = yuv_table(pixels[ofs + 6] * 3 + 0);
+                            YDU[idx + 7] = yuv_table(pixels[ofs + 7] * 3 + 0);
+
+                            YDU[idx + 0 + 64] = yuv_table(pixels[ofs + 8 + 0] * 3 + 0);
+                            YDU[idx + 1 + 64] = yuv_table(pixels[ofs + 8 + 1] * 3 + 0);
+                            YDU[idx + 2 + 64] = yuv_table(pixels[ofs + 8 + 2] * 3 + 0);
+                            YDU[idx + 3 + 64] = yuv_table(pixels[ofs + 8 + 3] * 3 + 0);
+                            YDU[idx + 4 + 64] = yuv_table(pixels[ofs + 8 + 4] * 3 + 0);
+                            YDU[idx + 5 + 64] = yuv_table(pixels[ofs + 8 + 5] * 3 + 0);
+                            YDU[idx + 6 + 64] = yuv_table(pixels[ofs + 8 + 6] * 3 + 0);
+                            YDU[idx + 7 + 64] = yuv_table(pixels[ofs + 8 + 7] * 3 + 0);
+
+                            // Just toss the odd UV pixels (could average for better quality)
+                            UDU[idx + 0] = yuv_table(pixels[ofs + 0] * 3 + 1);
+                            UDU[idx + 1] = yuv_table(pixels[ofs + 2] * 3 + 1);
+                            UDU[idx + 2] = yuv_table(pixels[ofs + 4] * 3 + 1);
+                            UDU[idx + 3] = yuv_table(pixels[ofs + 6] * 3 + 1);
+                            UDU[idx + 4] = yuv_table(pixels[ofs + 8] * 3 + 1);
+                            UDU[idx + 5] = yuv_table(pixels[ofs +10] * 3 + 1);
+                            UDU[idx + 6] = yuv_table(pixels[ofs +12] * 3 + 1);
+                            UDU[idx + 7] = yuv_table(pixels[ofs +14] * 3 + 1);
+
+                            VDU[idx + 0] = yuv_table(pixels[ofs + 0] * 3 + 2);
+                            VDU[idx + 1] = yuv_table(pixels[ofs + 2] * 3 + 2);
+                            VDU[idx + 2] = yuv_table(pixels[ofs + 4] * 3 + 2);
+                            VDU[idx + 3] = yuv_table(pixels[ofs + 6] * 3 + 2);
+                            VDU[idx + 4] = yuv_table(pixels[ofs + 8] * 3 + 2);
+                            VDU[idx + 5] = yuv_table(pixels[ofs +10] * 3 + 2);
+                            VDU[idx + 6] = yuv_table(pixels[ofs +12] * 3 + 2);
+                            VDU[idx + 7] = yuv_table(pixels[ofs +14] * 3 + 2);
+                            #else
                             YDU[idx + 0] = yuv_table[pixels[ofs + 0] * 3 + 0];
                             YDU[idx + 1] = yuv_table[pixels[ofs + 1] * 3 + 0];
                             YDU[idx + 2] = yuv_table[pixels[ofs + 2] * 3 + 0];
@@ -873,6 +936,7 @@ bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc)
                             VDU[idx + 5] = yuv_table[pixels[ofs +10] * 3 + 2];
                             VDU[idx + 6] = yuv_table[pixels[ofs +12] * 3 + 2];
                             VDU[idx + 7] = yuv_table[pixels[ofs +14] * 3 + 2];
+                            #endif
                         }
 
                         DCY = jpeg_processDU(&jpeg_buf, YDU,    fdtbl_Y, DCY, YDC_HT, YAC_HT);
@@ -895,6 +959,65 @@ bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc)
                         jpeg_get_mcu(src, 16, 16, x, y, src->bpp, pixels);
                         for (int r=0, idx=0; r<8; r++, idx+=8) {
                             int ofs = r*16;
+                            #ifdef IMLIB_ENABLE_YUV_LAB_FUNC
+                            YDU[idx + 0]       = yuv_table(pixels[ofs + 0] * 3 + 0);
+                            YDU[idx + 1]       = yuv_table(pixels[ofs + 1] * 3 + 0);
+                            YDU[idx + 2]       = yuv_table(pixels[ofs + 2] * 3 + 0);
+                            YDU[idx + 3]       = yuv_table(pixels[ofs + 3] * 3 + 0);
+                            YDU[idx + 4]       = yuv_table(pixels[ofs + 4] * 3 + 0);
+                            YDU[idx + 5]       = yuv_table(pixels[ofs + 5] * 3 + 0);
+                            YDU[idx + 6]       = yuv_table(pixels[ofs + 6] * 3 + 0);
+                            YDU[idx + 7]       = yuv_table(pixels[ofs + 7] * 3 + 0);
+
+                            YDU[idx + 0 + 64]  = yuv_table(pixels[ofs + 0 + 8] * 3 + 0);
+                            YDU[idx + 1 + 64]  = yuv_table(pixels[ofs + 1 + 8] * 3 + 0);
+                            YDU[idx + 2 + 64]  = yuv_table(pixels[ofs + 2 + 8] * 3 + 0);
+                            YDU[idx + 3 + 64]  = yuv_table(pixels[ofs + 3 + 8] * 3 + 0);
+                            YDU[idx + 4 + 64]  = yuv_table(pixels[ofs + 4 + 8] * 3 + 0);
+                            YDU[idx + 5 + 64]  = yuv_table(pixels[ofs + 5 + 8] * 3 + 0);
+                            YDU[idx + 6 + 64]  = yuv_table(pixels[ofs + 6 + 8] * 3 + 0);
+                            YDU[idx + 7 + 64]  = yuv_table(pixels[ofs + 7 + 8] * 3 + 0);
+
+                            ofs = (r+8)*16;
+                            YDU[idx + 0 + 128] = yuv_table(pixels[ofs + 0] * 3 + 0);
+                            YDU[idx + 1 + 128] = yuv_table(pixels[ofs + 1] * 3 + 0);
+                            YDU[idx + 2 + 128] = yuv_table(pixels[ofs + 2] * 3 + 0);
+                            YDU[idx + 3 + 128] = yuv_table(pixels[ofs + 3] * 3 + 0);
+                            YDU[idx + 4 + 128] = yuv_table(pixels[ofs + 4] * 3 + 0);
+                            YDU[idx + 5 + 128] = yuv_table(pixels[ofs + 5] * 3 + 0);
+                            YDU[idx + 6 + 128] = yuv_table(pixels[ofs + 6] * 3 + 0);
+                            YDU[idx + 7 + 128] = yuv_table(pixels[ofs + 7] * 3 + 0);
+
+                            YDU[idx + 0 + 192] = yuv_table(pixels[ofs + 0 + 8] * 3 + 0);
+                            YDU[idx + 1 + 192] = yuv_table(pixels[ofs + 1 + 8] * 3 + 0);
+                            YDU[idx + 2 + 192] = yuv_table(pixels[ofs + 2 + 8] * 3 + 0);
+                            YDU[idx + 3 + 192] = yuv_table(pixels[ofs + 3 + 8] * 3 + 0);
+                            YDU[idx + 4 + 192] = yuv_table(pixels[ofs + 4 + 8] * 3 + 0);
+                            YDU[idx + 5 + 192] = yuv_table(pixels[ofs + 5 + 8] * 3 + 0);
+                            YDU[idx + 6 + 192] = yuv_table(pixels[ofs + 6 + 8] * 3 + 0);
+                            YDU[idx + 7 + 192] = yuv_table(pixels[ofs + 7 + 8] * 3 + 0);
+
+                            ofs = (r*2)*16;
+                            // Just toss the odd U/V pixels (could average for better quality)
+                            UDU[idx + 0] = yuv_table(pixels[ofs + 0] * 3 + 1);
+                            UDU[idx + 1] = yuv_table(pixels[ofs + 2] * 3 + 1);
+                            UDU[idx + 2] = yuv_table(pixels[ofs + 4] * 3 + 1);
+                            UDU[idx + 3] = yuv_table(pixels[ofs + 6] * 3 + 1);
+                            UDU[idx + 4] = yuv_table(pixels[ofs + 8] * 3 + 1);
+                            UDU[idx + 5] = yuv_table(pixels[ofs +10] * 3 + 1);
+                            UDU[idx + 6] = yuv_table(pixels[ofs +12] * 3 + 1);
+                            UDU[idx + 7] = yuv_table(pixels[ofs +14] * 3 + 1);
+
+                            VDU[idx + 0] = yuv_table(pixels[ofs + 0] * 3 + 2);
+                            VDU[idx + 1] = yuv_table(pixels[ofs + 2] * 3 + 2);
+                            VDU[idx + 2] = yuv_table(pixels[ofs + 4] * 3 + 2);
+                            VDU[idx + 3] = yuv_table(pixels[ofs + 6] * 3 + 2);
+                            VDU[idx + 4] = yuv_table(pixels[ofs + 8] * 3 + 2);
+                            VDU[idx + 5] = yuv_table(pixels[ofs +10] * 3 + 2);
+                            VDU[idx + 6] = yuv_table(pixels[ofs +12] * 3 + 2);
+                            VDU[idx + 7] = yuv_table(pixels[ofs +14] * 3 + 2);
+
+                            #else
                             YDU[idx + 0]       = yuv_table[pixels[ofs + 0] * 3 + 0];
                             YDU[idx + 1]       = yuv_table[pixels[ofs + 1] * 3 + 0];
                             YDU[idx + 2]       = yuv_table[pixels[ofs + 2] * 3 + 0];
@@ -951,6 +1074,7 @@ bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc)
                             VDU[idx + 5] = yuv_table[pixels[ofs +10] * 3 + 2];
                             VDU[idx + 6] = yuv_table[pixels[ofs +12] * 3 + 2];
                             VDU[idx + 7] = yuv_table[pixels[ofs +14] * 3 + 2];
+                            #endif
                         }
 
                         DCY = jpeg_processDU(&jpeg_buf, YDU,     fdtbl_Y, DCY, YDC_HT, YAC_HT);
@@ -976,6 +1100,39 @@ bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc)
                     for (int x=0; x<src->w; x+=8) {
                         imlib_bayer_to_rgb565(src, 8, 8, x, y, rgbbuf);
                         for (int r=0, idx=0; r<8; r++, idx+=8) {
+                            #ifdef IMLIB_ENABLE_YUV_LAB_FUNC
+                            YDU[idx + 0] = yuv_table(rgbbuf[idx + 0] * 3 + 0);
+                            UDU[idx + 0] = yuv_table(rgbbuf[idx + 0] * 3 + 1);
+                            VDU[idx + 0] = yuv_table(rgbbuf[idx + 0] * 3 + 2);
+
+                            YDU[idx + 1] = yuv_table(rgbbuf[idx + 1] * 3 + 0);
+                            UDU[idx + 1] = yuv_table(rgbbuf[idx + 1] * 3 + 1);
+                            VDU[idx + 1] = yuv_table(rgbbuf[idx + 1] * 3 + 2);
+
+                            YDU[idx + 2] = yuv_table(rgbbuf[idx + 2] * 3 + 0);
+                            UDU[idx + 2] = yuv_table(rgbbuf[idx + 2] * 3 + 1);
+                            VDU[idx + 2] = yuv_table(rgbbuf[idx + 2] * 3 + 2);
+
+                            YDU[idx + 3] = yuv_table(rgbbuf[idx + 3] * 3 + 0);
+                            UDU[idx + 3] = yuv_table(rgbbuf[idx + 3] * 3 + 1);
+                            VDU[idx + 3] = yuv_table(rgbbuf[idx + 3] * 3 + 2);
+
+                            YDU[idx + 4] = yuv_table(rgbbuf[idx + 4] * 3 + 0);
+                            UDU[idx + 4] = yuv_table(rgbbuf[idx + 4] * 3 + 1);
+                            VDU[idx + 4] = yuv_table(rgbbuf[idx + 4] * 3 + 2);
+
+                            YDU[idx + 5] = yuv_table(rgbbuf[idx + 5] * 3 + 0);
+                            UDU[idx + 5] = yuv_table(rgbbuf[idx + 5] * 3 + 1);
+                            VDU[idx + 5] = yuv_table(rgbbuf[idx + 5] * 3 + 2);
+
+                            YDU[idx + 6] = yuv_table(rgbbuf[idx + 6] * 3 + 0);
+                            UDU[idx + 6] = yuv_table(rgbbuf[idx + 6] * 3 + 1);
+                            VDU[idx + 6] = yuv_table(rgbbuf[idx + 6] * 3 + 2);
+
+                            YDU[idx + 7] = yuv_table(rgbbuf[idx + 7] * 3 + 0);
+                            UDU[idx + 7] = yuv_table(rgbbuf[idx + 7] * 3 + 1);
+                            VDU[idx + 7] = yuv_table(rgbbuf[idx + 7] * 3 + 2);
+                            #else
                             YDU[idx + 0] = yuv_table[rgbbuf[idx + 0] * 3 + 0];
                             UDU[idx + 0] = yuv_table[rgbbuf[idx + 0] * 3 + 1];
                             VDU[idx + 0] = yuv_table[rgbbuf[idx + 0] * 3 + 2];
@@ -1007,6 +1164,7 @@ bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc)
                             YDU[idx + 7] = yuv_table[rgbbuf[idx + 7] * 3 + 0];
                             UDU[idx + 7] = yuv_table[rgbbuf[idx + 7] * 3 + 1];
                             VDU[idx + 7] = yuv_table[rgbbuf[idx + 7] * 3 + 2];
+                            #endif
                         }
 
                         DCY = jpeg_processDU(&jpeg_buf, YDU, fdtbl_Y, DCY, YDC_HT, YAC_HT);
@@ -1027,6 +1185,44 @@ bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc)
                     for (int x=0; x<src->w; x+=16) {
                         imlib_bayer_to_rgb565(src, 16, 8, x, y, rgbbuf);
                         for (int r=0, idx=0, ofs=0; r<8; r++, idx+=8, ofs+=16) {
+                            #ifdef IMLIB_ENABLE_YUV_LAB_FUNC
+                            YDU[idx + 0]      = yuv_table(rgbbuf[ofs + 0] * 3 + 0);
+                            YDU[idx + 1]      = yuv_table(rgbbuf[ofs + 1] * 3 + 0);
+                            YDU[idx + 2]      = yuv_table(rgbbuf[ofs + 2] * 3 + 0);
+                            YDU[idx + 3]      = yuv_table(rgbbuf[ofs + 3] * 3 + 0);
+                            YDU[idx + 4]      = yuv_table(rgbbuf[ofs + 4] * 3 + 0);
+                            YDU[idx + 5]      = yuv_table(rgbbuf[ofs + 5] * 3 + 0);
+                            YDU[idx + 6]      = yuv_table(rgbbuf[ofs + 6] * 3 + 0);
+                            YDU[idx + 7]      = yuv_table(rgbbuf[ofs + 7] * 3 + 0);
+
+                            YDU[idx + 0 + 64] = yuv_table(rgbbuf[ofs + 8] * 3 + 0);
+                            YDU[idx + 1 + 64] = yuv_table(rgbbuf[ofs + 9] * 3 + 0);
+                            YDU[idx + 2 + 64] = yuv_table(rgbbuf[ofs +10] * 3 + 0);
+                            YDU[idx + 3 + 64] = yuv_table(rgbbuf[ofs +11] * 3 + 0);
+                            YDU[idx + 4 + 64] = yuv_table(rgbbuf[ofs +12] * 3 + 0);
+                            YDU[idx + 5 + 64] = yuv_table(rgbbuf[ofs +13] * 3 + 0);
+                            YDU[idx + 6 + 64] = yuv_table(rgbbuf[ofs +14] * 3 + 0);
+                            YDU[idx + 7 + 64] = yuv_table(rgbbuf[ofs +15] * 3 + 0);
+
+                            // Just toss the old UV pixel( (could average for better quality)
+                            UDU[idx + 0]      = yuv_table(rgbbuf[ofs + 0] * 3 + 1);
+                            UDU[idx + 1]      = yuv_table(rgbbuf[ofs + 2] * 3 + 1);
+                            UDU[idx + 2]      = yuv_table(rgbbuf[ofs + 4] * 3 + 1);
+                            UDU[idx + 3]      = yuv_table(rgbbuf[ofs + 6] * 3 + 1);
+                            UDU[idx + 4]      = yuv_table(rgbbuf[ofs + 8] * 3 + 1);
+                            UDU[idx + 5]      = yuv_table(rgbbuf[ofs +10] * 3 + 1);
+                            UDU[idx + 6]      = yuv_table(rgbbuf[ofs +12] * 3 + 1);
+                            UDU[idx + 7]      = yuv_table(rgbbuf[ofs +14] * 3 + 1);
+
+                            VDU[idx + 0]      = yuv_table(rgbbuf[ofs + 0] * 3 + 2);
+                            VDU[idx + 1]      = yuv_table(rgbbuf[ofs + 2] * 3 + 2);
+                            VDU[idx + 2]      = yuv_table(rgbbuf[ofs + 4] * 3 + 2);
+                            VDU[idx + 3]      = yuv_table(rgbbuf[ofs + 6] * 3 + 2);
+                            VDU[idx + 4]      = yuv_table(rgbbuf[ofs + 8] * 3 + 2);
+                            VDU[idx + 5]      = yuv_table(rgbbuf[ofs +10] * 3 + 2);
+                            VDU[idx + 6]      = yuv_table(rgbbuf[ofs +12] * 3 + 2);
+                            VDU[idx + 7]      = yuv_table(rgbbuf[ofs +14] * 3 + 2);
+                            #else
                             YDU[idx + 0]      = yuv_table[rgbbuf[ofs + 0] * 3 + 0];
                             YDU[idx + 1]      = yuv_table[rgbbuf[ofs + 1] * 3 + 0];
                             YDU[idx + 2]      = yuv_table[rgbbuf[ofs + 2] * 3 + 0];
@@ -1063,6 +1259,7 @@ bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc)
                             VDU[idx + 5]      = yuv_table[rgbbuf[ofs +10] * 3 + 2];
                             VDU[idx + 6]      = yuv_table[rgbbuf[ofs +12] * 3 + 2];
                             VDU[idx + 7]      = yuv_table[rgbbuf[ofs +14] * 3 + 2];
+                            #endif
                         }
 
                         DCY = jpeg_processDU(&jpeg_buf, YDU,    fdtbl_Y, DCY, YDC_HT, YAC_HT);
@@ -1085,6 +1282,65 @@ bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc)
                         imlib_bayer_to_rgb565(src, 16, 16, x, y, rgbbuf);
                         for (int r=0, idx=0; r<8; r++, idx+=8) {
                             int ofs = r*16;
+
+                            #ifdef IMLIB_ENABLE_YUV_LAB_FUNC
+                            YDU[idx + 0]       = yuv_table(rgbbuf[ofs + 0] * 3 + 0);
+                            YDU[idx + 1]       = yuv_table(rgbbuf[ofs + 1] * 3 + 0);
+                            YDU[idx + 2]       = yuv_table(rgbbuf[ofs + 2] * 3 + 0);
+                            YDU[idx + 3]       = yuv_table(rgbbuf[ofs + 3] * 3 + 0);
+                            YDU[idx + 4]       = yuv_table(rgbbuf[ofs + 4] * 3 + 0);
+                            YDU[idx + 5]       = yuv_table(rgbbuf[ofs + 5] * 3 + 0);
+                            YDU[idx + 6]       = yuv_table(rgbbuf[ofs + 6] * 3 + 0);
+                            YDU[idx + 7]       = yuv_table(rgbbuf[ofs + 7] * 3 + 0);
+
+                            YDU[idx + 0 + 64]  = yuv_table(rgbbuf[ofs + 8] * 3 + 0);
+                            YDU[idx + 1 + 64]  = yuv_table(rgbbuf[ofs + 9] * 3 + 0);
+                            YDU[idx + 2 + 64]  = yuv_table(rgbbuf[ofs +10] * 3 + 0);
+                            YDU[idx + 3 + 64]  = yuv_table(rgbbuf[ofs +11] * 3 + 0);
+                            YDU[idx + 4 + 64]  = yuv_table(rgbbuf[ofs +12] * 3 + 0);
+                            YDU[idx + 5 + 64]  = yuv_table(rgbbuf[ofs +13] * 3 + 0);
+                            YDU[idx + 6 + 64]  = yuv_table(rgbbuf[ofs +14] * 3 + 0);
+                            YDU[idx + 7 + 64]  = yuv_table(rgbbuf[ofs +15] * 3 + 0);
+
+                            ofs = (r+8)*16;
+                            YDU[idx + 0 + 128] = yuv_table(rgbbuf[ofs + 0] * 3 + 0);
+                            YDU[idx + 1 + 128] = yuv_table(rgbbuf[ofs + 1] * 3 + 0);
+                            YDU[idx + 2 + 128] = yuv_table(rgbbuf[ofs + 2] * 3 + 0);
+                            YDU[idx + 3 + 128] = yuv_table(rgbbuf[ofs + 3] * 3 + 0);
+                            YDU[idx + 4 + 128] = yuv_table(rgbbuf[ofs + 4] * 3 + 0);
+                            YDU[idx + 5 + 128] = yuv_table(rgbbuf[ofs + 5] * 3 + 0);
+                            YDU[idx + 6 + 128] = yuv_table(rgbbuf[ofs + 6] * 3 + 0);
+                            YDU[idx + 7 + 128] = yuv_table(rgbbuf[ofs + 7] * 3 + 0);
+
+                            YDU[idx + 0 + 192] = yuv_table(rgbbuf[ofs + 8] * 3 + 0);
+                            YDU[idx + 1 + 192] = yuv_table(rgbbuf[ofs + 9] * 3 + 0);
+                            YDU[idx + 2 + 192] = yuv_table(rgbbuf[ofs +10] * 3 + 0);
+                            YDU[idx + 3 + 192] = yuv_table(rgbbuf[ofs +11] * 3 + 0);
+                            YDU[idx + 4 + 192] = yuv_table(rgbbuf[ofs +12] * 3 + 0);
+                            YDU[idx + 5 + 192] = yuv_table(rgbbuf[ofs +13] * 3 + 0);
+                            YDU[idx + 6 + 192] = yuv_table(rgbbuf[ofs +14] * 3 + 0);
+                            YDU[idx + 7 + 192] = yuv_table(rgbbuf[ofs +15] * 3 + 0);
+
+                            ofs = (r*2)*16;
+                            // Just toss the odd U/V pixels (could average for better quality)
+                            UDU[idx + 0]       = yuv_table(rgbbuf[ofs + 0] * 3 + 1);
+                            UDU[idx + 1]       = yuv_table(rgbbuf[ofs + 2] * 3 + 1);
+                            UDU[idx + 2]       = yuv_table(rgbbuf[ofs + 4] * 3 + 1);
+                            UDU[idx + 3]       = yuv_table(rgbbuf[ofs + 6] * 3 + 1);
+                            UDU[idx + 4]       = yuv_table(rgbbuf[ofs + 8] * 3 + 1);
+                            UDU[idx + 5]       = yuv_table(rgbbuf[ofs +10] * 3 + 1);
+                            UDU[idx + 6]       = yuv_table(rgbbuf[ofs +12] * 3 + 1);
+                            UDU[idx + 7]       = yuv_table(rgbbuf[ofs +14] * 3 + 1);
+
+                            VDU[idx + 0]       = yuv_table(rgbbuf[ofs + 0] * 3 + 2);
+                            VDU[idx + 1]       = yuv_table(rgbbuf[ofs + 2] * 3 + 2);
+                            VDU[idx + 2]       = yuv_table(rgbbuf[ofs + 4] * 3 + 2);
+                            VDU[idx + 3]       = yuv_table(rgbbuf[ofs + 6] * 3 + 2);
+                            VDU[idx + 4]       = yuv_table(rgbbuf[ofs + 8] * 3 + 2);
+                            VDU[idx + 5]       = yuv_table(rgbbuf[ofs +10] * 3 + 2);
+                            VDU[idx + 6]       = yuv_table(rgbbuf[ofs +12] * 3 + 2);
+                            VDU[idx + 7]       = yuv_table(rgbbuf[ofs +14] * 3 + 2);
+                            #else
                             YDU[idx + 0]       = yuv_table[rgbbuf[ofs + 0] * 3 + 0];
                             YDU[idx + 1]       = yuv_table[rgbbuf[ofs + 1] * 3 + 0];
                             YDU[idx + 2]       = yuv_table[rgbbuf[ofs + 2] * 3 + 0];
@@ -1141,6 +1397,7 @@ bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc)
                             VDU[idx + 5]       = yuv_table[rgbbuf[ofs +10] * 3 + 2];
                             VDU[idx + 6]       = yuv_table[rgbbuf[ofs +12] * 3 + 2];
                             VDU[idx + 7]       = yuv_table[rgbbuf[ofs +14] * 3 + 2];
+                            #endif
                         }
 
                         DCY = jpeg_processDU(&jpeg_buf, YDU,     fdtbl_Y, DCY, YDC_HT, YAC_HT);
@@ -1253,7 +1510,7 @@ void jpeg_read(image_t *img, const char *path)
     // Do not use file_buffer_off() here.
     vfs_internal_close(file, &err);
 }
-
+#include "sysctl.h"
 void jpeg_write(image_t *img, const char *path, int quality)
 {
     int err;
@@ -1270,7 +1527,9 @@ void jpeg_write(image_t *img, const char *path, int quality)
         // When jpeg_compress needs more memory than in currently allocated it
         // will try to realloc. MP will detect that the pointer is outside of
         // the heap and return NULL which will cause an out of memory error.
+        printf("start jpeg_compress:\t%ld\r\n",sysctl_get_time_us());
         jpeg_compress(img, &out, quality, false);
+        printf("end jpeg_compress:\t%ld\r\n",sysctl_get_time_us());
         ret = file_save_data(path, out.pixels, out.bpp, &err);
         fb_free();
         if(err != 0)

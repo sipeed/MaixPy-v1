@@ -123,4 +123,6 @@
 // Enable selective_search()
 #define IMLIB_ENABLE_SELECTIVE_SEARCH
 
+#define IMLIB_ENABLE_YUV_LAB_FUNC
+
 #endif //__IMLIB_CONFIG_H__

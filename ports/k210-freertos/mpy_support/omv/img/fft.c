@@ -581,9 +581,14 @@ void fft2d_dealloc()
     fb_free();
 }
 
+#include "imlib_config.h"
+
+#ifdef IMLIB_ENABLE_YUV_LAB_FUNC
+extern int8_t yuv_table(uint32_t idx);
+#else
 // RGB565 to YUV conversion
 extern const int8_t yuv_table[196608];
-
+#endif
 void fft2d_run(fft2d_controller_t *controller)
 {
     // This section copies image data into the fft buffer. It takes care of
@@ -597,8 +602,13 @@ void fft2d_run(fft2d_controller_t *controller)
                 tmp[j] = IM_GET_GS_PIXEL(controller->img,
                     controller->r.x + j, controller->r.y + i);
             } else {
+                #ifdef IMLIB_ENABLE_YUV_LAB_FUNC
+                tmp[j] = yuv_table(IM_GET_RGB565_PIXEL(controller->img,
+                    controller->r.x + j, controller->r.y + i)*3);
+                #else
                 tmp[j] = yuv_table[IM_GET_RGB565_PIXEL(controller->img,
                     controller->r.x + j, controller->r.y + i)*3];
+                #endif
             }
         }
         // Do FFT on image data and copy to main buffer.

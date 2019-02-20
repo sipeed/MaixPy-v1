@@ -1,5 +1,58 @@
 #include <stdint.h>
-//const int8_t lab_table[1] = {0};
+#include "imlib_config.h"
+
+#ifdef IMLIB_ENABLE_YUV_LAB_FUNC
+
+#include "math.h"
+
+static inline float lab_f(float t)
+{
+    if (t > 0.008856)
+        return powf(t, (1 / 3.0));
+    else
+        return ((7.787037 * t) + 0.137931);
+}
+
+static inline float lab_lin(float c)
+{
+    if (c <= 0.04045)
+        return 100.0 * (c / 12.92);
+    else
+        return 100.0 * powf((c + 0.055) / 1.055, 2.4);
+}
+
+// https://github.com/openmv/openmv/blob/master/tools/gen_rgb2lab.py
+int8_t lab_table(uint32_t idx)
+{
+    int8_t l = 0, a = 0, b = 0;
+    float r = 0, g = 0, bb = 0;
+
+    uint16_t pixel = idx / 3;
+    uint8_t lab = idx % 3;
+
+    r = (uint8_t)(((((pixel >> 3) & 31) * 255) + 15.5) / 31);
+    g = (uint8_t)((((((pixel & 7) << 3) | (pixel >> 13)) * 255) + 31.5) / 63);
+    bb = (uint8_t)(((((pixel >> 8) & 31) * 255) + 15.5) / 31);
+
+    float r_lin = lab_lin(r / 255.0);
+    float g_lin = lab_lin(g / 255.0);
+    float b_lin = lab_lin(bb / 255.0);
+
+    float x = (r_lin * 0.4124) + (g_lin * 0.3576) + (b_lin * 0.1805);
+    float y = (r_lin * 0.2126) + (g_lin * 0.7152) + (b_lin * 0.0722);
+    float z = (r_lin * 0.0193) + (g_lin * 0.1192) + (b_lin * 0.9505);
+
+    x = lab_f(x / 095.047);
+    y = lab_f(y / 100.000);
+    z = lab_f(z / 108.883);
+
+    l = (int8_t)(roundf(116.0 * y)) - 16;
+    a = (int8_t)(roundf(500.0 * (x - y)));
+    b = (int8_t)(roundf(200.0 * (y - z)));
+
+    return (int8_t)(lab == 0) ? l : (lab == 1) ? a : (lab == 2) ? b : 0;
+}
+#else
 const int8_t lab_table[196608] = {
        0,    0,    0,        9,  -19,   14,       23,  -32,   31,       35,  -42,   41,
       47,  -52,   50,       58,  -61,   59,       68,  -70,   68,       79,  -79,   76,
@@ -16386,3 +16439,4 @@ const int8_t lab_table[196608] = {
       61,   96,  -60,       63,   90,  -56,       67,   80,  -51,       72,   66,  -43,
       78,   50,  -33,       85,   34,  -23,       92,   16,  -11,      100,    0,    0
 };
+#endif
