@@ -53,26 +53,29 @@ mp_obj_t py_kpufreq_get_supported_frequencies()
 }
 #define CPU 0
 #define KPU 1
-mp_obj_t py_cpufreq_set_frequency(size_t n_args, const mp_obj_t *args)
+#define FREQ_NUM 2
+mp_obj_t py_cpufreq_set_frequency(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
+    mp_map_elem_t *cpu_arg = mp_map_lookup(kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_cpu), MP_MAP_LOOKUP);
+    mp_map_elem_t *kpu_arg = mp_map_lookup(kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_kpu), MP_MAP_LOOKUP);
+    uint32_t freq_list[FREQ_NUM] = {0};
     uint32_t cpufreq = 0;
     uint32_t kpufreq = 0;
-    switch(n_args)
-    {
-        case 0:
-            nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "Please enter frequency!"));
-            break;
-        case 1:
-             cpufreq = mp_obj_get_int(args[CPU]);
-             kpufreq = 0;
-             break;
-        case 2:
-            cpufreq = mp_obj_get_int(args[CPU]);
-            kpufreq = mp_obj_get_int(args[KPU]);
-            break;
-        default:
-            break;
-    }
+    if(NULL == cpu_arg && NULL == kpu_arg)
+        nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "Please enter frequency!"));
+
+    if(cpu_arg != NULL)
+        cpufreq = mp_obj_get_int(cpu_arg->value);
+    else
+        cpufreq = 0;
+    freq_list[CPU] = cpufreq;
+
+    if(kpu_arg != NULL)
+        kpufreq = mp_obj_get_int(kpu_arg->value);
+    else
+        kpufreq = 0;
+    freq_list[KPU] = kpufreq;
+
     // Check if frequency is supported
     int kpufreq_idx = -1;
     for (int i=0; i<ARRAY_LENGTH(kpufreq_freqs); i++) {
@@ -99,9 +102,7 @@ mp_obj_t py_cpufreq_set_frequency(size_t n_args, const mp_obj_t *args)
     uint32_t store_freq[FREQ_READ_NUM] = {0};
     for(int i = 0; i < FREQ_READ_NUM; i++)
 	{
-        if(i < n_args)
-            store_freq[i] = mp_obj_get_int(args[i]) * M_1;
-        // printf("for --> store_freq[%d] = %d \n", i, store_freq[i]);    
+        store_freq[i] = freq_list[i] * M_1;  
 	}   
     uint32_t res = 0;
     for(int i = 0; i < FREQ_READ_NUM; i++)
@@ -109,7 +110,6 @@ mp_obj_t py_cpufreq_set_frequency(size_t n_args, const mp_obj_t *args)
         if(0 == store_freq[i])
             continue;
 		res = sys_spiffs_write(FREQ_STORE_ADDR + i*4,4,(uint8_t* )(&store_freq[i]));
-        // printf("[MAIXPY]set --> store_freq[%d] = %d --- res = %d\n", i, store_freq[i],res);
 	}
     printf("\r\n");
     sysctl->soft_reset.soft_reset = 1;//reboot
@@ -119,7 +119,7 @@ mp_obj_t py_cpufreq_set_frequency(size_t n_args, const mp_obj_t *args)
     return mp_const_true;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_cpufreq_set_frequency_obj,0,2, py_cpufreq_set_frequency);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_cpufreq_set_frequency_obj,0, py_cpufreq_set_frequency);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_cpufreq_get_current_frequencies_obj, py_cpufreq_get_current_frequencies);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_kpufreq_get_supported_frequencies_obj, py_kpufreq_get_supported_frequencies);
 
