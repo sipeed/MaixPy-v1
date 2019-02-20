@@ -98,8 +98,8 @@ const char Banner[] = {"\r\n __  __              _____  __   __  _____   __     
 | |\\/| |   / /\\ \\     | |     > <   |  ___/    \\   /  \r\n\
 | |  | |  / ____ \\   _| |_   / . \\  | |         | |   \r\n\
 |_|  |_| /_/    \\_\\ |_____| /_/ \\_\\ |_|         |_|\r\n\
-Official Site:http://www.sipeed.com/\r\n\
-Wiki:http://maixpy.sipeed.com/\r\n"};
+Official Site:https://www.sipeed.com/\r\n\
+Wiki:https://maixpy.sipeed.com/\r\n"};
 
 STATIC bool init_sdcard_fs(void) {
     bool first_part = true;
