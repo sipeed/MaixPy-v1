@@ -205,7 +205,7 @@ void mp_thread_mutex_unlock(mp_thread_mutex_t *mutex) {
 void mp_thread_delete(thread_t *pre_th,thread_t *th) {
     pre_th->next = th->next;
     vTaskDelete(th->id);
-    free(th);
+    m_del_obj(thread_t,th);
 }
 
 void mp_thread_deinit(void) {
@@ -217,7 +217,7 @@ void mp_thread_deinit(void) {
             continue;
         }
         vTaskDelete(th->id);
-        free(th);
+        m_del_obj(thread_t,th);
     }
     mp_thread_mutex_unlock(&thread_mutex);
     // allow FreeRTOS to clean-up the threads
