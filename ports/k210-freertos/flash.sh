@@ -44,6 +44,10 @@ elif [[ "x$1" == "xuninstall" ]]; then
     exit 0
 fi
 
+if [[ ! -f $kflash_py ]]; then
+    git clone https://github.com/sipeed/kflash.py.git tools/kflash.py
+fi
+
 cwd=`pwd`
 bin_file_path="$cwd/output/maixpy.bin"
 
