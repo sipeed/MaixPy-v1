@@ -211,7 +211,7 @@ STATIC void *thread_entry(void *args_in) {
     mp_thread_finish();
 
     MP_THREAD_GIL_EXIT();
-
+    for(;;);
     return NULL;
 }
 
