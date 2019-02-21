@@ -620,7 +620,10 @@ void imlib_load_image(image_t *img, const char *path)
     } else */if ((magic[0]=='B') && (magic[1]=='M')) { // BMP
         bmp_read(img, path);
     } else if ((magic[0]==0xFF) && (magic[1]==0xD8)) { // JPEG
-        jpeg_read(img, path);
+        // jpeg_read(img, path);
+        int err = picojpeg_util_read(img, path);
+        if( err != 0)
+            mp_raise_OSError(err);
     } else {
         mp_raise_ValueError("format not supported");
     }
