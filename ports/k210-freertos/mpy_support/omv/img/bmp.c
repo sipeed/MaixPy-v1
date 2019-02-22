@@ -13,6 +13,7 @@
 #include "xalloc.h"
 #include "imlib.h"
 #include "omv_boardconfig.h"
+#include "framebuffer.h"
 
 // This function inits the geometry values of an image (opens file).
 bool bmp_read_geometry(mp_obj_t fp, image_t *img, bmp_read_settings_t *rs)
@@ -191,9 +192,17 @@ void bmp_read(image_t *img, const char *path)
     bmp_read_geometry(file, img, &rs);
     if (!img->pixels)
         img->pixels = xalloc(img->w * img->h * img->bpp);
+    else
+    {
+        if( (img->w * img->h * img->bpp) > OMV_INIT_W*OMV_INIT_H*2 )
+        {
+            mp_raise_OSError(MP_EINVAL);    
+        }
+    }
     if(!bmp_read_pixels(file, img, 0, img->h, &rs))
     {
-        xfree(img->pixels);
+        if(img->pixels != MAIN_FB()->pixels )
+            xfree(img->pixels);
         vfs_internal_close(file, &err);
         mp_raise_OSError(MP_EIO);
     }

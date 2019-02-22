@@ -509,7 +509,8 @@ static mp_obj_t py_image_del(mp_obj_t img_obj)
         {
            return mp_const_none;
         }
-        xfree(img->data);
+        if( img->data != MAIN_FB()->pixels )
+            xfree(img->data);
     }
     return mp_const_none;
 }
@@ -6033,6 +6034,12 @@ mp_obj_t py_image_load_image(uint n_args, const mp_obj_t *args, mp_map_t *kw_arg
 
 
     image_t image = {0};
+    memset(&image, 0, sizeof(image_t));
+    
+    if( copy_to_fb)
+    {
+        image.data = MAIN_FB()->pixels;
+    }
 
     if(n_args >= 1)
     {
@@ -6041,10 +6048,22 @@ mp_obj_t py_image_load_image(uint n_args, const mp_obj_t *args, mp_map_t *kw_arg
     }
     else
     {
-        image.w = 320;
-        image.h = 240;
-        image.bpp = IMAGE_BPP_RGB565;
-        image.data = xalloc(image.w*image.h*2);
+        if(copy_to_fb)
+        {
+            image.w = OMV_INIT_W;
+            image.h = OMV_INIT_H;
+            image.bpp = IMAGE_BPP_RGB565;
+            MAIN_FB()->w = image.w;
+            MAIN_FB()->h = image.h;
+            MAIN_FB()->bpp = image.bpp;
+        }
+        else
+        {
+            image.w = OMV_INIT_W;
+            image.h = OMV_INIT_H;
+            image.bpp = IMAGE_BPP_RGB565;
+            image.data = xalloc(image.w*image.h*2);
+        }
     }
     return py_image_from_struct(&image);
 }

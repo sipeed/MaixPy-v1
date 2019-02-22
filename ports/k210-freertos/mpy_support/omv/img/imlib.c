@@ -611,17 +611,25 @@ void imlib_load_image(image_t *img, const char *path)
     vfs_internal_read(file, magic, 2, &err);
     if( err != 0)
         mp_raise_OSError(err);
-    vfs_internal_close(file, &err);
+    vfs_internal_seek(file,0, SEEK_SET, &err);
+    if( err != 0)
+    {
+        int tmp = err;
+        vfs_internal_close(file, &err);
+        mp_raise_OSError(tmp);
+    }
 
     /*if ((magic[0]=='P')
     && ((magic[1]=='2') || (magic[1]=='3')
     ||  (magic[1]=='5') || (magic[1]=='6'))) { // PPM
         ppm_read(img, path);
-    } else */if ((magic[0]=='B') && (magic[1]=='M')) { // BMP
+    } else*/ if ((magic[0]=='B') && (magic[1]=='M')) { // BMP
         bmp_read(img, path);
     } else if ((magic[0]==0xFF) && (magic[1]==0xD8)) { // JPEG
         // jpeg_read(img, path);
-        int err = picojpeg_util_read(img, path);
+        int err = picojpeg_util_read(img, file);
+        int tmp;
+        vfs_internal_close(file, &tmp);
         if( err != 0)
             mp_raise_OSError(err);
     } else {

@@ -16,6 +16,8 @@
 
 #include "vfs_internal.h"
 #include "mperrno.h"
+#include "omv_boardconfig.h"
+#include "framebuffer.h"
 
 //------------------------------------------------------------------------------
 #ifndef max
@@ -69,7 +71,10 @@ typedef struct {
    mp_obj_t file;
    uint     size;
    uint     curr;
-}file_info_t;
+}file_info_t __attribute__((align(8)));
+
+
+static file_info_t f_info;
 //------------------------------------------------------------------------------
 unsigned char pjpeg_need_bytes_callback(unsigned char* pBuf, unsigned char buf_size, unsigned char *pBytes_actually_read, void *pCallback_data)
 {
@@ -99,7 +104,7 @@ unsigned char pjpeg_need_bytes_callback(unsigned char* pBuf, unsigned char buf_s
 // If reduce is non-zero, the image will be more quickly decoded at approximately
 // 1/8 resolution (the actual returned resolution will depend on the JPEG 
 // subsampling factor).
-uint8 *pjpeg_load_from_file(const char *pFilename, int *x, int *y, int *comps, pjpeg_scan_type_t *pScan_type, int reduce, bool rgb565, int* err)
+uint8 *pjpeg_load_from_file(mp_obj_t file, int *x, int *y, int *comps, pjpeg_scan_type_t *pScan_type, int reduce, bool rgb565, uint8_t* pixels, int* err)
 {
    pjpeg_image_info_t image_info;
    int mcu_x = 0;
@@ -109,15 +114,15 @@ uint8 *pjpeg_load_from_file(const char *pFilename, int *x, int *y, int *comps, p
    uint8 status;
    uint decoded_width, decoded_height;
    uint row_blocks_per_mcu, col_blocks_per_mcu;
-   file_info_t f_info;
    uint8_t one_color_size;
 
    *x = 0;
    *y = 0;
    *comps = 0;
    if (pScan_type) *pScan_type = PJPG_GRAYSCALE;
-   f_info.file = vfs_internal_open(pFilename, "rb", err);
-   if (f_info.file == MP_OBJ_NULL || *err!=0)
+   f_info.file = file;
+   *err = 0;
+   if (f_info.file == MP_OBJ_NULL)
       return NULL;
    f_info.curr = 0;
    f_info.size = vfs_internal_size(f_info.file);
@@ -129,11 +134,8 @@ uint8 *pjpeg_load_from_file(const char *pFilename, int *x, int *y, int *comps, p
       {
          printf("Progressive JPEG files are not supported.\n");
       }
-
-      vfs_internal_close(f_info.file, err);
       return NULL;
    }
-   
    if (pScan_type)
       *pScan_type = image_info.m_scanType;
 
@@ -145,15 +147,25 @@ uint8 *pjpeg_load_from_file(const char *pFilename, int *x, int *y, int *comps, p
    else// grayscale or RGB888
       one_color_size = image_info.m_comps;
    row_pitch = decoded_width * one_color_size;
-
-   pImage = (uint8 *)xalloc(row_pitch * decoded_height);
+   if(pixels==NULL)
+   {
+      pImage = (uint8 *)xalloc(row_pitch * decoded_height);
+   }
+   else
+   {
+      if( (row_pitch * decoded_height) > (OMV_INIT_W*OMV_INIT_H*2) )
+      {
+         printf("[MaixPy] image: max supported size: %dx%x\n", OMV_INIT_W, OMV_INIT_H);
+         *err = MP_EINVAL;
+         return NULL;
+      }
+      pImage = pixels;
+   }
    if (!pImage)
    {
-      vfs_internal_close(f_info.file, err);
       *err = MP_ENOMEM;
       return NULL;
    }
-   // printf("malloc pImage:%d\n",row_pitch * decoded_height);
 
    row_blocks_per_mcu = image_info.m_MCUWidth >> 3;
    col_blocks_per_mcu = image_info.m_MCUHeight >> 3;
@@ -161,16 +173,13 @@ uint8 *pjpeg_load_from_file(const char *pFilename, int *x, int *y, int *comps, p
    {
       int y, x;
       uint8 *pDst_row;
-
       status = pjpeg_decode_mcu();
-      
       if (status)
       {
          if (status != PJPG_NO_MORE_BLOCKS)
          {
             printf("pjpeg_decode_mcu() failed with status %u\n", status);
             xfree(pImage);
-            vfs_internal_close(f_info.file, err);
             *err = EPERM;
             return NULL;
          }
@@ -181,7 +190,6 @@ uint8 *pjpeg_load_from_file(const char *pFilename, int *x, int *y, int *comps, p
       if (mcu_y >= image_info.m_MCUSPerCol)
       {
          xfree(pImage);
-         vfs_internal_close(f_info.file, err);
          *err = EPERM;
          return NULL;
       }
@@ -305,7 +313,6 @@ uint8 *pjpeg_load_from_file(const char *pFilename, int *x, int *y, int *comps, p
          mcu_y++;
       }
    }
-   vfs_internal_close(f_info.file, err);
    *err = 0;
 
    *x = decoded_width;
@@ -399,16 +406,22 @@ static void image_compare(image_compare_results *pResults, int width, int height
       pResults->peak_snr = log10(255.0f / pResults->root_mean_squared) * 20.0f;
 }
 //------------------------------------------------------------------------------
-int picojpeg_util_read(image_t* img, const char* path)
+int picojpeg_util_read(image_t* img, mp_obj_t file)
 {
    int n = 1;
-   const char *pSrc_filename;
    int width, height, comps;
    pjpeg_scan_type_t scan_type;
    const char* p = "?";
 
    int err;
-   img->data = pjpeg_load_from_file(path, &width, &height, &comps, &scan_type, 0, true, &err);
+   if( img->data == MAIN_FB()->pixels)
+   {
+      img->data = pjpeg_load_from_file(file, &width, &height, &comps, &scan_type, 0, true, img->data, &err);
+   }
+   else
+   {
+      img->data = pjpeg_load_from_file(file, &width, &height, &comps, &scan_type, 0, true, NULL, &err);
+   }
    if (!img->data)
    {
       printf("Failed loading source image!\n");
@@ -432,6 +445,12 @@ int picojpeg_util_read(image_t* img, const char* path)
       img->bpp = IMAGE_BPP_GRAYSCALE;
    else
       img->bpp = IMAGE_BPP_RGB565;
+   if( img->data == MAIN_FB()->pixels)
+   {
+      MAIN_FB()->w = img->w;
+      MAIN_FB()->h = img->h;
+      MAIN_FB()->bpp = img->bpp;
+   }
    return 0;
 }
 //------------------------------------------------------------------------------

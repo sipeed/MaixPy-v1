@@ -4,7 +4,7 @@
 #include "imlib.h"
 
 
-int picojpeg_util_read(image_t* img, const char* path);
+int picojpeg_util_read(image_t* img, mp_obj_t file);
 
 #endif
 
