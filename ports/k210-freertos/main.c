@@ -77,10 +77,8 @@ static char heap[MPY_HEAP_SIZE] __attribute__((aligned(8)));
 
 #if MICROPY_PY_THREAD 
 #define MP_TASK_PRIORITY        4
-#define MP_TASK_STACK_SIZE      (16 * 1024)
+#define MP_TASK_STACK_SIZE      (32 * 1024)
 #define MP_TASK_STACK_LEN       (MP_TASK_STACK_SIZE / sizeof(StackType_t))
-STATIC StaticTask_t mp_task_tcb;
-STATIC StackType_t mp_task_stack[MP_TASK_STACK_LEN] __attribute__((aligned (8)));
 TaskHandle_t mp_main_task_handle;
 #endif
 
@@ -238,15 +236,17 @@ void mp_task(
 	void *pvParameter
 	#endif
 	) {
-		volatile uintptr_t sp = (uint32_t)get_sp();
-
 #if MICROPY_PY_THREAD
-		mp_thread_init(&mp_task_stack[0], MP_TASK_STACK_LEN);
+		volatile void *stack_p = 0;
+        volatile void *mp_main_stack_top = &stack_p;
+		mp_thread_init(mp_main_stack_top, MP_TASK_STACK_LEN);
+#else
+		volatile* mp_main_stack_top = (uint32_t)get_sp();
 #endif
 soft_reset:
 		// initialise the stack pointer for the main thread
-		mp_stack_set_top((void *)(uint64_t)sp);
-		mp_stack_set_limit(MP_TASK_STACK_SIZE - 1024);
+		mp_stack_set_top((void *)(uint64_t)mp_main_stack_top);
+		//mp_stack_set_limit(MP_TASK_STACK_SIZE - 1024);//Not open MICROPY_STACK_CHECK
 #if MICROPY_ENABLE_GC
 		gc_init(heap, heap + sizeof(heap));
 		printk("heap0=%x\r\n",heap);
