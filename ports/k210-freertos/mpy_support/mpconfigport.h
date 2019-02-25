@@ -244,6 +244,7 @@ extern const struct _mp_obj_module_t sensor_module;
 extern const struct _mp_obj_module_t lcd_module;
 extern const struct _mp_obj_module_t time_module;
 extern const struct _mp_obj_module_t cpufreq_module;
+extern const struct _mp_obj_module_t kpu_module;
 
 #define MICROPY_PORT_BUILTIN_MODULES \
     { MP_OBJ_NEW_QSTR(MP_QSTR_uos), (mp_obj_t)&uos_module }, \
@@ -259,7 +260,7 @@ extern const struct _mp_obj_module_t cpufreq_module;
     { MP_OBJ_NEW_QSTR(MP_QSTR_lcd), (mp_obj_t)&lcd_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_clock), (mp_obj_t)&time_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_cpufreq), (mp_obj_t)&cpufreq_module }, \
-    
+    { MP_OBJ_NEW_QSTR(MP_QSTR_kpu), (mp_obj_t)&kpu_module }, \
 
 #define MICROPY_PORT_BUILTIN_MODULE_WEAK_LINKS \
     { MP_OBJ_NEW_QSTR(MP_QSTR_binascii), (mp_obj_t)&mp_module_ubinascii }, \
