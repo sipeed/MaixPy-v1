@@ -572,14 +572,14 @@ static void py_kpu_class_print(const mp_print_t *print, mp_obj_t self_in, mp_pri
 {
     py_kpu_class_obj_t *self = self_in;
     mp_printf(print,
-              "{\"x\":%d, \"y\":%d, \"w\":%d, \"h\":%d, \"classid\":%d, \"index\":%d, \"value\":%f, \"objnum\":%d}",
+              "{\"x\":%d, \"y\":%d, \"w\":%d, \"h\":%d, \"value\":%f, \"classid\":%d, \"index\":%d, \"objnum\":%d}",
               mp_obj_get_int(self->x),
               mp_obj_get_int(self->y),
               mp_obj_get_int(self->w),
               mp_obj_get_int(self->h),
+              (double)mp_obj_get_float(self->value),
               mp_obj_get_int(self->classid),
               mp_obj_get_int(self->index),
-              (double)mp_obj_get_float(self->value),
               mp_obj_get_int(self->objnum));
 }
 
@@ -771,6 +771,95 @@ static mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
         return mp_const_false;
     }
 }
+///////////////////////////////////////////////////////////////////////////////
+
+static void py_kpu_region_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind)
+{
+    py_kpu_rl_obj_t *self = self_in;
+
+    char msg[300];
+
+    uint8_t num = mp_obj_get_int(self->anchor_number);
+    if(num>0)
+    {
+    sprintf(msg,"%f",rl_arg.anchor[0]);
+    for(uint16_t i = 1; i < num * 2; i++)
+        sprintf(msg,"%s, %f",msg, rl_arg.anchor[i]);
+    }
+
+    mp_printf(print,
+              "{\"threshold\":%f, \"nms_value\":%f, \"anchor_number\":%d, \"anchor\":(%s)}",
+                rl_arg.threshold,
+                rl_arg.nms_value,
+                rl_arg.anchor_number,
+                msg);
+}
+
+static mp_obj_t py_kpu_region_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value)
+{
+    // if (value == MP_OBJ_SENTINEL) { // load
+    //     py_kpu_region_obj_t *self = self_in;
+    //     if (MP_OBJ_IS_TYPE(index, &mp_type_slice)) {
+    //         mp_bound_slice_t slice;
+    //         if (!mp_seq_get_fast_slice_indexes(py_kpu_region_obj_size, index, &slice)) {
+    //             nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "only slices with step=1 (aka None) are supported"));
+    //         }
+    //         mp_obj_tuple_t *result = mp_obj_new_tuple(slice.stop - slice.start, NULL);
+    //         mp_seq_copy(result->items, &(self->x) + slice.start, result->len, mp_obj_t);
+    //         return result;
+    //     }
+    //     switch (mp_get_index(self->base.type, py_kpu_region_obj_size, index, false)) {
+    //         case 0: return self->x1;
+    //         case 1: return self->y1;
+    //         case 2: return self->x2;
+    //         case 3: return self->y2;
+    //         case 4: return self->index;
+    //         case 5: return self->value;
+    //     }
+    // }
+    return MP_OBJ_NULL; // op not supported
+}
+
+mp_obj_t py_kpu_region_anchor(mp_obj_t self_in)
+{
+    mp_obj_t *tuple, *ret;
+
+    tuple = (mp_obj_t *)malloc(rl_arg.anchor_number * 2 * sizeof(mp_obj_t));
+
+    for (uint8_t index = 0; index < rl_arg.anchor_number * 2; index++)
+        tuple[index] = mp_obj_new_float(rl_arg.anchor[index]);
+
+    ret = mp_obj_new_tuple(rl_arg.anchor_number*2,tuple);
+
+    free(tuple);
+    return ret;
+}
+
+mp_obj_t py_kpu_region_threshold(mp_obj_t self_in) { return ((py_kpu_rl_obj_t *)self_in)->threshold; }
+mp_obj_t py_kpu_region_nms_value(mp_obj_t self_in) { return ((py_kpu_rl_obj_t *)self_in)->nms_value; }
+mp_obj_t py_kpu_region_anchor_number(mp_obj_t self_in) { return ((py_kpu_rl_obj_t *)self_in)->anchor_number; }
+
+static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_region_anchor_obj,          py_kpu_region_anchor);
+static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_region_threshold_obj,       py_kpu_region_threshold);
+static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_region_nms_value_obj,       py_kpu_region_nms_value);
+static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_region_anchor_number_obj,   py_kpu_region_anchor_number);
+
+static const mp_rom_map_elem_t py_kpu_region_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_anchor),              MP_ROM_PTR(&py_kpu_region_anchor_obj) },
+    { MP_ROM_QSTR(MP_QSTR_threshold),           MP_ROM_PTR(&py_kpu_region_threshold_obj) },
+    { MP_ROM_QSTR(MP_QSTR_nms_value),           MP_ROM_PTR(&py_kpu_region_nms_value_obj) },
+    { MP_ROM_QSTR(MP_QSTR_anchor_number),       MP_ROM_PTR(&py_kpu_region_anchor_number_obj) }
+};
+
+static MP_DEFINE_CONST_DICT(py_kpu_region_locals_dict, py_kpu_region_locals_dict_table);
+
+static const mp_obj_type_t py_kpu_region_type = {
+    { &mp_type_type },
+    .name  = MP_QSTR_kpu_region,
+    .print = py_kpu_region_print,
+    // .subscr = py_kpu_region_subscr,
+    .locals_dict = (mp_obj_t) &py_kpu_region_locals_dict
+};
 
 static mp_obj_t py_kpu_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
@@ -803,9 +892,9 @@ static mp_obj_t py_kpu_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_
 
     anchor_number = args[ARG_anchor_number].u_int;
 
-    printf("threshold: %f\n", threshold);
-    printf("nms_value: %f\n", nms_value);
-    printf("anchor_number: %d\n", anchor_number);
+    // printf("threshold: %f\n", threshold);
+    // printf("nms_value: %f\n", nms_value);
+    // printf("anchor_number: %d\n", anchor_number);
     // printf("ARG_anchor: %s\n",mp_obj_get_type_str(args[ARG_anchor].u_obj));
 
     if(anchor_number > 0)
@@ -819,7 +908,7 @@ static mp_obj_t py_kpu_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_
         {
             float tmp = mp_obj_get_float(items[index]);
             anchor[index] = tmp;
-            printf("item[%d]: %f\n",index, tmp);
+            // printf("item[%d]: %f\n",index, tmp);
         }
     }
     else
@@ -835,8 +924,31 @@ static mp_obj_t py_kpu_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_
 
     kpu_init_flag = 1;
 
-    return mp_const_true;
+    py_kpu_rl_obj_t *o = m_new_obj(py_kpu_rl_obj_t);
+
+    o->base.type = &py_kpu_region_type;
+
+    o->threshold = mp_obj_new_float(threshold);
+    o->nms_value = mp_obj_new_float(nms_value);
+    o->anchor_number = mp_obj_new_int(anchor_number);
+
+    mp_obj_t *tuple, *ret;
+
+    tuple = (mp_obj_t *)malloc(rl_arg.anchor_number * 2 * sizeof(mp_obj_t));
+
+    for (uint8_t index = 0; index < rl_arg.anchor_number*2; index++)
+        tuple[index] = mp_obj_new_float(rl_arg.anchor[index]);
+
+    ret = mp_obj_new_tuple(rl_arg.anchor_number*2,tuple);
+
+    free(tuple);
+
+    o->anchor = ret;
+
+    return o;
 }
+
+///////////////////////////////////////////////////////////////////////////////
 
 static mp_obj_t py_kpu_class_deinit(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
@@ -849,6 +961,7 @@ static mp_obj_t py_kpu_class_deinit(uint n_args, const mp_obj_t *pos_args, mp_ma
 
     return mp_const_true;
 }
+///////////////////////////////////////////////////////////////////////////////
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_load_obj, 2, py_kpu_class_load);
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_init_obj, 4, py_kpu_init);

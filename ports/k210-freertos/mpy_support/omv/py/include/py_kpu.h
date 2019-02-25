@@ -71,4 +71,10 @@ typedef struct py_kpu_class_obj {
     mp_obj_t x, y, w, h, classid, index, value, objnum;
 } __attribute__((aligned(8))) py_kpu_class_obj_t;
 
+typedef struct py_kpu_rl_obj {
+    mp_obj_base_t base;
+    mp_obj_t threshold, nms_value, anchor_number, anchor;
+} __attribute__((aligned(8))) py_kpu_rl_obj_t;
+
+
 #endif
