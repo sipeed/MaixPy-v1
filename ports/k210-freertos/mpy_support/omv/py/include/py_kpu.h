@@ -2,8 +2,11 @@
 #define __PY_KPU_H
 
 #include <stdint.h>
+
 #include "kpu.h"
 #include "py_helper.h"
+
+#include "imlib.h"
 
 typedef struct
 {
@@ -46,16 +49,8 @@ typedef struct
     float *softmax;
 } __attribute__((aligned(8))) region_layer_t;
 
-typedef struct py_kpu_class_rect
-{
-    int x1;
-    int y1;
-    int x2;
-    int y2;
-}__attribute__((aligned(8))) py_kpu_class_rect_t;
-
 typedef struct py_kpu_class_list_link_data {
-    py_kpu_class_rect_t rect;
+    rectangle_t rect;
     int classid;
     float value;
     //
@@ -63,9 +58,17 @@ typedef struct py_kpu_class_list_link_data {
     int objnum;
 } __attribute__((aligned(8))) py_kpu_class_list_link_data_t;
 
+typedef struct py_kpu_class_region_layer_arg
+{
+    float threshold;
+    float nms_value;
+    int anchor_number;
+    float *anchor;
+}__attribute__((aligned(8))) py_kpu_class_region_layer_arg_t;
+
 typedef struct py_kpu_class_obj {
     mp_obj_base_t base;
-    mp_obj_t x1, y1, x2, y2, classid, index, value, objnum;
+    mp_obj_t x, y, w, h, classid, index, value, objnum;
 } __attribute__((aligned(8))) py_kpu_class_obj_t;
 
 #endif

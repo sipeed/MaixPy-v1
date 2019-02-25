@@ -468,7 +468,7 @@ static float g_anchor[ANCHOR_NUM * 2] = {1.889, 2.5245, 2.9465, 3.94056, 3.99987
 
 #define KMODEL_SIZE (380 * 1024)
 
-#define AAA 0
+#define AAA 1
 
 #if AAA
 static uint8_t *model_data = NULL;
@@ -478,29 +478,35 @@ static uint8_t model_data[KMODEL_SIZE];
 
 static kpu_task_t mpy_kpu_task;
 static region_layer_t mpy_kpu_detect_rl;
-// static obj_info_t mpy_kpu_detect_info;
+static py_kpu_class_region_layer_arg_t rl_arg;
 
-volatile static uint32_t g_ai_done_flag = 0;
-volatile static uint8_t model_load_flag = 0;
+volatile static uint8_t g_ai_done_flag = 0;
+volatile static uint8_t model_load_flag = 0, kpu_init_flag = 0;
 
 static void ai_done(void *ctx)
 {
     g_ai_done_flag = 1;
 }
 
-static int mpy_kpu_load(uint64_t model_size)
+// 需要支持指定模型的存储地址
+static int mpy_kpu_load(uint32_t model_addr,uint32_t model_size)
 {
-#if AAA
     if (model_data == NULL)
         model_data = (uint8_t *)malloc(model_size * sizeof(uint8_t));
-#endif
-    w25qxx_read_data_dma(0xD00000, model_data, model_size, W25QXX_QUAD_FAST); //13M
 
-    kpu_model_load_from_buffer(&mpy_kpu_task, model_data, NULL);
+    w25qxx_status_t status = w25qxx_read_data_dma(model_addr, model_data, model_size, W25QXX_QUAD_FAST);
+
+    if(status != W25QXX_OK)
+            return -1;
+    
+    int ret = kpu_model_load_from_buffer(&mpy_kpu_task, model_data, NULL);
+
     model_load_flag = 1;
+
+    return ret;
 }
 
-static int mpy_kpu_init(uint8_t *rgb888_buf)
+static int mpy_kpu_task_init(uint8_t *rgb888_buf)
 {
     if (model_load_flag)
     {
@@ -509,12 +515,17 @@ static int mpy_kpu_init(uint8_t *rgb888_buf)
         mpy_kpu_task.callback = ai_done;
         kpu_single_task_init(&mpy_kpu_task);
 
-        mpy_kpu_detect_rl.anchor_number = ANCHOR_NUM;
-        mpy_kpu_detect_rl.anchor = g_anchor;
-        mpy_kpu_detect_rl.threshold = 0.5;
-        mpy_kpu_detect_rl.nms_value = 0.3;
+        mpy_kpu_detect_rl.anchor_number = rl_arg.anchor_number;
+        mpy_kpu_detect_rl.anchor = rl_arg.anchor;
+        mpy_kpu_detect_rl.threshold = rl_arg.threshold;
+        mpy_kpu_detect_rl.nms_value = rl_arg.nms_value;
         region_layer_init(&mpy_kpu_detect_rl, &mpy_kpu_task);
 
+        // printf("anchor_number:%d\nanchor:%x\nthreshold:%f\nnms_value:%f\n",
+                                                                    //    rl_arg.anchor_number,
+                                                                    //    rl_arg.anchor,
+                                                                    //    rl_arg.threshold,
+                                                                    //    rl_arg.nms_value);
         return 1;
     }
     else
@@ -536,18 +547,21 @@ static int mpy_kpu_run(obj_info_t *mpy_kpu_detect_info)
     return 1;
 }
 
-static int mpy_kpu_deint(void)
+static int mpy_kpu_deint(int free_all)
 {
     kpu_single_task_deinit(&mpy_kpu_task);
     region_layer_deinit(&mpy_kpu_detect_rl);
 
-#if AAA
-    if (model_data)
+    if (free_all && model_load_flag && kpu_init_flag)
     {
         free(model_data);
         model_data = NULL;
+        model_load_flag = 0;
+
+        free(rl_arg.anchor);
+        rl_arg.anchor = NULL;
+        kpu_init_flag = 0;
     }
-#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -558,11 +572,11 @@ static void py_kpu_class_print(const mp_print_t *print, mp_obj_t self_in, mp_pri
 {
     py_kpu_class_obj_t *self = self_in;
     mp_printf(print,
-              "{\"x1\":%d, \"y1\":%d, \"x2\":%d, \"y2\":%d, \"classid\":%d, \"index\":%d, \"value\":%f, \"objnum\":%d}",
-              mp_obj_get_int(self->x1),
-              mp_obj_get_int(self->y1),
-              mp_obj_get_int(self->x2),
-              mp_obj_get_int(self->y2),
+              "{\"x\":%d, \"y\":%d, \"w\":%d, \"h\":%d, \"classid\":%d, \"index\":%d, \"value\":%f, \"objnum\":%d}",
+              mp_obj_get_int(self->x),
+              mp_obj_get_int(self->y),
+              mp_obj_get_int(self->w),
+              mp_obj_get_int(self->h),
               mp_obj_get_int(self->classid),
               mp_obj_get_int(self->index),
               (double)mp_obj_get_float(self->value),
@@ -596,26 +610,26 @@ static mp_obj_t py_kpu_class_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t v
 
 mp_obj_t py_kpu_class_rect(mp_obj_t self_in)
 {
-    return mp_obj_new_tuple(4, (mp_obj_t[]){((py_kpu_class_obj_t *)self_in)->x1,
-                                            ((py_kpu_class_obj_t *)self_in)->y1,
-                                            ((py_kpu_class_obj_t *)self_in)->x2,
-                                            ((py_kpu_class_obj_t *)self_in)->y2});
+    return mp_obj_new_tuple(4, (mp_obj_t[]){((py_kpu_class_obj_t *)self_in)->x,
+                                            ((py_kpu_class_obj_t *)self_in)->y,
+                                            ((py_kpu_class_obj_t *)self_in)->w,
+                                            ((py_kpu_class_obj_t *)self_in)->h});
 }
 
-mp_obj_t py_kpu_class_x1(mp_obj_t self_in) { return ((py_kpu_class_obj_t *)self_in)->x1; }
-mp_obj_t py_kpu_class_y1(mp_obj_t self_in) { return ((py_kpu_class_obj_t *)self_in)->y1; }
-mp_obj_t py_kpu_class_x2(mp_obj_t self_in) { return ((py_kpu_class_obj_t *)self_in)->x2; }
-mp_obj_t py_kpu_class_y2(mp_obj_t self_in) { return ((py_kpu_class_obj_t *)self_in)->y2; }
+mp_obj_t py_kpu_class_x(mp_obj_t self_in) { return ((py_kpu_class_obj_t *)self_in)->x; }
+mp_obj_t py_kpu_class_y(mp_obj_t self_in) { return ((py_kpu_class_obj_t *)self_in)->y; }
+mp_obj_t py_kpu_class_w(mp_obj_t self_in) { return ((py_kpu_class_obj_t *)self_in)->w; }
+mp_obj_t py_kpu_class_h(mp_obj_t self_in) { return ((py_kpu_class_obj_t *)self_in)->h; }
 mp_obj_t py_kpu_class_classid(mp_obj_t self_in) { return ((py_kpu_class_obj_t *)self_in)->classid; }
 mp_obj_t py_kpu_class_index(mp_obj_t self_in) { return ((py_kpu_class_obj_t *)self_in)->index; }
 mp_obj_t py_kpu_class_value(mp_obj_t self_in) { return ((py_kpu_class_obj_t *)self_in)->value; }
 mp_obj_t py_kpu_class_objnum(mp_obj_t self_in) { return ((py_kpu_class_obj_t *)self_in)->objnum; }
 
 static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_rect_obj, py_kpu_class_rect);
-static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_x1_obj, py_kpu_class_x1);
-static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_y1_obj, py_kpu_class_y1);
-static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_x2_obj, py_kpu_class_x2);
-static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_y2_obj, py_kpu_class_y2);
+static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_x_obj, py_kpu_class_x);
+static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_y_obj, py_kpu_class_y);
+static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_w_obj, py_kpu_class_w);
+static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_h_obj, py_kpu_class_h);
 static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_classid_obj, py_kpu_class_classid);
 static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_index_obj, py_kpu_class_index);
 static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_value_obj, py_kpu_class_value);
@@ -623,10 +637,10 @@ static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_objnum_obj, py_kpu_class_objnum);
 
 static const mp_rom_map_elem_t py_kpu_class_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_rect),        MP_ROM_PTR(&py_kpu_class_rect_obj) },
-    { MP_ROM_QSTR(MP_QSTR_x1),          MP_ROM_PTR(&py_kpu_class_x1_obj) },
-    { MP_ROM_QSTR(MP_QSTR_y1),          MP_ROM_PTR(&py_kpu_class_y1_obj) },
-    { MP_ROM_QSTR(MP_QSTR_x2),          MP_ROM_PTR(&py_kpu_class_x2_obj) },
-    { MP_ROM_QSTR(MP_QSTR_y2),          MP_ROM_PTR(&py_kpu_class_y2_obj) },
+    { MP_ROM_QSTR(MP_QSTR_x),          MP_ROM_PTR(&py_kpu_class_x_obj) },
+    { MP_ROM_QSTR(MP_QSTR_y),          MP_ROM_PTR(&py_kpu_class_y_obj) },
+    { MP_ROM_QSTR(MP_QSTR_w),          MP_ROM_PTR(&py_kpu_class_w_obj) },
+    { MP_ROM_QSTR(MP_QSTR_h),          MP_ROM_PTR(&py_kpu_class_h_obj) },
     { MP_ROM_QSTR(MP_QSTR_classid),     MP_ROM_PTR(&py_kpu_class_classid_obj) },
     { MP_ROM_QSTR(MP_QSTR_index),       MP_ROM_PTR(&py_kpu_class_index_obj) },
     { MP_ROM_QSTR(MP_QSTR_value),       MP_ROM_PTR(&py_kpu_class_value_obj) },
@@ -639,7 +653,7 @@ static const mp_obj_type_t py_kpu_class_type = {
     { &mp_type_type },
     .name  = MP_QSTR_kpu_class,
     .print = py_kpu_class_print,
-    .subscr = py_kpu_class_subscr,
+    // .subscr = py_kpu_class_subscr,
     .locals_dict = (mp_obj_t) &py_kpu_class_locals_dict
 };
 
@@ -653,13 +667,11 @@ static mp_obj_t py_kpu_class_run(uint n_args, const mp_obj_t *args, mp_map_t *kw
         printf("pix_ai or pixels is NULL!\n");
         return mp_const_false;
     }
-    if (mpy_kpu_init(arg_img->pix_ai) == 0)
+    if (mpy_kpu_task_init(arg_img->pix_ai) == 0)
         return mp_const_false;
 
     static obj_info_t mpy_kpu_detect_info;
     mpy_kpu_run(&mpy_kpu_detect_info);
-
-    // fb_alloc_mark();
 
     uint8_t obj_num = 0;
     obj_num = mpy_kpu_detect_info.obj_number;
@@ -669,13 +681,15 @@ static mp_obj_t py_kpu_class_run(uint n_args, const mp_obj_t *args, mp_map_t *kw
         list_t out;
         list_init(&out, sizeof(py_kpu_class_list_link_data_t));
 
+        // fb_alloc_mark();
+
         for (uint8_t index = 0; index < obj_num; index++)
         {
             py_kpu_class_list_link_data_t lnk_data;
-            lnk_data.rect.x1 = mpy_kpu_detect_info.obj[index].x1;
-            lnk_data.rect.y1 = mpy_kpu_detect_info.obj[index].y1;
-            lnk_data.rect.x2 = mpy_kpu_detect_info.obj[index].x2;
-            lnk_data.rect.y2 = mpy_kpu_detect_info.obj[index].y2;
+            lnk_data.rect.x = mpy_kpu_detect_info.obj[index].x1;
+            lnk_data.rect.y = mpy_kpu_detect_info.obj[index].y1;
+            lnk_data.rect.w = mpy_kpu_detect_info.obj[index].x2 - mpy_kpu_detect_info.obj[index].x1;
+            lnk_data.rect.h = mpy_kpu_detect_info.obj[index].y2 - mpy_kpu_detect_info.obj[index].y1;
             lnk_data.classid = mpy_kpu_detect_info.obj[index].classid;
             lnk_data.value = mpy_kpu_detect_info.obj[index].prob;
 
@@ -704,10 +718,10 @@ static mp_obj_t py_kpu_class_run(uint n_args, const mp_obj_t *args, mp_map_t *kw
 
             o->base.type = &py_kpu_class_type;
 
-            o->x1 = mp_obj_new_int(lnk_data.rect.x1);
-            o->y1 = mp_obj_new_int(lnk_data.rect.y1);
-            o->x2 = mp_obj_new_int(lnk_data.rect.x2);
-            o->y2 = mp_obj_new_int(lnk_data.rect.y2);
+            o->x = mp_obj_new_int(lnk_data.rect.x);
+            o->y = mp_obj_new_int(lnk_data.rect.y);
+            o->w = mp_obj_new_int(lnk_data.rect.w);
+            o->h = mp_obj_new_int(lnk_data.rect.h);
             o->classid = mp_obj_new_int(lnk_data.classid);
             o->index = mp_obj_new_int(lnk_data.index);
             o->value = mp_obj_new_float(lnk_data.value);
@@ -715,37 +729,136 @@ static mp_obj_t py_kpu_class_run(uint n_args, const mp_obj_t *args, mp_map_t *kw
 
             objects_list->items[i] = o;
         }
+        //    fb_alloc_free_till_mark();
         return objects_list;
     }
     else
     {
         return mp_const_none;
     }
-    //    fb_alloc_free_till_mark();
     return mp_const_true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static mp_obj_t py_kpu_class_load()
+static mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
-    mpy_kpu_load(KMODEL_SIZE);
+    const char *path = NULL;
+
+    enum { ARG_addr, ARG_size, ARG_path};
+    static const mp_arg_t allowed_args[] = {
+        { MP_QSTR_addr, MP_ARG_INT, {.u_int = 0x0} },
+        { MP_QSTR_size, MP_ARG_INT, {.u_int = 0x0} },
+        { MP_QSTR_path, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} }
+    };
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    printf("addr: %d\r\n",args[ARG_addr].u_int);
+    printf("size: %d\r\n",args[ARG_size].u_int);
+    if(args[ARG_path].u_obj != mp_const_none )
+        printf("path: %s\r\n",mp_obj_str_get_str(args[ARG_path].u_obj));
+
+    //现在只从flash读取模型，之后要支持从文件系统加载
+    int ret = mpy_kpu_load(args[ARG_addr].u_int,args[ARG_size].u_int);
+    if(ret == 0)
+        return mp_const_true;
+    else
+    {
+        char msg[50];
+        sprintf(msg,"[MAIXPY]kpu: error at load model with %d",ret);
+        mp_raise_ValueError(msg);
+        return mp_const_false;
+    }
+}
+
+static mp_obj_t py_kpu_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
+{
+    enum { ARG_threshold, ARG_nms_value, ARG_anchor_number, ARG_anchor};
+    static const mp_arg_t allowed_args[] = {
+        { MP_QSTR_threshold,            MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        { MP_QSTR_nms_value,            MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        { MP_QSTR_anchor_number,        MP_ARG_INT, {.u_int = 0x0}           },
+        { MP_QSTR_anchor,               MP_ARG_OBJ, {.u_obj = mp_const_none} },
+    };
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    float threshold, nms_value, *anchor = NULL;
+    int anchor_number;
+
+    threshold = mp_obj_get_float(args[ARG_threshold].u_obj);
+    if(!(threshold >= 0.0 && threshold <= 1.0))
+    {
+        mp_raise_ValueError("[MAIXPY]kpu: threshold only support 0 to 1");
+        return mp_const_false;
+    }
+
+    nms_value = mp_obj_get_float(args[ARG_nms_value].u_obj);
+    if(!(nms_value >= 0.0 && nms_value <= 1.0))
+    {
+        mp_raise_ValueError("[MAIXPY]kpu: nms_value only support 0 to 1");
+        return mp_const_false;
+    }
+
+    anchor_number = args[ARG_anchor_number].u_int;
+
+    printf("threshold: %f\n", threshold);
+    printf("nms_value: %f\n", nms_value);
+    printf("anchor_number: %d\n", anchor_number);
+    // printf("ARG_anchor: %s\n",mp_obj_get_type_str(args[ARG_anchor].u_obj));
+
+    if(anchor_number > 0)
+    {
+        anchor = (float*)malloc(anchor_number * 2 * sizeof(float));
+
+        mp_obj_t *items;
+        mp_obj_get_array_fixed_n(args[ARG_anchor].u_obj, args[ARG_anchor_number].u_int*2, &items);
+    
+        for(uint8_t index; index < args[ARG_anchor_number].u_int*2; index++)
+        {
+            float tmp = mp_obj_get_float(items[index]);
+            anchor[index] = tmp;
+            printf("item[%d]: %f\n",index, tmp);
+        }
+    }
+    else
+    {
+        mp_raise_ValueError("[MAIXPY]kpu: anchor_number should > 0");
+        return mp_const_false;
+    }
+    
+    rl_arg.threshold = threshold;
+    rl_arg.nms_value = nms_value;
+    rl_arg.anchor_number = anchor_number;    
+    rl_arg.anchor = anchor;
+
+    kpu_init_flag = 1;
+
     return mp_const_true;
 }
 
-static mp_obj_t py_kpu_class_deinit()
+static mp_obj_t py_kpu_class_deinit(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
-    mpy_kpu_deint();
+    if(!MP_OBJ_IS_INT(pos_args[0]))
+        mp_raise_ValueError("[MAIXPY]kpu: deinit only support 0 or 1");
+
+    int free_all = mp_obj_get_int(pos_args[0]);
+
+    mpy_kpu_deint(free_all);
+
     return mp_const_true;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_kpu_load_obj, py_kpu_class_load);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_load_obj, 2, py_kpu_class_load);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_init_obj, 4, py_kpu_init);
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_run_obj, 1, py_kpu_class_run);
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_kpu_deinit_obj, py_kpu_class_deinit);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_deinit_obj, 0, py_kpu_class_deinit);
 
 static const mp_map_elem_t globals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__),                    MP_OBJ_NEW_QSTR(MP_QSTR_kpu) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_load),                        (mp_obj_t)&py_kpu_load_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_init),                        (mp_obj_t)&py_kpu_init_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_run),                         (mp_obj_t)&py_kpu_run_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_deinit),                      (mp_obj_t)&py_kpu_deinit_obj },
     { NULL, NULL },
