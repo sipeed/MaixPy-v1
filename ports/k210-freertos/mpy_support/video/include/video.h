@@ -23,8 +23,11 @@ extern uint8_t g_dvp_buf[OMV_INIT_W * OMV_INIT_H * 2];
 
 
 typedef enum{
-    VIDEO_STATUS_PLAY_END = -1,
-    VIDEO_STATUS_OK = 0
+    VIDEO_STATUS_PLAY_END = 0,
+    VIDEO_STATUS_PLAYING = -1,
+    VIDEO_STATUS_RESUME = -2,
+    VIDEO_STATUS_DECODE_VIDEO = -3,
+    VIDEO_STATUS_DECODE_AUDIO = -4
 }video_status_t;
 
 typedef struct{

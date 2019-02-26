@@ -44,7 +44,7 @@ int video_play_avi_init(const char* path, avi_t* avi)
     avi->video_buf = buf;
     avi->offset_movi = offset;
     avi->frame_count = 0;
-    avi->status = VIDEO_STATUS_OK;
+    avi->status = VIDEO_STATUS_RESUME;
     avi->time_us_fps_ctrl = video_hal_ticks_us();
 #ifdef VIDEO_DEBUG
     avi_debug_info(avi);
@@ -66,10 +66,13 @@ video_status_t video_play_avi(avi_t* avi)
         .x = 0,
         .y = 0
     };
-    if(avi->status != VIDEO_STATUS_OK && avi->status != VIDEO_STATUS_PLAY_END)
+    int status = VIDEO_STATUS_PLAYING;
+
+    if(avi->status != VIDEO_STATUS_RESUME && avi->status != VIDEO_STATUS_PLAYING && avi->status != VIDEO_STATUS_PLAY_END)
     {
         return avi->status;
     }
+    avi->status = VIDEO_STATUS_PLAYING;
     if(avi->stream_id == AVI_VIDS_FLAG) // video
     {
         vfs_internal_read(avi->file, avi->video_buf, avi->stream_size+8, &err);
@@ -91,6 +94,7 @@ video_status_t video_play_avi(avi_t* avi)
         avi->time_us_fps_ctrl = video_hal_ticks_us();
         video_hal_display(&img, roi);
         ++avi->frame_count;
+        status = VIDEO_STATUS_DECODE_VIDEO;
     }
     else // audio
     {//TODO:
@@ -100,19 +104,21 @@ video_status_t video_play_avi(avi_t* avi)
             video_stop_play(avi);
             return err;
         }
+        status = VIDEO_STATUS_DECODE_AUDIO;
     } 
     err = avi_get_streaminfo(avi->video_buf+avi->stream_size, avi);
     if( err != AVI_STATUS_OK)//read the next frame
     {
+        video_stop_play(avi);
         if(avi->frame_count != avi->total_frame)
         {
             printf("frame error \r\n"); 
+            avi->status = err;
             return err;
         }
         avi->status = VIDEO_STATUS_PLAY_END;
-        return VIDEO_STATUS_PLAY_END;
     }
-    return VIDEO_STATUS_OK;
+    return status;
 }
 
 
@@ -120,6 +126,7 @@ int video_stop_play(avi_t* avi)
 {
     int err;
     vfs_internal_close(avi->file, &err);
+    avi->status = VIDEO_STATUS_PLAY_END;
     return 0;
 }
 

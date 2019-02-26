@@ -26,12 +26,10 @@ static void py_video_avi_print(const mp_print_t *print, mp_obj_t self_in, mp_pri
 STATIC mp_obj_t py_video_play(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     py_video_avi_obj_t* arg_avi = (py_video_avi_obj_t*)args[0];
-    int err = video_play_avi(&arg_avi->obj);
-    if(err != VIDEO_STATUS_OK && err != VIDEO_STATUS_PLAY_END)
-        mp_raise_OSError(err);
-    if(err == VIDEO_STATUS_PLAY_END)
-        return mp_obj_new_int(1);
-    return mp_const_none;
+    int status = video_play_avi(&arg_avi->obj);
+    if(status > 0)
+        mp_raise_OSError(status);
+    return mp_obj_new_int(-status);
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_video_play_obj, 0, py_video_play);
