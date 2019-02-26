@@ -1,17 +1,17 @@
 
 #include "video.h"
 #include "lcd.h"
+#include "encoding.h"
+#include "sysctl.h"
 
-int video_display(image_t* img, video_display_roi_t img_roi)
+int video_hal_display(image_t* img, video_display_roi_t img_roi)
 {
-    /*
 	int is_cut;
     uint16_t lcd_width  = LCD_W;
     uint16_t lcd_height = LCD_H;
     int l_pad = 0, r_pad = 0;
     int t_pad = 0, b_pad = 0;
 
-    printf("video_display\n");
     if (img_roi.w > lcd_width) {
         int adjust = img_roi.w - lcd_width;
         img_roi.w -= adjust;
@@ -46,11 +46,13 @@ int video_display(image_t* img, video_display_roi_t img_roi)
             lcd_draw_pic_gray(l_pad, t_pad, img_roi.w, img_roi.h, (uint8_t *)(img->pixels));
         }
         else {
-            printf("video_display draw pic\n");
             lcd_draw_picture(l_pad, t_pad, img_roi.w, img_roi.h, (uint32_t *)(img->pixels));
-            printf("video_display draw pic end\n");
         }
     }
-    */
     return 0;
+}
+
+uint64_t inline video_hal_ticks_us(void)
+{
+    return (uint64_t)(read_csr(mcycle)/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU)/1000000));
 }

@@ -162,7 +162,13 @@ typedef struct
 	uint8_t* video_flag;          //"00dc"/"01dc"
 	uint8_t* audio_flag;          //"00wb"/"01wb"
 
-    void* file;
+	uint32_t frame_count;         //frame palyed
+	int      status;
+	uint64_t time_us_fps_ctrl;
+
+    void*    file;
+	uint8_t* video_buf;
+	uint32_t offset_movi;         //start index of movi flag
 } avi_t;
 
 

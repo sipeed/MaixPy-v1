@@ -72,7 +72,7 @@ typedef struct {
    uint8_t* buf;
    uint     size;
    uint     curr;
-}file_info_t __attribute__((align(8)));
+}file_info_t;
 
 
 //------------------------------------------------------------------------------
@@ -89,13 +89,13 @@ unsigned char pjpeg_need_bytes_callback(unsigned char* pBuf, unsigned char buf_s
       ret = vfs_internal_read(file->file, pBuf, n, &err);
       if(err!=0 || ret!=n)
       {
-         printf("read err:%d, n:%d, ret:%d\n", err, n, ret);
+         printf("read err:%d, n:%d, ret:%ld\n", err, n, ret);
          return PJPG_STREAM_READ_ERROR;
       }
    }
    else
    {
-      memcpy(pBuf, file->buf, n);
+      memcpy(pBuf, file->buf+file->curr, n);
    }
    *pBytes_actually_read = (unsigned char)(n);
    file->curr += n;
@@ -129,12 +129,12 @@ uint8 *pjpeg_load_from_file(mp_obj_t file, uint8_t* buf, uint32_t buf_len, int *
    *comps = 0;
    if (pScan_type) *pScan_type = PJPG_GRAYSCALE;
    *err = 0;
-   if(f_info.file == MP_OBJ_NULL && !buf)
+   if(file == MP_OBJ_NULL && !buf)
    {
       *err = MP_EINVAL;
       return NULL;
    }
-   if (f_info.file != MP_OBJ_NULL)
+   if (file != MP_OBJ_NULL)
    {
       f_info.file = file;
       f_info.buf  = NULL;
@@ -430,10 +430,8 @@ static void image_compare(image_compare_results *pResults, int width, int height
 //------------------------------------------------------------------------------
 int picojpeg_util_read(image_t* img, mp_obj_t file, uint8_t* buf, uint32_t buf_len)
 {
-   int n = 1;
    int width, height, comps;
    pjpeg_scan_type_t scan_type;
-   const char* p = "?";
 
    int err;
    if(file != MP_OBJ_NULL)

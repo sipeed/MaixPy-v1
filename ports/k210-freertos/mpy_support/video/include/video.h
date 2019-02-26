@@ -5,21 +5,27 @@
 
 //////////////////// VIDEO BUFF ///////////////////////
 #include "framebuffer.h"
-#define   VIDEO_BUFF()  fb_framebuffer->pixels  // we use omv module's framebuff here, size: OMV_INIT_W * OMV_INIT_H * 2
-#define   VIDEO_AVI_BUFF_SIZE  1024*60          // must <= OMV_INIT_W * OMV_INIT_H * 2
-
 #include "omv_boardconfig.h"
-extern uint8_t g_lcd_buf[OMV_INIT_W * OMV_INIT_H * 2];
-#define   IMAGE_BUFF()  g_lcd_buf
+extern uint8_t g_jpg_buf[OMV_JPEG_BUF_SIZE];
+#define   VIDEO_BUFF()  g_jpg_buf  // we use omv module's framebuff here
+#define   VIDEO_AVI_BUFF_SIZE  OMV_JPEG_BUF_SIZE
+
+extern uint8_t g_dvp_buf[OMV_INIT_W * OMV_INIT_H * 2];
+#define   IMAGE_BUFF()  g_dvp_buf
 
 #define LCD_W 320
 #define LCD_H 240
 
-
+// #define VIDEO_DEBUG
 //////////////////////////////////////////////////////
 
 #include "imlib.h" // need image_t related
 
+
+typedef enum{
+    VIDEO_STATUS_PLAY_END = -1,
+    VIDEO_STATUS_OK = 0
+}video_status_t;
 
 typedef struct{
     uint16_t x;
@@ -31,7 +37,8 @@ typedef struct{
 int video_play_avi_init(const char* path, avi_t* avi);
 int video_play_avi(avi_t* avi);
 int video_stop_play();
-int video_display(image_t* img, video_display_roi_t img_roi);
+int video_hal_display(image_t* img, video_display_roi_t img_roi);
+uint64_t video_hal_ticks_us(void);
 
 #endif
 

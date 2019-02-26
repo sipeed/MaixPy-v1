@@ -11,7 +11,7 @@ typedef enum{
     VFS_SEEK_SET = 0,
     VFS_SEEK_CUR = 1,
     VFS_SEEK_END = 2
-};
+} vfs_seek_t;
 
 mp_obj_t vfs_internal_open(const char* path, const char* mode, int* error_code);
 mp_uint_t vfs_internal_write(mp_obj_t fs, void* data, mp_uint_t length, int* error_code);

@@ -13,17 +13,24 @@ typedef struct {
 static void py_video_avi_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind)
 {
     py_video_avi_obj_t *self = (py_video_avi_obj_t*)self_in;
-    mp_printf(print, "[MaixPy] video avi");
+    avi_t* avi = &self->obj;
+
+    mp_printf(print, "[MaixPy] video_avi:\n[video] w:%d, h:%d, t:%dus, fps:%.2f, total_frame:%d, status:%d\n"
+                "[audio] type:%d, channel:%d, sample_rate:%d",
+                avi->width, avi->height, avi->sec_per_frame, 1000.0/(avi->sec_per_frame/1000.0), 
+                avi->total_frame, avi->status,
+                avi->audio_type, avi->audio_channels, avi->audio_sample_rate);
 }
 
 
 STATIC mp_obj_t py_video_play(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     py_video_avi_obj_t* arg_avi = (py_video_avi_obj_t*)args[0];
-    const char *path = mp_obj_str_get_str(args[1]);
     int err = video_play_avi(&arg_avi->obj);
-    if(err!=0)
+    if(err != VIDEO_STATUS_OK && err != VIDEO_STATUS_PLAY_END)
         mp_raise_OSError(err);
+    if(err == VIDEO_STATUS_PLAY_END)
+        return mp_obj_new_int(1);
     return mp_const_none;
 }
 

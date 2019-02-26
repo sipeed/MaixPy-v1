@@ -7,7 +7,6 @@
 #include "lib/utils/pyexec.h"
 #include "mphalport.h"
 #include "uarths.h"
-#
 #include "encoding.h"
 #include "sysctl.h"
 #include "sleep.h"
