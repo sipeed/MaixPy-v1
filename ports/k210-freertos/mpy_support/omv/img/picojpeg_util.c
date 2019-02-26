@@ -69,12 +69,12 @@ typedef unsigned int uint;
 //------------------------------------------------------------------------------
 typedef struct {
    mp_obj_t file;
+   uint8_t* buf;
    uint     size;
    uint     curr;
 }file_info_t __attribute__((align(8)));
 
 
-static file_info_t f_info;
 //------------------------------------------------------------------------------
 unsigned char pjpeg_need_bytes_callback(unsigned char* pBuf, unsigned char buf_size, unsigned char *pBytes_actually_read, void *pCallback_data)
 {
@@ -84,11 +84,18 @@ unsigned char pjpeg_need_bytes_callback(unsigned char* pBuf, unsigned char buf_s
    int err;
    
    n = min(file->size - file->curr, buf_size);
-   ret = vfs_internal_read(file->file, pBuf, n, &err);
-   if(err!=0 || ret!=n)
+   if(file->file != MP_OBJ_NULL)
    {
-      printf("read err:%d, n:%d, ret:%d\n", err, n, ret);
-      return PJPG_STREAM_READ_ERROR;
+      ret = vfs_internal_read(file->file, pBuf, n, &err);
+      if(err!=0 || ret!=n)
+      {
+         printf("read err:%d, n:%d, ret:%d\n", err, n, ret);
+         return PJPG_STREAM_READ_ERROR;
+      }
+   }
+   else
+   {
+      memcpy(pBuf, file->buf, n);
    }
    *pBytes_actually_read = (unsigned char)(n);
    file->curr += n;
@@ -104,7 +111,7 @@ unsigned char pjpeg_need_bytes_callback(unsigned char* pBuf, unsigned char buf_s
 // If reduce is non-zero, the image will be more quickly decoded at approximately
 // 1/8 resolution (the actual returned resolution will depend on the JPEG 
 // subsampling factor).
-uint8 *pjpeg_load_from_file(mp_obj_t file, int *x, int *y, int *comps, pjpeg_scan_type_t *pScan_type, int reduce, bool rgb565, uint8_t* pixels, int* err)
+uint8 *pjpeg_load_from_file(mp_obj_t file, uint8_t* buf, uint32_t buf_len, int *x, int *y, int *comps, pjpeg_scan_type_t *pScan_type, int reduce, bool rgb565, uint8_t* pixels, int* err)
 {
    pjpeg_image_info_t image_info;
    int mcu_x = 0;
@@ -115,17 +122,32 @@ uint8 *pjpeg_load_from_file(mp_obj_t file, int *x, int *y, int *comps, pjpeg_sca
    uint decoded_width, decoded_height;
    uint row_blocks_per_mcu, col_blocks_per_mcu;
    uint8_t one_color_size;
+   file_info_t f_info;
 
    *x = 0;
    *y = 0;
    *comps = 0;
    if (pScan_type) *pScan_type = PJPG_GRAYSCALE;
-   f_info.file = file;
    *err = 0;
-   if (f_info.file == MP_OBJ_NULL)
+   if(f_info.file == MP_OBJ_NULL && !buf)
+   {
+      *err = MP_EINVAL;
       return NULL;
+   }
+   if (f_info.file != MP_OBJ_NULL)
+   {
+      f_info.file = file;
+      f_info.buf  = NULL;
+      f_info.size = vfs_internal_size(f_info.file);
+   }
+   else
+   {
+      f_info.file  = MP_OBJ_NULL;
+      f_info.buf  = buf;
+      f_info.size = buf_len;
+   }
    f_info.curr = 0;
-   f_info.size = vfs_internal_size(f_info.file);
+   
    status = pjpeg_decode_init(&image_info, pjpeg_need_bytes_callback, &f_info, (unsigned char)reduce);
    if (status)
    {
@@ -406,7 +428,7 @@ static void image_compare(image_compare_results *pResults, int width, int height
       pResults->peak_snr = log10(255.0f / pResults->root_mean_squared) * 20.0f;
 }
 //------------------------------------------------------------------------------
-int picojpeg_util_read(image_t* img, mp_obj_t file)
+int picojpeg_util_read(image_t* img, mp_obj_t file, uint8_t* buf, uint32_t buf_len)
 {
    int n = 1;
    int width, height, comps;
@@ -414,14 +436,34 @@ int picojpeg_util_read(image_t* img, mp_obj_t file)
    const char* p = "?";
 
    int err;
-   if( img->data == MAIN_FB()->pixels)
+   if(file != MP_OBJ_NULL)
    {
-      img->data = pjpeg_load_from_file(file, &width, &height, &comps, &scan_type, 0, true, img->data, &err);
+      if( img->data)
+      {
+         img->data = pjpeg_load_from_file(file, NULL, 0, &width, &height, &comps, &scan_type, 0, true, img->data, &err);
+      }
+      else
+      {
+         img->data = pjpeg_load_from_file(file, NULL, 0, &width, &height, &comps, &scan_type, 0, true, NULL, &err);
+      }
+   }
+   else if(buf)
+   {
+      if( img->data)
+      {
+         img->data = pjpeg_load_from_file(MP_OBJ_NULL, buf, buf_len, &width, &height, &comps, &scan_type, 0, true, img->data, &err);
+      }
+      else
+      {
+         img->data = pjpeg_load_from_file(MP_OBJ_NULL, buf, buf_len, &width, &height, &comps, &scan_type, 0, true, NULL, &err);
+      }
    }
    else
    {
-      img->data = pjpeg_load_from_file(file, &width, &height, &comps, &scan_type, 0, true, NULL, &err);
+      err = MP_EINVAL;
+      return err;
    }
+   
    if (!img->data)
    {
       printf("Failed loading source image!\n");

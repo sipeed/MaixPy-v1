@@ -631,7 +631,7 @@ void imlib_load_image(image_t *img, const char *path, mp_obj_t file)
         bmp_read(img, path);
     } else if ((magic[0]==0xFF) && (magic[1]==0xD8)) { // JPEG
         // jpeg_read(img, path);
-        int err = picojpeg_util_read(img, file);
+        int err = picojpeg_util_read(img, file, NULL, 0);
         int tmp;
         if(!is_file_obj)
             vfs_internal_close(file, &tmp);

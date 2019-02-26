@@ -1,11 +1,13 @@
 
 #include "avi.h"
+#include "stdio.h"
 
 uint8_t* const AVI_VIDS_FLAG_TBL[2]={"00dc","01dc"};
 uint8_t* const AVI_AUDS_FLAG_TBL[2]={"00wb","01wb"};
 
 int avi_init(uint8_t* buf, uint32_t size, avi_t* avi)
 {
+	
     uint32_t offset;
     uint8_t* buf_start = buf;
 	avi_status_t res=AVI_STATUS_OK;
@@ -44,7 +46,7 @@ int avi_init(uint8_t* buf, uint32_t size, avi_t* avi)
 		if(strh_header->handler!=AVI_FORMAT_MJPG)return AVI_STATUS_ERR_FORMAT;
 		avi->video_flag=(uint8_t*)AVI_VIDS_FLAG_TBL[0];
 		avi->audio_flag=(uint8_t*)AVI_AUDS_FLAG_TBL[1];
-		bmp_header=(bmp_header_t*)(buf+12+strh_header->block_size+8);
+		bmp_header=(strf_bmp_header_t*)(buf+12+strh_header->block_size+8);
 		if(bmp_header->block_id!=AVI_STRF_ID)return AVI_STATUS_ERR_STRF;
 		avi->width=bmp_header->bmi_header.width;
 		avi->height=bmp_header->bmi_header.height; 
@@ -102,8 +104,12 @@ int avi_init(uint8_t* buf, uint32_t size, avi_t* avi)
 		buf_start+=offset+4;
 		avi->audio_buf_size=*((uint32_t*)buf_start);						//得到音频流buf大小.
 	}		
-	printf("avi init ok\r\n");
-	printf("avi->SecPerFrame:%d\r\n",avi->sec_per_frame);
+	return res;
+}
+
+void avi_debug_info(avi_t* avi)
+{
+    printf("avi->SecPerFrame:%d\r\n",avi->sec_per_frame);
 	printf("avi->TotalFrame:%d\r\n",avi->total_frame);
 	printf("avi->Width:%d\r\n",avi->width);
 	printf("avi->Height:%d\r\n",avi->height);
@@ -113,12 +119,10 @@ int avi_init(uint8_t* buf, uint32_t size, avi_t* avi)
 	printf("avi->AudioBufSize:%d\r\n",avi->audio_buf_size);
 	printf("avi->VideoFLAG:%s\r\n",avi->video_flag); 
 	printf("avi->AudioFLAG:%s\r\n",avi->audio_flag); 
-	return res;
-}
 
-void avi_debug_info(avi_t* avi)
-{
-
+    printf("\nfps:%.2f\n", 1000.0/(avi->sec_per_frame/1000));
+    printf("audio channels:%d\n", avi->audio_channels);
+    printf("audio sample rate:%d\n", avi->audio_sample_rate*10);
 }
 
 
@@ -136,4 +140,19 @@ uint32_t avi_srarch_id(uint8_t* buf, uint32_t size, uint8_t* id)
 	}
 	return 0;
 }
+
+#define	 MAKEWORD(ptr)	(uint16_t)(((uint16_t)*((uint8_t*)(ptr))<<8)|(uint16_t)*(uint8_t*)((ptr)+1))
+#define  MAKEDWORD(ptr)	(uint32_t)(((uint16_t)*(uint8_t*)(ptr)|(((uint16_t)*(uint8_t*)(ptr+1))<<8)|\
+						(((uint16_t)*(uint8_t*)(ptr+2))<<16)|(((uint16_t)*(uint8_t*)(ptr+3))<<24))) 
+
+int avi_get_streaminfo(uint8_t* buf, avi_t* avi)
+{
+	avi->stream_id=MAKEWORD(buf+2);			//得到流类型
+	avi->stream_size=MAKEDWORD(buf+4);		//得到流大小 
+	if(avi->stream_size%2)avi->stream_size++;	//奇数加1(avi->StreamSize,必须是偶数)
+	if(avi->stream_id==AVI_VIDS_FLAG||avi->stream_id==AVI_AUDS_FLAG)
+        return AVI_STATUS_OK;
+	return AVI_STATUS_ERR_STREAM;	
+}
+
 

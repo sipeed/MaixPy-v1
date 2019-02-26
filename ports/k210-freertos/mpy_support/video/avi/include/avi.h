@@ -19,6 +19,9 @@
 #define AVI_VIDS_STREAM		0X73646976
 #define AVI_AUDS_STREAM		0X73647561
 
+#define AVI_VIDS_FLAG		0X6463
+#define AVI_AUDS_FLAG		0X7762
+
 #define AVI_FORMAT_MJPG		0X47504A4D
 
 
@@ -165,6 +168,7 @@ typedef struct
 
 int avi_init(uint8_t* buff, uint32_t size, avi_t* avi);
 uint32_t avi_srarch_id(uint8_t* buf, uint32_t size, uint8_t* id);
+int avi_get_streaminfo(uint8_t* buf, avi_t* avi);
 void avi_debug_info(avi_t* avi);
 
 #endif
