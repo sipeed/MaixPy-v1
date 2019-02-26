@@ -268,6 +268,20 @@ extern const uint8_t g826_table[256];
 
 #define COLOR_R8_G8_B8_TO_RGB565(r8, g8, b8) COLOR_R5_G6_B5_TO_RGB565(COLOR_R8_TO_R5(r8), COLOR_G8_TO_G6(g8), COLOR_B8_TO_B5(b8))
 
+#ifdef IMLIB_ENABLE_YUV_LAB_FUNC
+
+extern int8_t lab_table(uint32_t idx);
+extern int8_t yuv_table(uint32_t idx);
+
+#define COLOR_RGB565_TO_L(pixel) lab_table((pixel) * 3)
+#define COLOR_RGB565_TO_A(pixel) lab_table(((pixel) * 3) + 1)
+#define COLOR_RGB565_TO_B(pixel) lab_table(((pixel) * 3) + 2)
+#define COLOR_RGB565_TO_Y(pixel) yuv_table((pixel) * 3)
+#define COLOR_RGB565_TO_U(pixel) yuv_table(((pixel) * 3) + 1)
+#define COLOR_RGB565_TO_V(pixel) yuv_table(((pixel) * 3) + 2)
+
+#else
+
 extern const int8_t lab_table[196608];
 extern const int8_t yuv_table[196608];
 
@@ -278,6 +292,7 @@ extern const int8_t yuv_table[196608];
 #define COLOR_RGB565_TO_U(pixel) yuv_table[((pixel) * 3) + 1]
 #define COLOR_RGB565_TO_V(pixel) yuv_table[((pixel) * 3) + 2]
 
+#endif
 // https://en.wikipedia.org/wiki/Lab_color_space -> CIELAB-CIEXYZ conversions
 // https://en.wikipedia.org/wiki/SRGB -> Specification of the transformation
 
@@ -885,9 +900,17 @@ extern const int kernel_high_pass_3[9];
        __typeof__ (img1) _img1 = (img1); \
        (_img0->w==_img1->w)&&(_img0->h==_img1->h)&&(_img0->bpp==_img1->bpp); })
 
+#ifdef IMLIB_ENABLE_YUV_LAB_FUNC
+
+#define IM_TO_GS_PIXEL(img, x, y)    \
+    (img->bpp == 1 ? img->pixels[((y)*img->w)+(x)] : (yuv_table(((uint16_t*)img->pixels)[((y)*img->w)+(x)] * 3) + 128))
+
+#else
+
 #define IM_TO_GS_PIXEL(img, x, y)    \
     (img->bpp == 1 ? img->pixels[((y)*img->w)+(x)] : (yuv_table[((uint16_t*)img->pixels)[((y)*img->w)+(x)] * 3] + 128))
 
+#endif
 typedef struct simple_color {
     uint8_t G;          // Gray
     union {
