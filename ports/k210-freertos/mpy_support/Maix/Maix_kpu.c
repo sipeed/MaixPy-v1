@@ -963,17 +963,26 @@ static mp_obj_t py_kpu_class_deinit(uint n_args, const mp_obj_t *pos_args, mp_ma
 }
 ///////////////////////////////////////////////////////////////////////////////
 
+
+static mp_obj_t py_kpu_forward()
+{
+    mp_raise_ValueError("[MAIXPY]kpu: not support forward now!");
+    return mp_const_false;
+}
+
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_load_obj, 2, py_kpu_class_load);
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_init_obj, 4, py_kpu_init);
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_run_obj, 1, py_kpu_class_run);
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_deinit_obj, 0, py_kpu_class_deinit);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_kpu_forward_obj,py_kpu_forward);
 
 static const mp_map_elem_t globals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__),                    MP_OBJ_NEW_QSTR(MP_QSTR_kpu) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_load),                        (mp_obj_t)&py_kpu_load_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_init),                        (mp_obj_t)&py_kpu_init_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_run),                         (mp_obj_t)&py_kpu_run_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_init_yolo2),                   (mp_obj_t)&py_kpu_init_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_run_yolo2),                    (mp_obj_t)&py_kpu_run_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_deinit),                      (mp_obj_t)&py_kpu_deinit_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_forward),                      (mp_obj_t)&py_kpu_forward_obj },
     { NULL, NULL },
 };
 STATIC MP_DEFINE_CONST_DICT(globals_dict, globals_dict_table);
