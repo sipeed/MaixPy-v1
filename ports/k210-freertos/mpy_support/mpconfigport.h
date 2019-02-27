@@ -246,6 +246,7 @@ extern const struct _mp_obj_module_t time_module;
 extern const struct _mp_obj_module_t cpufreq_module;
 extern const struct _mp_obj_module_t video_module;
 extern const struct _mp_obj_module_t kpu_module;
+extern const struct _mp_obj_module_t nes_module;
 
 #define MICROPY_PORT_BUILTIN_MODULES \
     { MP_OBJ_NEW_QSTR(MP_QSTR_uos), (mp_obj_t)&uos_module }, \
@@ -263,6 +264,8 @@ extern const struct _mp_obj_module_t kpu_module;
     { MP_OBJ_NEW_QSTR(MP_QSTR_cpufreq), (mp_obj_t)&cpufreq_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_video), (mp_obj_t)&video_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_kpu), (mp_obj_t)&kpu_module }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_nes), (mp_obj_t)&nes_module }, \
+    
 
 
 #define MICROPY_PORT_BUILTIN_MODULE_WEAK_LINKS \

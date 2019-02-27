@@ -1406,13 +1406,12 @@ wifi_en=GPIO(GPIO.GPIO0,GPIO.OUT)
 wifi_en.value(0)
 v = video.open("/sd/badapple.avi")
 print(v)
-try:
-    while True:
-        if v.play() == 0:
-	     break
-except Exception as e:
-    v.__del__()
-    del v
+v.volume(50)
+while True:
+    if v.play() == 0:
+        break
+v.__del__()
+del v
 ```
 
 
@@ -1461,6 +1460,22 @@ while tmp:
     tim = time.ticks_ms()
 
 f.close()
+
+```
+
+
+## nes emulator
+
+```python
+import nes
+from Maix import GPIO
+
+fm.register(8,  fm.fpioa.GPIO0)
+wifi_en=GPIO(GPIO.GPIO0,GPIO.OUT)
+wifi_en.value(0)
+
+nes.init(0)
+nes.run("mario")
 
 ```
 
