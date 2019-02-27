@@ -38,7 +38,7 @@ int video_play_avi_init(const char* path, avi_t* avi)
     vfs_internal_seek(file, offset+12, VFS_SEEK_SET, &err);
     if(avi->audio_sample_rate)//init audio device
     {
-        //TODO: init i2s
+        video_hal_audio_init(avi);
     }
     avi->file = (void*)file;
     avi->video_buf = buf;
@@ -46,6 +46,8 @@ int video_play_avi_init(const char* path, avi_t* avi)
     avi->frame_count = 0;
     avi->status = VIDEO_STATUS_RESUME;
     avi->time_us_fps_ctrl = video_hal_ticks_us();
+    avi->volume = 80;
+    avi->audio_count = 0;
 #ifdef VIDEO_DEBUG
     avi_debug_info(avi);
 #endif
@@ -67,6 +69,8 @@ video_status_t video_play_avi(avi_t* avi)
         .y = 0
     };
     int status = VIDEO_STATUS_PLAYING;
+    uint8_t tmp_u8;
+    uint8_t* pbuf;
 
     if(avi->status != VIDEO_STATUS_RESUME && avi->status != VIDEO_STATUS_PLAYING && avi->status != VIDEO_STATUS_PLAY_END)
     {
@@ -75,6 +79,7 @@ video_status_t video_play_avi(avi_t* avi)
     avi->status = VIDEO_STATUS_PLAYING;
     if(avi->stream_id == AVI_VIDS_FLAG) // video
     {
+        pbuf = avi->video_buf;
         vfs_internal_read(avi->file, avi->video_buf, avi->stream_size+8, &err);
         if( err != 0)
         {
@@ -98,15 +103,35 @@ video_status_t video_play_avi(avi_t* avi)
     }
     else // audio
     {//TODO:
-        vfs_internal_read(avi->file, avi->video_buf, avi->stream_size+8, &err);
+        
+        if(++avi->index_buf_save > 3)
+            avi->index_buf_save = 0;
+        do
+        {
+            tmp_u8 = avi->index_buf_play;
+            if(tmp_u8)
+                --tmp_u8;
+            else
+                tmp_u8 = 3;
+        }while(avi->index_buf_save == tmp_u8);//buffer full, wait for play complete
+        vfs_internal_read(avi->file, avi->audio_buf[avi->index_buf_save], avi->stream_size+8, &err);
         if( err != 0)
         {
             video_stop_play(avi);
             return err;
         }
+        avi->audio_buf_len[avi->index_buf_save] = avi->stream_size;
+        if(avi->audio_count == 0)//first once play
+        {
+            ++avi->index_buf_play;
+            video_hal_audio_play(avi->audio_buf[avi->index_buf_play], avi->audio_buf_len[avi->index_buf_play]);
+        }
+        ++avi->audio_count;
+        pbuf = avi->audio_buf[avi->index_buf_save];
+        // printf("save:%d %d\n", avi->index_buf_save, avi->audio_buf_len[avi->index_buf_save]);
         status = VIDEO_STATUS_DECODE_AUDIO;
     } 
-    err = avi_get_streaminfo(avi->video_buf+avi->stream_size, avi);
+    err = avi_get_streaminfo(pbuf + avi->stream_size, avi);
     if( err != AVI_STATUS_OK)//read the next frame
     {
         video_stop_play(avi);
@@ -127,6 +152,7 @@ int video_stop_play(avi_t* avi)
     int err;
     vfs_internal_close(avi->file, &err);
     avi->status = VIDEO_STATUS_PLAY_END;
+    video_hal_audio_deinit(avi);
     return 0;
 }
 

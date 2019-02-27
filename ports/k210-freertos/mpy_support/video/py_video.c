@@ -18,7 +18,7 @@ static void py_video_avi_print(const mp_print_t *print, mp_obj_t self_in, mp_pri
     mp_printf(print, "[MaixPy] video_avi:\n[video] w:%d, h:%d, t:%dus, fps:%.2f, total_frame:%d, status:%d\n"
                 "[audio] type:%d, channel:%d, sample_rate:%d",
                 avi->width, avi->height, avi->sec_per_frame, 1000.0/(avi->sec_per_frame/1000.0), 
-                avi->total_frame, avi->status,
+                avi->total_frame, -avi->status,
                 avi->audio_type, avi->audio_channels, avi->audio_sample_rate);
 }
 
@@ -34,8 +34,37 @@ STATIC mp_obj_t py_video_play(uint n_args, const mp_obj_t *args, mp_map_t *kw_ar
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_video_play_obj, 0, py_video_play);
 
+STATIC mp_obj_t py_video_volume(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
+{
+    py_video_avi_obj_t* arg_avi = (py_video_avi_obj_t*)args[0];
+    avi_t* avi = &arg_avi->obj;
+    int volume = 100;
+    if( n_args > 1)
+    {
+        avi->volume = mp_obj_get_int(args[1]);
+    }
+    volume = avi->volume;
+    return mp_obj_new_int(volume);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_video_volume_obj, 0, py_video_volume);
+
+STATIC mp_obj_t py_video_del(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
+{
+    py_video_avi_obj_t* arg_avi = (py_video_avi_obj_t*)args[0];
+    avi_t* avi = &arg_avi->obj;
+    video_hal_audio_deinit(avi);
+    memset(avi, 0, sizeof(avi_t));
+    m_del_obj(py_video_avi_obj_t, arg_avi);
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_video_del_obj, 0, py_video_del);
+
 static const mp_rom_map_elem_t locals_dict_table[] = {
-    {MP_OBJ_NEW_QSTR(MP_QSTR_play),  (&py_video_play_obj)}
+    {MP_OBJ_NEW_QSTR(MP_QSTR___del__),  (&py_video_del_obj)},
+    {MP_OBJ_NEW_QSTR(MP_QSTR_play),  (&py_video_play_obj)},
+    {MP_OBJ_NEW_QSTR(MP_QSTR_volume),  (&py_video_volume_obj)}
 };
 
 STATIC MP_DEFINE_CONST_DICT(locals_dict, locals_dict_table);

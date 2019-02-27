@@ -169,6 +169,13 @@ typedef struct
     void*    file;
 	uint8_t* video_buf;
 	uint32_t offset_movi;         //start index of movi flag
+
+	uint8_t* audio_buf[4];
+	uint32_t audio_buf_len[4];
+	uint8_t  index_buf_save;
+	volatile uint8_t  index_buf_play;
+	uint32_t audio_count;
+	uint8_t  volume;
 } avi_t;
 
 
