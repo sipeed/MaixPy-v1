@@ -5,6 +5,7 @@
 #include <math.h>
 
 #include "sipeed_yolo2.h"
+#include "sipeed_conf.h"
 
 #include "w25qxx.h"
 #include "lcd.h"
@@ -499,7 +500,7 @@ STATIC mp_obj_t py_kpu_class_run_yolo2(uint n_args, const mp_obj_t *pos_args, mp
         g_ai_done_flag = 0;
 
         kpu_task->src = arg_img->pix_ai;
-        kpu_task->dma_ch = 5;
+        kpu_task->dma_ch = K210_DMA_CH_KPU;
         kpu_task->callback = ai_done;
         kpu_single_task_init(kpu_task);
 
