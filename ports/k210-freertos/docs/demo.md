@@ -1391,6 +1391,78 @@ while True:
 ```
 
 
+## video
+
+```python
+
+import video,time
+from Maix import GPIO
+
+fm.register(34,  fm.fpioa.I2S0_OUT_D1)
+fm.register(35,  fm.fpioa.I2S0_SCLK)
+fm.register(33,  fm.fpioa.I2S0_WS)
+fm.register(8,  fm.fpioa.GPIO0)
+wifi_en=GPIO(GPIO.GPIO0,GPIO.OUT)
+wifi_en.value(0)
+v = video.open("/sd/badapple.avi")
+print(v)
+try:
+    while True:
+        if v.play() == 0:
+	     break
+except Exception as e:
+    v.__del__()
+    del v
+```
+
+
+```python
+
+import os, sys, time, image, lcd
+
+f = open("badapple.avi", "rb")
+index = 0
+tmp = f.read(4)
+while tmp !=b'movi':
+    index += 1
+    a = f.seek(index,0)
+    tmp = f.read(4)
+index += 4
+movi_location = index
+f.seek(0,2)
+f_size = f.tell()
+index = f_size
+while tmp != b'idx1':
+    index -= 1
+    a = f.seek(index, 0)
+    tmp = f.read(4)
+count = 0
+lcd.init()
+tim = time.ticks_ms()
+while tmp:
+    while tmp != b'00dc':
+        index += 1
+        a = f.seek(index, 0)
+        tmp = f.read(4)
+    index += 8       #dwflag +4bytes from dwflag--->dwoffset=frame_loaction
+    a = f.seek(index,0)
+    tmp = f.read(4)
+    frame_location = movi_location + int.from_bytes(tmp, "little")
+    a = f.seek(frame_location,0)
+    tmp = f.read(4)
+    frame_size = int.from_bytes(tmp, 'little')
+    frame_location += 4 #//only data length removed
+    a = f.seek(frame_location, 0)
+    img = image.Image(f, copy_to_fb=1)
+    a = img.draw_string(2,2,"%.2ffps" %(1000/(time.ticks_ms()-tim)), color=(255,0,0), scale=2)
+    lcd.display(img)
+    a = f.seek(index, 0)
+    count += 1
+    tim = time.ticks_ms()
+
+f.close()
+
+```
 
 
 
