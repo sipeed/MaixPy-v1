@@ -1,30 +1,18 @@
 /*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * Development of the code in this file was sponsored by Microbric Pty Ltd
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2016 Damien P. George
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+* Copyright 2019 Sipeed Co.,Ltd.
+
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 #include <stdio.h>
 #include <string.h>
@@ -90,7 +78,7 @@ STATIC mp_obj_t Maix_fft_run(size_t n_args, const mp_obj_t *pos_args, mp_map_t *
     {
         mp_raise_ValueError("[MAIXPY]FFT:Buffer length must be a multiple of 4");
     }
-    //how to get the length of i2s buffer?
+    // how to get the length of i2s buffer?
     if(byte_len < points * 4)
     {
         printf("[MAIXPY]FFT:Zero padding\n");
@@ -98,21 +86,17 @@ STATIC mp_obj_t Maix_fft_run(size_t n_args, const mp_obj_t *pos_args, mp_map_t *
     }
 
     //------------------get data----------------------
-    complex_hard_t* data_hard = (complex_hard_t*)m_new(complex_hard_t,points);//m_new
     uint64_t* buffer_input = (uint64_t*)m_new(uint64_t, points);//m_new
     uint64_t* buffer_output = (uint64_t*)m_new(uint64_t ,points);//m_new
-    // complex_hard_t* data_hard = (complex_hard_t*)malloc(fft_points * sizeof(complex_hard_t));//m_new
-    // uint64_t* buffer_input = (uint64_t*)malloc(fft_points * sizeof(uint64_t));//m_new
-    // uint64_t* buffer_output = (uint64_t*)malloc(fft_points * sizeof(uint64_t));//m_new
     fft_data_t * input_data = NULL;
     fft_data_t * output_data = NULL;
     for(int i = 0; i < points / 2; ++i)
     {
         input_data = (fft_data_t *)&buffer_input[i];
-        input_data->R1 = byte_addr[2*i];   // data_hard[2 * i].real;
-        input_data->I1 = 0;                 // data_hard[2 * i].imag;
-        input_data->R2 = byte_addr[2*i+1]; // data_hard[2 * i + 1].real;
-        input_data->I2 = 0;                 // data_hard[2 * i + 1].imag;
+        input_data->R1 = byte_addr[2*i];    
+        input_data->I1 = 0;                  
+        input_data->R2 = byte_addr[2*i+1];  
+        input_data->I2 = 0;
     }
     //run fft
     fft_complex_uint16_dma(DMAC_CHANNEL3, DMAC_CHANNEL4,shift,direction,buffer_input,points,buffer_output);
@@ -124,16 +108,12 @@ STATIC mp_obj_t Maix_fft_run(size_t n_args, const mp_obj_t *pos_args, mp_map_t *
     for (int i = 0; i < points / 2; i++)
     {
         output_data = (fft_data_t*)&buffer_output[i];
-        data_hard[2 * i].real = output_data->R1 ;
-        data_hard[2 * i].imag = output_data->I1 ;
-        tuple_1[0] = mp_obj_new_int(data_hard[2 * i].real);
-        tuple_1[1] = mp_obj_new_int(data_hard[2 * i].imag);
+        tuple_1[0] = mp_obj_new_int(output_data->R1);
+        tuple_1[1] = mp_obj_new_int(output_data->I1);
         mp_obj_list_append(ret_list, mp_obj_new_tuple(MP_ARRAY_SIZE(tuple_1), tuple_1));
 
-        data_hard[2 * i + 1].real = output_data->R2 ;
-        data_hard[2 * i + 1].imag = output_data->I2 ;
-        tuple_2[0] = mp_obj_new_int(data_hard[2 * i + 1].real);
-        tuple_2[1] = mp_obj_new_int(data_hard[2 * i + 1].imag);
+        tuple_2[0] = mp_obj_new_int(output_data->R2);
+        tuple_2[1] = mp_obj_new_int(output_data->I2);
         mp_obj_list_append(ret_list, mp_obj_new_tuple(MP_ARRAY_SIZE(tuple_2), tuple_2));
     }
     return MP_OBJ_FROM_PTR(ret_list);
@@ -186,13 +166,12 @@ STATIC mp_obj_t Maix_fft_amplitude(const mp_obj_t list_obj)
     for(index = 0; index < list->len; index++)
     {
         list_iter = list->items[index];
-        //list_iter = list_subscr(list_obj,index,MP_OBJ_SENTINEL);
         tuple = MP_OBJ_FROM_PTR(list_iter);
         uint32_t r_val = MP_OBJ_SMALL_INT_VALUE(tuple->items[0]);
         uint32_t i_val = MP_OBJ_SMALL_INT_VALUE(tuple->items[1]);
         uint32_t amplitude = sqrt(r_val * r_val + i_val * i_val);
-        //Convert to dBFS
-        uint32_t hard_power = 20*log(2*amplitude/list->len);
+        //Convert to power
+        uint32_t hard_power = 2*amplitude/list->len;
         mp_obj_list_append(ret_list,mp_obj_new_int(hard_power));
     }
     return MP_OBJ_FROM_PTR(ret_list);
