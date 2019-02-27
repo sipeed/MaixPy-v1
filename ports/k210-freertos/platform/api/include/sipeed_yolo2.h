@@ -1,5 +1,5 @@
-#ifndef __SIPEED_KPU_H
-#define __SIPEED_KPU_H
+#ifndef __SIPEED_YOLO2_H
+#define __SIPEED_YOLO2_H
 
 #include <stdint.h>
 

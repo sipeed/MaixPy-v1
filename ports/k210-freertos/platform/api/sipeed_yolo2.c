@@ -1,4 +1,4 @@
-#include "sipeed_kpu.h"
+#include "sipeed_yolo2.h"
 
 // #include "lcd.h"
 
