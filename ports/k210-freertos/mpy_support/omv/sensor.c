@@ -96,9 +96,9 @@ static int sensor_irq(void *ctx)
 
  
 extern uint8_t* g_ai_buf_in;
-extern uint8_t* g_ai_buf_out;
+// extern uint8_t* g_ai_buf_out;
 extern uint8_t* g_dvp_buf;
-extern uint8_t* g_lcd_buf;
+// extern uint8_t* g_lcd_buf;
 extern uint8_t* g_jpg_buf;
 
 void sensor_init_fb()

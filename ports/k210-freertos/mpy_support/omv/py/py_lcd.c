@@ -25,7 +25,7 @@
 
 
 #define printf(...)
-extern uint8_t g_lcd_buf[];
+// extern uint8_t g_lcd_buf[];
 
 #define LCD_W 320
 #define LCD_H 240
