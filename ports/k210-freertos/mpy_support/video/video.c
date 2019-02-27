@@ -121,6 +121,10 @@ video_status_t video_play_avi(avi_t* avi)
             return err;
         }
         avi->audio_buf_len[avi->index_buf_save] = avi->stream_size;
+        for(uint32_t i = 0; i< avi->audio_buf_len[avi->index_buf_save]/2; ++i)
+        {
+            ((int16_t*)avi->audio_buf[avi->index_buf_save])[i] = (int16_t)( ((int16_t*)avi->audio_buf[avi->index_buf_save])[i] * (avi->volume/100.0) );
+        }
         if(avi->audio_count == 0)//first once play
         {
             ++avi->index_buf_play;

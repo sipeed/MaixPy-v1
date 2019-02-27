@@ -55,7 +55,6 @@ STATIC mp_obj_t py_video_del(uint n_args, const mp_obj_t *args, mp_map_t *kw_arg
     avi_t* avi = &arg_avi->obj;
     video_hal_audio_deinit(avi);
     memset(avi, 0, sizeof(avi_t));
-    m_del_obj(py_video_avi_obj_t, arg_avi);
     return mp_const_none;
 }
 
