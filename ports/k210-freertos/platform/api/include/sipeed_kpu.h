@@ -1,12 +1,9 @@
-#ifndef __PY_KPU_H
-#define __PY_KPU_H
+#ifndef __SIPEED_KPU_H
+#define __SIPEED_KPU_H
 
 #include <stdint.h>
 
 #include "kpu.h"
-#include "py_helper.h"
-
-#include "imlib.h"
 
 typedef struct
 {
@@ -49,32 +46,11 @@ typedef struct
     float *softmax;
 } __attribute__((aligned(8))) region_layer_t;
 
-typedef struct py_kpu_class_list_link_data {
-    rectangle_t rect;
-    int classid;
-    float value;
-    //
-    int index;
-    int objnum;
-} __attribute__((aligned(8))) py_kpu_class_list_link_data_t;
+typedef void (*callback_draw_box)(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, uint32_t class, float prob);;
 
-typedef struct py_kpu_class_region_layer_arg
-{
-    float threshold;
-    float nms_value;
-    int anchor_number;
-    float *anchor;
-}__attribute__((aligned(8))) py_kpu_class_region_layer_arg_t;
-
-typedef struct py_kpu_class_obj {
-    mp_obj_base_t base;
-    mp_obj_t x, y, w, h, classid, index, value, objnum;
-} __attribute__((aligned(8))) py_kpu_class_obj_t;
-
-typedef struct py_kpu_rl_obj {
-    mp_obj_base_t base;
-    mp_obj_t threshold, nms_value, anchor_number, anchor;
-} __attribute__((aligned(8))) py_kpu_rl_obj_t;
-
+int region_layer_init(region_layer_t *rl, kpu_task_t *task);
+void region_layer_deinit(region_layer_t *rl);
+void region_layer_run(region_layer_t *rl, obj_info_t *obj_info);
+void region_layer_draw_boxes(region_layer_t *rl, callback_draw_box callback);
 
 #endif
