@@ -222,7 +222,7 @@ STATIC mp_obj_t Maix_i2s_record(size_t n_args, const mp_obj_t *pos_args, mp_map_
          ARG_time,
     };
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_points, MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_points, MP_ARG_INT, {.u_int = 512} },
         { MP_QSTR_time, MP_ARG_INT | MP_ARG_KW_ONLY, {.u_int = 0} },
     };
     //parse parameter
@@ -241,17 +241,17 @@ STATIC mp_obj_t Maix_i2s_record(size_t n_args, const mp_obj_t *pos_args, mp_map_
     }
     else if(args[ARG_time].u_int > 0)
     {
-        uint32_t times = args[ARG_time].u_int;
-        if(self->sample_rate <= 0)
-             mp_raise_ValueError("[MAIXPY]I2S:please set sample rate");
-        uint32_t sample_rate = self->sample_rate;
-        uint32_t points_sum = sample_rate * times;
-        //TODO:Determine if the length is too large
-        audio_obj->audio.buf_len = points_sum * sizeof(uint32_t);
-        audio_obj->audio.buf = self->buf;
+        // uint32_t times = args[ARG_time].u_int;
+        // if(self->sample_rate <= 0)
+        //      mp_raise_ValueError("[MAIXPY]I2S:please set sample rate");
+        // uint32_t sample_rate = self->sample_rate;
+        // uint32_t points_sum = sample_rate * times;
+        // //TODO:Determine if the length is too large
+        // audio_obj->audio.buf_len = points_sum * sizeof(uint32_t);
+        // audio_obj->audio.buf = self->buf;
     }
     i2s_receive_data_dma(self->i2s_num, audio_obj->audio.buf, audio_obj->audio.buf_len, DMAC_CHANNEL5);
-    //dmac_wait_idle(DMAC_CHANNEL5);//wait to finish recv
+    dmac_wait_idle(DMAC_CHANNEL5);//wait to finish recv
     return MP_OBJ_FROM_PTR(audio_obj);
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(Maix_i2s_record_obj,1,Maix_i2s_record);

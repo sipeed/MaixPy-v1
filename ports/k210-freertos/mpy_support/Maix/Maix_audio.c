@@ -111,7 +111,7 @@ STATIC mp_obj_t Maix_audio_to_byte(Maix_audio_obj_t* self) {
     audio_array->typecode = BYTEARRAY_TYPECODE;
     audio_array->free = 0;
     audio_array->len = audio->buf_len;
-    audio_array->items = audio->buf;    
+    audio_array->items = audio->buf;
     // audio_array->items = m_new(uint8_t, audio_array->len);
     // memcpy(audio_array->items,audio->buf,audio_array->len);
     //mp_obj_t *audio_array = mp_obj_new_bytearray(audio->buf_len, audio->buf);
