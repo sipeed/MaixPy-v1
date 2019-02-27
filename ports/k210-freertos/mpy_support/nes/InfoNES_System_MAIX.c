@@ -11,6 +11,8 @@
 #include "plic.h"
 #include "uarths.h"
 #include "bsp.h"
+#include "lcd.h"
+#include "vfs_internal.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -30,6 +32,7 @@ int waveptr=0;
 int wavflag=0;
 bool i2s_idle = true;
 bool is_exit_to_menu = true;
+BYTE* g_rom_file_content = NULL;
 
 #define _D //printf("%d\n",__LINE__)
 
@@ -54,7 +57,6 @@ int InfoNES_Menu()
 }
 
 
-extern const BYTE nes_rom[];
 /* Read ROM image file */
 int InfoNES_ReadRom( const char *pszFileName )
 {
@@ -68,10 +70,24 @@ int InfoNES_ReadRom( const char *pszFileName )
  *     0 : Normally
  *    -1 : Error
  */
+	BYTE* rom = NULL;
+	int err;
 
-
+	mp_obj_t file = vfs_internal_open(pszFileName, "rb", &err);
+	if( file == MP_OBJ_NULL || err!=0)
+		return -1;
+	mp_uint_t size = vfs_internal_size(file);
+	if(!g_rom_file_content)
+	{
+		g_rom_file_content = (BYTE*)malloc(size);
+		if(!g_rom_file_content)
+			return -1;
+	}
+	rom =g_rom_file_content;
   // Read ROM Header 
-  BYTE * rom = (BYTE*)nes_rom;
+  mp_uint_t ret = vfs_internal_read(file, (void*)rom, size, &err);
+	if(ret != size || err!=0)
+		return -1;
   memcpy( &NesHeader, rom, sizeof(NesHeader));
   if ( memcmp( NesHeader.byID, "NES\x1a", 4 ) != 0 )
   {
@@ -87,7 +103,7 @@ int InfoNES_ReadRom( const char *pszFileName )
   if ( NesHeader.byInfo1 & 4 )
   {
     //memcpy( &SRAM[ 0x1000 ], rom, 512);
-	rom += 512;
+		rom += 512;
   }
 
   // Allocate Memory for ROM Image 
@@ -109,6 +125,10 @@ int InfoNES_ReadRom( const char *pszFileName )
 /* Release a memory for ROM */
 void InfoNES_ReleaseRom()
 {
+	lcd_clear(BLACK);
+	if(g_rom_file_content)
+		free(g_rom_file_content);
+	g_rom_file_content = NULL;
 }
 
 static int exchang_data_byte(uint8_t* addr,uint32_t length)
@@ -191,6 +211,7 @@ void InfoNES_PadState( NES_DWORD *pdwPad1, NES_DWORD *pdwPad2, NES_DWORD *pdwSys
 			  dwKeyPad1 |= ( 1 << 4 );state[4]=REPEAT_N;
 			  break;
 
+			case '\n':
 			case 'm':	//start
 			  dwKeyPad1 |= ( 1 << 3 );state[3]=0;
 			  break;

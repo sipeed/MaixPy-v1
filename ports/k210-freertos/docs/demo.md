@@ -1475,7 +1475,7 @@ wifi_en=GPIO(GPIO.GPIO0,GPIO.OUT)
 wifi_en.value(0)
 
 nes.init(0)
-nes.run("mario")
+nes.run("/sd/sdkuaida.nes")
 
 ```
 
