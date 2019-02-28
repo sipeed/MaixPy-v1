@@ -5428,7 +5428,115 @@ static mp_obj_t py_image_conv3(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_conv3_obj, 2, py_image_conv3);
 
+static mp_obj_t py_image_resize(mp_obj_t img_obj, mp_obj_t *w_obj, mp_obj_t *h_obj)
+{
+	image_t* img = (image_t *) py_image_cobj(img_obj);
+	int w = mp_obj_get_int(w_obj);
+	int h = mp_obj_get_int(h_obj);
+	int w0 = img->w;
+	switch (img->bpp)
+	{
+	case IMAGE_BPP_GRAYSCALE:
+	{
+		uint8_t* out = xalloc(w*h);
+		uint8_t* in = img->pixels;
+		float sx=(float)(img->w)/w;
+		float sy=(float)(img->h)/h;
+		int x,y, x0,y0;
+		mp_obj_t image = py_image(w, h, img->bpp, out);
+		//TODO: optimize linear
+		for(y=0;y<h;y++)
+		{
+			y0 = y*sy;
+			for(x=0;x<w;x++)
+			{
+				x0 = x*sy;
+				out[y*w+x] = in[y0*w0+x0];
+			}
+		}
+		return image;
+		break;
+	}
+	default:
+		printf("only support grayscale now\r\n");
+		return mp_const_none;
+		break;
+	}
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(py_image_resize_obj, py_image_resize);
 
+static float min(uint8_t* data, uint16_t x, uint16_t y)
+{
+	int i,j;
+	float m=data[x+1];
+	//printf("#m=%d ",m);
+	for(j=1;j<y-1;j++)
+	{
+		for(i=1;i<x-1;i++)
+		{
+			if(data[j*x+i]<m){m = data[j*x+i];}
+		}
+	}
+	//printf("\r\nmin m=%d ",m);
+	return m;
+}
+
+static float max(uint8_t* data, uint16_t x, uint16_t y)
+{
+	int i,j;
+	float m=data[x+1];
+	//printf("#m=%d ",m);
+	for(j=1;j<y-1;j++)
+	{
+		for(i=1;i<x-1;i++)
+		{
+			if(data[j*x+i]>m){m = data[j*x+i];}
+		}
+	}
+	//printf("\r\nmax m=%d ",m);
+	return m;
+}
+
+#define MAX_SCALE 5
+static mp_obj_t py_image_stretch(mp_obj_t img_obj, mp_obj_t *min_obj, mp_obj_t *max_obj)
+{
+	image_t* img = (image_t *) py_image_cobj(img_obj);
+	int to_min = mp_obj_get_int(min_obj);
+	int to_max = mp_obj_get_int(max_obj);
+	int w = img->w;
+	int h = img->h;
+	switch(img->bpp)
+	{
+	case IMAGE_BPP_GRAYSCALE:
+	{
+		uint8_t min0 = min(img->pixels, w,h);
+		uint8_t max0 = max(img->pixels, w,h);
+		int x,y;
+		float scale;
+		uint8_t* data = img->pixels;
+		if(max0==min0) return mp_const_none;	//can't stretch
+		scale = (to_max-to_min)/(max0-min0);
+		//printf("min0:%d,max0:%d,s:%f\r\n",min0,max0,scale);
+		if(scale > MAX_SCALE) scale = MAX_SCALE;
+		//TODO: optimize linear
+		for(y=0;y<h;y++)
+		{
+			for(x=0;x<w;x++)
+			{
+				data[y*w+x] = (data[y*w+x]-min0)*scale+to_min;
+			}
+		}
+		return mp_const_none;
+		break;
+	}
+	default:
+		printf("only support grayscale now\r\n");
+		return mp_const_none;
+		break;
+	}
+	
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(py_image_stretch_obj, py_image_stretch);
 
 static const mp_rom_map_elem_t locals_dict_table[] = {
     /* Basic Methods */
@@ -5708,6 +5816,8 @@ static const mp_rom_map_elem_t locals_dict_table[] = {
 #endif
 	{MP_ROM_QSTR(MP_QSTR_dump_roi),    MP_ROM_PTR(&py_image_dump_roi_obj)},
 	{MP_ROM_QSTR(MP_QSTR_conv3),    MP_ROM_PTR(&py_image_conv3_obj)},
+	{MP_ROM_QSTR(MP_QSTR_resize),    MP_ROM_PTR(&py_image_resize_obj)},
+	{MP_ROM_QSTR(MP_QSTR_stretch),    MP_ROM_PTR(&py_image_stretch_obj)},
 };
 
 STATIC MP_DEFINE_CONST_DICT(locals_dict, locals_dict_table);

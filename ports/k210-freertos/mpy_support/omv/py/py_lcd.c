@@ -156,34 +156,43 @@ static mp_obj_t py_lcd_display(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
 
     rectangle_t rect;
     uint16_t x,y;
-    uint16_t y_offset;
+    point_t oft;
 	int is_cut;
+	int l_pad = 0, r_pad = 0;
+	int t_pad = 0, b_pad = 0;
     py_helper_keyword_rectangle_roi(arg_img, n_args, args, 1, kw_args, &rect);
+	py_helper_keyword_oft(arg_img, n_args, args, 2, kw_args, &oft);
     
     // Fit X. bigger or smaller, cut or pad to center
-    int l_pad = 0, r_pad = 0;
-    if (rect.w > width) {
-        int adjust = rect.w - width;
-        rect.w -= adjust;
-        rect.x += adjust / 2;
-    } else if (rect.w < width) {
-        int adjust = width - rect.w;
-        l_pad = adjust / 2;
-        r_pad = (adjust + 1) / 2;
-    }
-    printf("l_pad %d r_pad %d\n",l_pad,r_pad);
-    // Fit Y. bigger or smaller, cut or pad to center
-    int t_pad = 0, b_pad = 0;
-    if (rect.h > height) {
-        int adjust = rect.h - height;
-        rect.h -= adjust;
-        rect.y += adjust / 2;
-    } else if (rect.h < height) {
-        int adjust = height - rect.h;
-        t_pad = adjust / 2;
-        b_pad = (adjust + 1) / 2;
-    }
-    printf("t_pad %d b_pad %d\n",t_pad,b_pad);
+	if(oft.x < 0 || oft.y < 0)
+    {
+		if (rect.w > width) {
+			int adjust = rect.w - width;
+			rect.w -= adjust;
+			rect.x += adjust / 2;
+		} else if (rect.w < width) {
+			int adjust = width - rect.w;
+			l_pad = adjust / 2;
+			r_pad = (adjust + 1) / 2;
+		}
+		printf("l_pad %d r_pad %d\n",l_pad,r_pad);
+		// Fit Y. bigger or smaller, cut or pad to center
+		if (rect.h > height) {
+			int adjust = rect.h - height;
+			rect.h -= adjust;
+			rect.y += adjust / 2;
+		} else if (rect.h < height) {
+			int adjust = height - rect.h;
+			t_pad = adjust / 2;
+			b_pad = (adjust + 1) / 2;
+		}
+		printf("t_pad %d b_pad %d\n",t_pad,b_pad);
+	}
+	else
+	{
+		l_pad = oft.x;
+		t_pad = oft.y;
+	}
 	is_cut =((rect.x != 0) || (rect.y != 0) || \
 			(rect.w != arg_img->w) || (rect.h != arg_img->h));
     printf("is_cut=%d; rect:w %d h %d, x %d y%d; img: w %d h %d;\n",\
@@ -193,10 +202,13 @@ static mp_obj_t py_lcd_display(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
             return mp_const_none;
         case LCD_SHIELD:
 			//fill pad
-			lcd_fill_rectangle(0,0, width, t_pad, BLACK);
-			lcd_fill_rectangle(0,height-b_pad, width, height, BLACK);
-			lcd_fill_rectangle(0,t_pad, l_pad, height-b_pad, BLACK);
-			lcd_fill_rectangle(width-r_pad,t_pad, width, height-b_pad, BLACK);
+			if(oft.x < 0 || oft.y < 0)
+			{
+				lcd_fill_rectangle(0,0, width, t_pad, BLACK);
+				lcd_fill_rectangle(0,height-b_pad, width, height, BLACK);
+				lcd_fill_rectangle(0,t_pad, l_pad, height-b_pad, BLACK);
+				lcd_fill_rectangle(width-r_pad,t_pad, width, height-b_pad, BLACK);
+			}
             if(is_cut){	//cut from img
 				if (IM_IS_GS(arg_img)) {
 					lcd_draw_pic_grayroi(l_pad, t_pad, arg_img->w, arg_img->h, rect.x, rect.y, rect.w, rect.h, (uint8_t *)(arg_img->pixels));
