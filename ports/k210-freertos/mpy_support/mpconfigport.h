@@ -263,7 +263,7 @@ extern const struct _mp_obj_module_t nes_module;
     { MP_OBJ_NEW_QSTR(MP_QSTR_clock), (mp_obj_t)&time_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_cpufreq), (mp_obj_t)&cpufreq_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_video), (mp_obj_t)&video_module }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_kpu), (mp_obj_t)&kpu_module }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_KPU), (mp_obj_t)&kpu_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_nes), (mp_obj_t)&nes_module }, \
     
 
