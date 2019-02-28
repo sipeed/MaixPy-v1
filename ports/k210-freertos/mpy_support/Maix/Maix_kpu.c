@@ -157,25 +157,25 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
         o->model_path = mp_obj_new_str(path,strlen(path));
         o->model_addr = mp_const_none;
 
-        int err;
+        int ferr;
         mp_obj_t file;
         uint16_t tmp;
         uint8_t model_header[sizeof(kpu_model_header_t) + 1];
 
-        file = vfs_internal_open(path,"rb", &err);
-        if(file == MP_OBJ_NULL || err != 0)
-            mp_raise_OSError(err);
+        file = vfs_internal_open(path,"rb", &ferr);
+        if(file == MP_OBJ_NULL || ferr != 0)
+            mp_raise_OSError(ferr);
 
-        vfs_internal_read(file, model_header, sizeof(kpu_model_header_t), &err);
-        if( err != 0)
-            mp_raise_OSError(err);
+        vfs_internal_read(file, model_header, sizeof(kpu_model_header_t), &ferr);
+        if( ferr != 0)
+            mp_raise_OSError(ferr);
 
         model_size = kpu_model_get_size(model_header);
 
         if(model_size == -1)
         {
             err = -2;//read error
-            vfs_internal_close(file, &err);
+            vfs_internal_close(file, &ferr);
             goto error;
         }
 
@@ -186,17 +186,17 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
             goto error;
         }
 
-        vfs_internal_seek(file, 0, VFS_SEEK_SET, &err);
-        if(err != 0)
-            mp_raise_OSError(err);
+        vfs_internal_seek(file, 0, VFS_SEEK_SET, &ferr);
+        if(ferr != 0)
+            mp_raise_OSError(ferr);
 
-        vfs_internal_read(file, model_data, model_size, &err);
-        if( err != 0)
-            mp_raise_OSError(err);
+        vfs_internal_read(file, model_data, model_size, &ferr);
+        if( ferr != 0)
+            mp_raise_OSError(ferr);
 
-        vfs_internal_close(file, &err);
-        if( err != 0)
-            mp_raise_OSError(err);
+        vfs_internal_close(file, &ferr);
+        if( ferr != 0)
+            mp_raise_OSError(ferr);
     }
     else
     {
