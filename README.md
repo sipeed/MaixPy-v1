@@ -14,7 +14,7 @@ MaixPy
 
 **MaixPy, makes AIOT easier!**
 
-Maixpy is designed to make AIOT programming easier, based on the [Micropython]((http://www.micropython.org)) syntax, running on a very powerful embedded AIOT chip [K210](https://kendryte.com).
+Maixpy is designed to make AIOT programming easier, based on the [Micropython](http://www.micropython.org) syntax, running on a very powerful embedded AIOT chip [K210](https://kendryte.com).
 
 ## Simple code
 
