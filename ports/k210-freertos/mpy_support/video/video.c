@@ -28,21 +28,22 @@ int video_play_avi_init(const char* path, avi_t* avi)
         return err;
     }
     //stream
-    offset = avi_srarch_id(buf, read_size, (uint8_t*)"movi");
-    err = avi_get_streaminfo(buf+offset+4, avi);
+    // printf("movi offset: %d %x\n", avi->offset_movi, avi->offset_movi);
+    // offset = avi_srarch_id(buf, read_size, (uint8_t*)"movi");
+    err = avi_get_streaminfo(buf+avi->offset_movi+4, avi);
     if( err != 0)
     {
         video_stop_play(avi);
         return err;
     }
-    vfs_internal_seek(file, offset+12, VFS_SEEK_SET, &err);
+    // printf("----2--:%d %d\n", avi->stream_id, avi->stream_size);
+    vfs_internal_seek(file, avi->offset_movi+12, VFS_SEEK_SET, &err);
     if(avi->audio_sample_rate)//init audio device
     {
         video_hal_audio_init(avi);
     }
     avi->file = (void*)file;
     avi->video_buf = buf;
-    avi->offset_movi = offset;
     avi->frame_count = 0;
     avi->status = VIDEO_STATUS_RESUME;
     avi->time_us_fps_ctrl = video_hal_ticks_us();
@@ -106,32 +107,41 @@ video_status_t video_play_avi(avi_t* avi)
         
         if(++avi->index_buf_save > 3)
             avi->index_buf_save = 0;
-        do
-        {
-            tmp_u8 = avi->index_buf_play;
-            if(tmp_u8)
-                --tmp_u8;
-            else
-                tmp_u8 = 3;
-        }while(avi->index_buf_save == tmp_u8);//buffer full, wait for play complete
-        vfs_internal_read(avi->file, avi->audio_buf[avi->index_buf_save], avi->stream_size+8, &err);
+        // printf("save index:%d\n", avi->index_buf_save);
+
+        while( !avi->audio_buf[avi->index_buf_save].empty );//buffer full, wait for play complete
+        // printf("save index:%d ok\n", avi->index_buf_save);
+        vfs_internal_read(avi->file, avi->audio_buf[avi->index_buf_save].buf, avi->stream_size+8, &err);
         if( err != 0)
         {
             video_stop_play(avi);
             return err;
         }
-        avi->audio_buf_len[avi->index_buf_save] = avi->stream_size;
-        for(uint32_t i = 0; i< avi->audio_buf_len[avi->index_buf_save]/2; ++i)
+        avi->audio_buf[avi->index_buf_save].len = avi->stream_size;
+        for(uint32_t i = 0; i< avi->audio_buf[avi->index_buf_save].len/2; ++i)
         {
-            ((int16_t*)avi->audio_buf[avi->index_buf_save])[i] = (int16_t)( ((int16_t*)avi->audio_buf[avi->index_buf_save])[i] * (avi->volume/100.0) );
+            ((int16_t*)avi->audio_buf[avi->index_buf_save].buf)[i] = (int16_t)( ((int16_t*)avi->audio_buf[avi->index_buf_save].buf)[i] * (avi->volume/100.0) );
         }
-        if(avi->audio_count == 0)//first once play
+        avi->audio_buf[avi->index_buf_save].empty = false;
+        if(avi->audio_count==0)//first once play
         {
             ++avi->index_buf_play;
-            video_hal_audio_play(avi->audio_buf[avi->index_buf_play], avi->audio_buf_len[avi->index_buf_play]);
+            if(!avi->audio_buf[avi->index_buf_play].empty)
+            {
+                video_hal_audio_play(avi->audio_buf[avi->index_buf_play].buf, avi->audio_buf[avi->index_buf_play].len);
+                // printf("play index:%d\n", avi->index_buf_play);
+            }
+        }
+        else if(avi->index_buf_play == avi->index_buf_save)//play complete already, restart play, play index no change
+        {
+            if(!avi->audio_buf[avi->index_buf_play].empty)
+            {
+                video_hal_audio_play(avi->audio_buf[avi->index_buf_play].buf, avi->audio_buf[avi->index_buf_play].len);
+                // printf("play index:%d\n", avi->index_buf_play);
+            }
         }
         ++avi->audio_count;
-        pbuf = avi->audio_buf[avi->index_buf_save];
+        pbuf = avi->audio_buf[avi->index_buf_save].buf;
         // printf("save:%d %d\n", avi->index_buf_save, avi->audio_buf_len[avi->index_buf_save]);
         status = VIDEO_STATUS_DECODE_AUDIO;
     } 
@@ -159,4 +169,53 @@ int video_stop_play(avi_t* avi)
     video_hal_audio_deinit(avi);
     return 0;
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+/**
+  * @avi_config: config: sec_per_frame, max_byte_sec, width, height,
+  *                      audio_sample_rate, audio_channels, audio_format
+  */
+int video_record_avi_init(const char* path, avi_t* avi_config)
+{
+    
+    int err, tmp;
+    uint32_t offset;
+    uint8_t* buf = VIDEO_BUFF();
+    mp_obj_t file = vfs_internal_open(path, "wb", &err);
+    uint32_t header_size;
+
+    if(file==MP_OBJ_NULL || err!=0)
+        return err;
+    err = avi_record_header_init(buf, VIDEO_AVI_BUFF_SIZE, avi_config);
+    if( err != 0 )
+    {
+        vfs_internal_close(file, &tmp);
+        return err;
+    }
+    header_size = avi_config->offset_movi + 4;
+    mp_uint_t ret = vfs_internal_write(file, buf, header_size, &err);
+    if( (ret != header_size) || (err!=0) )
+    {
+        vfs_internal_close(file, &tmp);
+        return err;
+    }
+    avi_config->file = file;
+
+    return 0;
+}
+
+void video_avi_record_fail(avi_t* avi)
+{
+    int err;
+    vfs_internal_close(avi->file, &err);
+}
+
+void video_avi_record_success(avi_t* avi)
+{
+    int err;
+    vfs_internal_close(avi->file, &err);
+}
+
 

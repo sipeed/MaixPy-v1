@@ -4,6 +4,9 @@
 #include "stdbool.h"
 #include "stdint.h"
 
+#define AVI_AUDIO_BUF_MAX_NUM 4
+
+//Little endian
 #define AVI_RIFF_ID			0X46464952  
 #define AVI_AVI_ID			0X20495641
 #define AVI_LIST_ID			0X5453494C  
@@ -22,7 +25,12 @@
 #define AVI_VIDS_FLAG		0X6463
 #define AVI_AUDS_FLAG		0X7762
 
-#define AVI_FORMAT_MJPG		0X47504A4D
+#define AVI_FORMAT_MJPG		0X47504A4D          //"MJPG"
+
+#define AVI_AUDIO_FORMAT_PCM  0x00000001        // PCM
+#define AVI_AUDIO_FORMAT_MP2  0x00000050        // MP2
+#define AVI_AUDIO_FORMAT_MP3  0x00000055        // MP3
+#define AVI_AUDIO_FORMAT_AC3  0x00002000        // AC3
 
 
 typedef enum {
@@ -81,8 +89,8 @@ typedef struct
 	uint32_t stream_type;
 	uint32_t handler;
 	uint32_t flags;
-	uint32_t priority;
-	uint32_t language;
+	uint16_t priority;
+	uint16_t language;
 	uint32_t init_frames;
 	uint32_t scale;
 	uint32_t rate;
@@ -146,17 +154,23 @@ typedef struct
 	uint16_t size;				//该结构大小
 }strf_wav_header_t;
 
+typedef struct{
+	uint8_t* buf;
+	uint32_t len;
+	volatile bool     empty;
+} audio_buf_info_t;
 
 typedef struct
 {
 	uint32_t sec_per_frame;
+	uint32_t max_byte_sec;
 	uint32_t total_frame;
 	uint32_t width;
 	uint32_t height;
 	uint32_t audio_sample_rate;
 	uint16_t audio_channels;
 	uint16_t audio_buf_size;
-	uint16_t audio_type;          //0X0001=PCM, 0X0050=MP2, 0X0055=MP3, 0X2000=AC3
+	uint16_t audio_format;          //AVI_AUDIO_FORMAT_***
 	uint16_t stream_id;           //'dc'==0X6463(video) 'wb'==0X7762(audio)
 	uint32_t stream_size;         // must be even, or +1 to be even
 	uint8_t* video_flag;          //"00dc"/"01dc"
@@ -170,12 +184,13 @@ typedef struct
 	uint8_t* video_buf;
 	uint32_t offset_movi;         //start index of movi flag
 
-	uint8_t* audio_buf[4];
-	uint32_t audio_buf_len[4];
-	uint8_t  index_buf_save;
+	audio_buf_info_t audio_buf[AVI_AUDIO_BUF_MAX_NUM];
+	volatile uint8_t  index_buf_save;
 	volatile uint8_t  index_buf_play;
 	uint32_t audio_count;
 	uint8_t  volume;
+
+	bool record;
 } avi_t;
 
 
@@ -183,6 +198,8 @@ int avi_init(uint8_t* buff, uint32_t size, avi_t* avi);
 uint32_t avi_srarch_id(uint8_t* buf, uint32_t size, uint8_t* id);
 int avi_get_streaminfo(uint8_t* buf, avi_t* avi);
 void avi_debug_info(avi_t* avi);
+
+int avi_record_header_init(uint8_t* buf, uint32_t buf_size, avi_t* avi_config);
 
 #endif
 

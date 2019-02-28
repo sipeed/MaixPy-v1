@@ -16,10 +16,10 @@ static void py_video_avi_print(const mp_print_t *print, mp_obj_t self_in, mp_pri
     avi_t* avi = &self->obj;
 
     mp_printf(print, "[MaixPy] video_avi:\n[video] w:%d, h:%d, t:%dus, fps:%.2f, total_frame:%d, status:%d\n"
-                "[audio] type:%d, channel:%d, sample_rate:%d",
+                "[audio] format:%d, channel:%d, sample_rate:%d",
                 avi->width, avi->height, avi->sec_per_frame, 1000.0/(avi->sec_per_frame/1000.0), 
                 avi->total_frame, -avi->status,
-                avi->audio_type, avi->audio_channels, avi->audio_sample_rate);
+                avi->audio_format, avi->audio_channels, avi->audio_sample_rate);
 }
 
 
@@ -80,16 +80,31 @@ mp_obj_t py_video_open(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     const char *path = mp_obj_str_get_str(args[0]);
     GET_STR_LEN(args[0], len);
+    enum { ARG_record};
+    const mp_arg_t machine_video_open_allowed_args[] = {
+        { MP_QSTR_record,    MP_ARG_BOOL|MP_ARG_KW_ONLY, {.u_bool = false} }
+    };
+    mp_arg_val_t args_parsed[MP_ARRAY_SIZE(machine_video_open_allowed_args)];
+    mp_arg_parse_all(n_args - 1, args + 1, kw_args,
+        MP_ARRAY_SIZE(machine_video_open_allowed_args), machine_video_open_allowed_args, args_parsed);
     if(path[len-1]=='i' && path[len-2]=='v' && path[len-3]=='a' && path[len-4]=='.')
     {
         py_video_avi_obj_t *o = m_new_obj(py_video_avi_obj_t);
         o->base.type = &py_video_avi_type;
         avi_t* avi = &o->obj;
-        int err = video_play_avi_init(path, avi);
-        if(err != 0)
+        if(args_parsed[ARG_record].u_bool)// record avi
         {
-            m_del_obj(py_video_avi_obj_t, o);
-            mp_raise_OSError(err);
+            avi->record = true;
+        }
+        else//play avi
+        {
+            avi->record = false;
+            int err = video_play_avi_init(path, avi);
+            if(err != 0)
+            {
+                m_del_obj(py_video_avi_obj_t, o);
+                mp_raise_OSError(err);
+            }
         }
         return MP_OBJ_FROM_PTR(o);
 

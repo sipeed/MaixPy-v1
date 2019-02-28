@@ -67,10 +67,16 @@ uint64_t inline video_hal_ticks_us(void)
 static int on_irq_dma3(void *ctx)
 {
     avi_t* avi = (avi_t*)ctx;
+
+    // printk("play %d ok\r\n",avi->index_buf_play);
+    avi->audio_buf[avi->index_buf_play].empty = true;
     if(++avi->index_buf_play > 3)
         avi->index_buf_play = 0;
-    // printf("irq:%d, %d\n",avi->index_buf_play, avi->audio_buf_len[avi->index_buf_play]);
-    video_hal_audio_play(avi->audio_buf[avi->index_buf_play], avi->audio_buf_len[avi->index_buf_play]);
+    if( !avi->audio_buf[avi->index_buf_play].empty )
+    {
+        // printk("irq play %d\r\n",avi->index_buf_play);
+        video_hal_audio_play(avi->audio_buf[avi->index_buf_play].buf, avi->audio_buf[avi->index_buf_play].len);
+    }
     return 0;
 }
 
@@ -85,52 +91,59 @@ int video_hal_audio_init(avi_t* avi)
         /*TRIGGER_LEVEL_1*/TRIGGER_LEVEL_4,
         RIGHT_JUSTIFYING_MODE
         );
-    i2s_set_sample_rate(I2S_DEVICE_0, avi->audio_sample_rate);
+    uint32_t ret = i2s_set_sample_rate(I2S_DEVICE_0, avi->audio_sample_rate/2);//TODO: /2 ?
+
     dmac_set_irq(DMAC_CHANNEL3, on_irq_dma3, (void*)avi, 1);
-    avi->audio_buf[0] = (uint8_t*)malloc(VIDEO_AUDIO_BUFF_LEN);
-    if( !avi->audio_buf[0] )
+    avi->audio_buf[0].buf = (uint8_t*)malloc(avi->audio_buf_size+8);
+    if( !avi->audio_buf[0].buf )
         return ENOMEM;
-    avi->audio_buf[1] = (uint8_t*)malloc(VIDEO_AUDIO_BUFF_LEN);
-    if( !avi->audio_buf[1] )
+    avi->audio_buf[1].buf = (uint8_t*)malloc(avi->audio_buf_size+8);
+    if( !avi->audio_buf[1].buf )
     {
-        free(avi->audio_buf[0]);
-        return ENOMEM;
-    }
-    avi->audio_buf[2] = (uint8_t*)malloc(VIDEO_AUDIO_BUFF_LEN);
-    if( !avi->audio_buf[1] )
-    {
-        free(avi->audio_buf[0]);
-        free(avi->audio_buf[1]);
+        free(avi->audio_buf[0].buf);
         return ENOMEM;
     }
-    avi->audio_buf[3] = (uint8_t*)malloc(VIDEO_AUDIO_BUFF_LEN);
-    if( !avi->audio_buf[1] )
+    avi->audio_buf[2].buf = (uint8_t*)malloc(avi->audio_buf_size+8);
+    if( !avi->audio_buf[2].buf )
     {
-        free(avi->audio_buf[0]);
-        free(avi->audio_buf[1]);
-        free(avi->audio_buf[2]);
+        free(avi->audio_buf[0].buf);
+        free(avi->audio_buf[1].buf);
+        return ENOMEM;
+    }
+    avi->audio_buf[3].buf = (uint8_t*)malloc(avi->audio_buf_size+8);
+    if( !avi->audio_buf[3].buf )
+    {
+        free(avi->audio_buf[0].buf);
+        free(avi->audio_buf[1].buf);
+        free(avi->audio_buf[2].buf);
         return ENOMEM;
     }
     avi->index_buf_save = 0;
     avi->index_buf_play = 0;
-    avi->audio_buf_len[0] = 0;
-    avi->audio_buf_len[1] = 0;
-    avi->audio_buf_len[2] = 0;
-    avi->audio_buf_len[3] = 0;
+    avi->audio_buf[0].len = 0;
+    avi->audio_buf[1].len = 0;
+    avi->audio_buf[2].len = 0;
+    avi->audio_buf[3].len = 0;
+    avi->audio_buf[0].empty = true;
+    avi->audio_buf[1].empty = true;
+    avi->audio_buf[2].empty = true;
+    avi->audio_buf[3].empty = true;
     return 0;
 }
 
 int video_hal_audio_deinit(avi_t* avi)
 {
-    if(avi->audio_buf[0])
-        free(avi->audio_buf[0]);
-    if(avi->audio_buf[1])
-        free(avi->audio_buf[1]);
-    if(avi->audio_buf[2])
-        free(avi->audio_buf[2]);
-    avi->audio_buf[0] = NULL;
-    avi->audio_buf[1] = NULL;
-    avi->audio_buf[2] = NULL;
+    if(avi->audio_buf[0].buf)
+        free(avi->audio_buf[0].buf);
+    if(avi->audio_buf[1].buf)
+        free(avi->audio_buf[1].buf);
+    if(avi->audio_buf[2].buf)
+        free(avi->audio_buf[2].buf);
+    if(avi->audio_buf[3].buf)
+        free(avi->audio_buf[3].buf);
+    avi->audio_buf[0].buf = NULL;
+    avi->audio_buf[1].buf = NULL;
+    avi->audio_buf[2].buf = NULL;
     //TODO: replace register version with function
     ier_t u_ier;
     u_ier.reg_data = readl(&i2s[I2S_DEVICE_0]->ier);
@@ -144,6 +157,7 @@ int video_hal_audio_deinit(avi_t* avi)
 
 int video_hal_audio_play(uint8_t* data, uint32_t len)
 {
-    i2s_play(I2S_DEVICE_0, DMAC_CHANNEL3, data, len, len, 16, 2);
+    i2s_play(I2S_DEVICE_0, DMAC_CHANNEL3, data, len, 1024, 16, 2);
     return 0;
 }
+
