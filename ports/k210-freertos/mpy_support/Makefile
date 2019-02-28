@@ -17,7 +17,7 @@ LIB_NAME ?= mpy_support
 OUTPUT_DIR := build
 OUTPUT_BIN := $(BIN_DIR)/$(LIB_NAME).a
 FROZEN_MPY_DIR ?= builtin-py
-INCLUDE := -I $(CUR_DIR) -I $(CUR_DIR)/Maix/include -I $(CUR_DIR)/network/include/ -I $(CUR_DIR)/standard_lib/include/ -I $(CUR_DIR)/video/include/ -I $(CUR_DIR)/video/avi/include/ -I $(CUR_DIR)/../../../  -I $(CUR_DIR)/omv/include/ -I $(CUR_DIR)/omv/py/include/ -I $(CUR_DIR)/omv/boards/MAIX/ -I $(CUR_DIR)/omv/img/include/ -I $(CUR_DIR)/../../../lib/oofatfs/ -I $(CUR_DIR)/../../../py/ -I $(CUR_DIR)/../../../lib/mp-readline/ -I $(CUR_DIR)/$(OUTPUT_DIR) 
+INCLUDE := -I $(CUR_DIR) -I $(CUR_DIR)/Maix/include -I $(CUR_DIR)/network/include/ -I $(CUR_DIR)/standard_lib/include/ -I $(CUR_DIR)/video/include/ -I $(CUR_DIR)/video/avi/include/ -I $(CUR_DIR)/../../../  -I $(CUR_DIR)/omv/include/ -I $(CUR_DIR)/omv/py/include/ -I $(CUR_DIR)/omv/boards/MAIX/ -I $(CUR_DIR)/omv/img/include/ -I $(CUR_DIR)/../../../lib/oofatfs/ -I $(CUR_DIR)/../../../py/ -I $(CUR_DIR)/../../../lib/mp-readline/ -I $(CUR_DIR)/$(OUTPUT_DIR) -I $(CUR_DIR)/audio/include/ 
 
 ######################################################################
 # MPY OPTIONS
