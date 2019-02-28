@@ -144,6 +144,7 @@ int video_hal_audio_deinit(avi_t* avi)
     avi->audio_buf[0].buf = NULL;
     avi->audio_buf[1].buf = NULL;
     avi->audio_buf[2].buf = NULL;
+    avi->audio_buf[3].buf = NULL;
     //TODO: replace register version with function
     ier_t u_ier;
     u_ier.reg_data = readl(&i2s[I2S_DEVICE_0]->ier);

@@ -152,13 +152,13 @@ typedef struct
 	uint32_t baud_rate;   		//波特率 
 	uint16_t block_align; 		//数据块对齐标志
 	uint16_t size;				//该结构大小
-}strf_wav_header_t;
+}strf_wav_header_t ;
 
 typedef struct{
 	uint8_t* buf;
 	uint32_t len;
 	volatile bool     empty;
-} audio_buf_info_t;
+} audio_buf_info_t __attribute__((aligned(8)));
 
 typedef struct
 {
@@ -191,7 +191,7 @@ typedef struct
 	uint8_t  volume;
 
 	bool record;
-} avi_t;
+} avi_t __attribute__((aligned(8)));
 
 
 int avi_init(uint8_t* buff, uint32_t size, avi_t* avi);

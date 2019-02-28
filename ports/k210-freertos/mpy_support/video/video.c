@@ -156,6 +156,7 @@ video_status_t video_play_avi(avi_t* avi)
             return err;
         }
         avi->status = VIDEO_STATUS_PLAY_END;
+        status = avi->status;
     }
     return status;
 }
@@ -164,6 +165,8 @@ video_status_t video_play_avi(avi_t* avi)
 int video_stop_play(avi_t* avi)
 {
     int err;
+
+    // printf("stop play\n");
     vfs_internal_close(avi->file, &err);
     avi->status = VIDEO_STATUS_PLAY_END;
     video_hal_audio_deinit(avi);
