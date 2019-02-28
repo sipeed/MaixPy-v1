@@ -78,103 +78,118 @@ static const mp_obj_type_t py_kpu_net_obj_type = {
 
 STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
-    mp_int_t addr,size;
+    int err = 0;
+    py_kpu_net_obj_t  *o = m_new_obj(py_kpu_net_obj_t);
 
-    const char *path = NULL;
+    uint8_t *model_data = NULL;
+    uint32_t model_size = 0;
 
-    enum { ARG_addr, ARG_size, ARG_path};
-    static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_addr, MP_ARG_INT, {.u_int = 0x0} },
-        { MP_QSTR_size, MP_ARG_INT, {.u_int = 0x0} },
-        { MP_QSTR_path, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} }
-    };
-    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
-    mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
-
-    if(args[ARG_path].u_obj != mp_const_none)
+    kpu_task_t *kpu_task = (kpu_task_t*)malloc(sizeof(kpu_task_t));
+    if(kpu_task == NULL)
     {
+        err = -1;
+        goto error;
+    }
+
+    if(mp_obj_get_type(pos_args[0]) == &mp_type_int)
+    {
+        mp_int_t model_addr = mp_obj_get_int(pos_args[0]);
+
+        if(model_addr < 0)
+        {
+            if(kpu_task)
+                free(kpu_task);
+            m_del(py_kpu_net_obj_t, o,sizeof(py_kpu_net_obj_t));
+            mp_raise_ValueError("[MAIXPY]kpu: model_addr must > 0 ");
+            return mp_const_false;
+        }
+
+        uint8_t model_header[sizeof(kpu_model_header_t) + 1];
+
+        w25qxx_status_t status = w25qxx_read_data_dma(model_addr, model_header, sizeof(kpu_model_header_t), W25QXX_QUAD_FAST);
+        if(status != W25QXX_OK)
+        {
+            err = -2;//read error
+            goto error;
+        }
+
+        model_size = kpu_model_get_size(model_header);
+
+        model_data = (uint8_t *)malloc(model_size * sizeof(uint8_t));
+        if(model_data == NULL)
+        {
+            err = -1;//malloc error
+            goto error;
+        }
+
+        status = w25qxx_read_data_dma(model_addr, model_data, model_size, W25QXX_QUAD_FAST);
+        if(status != W25QXX_OK)
+        {
+            err = -2;//read error
+            goto error;
+        }
+
+        int ret = kpu_model_load_from_buffer(kpu_task, model_data, NULL);
+        if(ret != 0)
+        {
+            err = -3; //load error
+            goto error;
+        }
+        o->model_addr = mp_obj_new_int(model_addr);
+        o->model_path = mp_const_none;
+    }
+    else if(mp_obj_get_type(pos_args[0]) == &mp_type_str)
+    {
+        const char *path = NULL;
+
+        o->model_path = mp_const_none;
+        o->model_addr = mp_const_none;
+
+        if(kpu_task)
+            free(kpu_task);
+
+        if(model_data)
+            free(model_data);
+
+        m_del(py_kpu_net_obj_t, o,sizeof(py_kpu_net_obj_t));
+
         //load from file system
         mp_raise_ValueError("[MAIXPY]kpu: not support load model from file just now");
         return mp_const_false;
     }
     else
     {
-        addr = args[ARG_addr].u_int;
-        size = args[ARG_size].u_int;
-
-        if(addr < 0 || size <= 0)
-        {
-            mp_raise_ValueError("[MAIXPY]kpu: addr and size must > 0 ");
-            return mp_const_false;
-        }
-
-        py_kpu_net_obj_t  *o = m_new_obj(py_kpu_net_obj_t);
-
-        o->base.type = &py_kpu_net_obj_type;
-
-        o->model_data = MP_OBJ_FROM_PTR(malloc(size * sizeof(uint8_t)));
-        if(MP_OBJ_TO_PTR(o->model_data) == NULL)
-            goto malloc_err;
-
-        o->model_addr = mp_obj_new_int(addr);
-        o->model_size = mp_obj_new_int(size);
-        o->model_path = mp_const_none;
-        o->kpu_task = MP_OBJ_FROM_PTR(malloc(sizeof(kpu_task_t)));
-        if(MP_OBJ_TO_PTR(o->kpu_task) == NULL)
-            goto malloc_err;
-
-        o->net_args = mp_const_none;
-        o->net_deinit = mp_const_none;
-
-        w25qxx_status_t status = w25qxx_read_data_dma(addr, MP_OBJ_TO_PTR(o->model_data), size, W25QXX_QUAD_FAST);
-        if(status != W25QXX_OK)
-            goto read_err;
-
-        int ret = kpu_model_load_from_buffer(MP_OBJ_TO_PTR(o->kpu_task), MP_OBJ_TO_PTR(o->model_data), NULL);
-        if(ret != 0)
-            goto load_err;
-
-        return MP_OBJ_FROM_PTR(o);
-
-    uint64_t *tmp = NULL;
-
-malloc_err:
-    tmp = MP_OBJ_TO_PTR(o->model_data);
-    if(tmp)
-        free(tmp);
-    tmp = MP_OBJ_TO_PTR(o->kpu_task);
-    if(tmp)
-        free(tmp);
-
-    mp_raise_ValueError("[MAIXPY]kpu: malloc error");
-    return mp_const_false;
-
-read_err:
-    tmp = MP_OBJ_TO_PTR(o->model_data);
-    if(tmp)
-        free(tmp);
-    tmp = MP_OBJ_TO_PTR(o->kpu_task);
-    if(tmp)
-        free(tmp);
-
-    mp_raise_ValueError("[MAIXPY]kpu: read model error");
-    return mp_const_false;
-
-load_err:
-    tmp = MP_OBJ_TO_PTR(o->model_data);
-    if(tmp)
-        free(tmp);
-    tmp = MP_OBJ_TO_PTR(o->kpu_task);
-    if(tmp)
-        free(tmp);
-
-    mp_raise_ValueError("[MAIXPY]kpu: load model error");
-    return mp_const_false;
+        m_del(py_kpu_net_obj_t, o,sizeof(py_kpu_net_obj_t));
+        mp_raise_TypeError("[MAIXPY]kpu: only accept int and string");
+        return mp_const_false;
     }
+
+    o->base.type = &py_kpu_net_obj_type;
+    o->net_args = mp_const_none;
+    o->net_deinit = mp_const_none;
+
+    o->kpu_task = MP_OBJ_FROM_PTR(kpu_task);
+    o->model_data = MP_OBJ_FROM_PTR(model_data);
+    o->model_size = mp_obj_new_int(model_size);
+
+    return MP_OBJ_FROM_PTR(o);
+
+error:
+    if(kpu_task)
+        free(kpu_task);
+
+    if(model_data)
+        free(model_data);
+
+    m_del(py_kpu_net_obj_t, o,sizeof(py_kpu_net_obj_t));
+
+    char msg[50];
+    sprintf(msg,"[MAIXPY]kpu: load error %d", err);
+    mp_raise_ValueError(msg);
     return mp_const_false;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_class_load_obj, 2, py_kpu_class_load);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_class_load_obj, 1, py_kpu_class_load);
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -386,7 +401,7 @@ STATIC mp_obj_t py_kpu_class_init_yolo2(uint n_args, const mp_obj_t *pos_args, m
     }
     else
     {
-        mp_raise_ValueError("[MAIXPY]kpu: kpu_net type error");
+        mp_raise_TypeError("[MAIXPY]kpu: kpu_net type error");
         return mp_const_false;
     }
 }
@@ -489,10 +504,14 @@ STATIC mp_obj_t py_kpu_class_run_yolo2(uint n_args, const mp_obj_t *pos_args, mp
 
         if (arg_img->pix_ai == NULL)
         {
-            printf("pix_ai or pixels is NULL!\n");
+            mp_raise_ValueError("[MAIXPY]kpu: pix_ai or pixels is NULL!\n");
             return mp_const_false;
         }
-
+        if(arg_img->w != 320 || arg_img->h != 240)
+        {
+            mp_raise_ValueError("[MAIXPY]kpu: img width or height error");
+            return mp_const_false;
+        }
         py_kpu_net_obj_t *kpu_net = MP_OBJ_TO_PTR(pos_args[0]);
 
         kpu_task_t *kpu_task = MP_OBJ_TO_PTR(kpu_net->kpu_task);
@@ -585,7 +604,7 @@ STATIC mp_obj_t py_kpu_class_run_yolo2(uint n_args, const mp_obj_t *pos_args, mp
     }
     else
     {
-        mp_raise_ValueError("[MAIXPY]kpu: kpu_net type error");
+        mp_raise_TypeError("[MAIXPY]kpu: kpu_net type error");
         return mp_const_false;
     }
 }
@@ -621,7 +640,7 @@ STATIC mp_obj_t py_kpu_deinit(uint n_args, const mp_obj_t *pos_args, mp_map_t *k
     }
     else
     {
-        mp_raise_ValueError("[MAIXPY]kpu: kpu_net type error");
+        mp_raise_TypeError("[MAIXPY]kpu: kpu_net type error");
         return mp_const_false;
     }
 
