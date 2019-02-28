@@ -16,7 +16,8 @@
 #include "imlib.h"
 #include "py_assert.h"
 #include "py_helper.h"
-
+#include "extmod/vfs.h"
+#include "vfs_wrapper.h"
 ///////////////////////////////////////////////////////////////////////////////
 
 #define _D  do{printf("%s --> %d\r\n",__func__,__LINE__);}while(0)
@@ -38,12 +39,23 @@ static void py_kpu_net_obj_print(const mp_print_t *print, mp_obj_t self_in, mp_p
 {
     py_kpu_net_obj_t *self = self_in;
 
-    //XXXX did not print all 
+    const *path = NULL;
+    if(MP_OBJ_IS_STR(self->model_path))
+    {
+        path = mp_obj_str_get_str(self->model_path);
+    }
+
+    uint32_t addr = 0;
+    if(MP_OBJ_IS_INT(self->model_addr))
+    {
+        addr = mp_obj_get_int(self->model_addr);
+    }
     mp_printf(print,
-              "{\"model_data\":%x, \"model_addr\":%x, \"model_size\":%x, \"model_path\": \"\"}",
+              "{\"model_data\":%x, \"model_addr\":%x, \"model_size\":%x, \"model_path\": \"%s\"}",
                 mp_obj_new_int(MP_OBJ_TO_PTR(((py_kpu_net_obj_t *)self_in)->model_data)),
-                mp_obj_get_int(self->model_addr),
-                mp_obj_get_int(self->model_size)
+                addr,
+                mp_obj_get_int(self->model_size),
+                path
                 );
 }
 
@@ -104,6 +116,9 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
             return mp_const_false;
         }
 
+        o->model_addr = mp_obj_new_int(model_addr);
+        o->model_path = mp_const_none;
+
         uint8_t model_header[sizeof(kpu_model_header_t) + 1];
 
         w25qxx_status_t status = w25qxx_read_data_dma(model_addr, model_header, sizeof(kpu_model_header_t), W25QXX_QUAD_FAST);
@@ -114,6 +129,12 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
         }
 
         model_size = kpu_model_get_size(model_header);
+
+        if(model_size == -1)
+        {
+            err = -2;//read error
+            goto error;
+        }
 
         model_data = (uint8_t *)malloc(model_size * sizeof(uint8_t));
         if(model_data == NULL)
@@ -128,40 +149,67 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
             err = -2;//read error
             goto error;
         }
-
-        int ret = kpu_model_load_from_buffer(kpu_task, model_data, NULL);
-        if(ret != 0)
-        {
-            err = -3; //load error
-            goto error;
-        }
-        o->model_addr = mp_obj_new_int(model_addr);
-        o->model_path = mp_const_none;
     }
     else if(mp_obj_get_type(pos_args[0]) == &mp_type_str)
     {
-        const char *path = NULL;
+        const char *path = mp_obj_str_get_str(pos_args[0]);
 
-        o->model_path = mp_const_none;
+        o->model_path = mp_obj_new_str(path,strlen(path));
         o->model_addr = mp_const_none;
 
-        if(kpu_task)
-            free(kpu_task);
+        int err;
+        mp_obj_t file;
+        uint16_t tmp;
+        uint8_t model_header[sizeof(kpu_model_header_t) + 1];
 
-        if(model_data)
-            free(model_data);
+        file = vfs_internal_open(path,"rb", &err);
+        if(file == MP_OBJ_NULL || err != 0)
+            mp_raise_OSError(err);
 
-        m_del(py_kpu_net_obj_t, o,sizeof(py_kpu_net_obj_t));
+        vfs_internal_read(file, model_header, sizeof(kpu_model_header_t), &err);
+        if( err != 0)
+            mp_raise_OSError(err);
 
-        //load from file system
-        mp_raise_ValueError("[MAIXPY]kpu: not support load model from file just now");
-        return mp_const_false;
+        model_size = kpu_model_get_size(model_header);
+
+        if(model_size == -1)
+        {
+            err = -2;//read error
+            vfs_internal_close(file, &err);
+            goto error;
+        }
+
+        model_data = (uint8_t *)malloc(model_size * sizeof(uint8_t));
+        if(model_data == NULL)
+        {
+            err = -1;//malloc error
+            goto error;
+        }
+
+        vfs_internal_seek(file, 0, VFS_SEEK_SET, &err);
+        if(err != 0)
+            mp_raise_OSError(err);
+
+        vfs_internal_read(file, model_data, model_size, &err);
+        if( err != 0)
+            mp_raise_OSError(err);
+
+        vfs_internal_close(file, &err);
+        if( err != 0)
+            mp_raise_OSError(err);
     }
     else
     {
         m_del(py_kpu_net_obj_t, o,sizeof(py_kpu_net_obj_t));
         mp_raise_TypeError("[MAIXPY]kpu: only accept int and string");
         return mp_const_false;
+    }
+
+    int ret = kpu_model_load_from_buffer(kpu_task, model_data, NULL);
+    if(ret != 0)
+    {
+        err = -3; //load error
+        goto error;
     }
 
     o->base.type = &py_kpu_net_obj_type;
