@@ -62,6 +62,29 @@ image_t *py_helper_keyword_to_image_mutable_mask(uint n_args, const mp_obj_t *ar
     return py_helper_keyword_to_image_mutable(n_args, args, arg_index, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_mask), NULL);
 }
 
+void py_helper_keyword_oft(image_t *img, uint n_args, const mp_obj_t *args, uint arg_index,
+                                 mp_map_t *kw_args, point_t *oft)
+{
+	mp_obj_t kw= MP_OBJ_NEW_QSTR(MP_QSTR_oft);
+    mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, kw, MP_MAP_LOOKUP);
+	
+    if (kw_arg) {
+        mp_obj_t *arg_point;
+        mp_obj_get_array_fixed_n(kw_arg->value, 2, &arg_point);
+        oft->x = mp_obj_get_int(arg_point[0]);
+        oft->y = mp_obj_get_int(arg_point[1]);
+    } else if (n_args > arg_index) {
+        mp_obj_t *arg_point;
+        mp_obj_get_array_fixed_n(args[arg_index], 2, &arg_point);
+        oft->x = mp_obj_get_int(arg_point[0]);
+        oft->y = mp_obj_get_int(arg_point[1]);
+    } else {
+        oft->x = -1;
+        oft->y = -1;
+    }
+	return;
+}
+
 void py_helper_keyword_rectangle(image_t *img, uint n_args, const mp_obj_t *args, uint arg_index,
                                  mp_map_t *kw_args, mp_obj_t kw, rectangle_t *r)
 {

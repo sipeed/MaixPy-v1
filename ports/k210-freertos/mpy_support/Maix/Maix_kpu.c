@@ -15,6 +15,7 @@
 #include "imlib.h"
 #include "py_assert.h"
 #include "py_helper.h"
+#include "imlib.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -33,11 +34,10 @@ typedef struct py_kpu_net_obj
 } __attribute__((aligned(8))) py_kpu_net_obj_t;
 
 
-
 static const mp_obj_type_t py_kpu_net_obj_type = {
     { &mp_type_type },
     .name  = MP_QSTR_kpu_net,
-    .print = py_kpu_region_print,
+    //.print = py_kpu_region_print,
     // .locals_dict = (mp_obj_t) &py_kpu_region_locals_dict
 };
 
@@ -93,7 +93,7 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
         w25qxx_status_t status = w25qxx_read_data_dma(addr, MP_OBJ_TO_PTR(o->model_data), size, W25QXX_QUAD_FAST);
         if(status != W25QXX_OK)
             goto read_err;
-
+printf("addr=0x%x,size=0x%x\r\n", addr,size);
         int ret = kpu_model_load_from_buffer(MP_OBJ_TO_PTR(o->kpu_task), MP_OBJ_TO_PTR(o->model_data), NULL);
         if(ret != 0)
             goto load_err;
@@ -181,7 +181,7 @@ static void py_kpu_class_yolo2_print(const mp_print_t *print, mp_obj_t self_in, 
 
 mp_obj_t py_kpu_calss_yolo2_anchor(mp_obj_t self_in)
 {
-    if(mp_obj_get_type(self_in) == &py_kpu_class_yolo_args_obj_type)
+    /*if(mp_obj_get_type(self_in) == &py_kpu_class_yolo_args_obj_type)
     {
         py_kpu_class_yolo_region_layer_arg_t *rl_arg = MP_OBJ_TO_PTR(self_in);
         mp_obj_t *tuple, *ret;
@@ -200,7 +200,8 @@ mp_obj_t py_kpu_calss_yolo2_anchor(mp_obj_t self_in)
     {
         mp_raise_TypeError("[MAIXPY]kpu: object type error");
         return mp_const_false;
-    }
+    }*/
+	return mp_const_false;
 }
 
 mp_obj_t py_kpu_calss_yolo2_threshold(mp_obj_t self_in) { return ((py_kpu_class_yolo_args_obj_t *)self_in)->threshold; }
@@ -533,13 +534,148 @@ STATIC mp_obj_t py_kpu_deinit(uint n_args, const mp_obj_t *pos_args, mp_map_t *k
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_deinit_obj, 1, py_kpu_deinit);
 ///////////////////////////////////////////////////////////////////////////////
+/*forward
+	单纯的网络前向运算
+	输入参数：
+		net结构体的obj（必须）
+		是否使用softmax（可选）
+		stride（可选，默认1）
+		计算到第几层（可选）：默认为计算完，可选计算到第n层
+			计算到第n层，即修改第n层的send_data_out为1，使能dma输出，方法为：
+			修改原自动生成的kpu_task_init，设置layers_length为n
+		
+	输出为 
+		特征图obj
+			即n个通道的m*n的图片，0~255灰度，可以使用color map映射为伪彩色
+			m*n即为最后一个layer的输出尺寸
+			last_layer->image_size.data.o_row_wid，o_col_high
+			新建一个类型，直接存储特征图数组，
+			对外提供转化某通道特征图到Image对象的方法，
+			并且提供deinit方向释放特征图空间。
+*/
+
+
+
+typedef struct fmap
+{
+	uint8_t* data;
+	uint16_t index;
+	uint16_t w;
+	uint16_t h;
+	uint16_t ch;
+} __attribute__((aligned(8)))fmap_t;
+
+typedef struct py_kpu_fmap_obj
+{
+    mp_obj_base_t base;
+    fmap_t fmap;
+} __attribute__((aligned(8))) py_kpu_fmap_obj_t;
+
+
+static void py_kpu_fmap_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind)
+{
+	py_kpu_fmap_obj_t *fmap_obj = MP_OBJ_TO_PTR(self_in);
+	fmap_t* fmap = &(fmap_obj->fmap);
+	printf("fmap: data=0x%x, index=%d, w=%d, h=%d, ch=%d\r\n",\
+			fmap->data, fmap->index, fmap->w, fmap->h, fmap->ch);
+	return;
+}
+
+static const mp_obj_type_t py_kpu_fmap_obj_type = {
+    { &mp_type_type },
+    .name  = MP_QSTR_kpu_fmap,
+    .print = py_kpu_fmap_print,
+    // .locals_dict = (mp_obj_t) &py_kpu_region_locals_dict
+};
+
+
 
 STATIC mp_obj_t py_kpu_forward(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
-    return mp_const_true;
+	enum { ARG_kpu_net, ARG_img, ARG_len};
+    static const mp_arg_t allowed_args[] = {
+        { MP_QSTR_kpu_net,              MP_ARG_OBJ, {.u_obj = mp_const_none} },
+		{ MP_QSTR_img,              	MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        { MP_QSTR_len, 			       	MP_ARG_INT, {.u_int = 0x0} },
+    };
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    if(mp_obj_get_type(args[ARG_kpu_net].u_obj) == &py_kpu_net_obj_type)
+    {
+		py_kpu_net_obj_t *kpu_net = MP_OBJ_TO_PTR(args[ARG_kpu_net].u_obj);
+		image_t *arg_img = py_image_cobj(args[ARG_img].u_obj);
+		kpu_task_t *kpu_task = MP_OBJ_TO_PTR(kpu_net->kpu_task);  
+		int layers_length = args[ARG_len].u_int;	//计算的层数
+		
+        g_ai_done_flag = 0;
+        kpu_task->src = arg_img->pix_ai;
+        kpu_task->dma_ch = 5;
+        kpu_task->callback = ai_done;
+		if(layers_length > 0)
+		{	//设置计算的层数，注意在kpu_single_task_init中会自动使能第len层的dma输出
+			kpu_task->layers_length = layers_length;
+		}
+		kpu_layer_argument_t *last_layer = &kpu_task->layers[kpu_task->layers_length - 1];
+        kpu_single_task_init(kpu_task);
+        /* starat to calculate */
+        kpu_start(kpu_task);
+        while (!g_ai_done_flag)
+            ;
+        g_ai_done_flag = 0;
+
+        py_kpu_fmap_obj_t  *o = m_new_obj(py_kpu_fmap_obj_t);
+		o->base.type = &py_kpu_fmap_obj_type;
+		fmap_t* fmap = &(o->fmap);
+		fmap->data = kpu_task->dst;
+		fmap->index = kpu_task->layers_length;
+		fmap->w = last_layer->image_size.data.o_row_wid + 1;;
+		fmap->h = last_layer->image_size.data.o_col_high + 1;
+		fmap->ch = last_layer->image_channel_num.data.o_ch_num + 1;
+		return MP_OBJ_FROM_PTR(o);
+		//kpu_single_task_deinit	//最后需要释放
+	}
+
+    return mp_const_none;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_forward_obj, 0, py_kpu_forward);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_forward_obj, 1, py_kpu_forward);
+
+//生成第ch通道的特征图Image_t格式
+/*typedef struct image {
+    int w;
+    int h;
+    int bpp;
+    union {
+        uint8_t *pixels;
+        uint8_t *data;
+    };
+	uint8_t *pix_ai;	//for MAIX AI speed up
+} __attribute__((aligned(8)))image_t; 
+*/
+
+STATIC mp_obj_t py_kpu_fmap(mp_obj_t fmap_obj, mp_obj_t ch_obj)
+{
+	int ch = mp_obj_get_int(ch_obj);
+	fmap_t* fmap = &(((py_kpu_fmap_obj_t*)fmap_obj)->fmap);
+	if(ch<0 || ch>= (fmap->ch)) 
+	{
+		printf("channel out of range! input 0~%d\r\n", fmap->ch);
+		return mp_const_none;
+	}
+	
+	mp_obj_t image = py_image(fmap->w, fmap->h, IMAGE_BPP_GRAYSCALE, fmap->data + ((fmap->w)*(fmap->h))*ch);
+	return image;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(py_kpu_fmap_obj, py_kpu_fmap);
+
+STATIC mp_obj_t py_kpu_fmap_free(mp_obj_t fmap_obj)
+{
+	fmap_t* fmap = &(((py_kpu_fmap_obj_t*)fmap_obj)->fmap);
+	free(fmap->data);
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_fmap_free_obj, py_kpu_fmap_free);
 ///////////////////////////////////////////////////////////////////////////////
 
 static const mp_map_elem_t globals_dict_table[] = {
@@ -549,6 +685,8 @@ static const mp_map_elem_t globals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_run_yolo2),                    (mp_obj_t)&py_kpu_class_run_yolo2_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_deinit),                      (mp_obj_t)&py_kpu_deinit_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_forward),                      (mp_obj_t)&py_kpu_forward_obj },
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_fmap),                      (mp_obj_t)&py_kpu_fmap_obj },
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_fmap_free),                      (mp_obj_t)&py_kpu_fmap_free_obj },
     { NULL, NULL },
 };
 
