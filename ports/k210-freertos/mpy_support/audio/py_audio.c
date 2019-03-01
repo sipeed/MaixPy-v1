@@ -148,8 +148,7 @@ STATIC mp_obj_t Maix_audio_pre_process(mp_obj_t self_in,mp_obj_t I2S_dev) {
     //-----------wav fmt init parameter---------------
     uint32_t head_len = 0;
     uint32_t err_code = 0;
-    uint32_t read_num = 0;
-    uint32_t smp_rate = 0;
+    uint32_t colse_code = 0;
     uint32_t file_size = vfs_internal_size(audio->fp);
     mp_obj_list_t* ret_list = (mp_obj_list_t*)m_new(mp_obj_list_t,sizeof(mp_obj_list_t));//m_new
     mp_obj_list_init(ret_list, 0);
@@ -157,14 +156,23 @@ STATIC mp_obj_t Maix_audio_pre_process(mp_obj_t self_in,mp_obj_t I2S_dev) {
     {
         case AUDIO_WAV_FMT:
             audio->fmt_obj = m_new(wav_t,1);//new format obj
-            read_num = vfs_internal_read(audio->fp,audio->buf,500,&err_code);//read head
+            vfs_internal_read(audio->fp,audio->buf,500,&err_code);//read head
             if(err_code != 0)
+            {
+                printf("[MAIXPY]: read head error close file\n");
+                m_del(mp_obj_list_t,ret_list,1);
+                m_del(wav_t,audio->fmt_obj,1);
+                vfs_internal_close(audio->fp,&colse_code);
                 mp_raise_OSError(err_code);
+            }
             wav_err_t status = wav_init(audio->fmt_obj,audio->buf,file_size,&head_len);//wav init
             //debug
             if(status != OK)
             {
                 printf("[MAIXPY]: wav error code : %d\n",status);
+                m_del(mp_obj_list_t,ret_list,1);
+                m_del(wav_t,audio->fmt_obj,1);
+                vfs_internal_close(audio->fp,&colse_code);
                 mp_raise_msg(&mp_type_OSError,"wav init error");
             }
             wav_t* wav_fmt = audio->fmt_obj;
@@ -184,7 +192,13 @@ STATIC mp_obj_t Maix_audio_pre_process(mp_obj_t self_in,mp_obj_t I2S_dev) {
             mp_obj_list_append(ret_list, mp_obj_new_int(wav_fmt->datasize));
             vfs_internal_seek(audio->fp,head_len,VFS_SEEK_SET,err_code);
             if(err_code != 0)
+            {
+                printf("[MAIXPY]: seek error  close file\n");
+                m_del(mp_obj_list_t,ret_list,1);
+                m_del(wav_t,audio->fmt_obj,1);
+                vfs_internal_close(audio->fp,&colse_code);
                 mp_raise_OSError(err_code);
+            }
             memset(audio->buf, audio->points * sizeof(uint32_t), 0);//clear buffer
             return MP_OBJ_FROM_PTR(ret_list);
             break;
