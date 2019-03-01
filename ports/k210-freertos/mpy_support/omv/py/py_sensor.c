@@ -19,6 +19,11 @@
 
 extern sensor_t sensor;
 
+static mp_obj_t py_binocular_sensor_reset() {
+    PY_ASSERT_FALSE_MSG(binocular_sensor_reset() != 0, "Reset Failed");
+    return mp_const_none;
+}
+
 static mp_obj_t py_sensor_reset() {
     PY_ASSERT_FALSE_MSG(sensor_reset() != 0, "Reset Failed");
     return mp_const_none;
@@ -430,6 +435,7 @@ static mp_obj_t py_sensor_read_reg(mp_obj_t addr) {
 //            sensor.id.MIDH, sensor.id.MIDL, sensor.id.PID, sensor.id.VER);
 //}
 
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_binocular_sensor_reset_obj,     py_binocular_sensor_reset);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_sensor_reset_obj,               py_sensor_reset);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_sleep_obj,               py_sensor_sleep);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_shutdown_obj,            py_sensor_shutdown);
@@ -515,6 +521,8 @@ STATIC const mp_map_elem_t globals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_UXGA),                MP_OBJ_NEW_SMALL_INT(FRAMESIZE_UXGA)},     /* 1600x1200 */
 
     // Sensor functions
+    
+    { MP_OBJ_NEW_QSTR(MP_QSTR_binocular_reset),     (mp_obj_t)&py_binocular_sensor_reset_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_reset),               (mp_obj_t)&py_sensor_reset_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_sleep),               (mp_obj_t)&py_sensor_sleep_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_shutdown),            (mp_obj_t)&py_sensor_shutdown_obj },

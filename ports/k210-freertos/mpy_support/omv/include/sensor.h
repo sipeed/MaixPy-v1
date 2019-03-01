@@ -92,7 +92,8 @@ typedef enum {
 
 typedef enum {
     ACTIVE_LOW,
-    ACTIVE_HIGH
+    ACTIVE_HIGH,
+    ACTIVE_BINOCULAR,
 } polarity_t;
 
 #define SENSOR_HW_FLAGS_VSYNC        (0) // vertical sync polarity.
@@ -160,6 +161,8 @@ typedef struct _sensor {
 extern const int resolution[][2];
 
 void sensor_flush(void);
+
+int binocular_sensor_reset();
 
 // Reset the sensor to its default state.
 int sensor_reset();
