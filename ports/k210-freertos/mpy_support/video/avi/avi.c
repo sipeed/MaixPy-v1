@@ -101,11 +101,11 @@ int avi_init(uint8_t* buf, uint32_t size, avi_t* avi)
 	if(avi->audio_sample_rate)
 	{
 		buf = buf_start + offset;
-		offset=avi_srarch_id(buf, size - offset, avi->audio_flag);
+		offset=avi_srarch_id(buf+4, size - offset-4, avi->audio_flag);
 		if(offset==0)
 			return AVI_STATUS_ERR_STREAM;
 		buf+=offset+4;
-		avi->audio_buf_size=*((uint32_t*)buf);
+		avi->audio_buf_size = buf[0]|buf[1]<<8|buf[2]<<16|buf[3]<<24;
 	}		
 	return res;
 }
