@@ -8,7 +8,6 @@
 #include "sipeed_conf.h"
 
 #include "w25qxx.h"
-#include "lcd.h"
 
 #include <mp.h>
 #include "mpconfigboard.h"
@@ -35,11 +34,13 @@ typedef struct py_kpu_net_obj
     mp_obj_t        net_deinit;
 } __attribute__((aligned(8))) py_kpu_net_obj_t;
 
+static int py_kpu_class_yolo2_print_to_buf(mp_obj_t self_in, char *buf);
+
 static void py_kpu_net_obj_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind)
 {
     py_kpu_net_obj_t *self = self_in;
 
-    const *path = NULL;
+    const char *path = NULL;
     if(MP_OBJ_IS_STR(self->model_path))
     {
         path = mp_obj_str_get_str(self->model_path);
@@ -50,12 +51,21 @@ static void py_kpu_net_obj_print(const mp_print_t *print, mp_obj_t self_in, mp_p
     {
         addr = mp_obj_get_int(self->model_addr);
     }
+
+    const char net_args[512];
+
+    if(py_kpu_class_yolo2_print_to_buf(self->net_args, net_args) != 0)
+    {
+        sprintf(net_args,"\"(null)\"");
+    }
+    
     mp_printf(print,
-              "{\"model_data\":%x, \"model_addr\":%x, \"model_size\":%x, \"model_path\": \"%s\"}",
+              "{\"model_data\": %d, \"model_addr\": %d, \"model_size\": %d, \"model_path\": \"%s\", \"net_args\": %s}",
                 mp_obj_new_int(MP_OBJ_TO_PTR(((py_kpu_net_obj_t *)self_in)->model_data)),
                 addr,
                 mp_obj_get_int(self->model_size),
-                path
+                path,
+                net_args
                 );
 }
 
@@ -263,7 +273,7 @@ static void py_kpu_class_yolo2_print(const mp_print_t *print, mp_obj_t self_in, 
 
     char msg[300];
 
-    uint8_t num = mp_obj_get_int(rl_arg->anchor_number);
+    uint8_t num = rl_arg->anchor_number;
 
     if(num>0)
     {
@@ -273,7 +283,7 @@ static void py_kpu_class_yolo2_print(const mp_print_t *print, mp_obj_t self_in, 
     }
 
     mp_printf(print,
-              "{\"threshold\":%f, \"nms_value\":%f, \"anchor_number\":%d, \"anchor\":(%s)}",
+              "{\"threshold\":%f, \"nms_value\":%f, \"anchor_number\":%d, \"anchor\":\"(%s)\"}",
                 rl_arg->threshold,
                 rl_arg->nms_value,
                 rl_arg->anchor_number,
@@ -307,6 +317,39 @@ static const mp_obj_type_t py_kpu_class_yolo_args_obj_type = {
     // .subscr = py_kpu_calss_yolo2_subscr,
     .locals_dict = (mp_obj_t) &py_kpu_class_yolo2_dict
 };
+
+static int py_kpu_class_yolo2_print_to_buf(mp_obj_t self_in, char *buf)
+{
+    if(buf == NULL)
+        return -1;
+
+    if(mp_obj_get_type(self_in) == &py_kpu_class_yolo_args_obj_type)
+    {
+        py_kpu_class_yolo_args_obj_t *yolo_args = self_in;
+
+        py_kpu_class_yolo_region_layer_arg_t *rl_arg = yolo_args->rl_args;
+
+        char msg[300];
+
+        uint8_t num = rl_arg->anchor_number;
+
+        if(num>0)
+        {
+            sprintf(msg,"%f",rl_arg->anchor[0]);
+            for(uint16_t i = 1; i < num * 2; i++)
+                sprintf(msg,"%s, %f",msg, rl_arg->anchor[i]);
+        }
+
+        sprintf(buf,
+                "{\"threshold\":%f, \"nms_value\":%f, \"anchor_number\":%d, \"anchor\":\"(%s)\"}",
+                    rl_arg->threshold,
+                    rl_arg->nms_value,
+                    rl_arg->anchor_number,
+                    msg);
+        return 0;
+    }
+    return -1;
+}
 
 mp_obj_t py_kpu_calss_yolo2_anchor(mp_obj_t self_in)
 {
@@ -738,8 +781,11 @@ static void py_kpu_fmap_print(const mp_print_t *print, mp_obj_t self_in, mp_prin
 {
 	py_kpu_fmap_obj_t *fmap_obj = MP_OBJ_TO_PTR(self_in);
 	fmap_t* fmap = &(fmap_obj->fmap);
-	printf("fmap: data=0x%x, index=%d, w=%d, h=%d, ch=%d\r\n",\
-			fmap->data, fmap->index, fmap->w, fmap->h, fmap->ch);
+
+    mp_printf(print,
+        "{\"fmap\": data=%d, \"index\": %d, \"w\": %d, \"h\": %d, \"ch\": %d}",
+        fmap->data, fmap->index, fmap->w, fmap->h, fmap->ch);
+
 	return;
 }
 
@@ -822,7 +868,11 @@ STATIC mp_obj_t py_kpu_fmap(mp_obj_t fmap_obj, mp_obj_t ch_obj)
 	fmap_t* fmap = &(((py_kpu_fmap_obj_t*)fmap_obj)->fmap);
 	if(ch<0 || ch>= (fmap->ch)) 
 	{
-		printf("channel out of range! input 0~%d\r\n", fmap->ch);
+        char str_ret[30];
+
+        sprintf(str_ret,"[MAIXPY]kpu: channel out of range! input 0~%d", fmap->ch);
+        mp_raise_ValueError(str_ret);
+
 		return mp_const_none;
 	}
 	
