@@ -1,10 +1,10 @@
 
 #include "avi.h"
 #include "stdio.h"
+#include "video.h"
 
 uint8_t* const AVI_VIDS_FLAG_TBL[2]={"00dc","01dc"};
 uint8_t* const AVI_AUDS_FLAG_TBL[2]={"00wb","01wb"};
-const uint8_t* AVI_FLAG_MOVI = "movi";
 
 int avi_init(uint8_t* buf, uint32_t size, avi_t* avi)
 {
@@ -32,7 +32,7 @@ int avi_init(uint8_t* buf, uint32_t size, avi_t* avi)
 
 	avih_header=(avih_header_t*)(buf);
 	if(avih_header->block_id!=AVI_AVIH_ID)return AVI_STATUS_ERR_AVIH;
-	avi->sec_per_frame=avih_header->sec_per_frame;
+	avi->usec_per_frame=avih_header->usec_per_frame;
 	avi->max_byte_sec=avih_header->max_byte_sec;
 	avi->total_frame=avih_header->total_frame;
 	buf+=avih_header->block_size+8;
@@ -94,7 +94,7 @@ int avi_init(uint8_t* buf, uint32_t size, avi_t* avi)
 		avi->width=bmp_header->bmi_header.width;
 		avi->height=bmp_header->bmi_header.height; 	
 	}
-	offset=avi_srarch_id(buf_start,size,(uint8_t*)AVI_FLAG_MOVI);
+	offset=avi_srarch_id(buf_start,size,(uint8_t*)AVI_MOVI_ID);
 	if(offset==0)
         return AVI_STATUS_ERR_MOVI;
 	avi->offset_movi = offset;
@@ -113,7 +113,7 @@ int avi_init(uint8_t* buf, uint32_t size, avi_t* avi)
 #ifdef VIDEO_DEBUG
 void avi_debug_info(avi_t* avi)
 {
-    printf("avi->SecPerFrame:%d\r\n",avi->sec_per_frame);
+    printf("avi->SecPerFrame:%d\r\n",avi->usec_per_frame);
 	printf("avi->TotalFrame:%d\r\n",avi->total_frame);
 	printf("avi->Width:%d\r\n",avi->width);
 	printf("avi->Height:%d\r\n",avi->height);
@@ -124,7 +124,7 @@ void avi_debug_info(avi_t* avi)
 	printf("avi->VideoFLAG:%s\r\n",avi->video_flag); 
 	printf("avi->AudioFLAG:%s\r\n",avi->audio_flag); 
 
-    printf("\nfps:%.2f\n", 1000.0/(avi->sec_per_frame/1000.0));
+    printf("\nfps:%.2f\n", 1000.0/(avi->usec_per_frame/1000.0));
     printf("audio channels:%d\n", avi->audio_channels);
     printf("audio sample rate:%d\n", avi->audio_sample_rate*10);
 }
@@ -164,14 +164,18 @@ int avi_get_streaminfo(uint8_t* buf, avi_t* avi)
 
 /**
  * 
- * @avi_config: config: sec_per_frame, max_byte_sec, width, height,
+ * @avi_config: config: usec_per_frame, max_byte_sec, width, height,
  *                      audio_sample_rate, audio_channels, audio_format
+ * @return return 0 if success, or returen error code(>0 from errno.h)
  */
-int avi_record_header_init(uint8_t* buf, uint32_t buf_size, avi_t* avi_config)
+int avi_record_header_init(const char* path, avi_t* avi_config)
 {
+	uint8_t* buf = video_hal_malloc(2048);// actually < 2048
 	uint8_t* buf_start = buf;
 	avi_header_t* header;
+	list_header_t* list_header0;
 	list_header_t* list_header;
+	list_header_t* list_header_video;
 	avih_header_t* avih_header; 
 	strh_header_t* strh_header; 
 
@@ -186,17 +190,17 @@ int avi_record_header_init(uint8_t* buf, uint32_t buf_size, avi_t* avi_config)
 	header->avi_id = AVI_AVI_ID;                          //"AVI "
 	buf += sizeof(avi_header_t);
 
-	list_header=(list_header_t*)(buf);
-	memset(list_header, 0, sizeof(list_header_t));
-	list_header->list_id = AVI_LIST_ID;                   //"LIST"
-	list_header->list_type = AVI_HDRL_ID;                 //"hdrl"
+	list_header0=(list_header_t*)(buf);
+	memset(list_header0, 0, sizeof(list_header_t));
+	list_header0->list_id = AVI_LIST_ID;                   //"LIST"
+	list_header0->list_type = AVI_HDRL_ID;                 //"hdrl"
 	buf += sizeof(list_header_t);
 
 	avih_header=(avih_header_t*)(buf);
 	memset(avih_header, 0, sizeof(avih_header_t));
 	avih_header->block_id = AVI_AVIH_ID;                  //"avih"
 	avih_header->block_size = sizeof(avih_header_t)-8;    //0x38(56)
-	avih_header->sec_per_frame = avi_config->sec_per_frame;
+	avih_header->usec_per_frame = avi_config->usec_per_frame;
 	avih_header->max_byte_sec = avi_config->max_byte_sec;
 	avih_header->streams = 2;                             //2 streams, video and audio
 	avih_header->width = avi_config->width;
@@ -204,9 +208,9 @@ int avi_record_header_init(uint8_t* buf, uint32_t buf_size, avi_t* avi_config)
 	buf += sizeof(avih_header_t);
 
 	// LIST for video header
-	list_header=(list_header_t*)(buf);
-	list_header->list_id = AVI_LIST_ID;                  //"LIST"
-	list_header->list_type = AVI_STRL_ID;                //"strl"
+	list_header_video=(list_header_t*)(buf);
+	list_header_video->list_id = AVI_LIST_ID;                  //"LIST"
+	list_header_video->list_type = AVI_STRL_ID;                //"strl"
 	buf += sizeof(list_header_t);
 
 	strh_header=(strh_header_t*)(buf);
@@ -215,26 +219,28 @@ int avi_record_header_init(uint8_t* buf, uint32_t buf_size, avi_t* avi_config)
 	strh_header->stream_type = AVI_VIDS_STREAM;          //"vids"  //video befor audio info
 	strh_header->handler = AVI_FORMAT_MJPG;              //"MJPG"
 	strh_header->init_frames = 0x01;                     //first frame
-	strh_header->scale = 0x00;//TODO: 0x0f
-	strh_header->rate = 0x00;
-	strh_header->start = 0x000000; //TODO: 0x00000cd8
-	strh_header->length = 0x00;//TODO:
-	strh_header->ref_buf_size = 0xffffffff; //TODO:
-	strh_header->quality = 0x00;
+	strh_header->scale = 0x01;
+	strh_header->rate = (uint32_t)(1000/(avi_config->usec_per_frame*1000.0));
+	strh_header->start = 0x000000;
+	strh_header->length = 0x00;
+	strh_header->ref_buf_size = 5128;
+	strh_header->quality = 0xFFFFFFFF;
 	strh_header->sample_size = 0x00;
-	//TODO: frame...
+	strh_header->frame.right = avi_config->width;
+	strh_header->frame.bottom = avi_config->height;
 	buf += sizeof(strh_header_t);
 
 	bmp_header = (strf_bmp_header_t*)(buf);
 	bmp_header->block_id = AVI_STRF_ID;                     //"strf"
 	bmp_header->block_size = sizeof(strf_bmp_header_t) -8;  //0x28(40)
+	bmp_header->bmi_header.bmp_size = sizeof(bmp_header_t);
 	bmp_header->bmi_header.width = avi_config->width;
 	bmp_header->bmi_header.height = avi_config->height;
 
-	list_header->block_size =  sizeof(list_header_t)-8 + 
+	list_header_video->block_size =  sizeof(list_header_t)-8 + 
 	                           sizeof(strh_header_t) +  
 							   sizeof(strf_bmp_header_t);
-	buf += list_header->block_size+8;                       // video stream header ok
+	buf += list_header_video->block_size+8;                       // video stream header ok
 
 	// LIST for audio header
 	list_header=(list_header_t*)(buf);
@@ -245,30 +251,117 @@ int avi_record_header_init(uint8_t* buf, uint32_t buf_size, avi_t* avi_config)
 	strh_header=(strh_header_t*)(buf);
 	strh_header->block_id = AVI_STRH_ID;                 //"strh"
 	strh_header->block_size = sizeof(strh_header_t)-8;   //0x38(56)
-	strh_header->stream_type = AVI_AUDS_STREAM;          //"vids"  //video befor audio info
+	strh_header->stream_type = AVI_AUDS_STREAM;          //"auds"  //audio info
 	strh_header->handler = avi_config->audio_format;         //PCM=0x01
-
-	//TODO: frame...
+	strh_header->scale = 1;
+	strh_header->rate  = avi_config->audio_sample_rate;
+	strh_header->ref_buf_size = 4096;//TODO:
+	strh_header->quality = 0xFFFFFFFF;
 	buf += sizeof(strh_header_t);
 
 	wav_header = (strf_wav_header_t*)(buf);
 	wav_header->block_id = AVI_STRF_ID;                     //"strf"
 	wav_header->block_size = sizeof(strf_wav_header_t) -8;  //0x28(40)
-	wav_header->sample_rate = avi_config->audio_sample_rate;
-	wav_header->channels = avi_config->audio_channels;
 	wav_header->format_tag = avi_config->audio_format;
+	wav_header->channels = avi_config->audio_channels;
+	wav_header->sample_rate = avi_config->audio_sample_rate;
+	wav_header->block_align = 4;
+	wav_header->bits_depth  = 16;
 
 	list_header->block_size =  sizeof(list_header_t)-8 + 
 	                           sizeof(strh_header_t) +  
 							   sizeof(strf_wav_header_t);
 	buf += list_header->block_size+8;                       // video stream header ok
 
-	//TODO: fill JUNK data to align
+	list_header0->block_size = sizeof(list_header_t)-8 +  //sizeof(hdrl)
+	                           sizeof(avih_header_t) +    
+							   list_header_video->block_size+8 + //list video size
+							   list_header->block_size+8;        //list audio size
 
-	memcpy(buf,AVI_FLAG_MOVI, 4);
+	//TODO: fill JUNK data to align
+	list_header=(list_header_t*)(buf);
+	list_header->list_id = AVI_LIST_ID;                  //"LIST"
+	list_header->list_type = AVI_MOVI_ID;                //"movi"
+	buf += sizeof(list_header_t);
 	
-	avi_config->offset_movi = buf - buf_start;
+	avi_config->offset_movi = (uint8_t*)(&list_header->list_type) - buf_start;
 	
+	int ret;
+	ret = video_hal_file_open(avi_config, path, true);
+	if(ret < 0)
+	{
+		video_hal_free(buf_start);
+		return -ret;	
+	}
+	ret = video_hal_file_write(avi_config, buf_start, buf - buf_start);
+	video_hal_free(buf_start);
+	if( ret <= 0)
+	{
+		video_hal_file_close(avi_config);
+		return -ret;
+	}
+	return 0;
+}
+
+/**
+ * 
+ * @return <0 if error occurred, or return length of append data
+ */
+int avi_record_append_video(avi_t* avi, image_t* img)
+{
+	int ret;
+	uint8_t* buf = NULL;
+	uint32_t len;
+	avi_data_t data = {
+		.id = AVI_VIDS_FLAG_TBL[0],
+		.len = 0,
+		.data = buf
+	};
+	ret = video_hal_file_write(avi, (uint8_t*)&data, 8);
+	if( ret <= 0 )
+		return ret;
+	ret = video_hal_image_encode_mjpeg(avi, img);
+	printf("write mjpeg:%d\n", ret);
+	if (ret < 0 )
+		return ret;
+	printf("write mjpeg, len:%d\n", ret);
+	data.len = ret;
+	ret = video_hal_file_seek(avi, -(ret+4), VIDEO_HAL_FILE_SEEK_CUR);
+	if( ret != 0)
+		return -ret;
+	ret = video_hal_file_write(avi, (uint8_t*)&data.len, 4);
+	if( ret <= 0 )
+		return ret;
+	ret = video_hal_file_seek(avi, data.len, VIDEO_HAL_FILE_SEEK_CUR);
+	if( ret != 0)
+		return -ret;
+	return ret;
+}
+
+int avi_record_append_audio(avi_t* avi, uint8_t* buf, uint32_t len)
+{
+	avi_data_t data = {
+		.id = AVI_AUDS_FLAG_TBL[1],
+		.len = len,
+		.data = buf
+	};
+	int ret = video_hal_file_write(avi, (uint8_t*)&data, 8);
+	if( ret <= 0 )
+		return -ret;	
+	ret = video_hal_file_write(avi, buf, len);
+	if( ret <= 0 )
+		return -ret;
+}
+
+int avi_record_fail(avi_t* avi)
+{
+	video_hal_file_close(avi);
+	return 0;
+}
+
+int avi_record_finish(avi_t* avi)
+{
+	video_hal_file_close(avi);
 	return 0;
 }
 

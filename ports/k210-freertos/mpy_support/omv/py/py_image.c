@@ -234,12 +234,19 @@ static const mp_obj_type_t py_kptmatch_type = {
 typedef struct _py_image_obj_t {
     mp_obj_base_t base;
     image_t _cobj;
-} py_image_obj_t;
+} py_image_obj_t MICROPY_OBJ_BASE_ALIGNMENT;
 
 void *py_image_cobj(mp_obj_t img_obj)
 {
     PY_ASSERT_TYPE(img_obj, &py_image_type);
     return &((py_image_obj_t *)img_obj)->_cobj;
+}
+
+bool py_image_obj_is_image(mp_obj_t obj)
+{
+    if( ((mp_obj_base_t*)obj)->type == &py_image_type )
+        return true;
+    return false;
 }
 
 static void py_image_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind)

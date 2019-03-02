@@ -6,6 +6,8 @@
 // config option to 0.  If you do this then you won't get a REPL prompt, but you
 // will still be able to execute pre-compiled scripts, compiled with mpy-cross.
 
+#define MICROPY_OBJ_BASE_ALIGNMENT          __attribute__((aligned(8)))
+
 // object representation and NLR handling
 #define MICROPY_OBJ_REPR                    (MICROPY_OBJ_REPR_A)
 #define MICROPY_NLR_SETJMP                  (1)

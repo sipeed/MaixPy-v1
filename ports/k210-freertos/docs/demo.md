@@ -1482,3 +1482,30 @@ nes.run("/sd/sdkuaida.nes")
 
 
 
+## record video
+
+```python
+
+import video, sensor, image, lcd
+
+lcd.init()  
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.run(1)
+sensor.skip_frames(10)
+v = video.open("/sd/capture.avi", record=1)
+i = 0
+while True:
+    img = sensor.snapshot()
+    lcd.display(img)
+    print("befor record")
+    v.record(img)
+    print("record",i)
+    i += 1
+    if i > 50:
+        break
+print("finish")
+v.record_finish()
+
+```

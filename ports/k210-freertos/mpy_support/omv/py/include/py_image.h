@@ -14,4 +14,5 @@ mp_obj_t py_image(int width, int height, int bpp, void *pixels);
 mp_obj_t py_image_from_struct(image_t *img);
 void *py_image_cobj(mp_obj_t img_obj);
 int py_image_descriptor_from_roi(image_t *img, const char *path, rectangle_t *roi);
+bool py_image_obj_is_image(mp_obj_t obj);
 #endif // __PY_IMAGE_H__

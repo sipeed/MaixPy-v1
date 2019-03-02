@@ -162,3 +162,119 @@ int video_hal_audio_play(uint8_t* data, uint32_t len)
     return 0;
 }
 
+    
+/**
+ * 
+ * @return <0 if error, 0 if success
+ */
+int video_hal_file_open(avi_t* avi, const char* path, bool write)
+{
+    int err;
+
+    if( avi->file )
+        return -EPERM;
+    if(write)
+        avi->file = (void*)vfs_internal_open(path, "wb", &err);
+    else
+        avi->file = (void*)vfs_internal_open(path, "rb", &err);
+    if( err!=0 )
+        return -err;
+    printf("open file:%p\n", avi->file);
+    return 0;
+}
+
+
+int video_hal_file_write(avi_t* avi, uint8_t* data, uint32_t len)
+{
+    int err, ret;
+
+    if( !avi->file )
+        return -EPERM;
+    printf("=======file:%p %p %d\n", avi->file, data, len);
+    ret = vfs_internal_write( (mp_obj_t)avi->file, data, len, &err );
+    printf("=======write end, len:%d\n", ret);
+    if( err<0 )
+        return -err;
+    return ret;
+}
+
+int video_hal_file_read(avi_t* avi, uint8_t* data, uint32_t len)
+{
+    int err;
+
+    if( !avi->file )
+        return -EPERM;
+    vfs_internal_read( (mp_obj_t)avi->file, data, len, &err );
+    if( err!=0 )
+        return -err;
+    return 0;
+}
+
+int video_hal_file_close(avi_t* avi)
+{
+    int err;
+
+    if( !avi->file )
+        return -EPERM;
+    vfs_internal_close( (mp_obj_t)avi->file, &err );
+    printf("file close\n");
+    avi->file = NULL;
+    if( err!=0 )
+        return -err;
+    return 0;
+}
+
+int video_hal_file_seek(avi_t* avi, long offset, uint8_t whence)
+{
+    int err;
+
+    if( !avi->file )
+        return -EPERM;
+    vfs_internal_seek( (mp_obj_t)avi->file, (mp_int_t)offset, whence, &err );
+    printf("seek:%d\n", err);
+    if( err!=0 )
+        return -err;
+    return 0;
+}
+
+/**
+ * 
+ * @return mjpeg file size, <0 if error occurred
+ */
+int video_hal_image_encode_mjpeg(avi_t* avi, image_t* img)
+{
+    uint64_t size;
+
+    fb_alloc_mark();
+    uint8_t *buffer = fb_alloc_all(&size);
+    image_t out = { .w=img->w, .h=img->h, .bpp=size - 8, .pixels=buffer };
+    // When jpeg_compress needs more memory than in currently allocated it
+    // will try to realloc. MP will detect that the pointer is outside of
+    // the heap and return NULL which will cause an out of memory error.
+    jpeg_compress(img, &out, avi->mjpeg_quality, false);
+    printf("encode ok:%d\n", out.bpp);
+    if(out.bpp%8)//align
+    {
+        out.bpp += (8 - out.bpp%8);
+    }
+    printf("final encode len:%d\n", out.bpp);
+    int ret = video_hal_file_write(avi, out.pixels, out.bpp);
+    printf("write to fs :%d\n", ret);
+    fb_free();
+    fb_alloc_free_till_mark();
+    if(ret < 0)
+        return ret;
+    if( ret != out.bpp)
+        return EIO;
+    return ret;
+}
+
+uint8_t* video_hal_malloc(uint32_t size)
+{
+    return (uint8_t*)malloc(size);
+}
+
+uint8_t* video_hal_free(uint8_t* ptr)
+{
+    free(ptr);
+}

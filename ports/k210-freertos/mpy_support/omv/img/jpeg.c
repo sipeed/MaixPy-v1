@@ -1527,9 +1527,7 @@ void jpeg_write(image_t *img, const char *path, int quality)
         // When jpeg_compress needs more memory than in currently allocated it
         // will try to realloc. MP will detect that the pointer is outside of
         // the heap and return NULL which will cause an out of memory error.
-        printf("start jpeg_compress:\t%ld\r\n",sysctl_get_time_us());
         jpeg_compress(img, &out, quality, false);
-        printf("end jpeg_compress:\t%ld\r\n",sysctl_get_time_us());
         ret = file_save_data(path, out.pixels, out.bpp, &err);
         fb_free();
         if(err != 0)

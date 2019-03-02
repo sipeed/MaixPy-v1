@@ -4,6 +4,8 @@
 #include "stdbool.h"
 #include "stdint.h"
 
+#include "imlib.h" // need image_t related
+
 #define AVI_AUDIO_BUF_MAX_NUM 4
 
 //Little endian
@@ -11,7 +13,7 @@
 #define AVI_AVI_ID			0X20495641
 #define AVI_LIST_ID			0X5453494C  
 #define AVI_HDRL_ID			0X6C726468
-#define AVI_MOVI_ID			0X69766F6D
+#define AVI_MOVI_ID			0X69766F6D          //"movi"
 #define AVI_STRL_ID			0X6C727473
 
 #define AVI_AVIH_ID			0X68697661
@@ -68,7 +70,7 @@ typedef struct
 {	
 	uint32_t block_id;
 	uint32_t block_size;
-	uint32_t sec_per_frame;
+	uint32_t usec_per_frame;
 	uint32_t max_byte_sec;
 	uint32_t padding_franularity;
 	uint32_t flags;
@@ -137,22 +139,28 @@ typedef struct
 	uint32_t block_id;         //strf==0X73747266
 	uint32_t block_size;
 	bmp_header_t bmi_header;
-	avi_rgb_quad_t bm_colors[1];
+	// avi_rgb_quad_t bm_colors[1];
 }strf_bmp_header_t;
 
 
 
 typedef struct 
 {
-	uint32_t block_id;			//块标志,strf==0X73747266
-	uint32_t block_size;			//块大小(不包含最初的8字节,也就是BlockID和本BlockSize不计算在内)
-   	uint16_t format_tag;			//格式标志:0X0001=PCM,0X0055=MP3...
-	uint16_t channels;	  		//声道数,一般为2,表示立体声
-	uint32_t sample_rate; 		//音频采样率
-	uint32_t baud_rate;   		//波特率 
-	uint16_t block_align; 		//数据块对齐标志
-	uint16_t size;				//该结构大小
+	uint32_t block_id;         //"strf"==0X73747266
+	uint32_t block_size;       //not include block_size
+   	uint16_t format_tag;       //AVI_AUDIO_FORMAT_***
+	uint16_t channels;         //
+	uint32_t sample_rate;      //
+	uint32_t baud_rate;        //avg bytes per second
+	uint16_t block_align;      //
+	uint16_t bits_depth;       //bits
 }strf_wav_header_t ;
+
+typedef struct{
+	uint32_t id;               // video: "00dc" / "01dc", audio: "00wb" / "01wb"
+	uint32_t len;
+	uint8_t* data;
+} avi_data_t;
 
 typedef struct{
 	uint8_t* buf;
@@ -162,7 +170,7 @@ typedef struct{
 
 typedef struct
 {
-	uint32_t sec_per_frame;
+	uint32_t usec_per_frame;
 	uint32_t max_byte_sec;
 	uint32_t total_frame;
 	uint32_t width;
@@ -190,7 +198,8 @@ typedef struct
 	uint32_t audio_count;
 	uint8_t  volume;
 
-	bool record;
+	bool     record;
+	uint8_t  mjpeg_quality;
 } avi_t __attribute__((aligned(8)));
 
 
@@ -199,7 +208,22 @@ uint32_t avi_srarch_id(uint8_t* buf, uint32_t size, uint8_t* id);
 int avi_get_streaminfo(uint8_t* buf, avi_t* avi);
 void avi_debug_info(avi_t* avi);
 
-int avi_record_header_init(uint8_t* buf, uint32_t buf_size, avi_t* avi_config);
+/**
+ * 
+ * @avi_config: config: usec_per_frame, max_byte_sec, width, height,
+ *                      audio_sample_rate, audio_channels, audio_format
+ * @return return 0 if success, or returen error code(>0 from errno.h)
+ */
+int avi_record_header_init(const char* path, avi_t* avi_config);
+/**
+ * 
+ * @return <0 if error occurred, or return length of append data
+ */
+int avi_record_append_video(avi_t* avi, image_t* img);
+int avi_record_append_audio(avi_t* avi, uint8_t* buf, uint32_t len);
+int avi_record_fail(avi_t* avi);
+int avi_record_finish(avi_t* avi);
+
 
 #endif
 

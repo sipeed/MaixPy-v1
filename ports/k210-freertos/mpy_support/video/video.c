@@ -96,7 +96,7 @@ video_status_t video_play_avi(avi_t* avi)
         }
         roi.w = img.w;
         roi.h = img.h;
-        while( video_hal_ticks_us() - avi->time_us_fps_ctrl < avi->sec_per_frame);
+        while( video_hal_ticks_us() - avi->time_us_fps_ctrl < avi->usec_per_frame);
         avi->time_us_fps_ctrl = video_hal_ticks_us();
         video_hal_display(&img, roi);
         ++avi->frame_count;
@@ -175,39 +175,6 @@ int video_stop_play(avi_t* avi)
 
 
 /////////////////////////////////////////////////////////////////////////////////////
-
-/**
-  * @avi_config: config: sec_per_frame, max_byte_sec, width, height,
-  *                      audio_sample_rate, audio_channels, audio_format
-  */
-int video_record_avi_init(const char* path, avi_t* avi_config)
-{
-    
-    int err, tmp;
-    uint32_t offset;
-    uint8_t* buf = VIDEO_BUFF();
-    mp_obj_t file = vfs_internal_open(path, "wb", &err);
-    uint32_t header_size;
-
-    if(file==MP_OBJ_NULL || err!=0)
-        return err;
-    err = avi_record_header_init(buf, VIDEO_AVI_BUFF_SIZE, avi_config);
-    if( err != 0 )
-    {
-        vfs_internal_close(file, &tmp);
-        return err;
-    }
-    header_size = avi_config->offset_movi + 4;
-    mp_uint_t ret = vfs_internal_write(file, buf, header_size, &err);
-    if( (ret != header_size) || (err!=0) )
-    {
-        vfs_internal_close(file, &tmp);
-        return err;
-    }
-    avi_config->file = file;
-
-    return 0;
-}
 
 void video_avi_record_fail(avi_t* avi)
 {
