@@ -816,9 +816,20 @@ STATIC mp_obj_t py_kpu_forward(uint n_args, const mp_obj_t *pos_args, mp_map_t *
 		kpu_task_t *kpu_task = MP_OBJ_TO_PTR(kpu_net->kpu_task);  
 		int layers_length = args[ARG_len].u_int;	//计算的层数
 		
+        if (arg_img->pix_ai == NULL)
+        {
+            mp_raise_ValueError("[MAIXPY]kpu: pix_ai or pixels is NULL!\n");
+            return mp_const_false;
+        }
+        if(arg_img->w != 320 || arg_img->h != 240)
+        {
+            mp_raise_ValueError("[MAIXPY]kpu: img width or height error");
+            return mp_const_false;
+        }
+
         g_ai_done_flag = 0;
-        kpu_task->src = arg_img->pix_ai;
-        kpu_task->dma_ch = 5;
+        kpu_task->src = arg_img->pix_ai;    //need judge is not null
+        kpu_task->dma_ch = K210_DMA_CH_KPU;
         kpu_task->callback = ai_done;
 		if(layers_length > 0)
 		{	//设置计算的层数，注意在kpu_single_task_init中会自动使能第len层的dma输出
