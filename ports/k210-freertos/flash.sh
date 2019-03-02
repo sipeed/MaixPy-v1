@@ -3,6 +3,7 @@
 ############### SETTINGS #############
 baud=2000000
 device=/dev/ttyUSB0
+Board=dan
 #######################################
 
 monitor=false
@@ -53,9 +54,9 @@ bin_file_path="$cwd/output/maixpy.bin"
 
 if [[ -f $bin_file_path ]]; then
     if [[ $monitor == true ]]; then
-        python3 $kflash_py -b $baud -p $device -B dan -t $bin_file_path
+        python3 $kflash_py -b $baud -p $device -B $Board -t $bin_file_path
     else
-        python3 $kflash_py -b $baud -p $device -B dan $bin_file_path
+        python3 $kflash_py -b $baud -p $device -B $Board $bin_file_path
     fi
 else
     echo "bin file not exist!!!!"
