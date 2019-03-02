@@ -260,7 +260,7 @@ STATIC void gc_deal_with_stack_overflow(void) {
         }
     }
 }
-
+#define _D //printf("%d#",__LINE__);
 STATIC void gc_sweep(void) {
     #if MICROPY_PY_GC_COLLECT_RETVAL
     MP_STATE_MEM(gc_collected) = 0;
@@ -277,19 +277,20 @@ STATIC void gc_sweep(void) {
                         // if the object has a type then see if it has a __del__ method
                         mp_obj_t dest[2];
                         mp_load_method_maybe(MP_OBJ_FROM_PTR(obj), MP_QSTR___del__, dest);
-                        if (dest[0] != MP_OBJ_NULL) {
+                        if (dest[0] != MP_OBJ_NULL) {_D
                             // load_method returned a method, execute it in a protected environment
                             #if MICROPY_ENABLE_SCHEDULER
                             mp_sched_lock();
                             #endif
-                            mp_call_function_1_protected(dest[0], dest[1]);
+							//printf("method=0x%lx, arg=0x%lx\r\n", (unsigned long int)dest[0], (unsigned long int)dest[1]);
+                            //mp_call_function_1_protected(dest[0], dest[1]);_D
                             #if MICROPY_ENABLE_SCHEDULER
                             mp_sched_unlock();
                             #endif
                         }
                     }
                     // clear finaliser flag
-                    FTB_CLEAR(block);
+                    FTB_CLEAR(block);_D
                 }
 #endif
                 free_tail = 1;
@@ -314,6 +315,7 @@ STATIC void gc_sweep(void) {
                 break;
         }
     }
+	
 }
 
 void gc_collect_start(void) {

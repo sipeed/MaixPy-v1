@@ -419,11 +419,11 @@ void InfoNES_SoundOutput(int samples, BYTE *wave1, BYTE *wave2, BYTE *wave3, BYT
 	int16_t tmp;
 	for (i = 0; i < samples; i++) 
 	{
-		// final_wave[ waveptr ] = 
-		// (( wave1[i] + wave2[i] + wave3[i] + wave4[i] + wave5[i] ) / 5)<<8;
-		tmp = (int16_t)wave1[i] +(int16_t)wave2[i] +(int16_t)wave3[i] +(int16_t)wave4[i] +(int16_t)wave5[i];
-		tmp = (int16_t)tmp/5.0*256;
-		final_wave[ waveptr ] = (uint16_t)tmp;
+		final_wave[ waveptr ] = 
+		 (( wave1[i]>>2 + wave2[i] + wave3[i] + wave4[i] + wave5[i] ) / 5)<<8;
+		//tmp = (int16_t)wave1[i] +(int16_t)wave2[i] +(int16_t)wave3[i] +(int16_t)wave4[i] +(int16_t)wave5[i];
+		//tmp = (int16_t)tmp/5.0*256;
+		//final_wave[ waveptr ] = wave1[i]<<8;
 		waveptr++;
 		if ( waveptr == 2048 ) 
 		{

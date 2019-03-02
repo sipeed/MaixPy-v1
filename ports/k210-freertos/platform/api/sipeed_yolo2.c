@@ -20,6 +20,18 @@ typedef struct
 } __attribute__((aligned(8))) sortable_box_t;
 
 
+uint32_t kpu_model_get_size(uint8_t *buffer)
+{
+    kpu_model_header_t *header = (kpu_model_header_t *)buffer;
+
+    if (header->version != 1)
+        return -1;
+
+    uint32_t layers_length = header->layers_length;
+
+    return (header->layers_argument_start + (sizeof(kpu_layer_argument_t) * layers_length));
+}
+
 int region_layer_init(region_layer_t *rl, kpu_task_t *task)
 {
     int flag = 0;

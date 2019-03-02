@@ -8,7 +8,6 @@
 #include "sipeed_conf.h"
 
 #include "w25qxx.h"
-#include "lcd.h"
 
 #include <mp.h>
 #include "mpconfigboard.h"
@@ -35,11 +34,13 @@ typedef struct py_kpu_net_obj
     mp_obj_t        net_deinit;
 } __attribute__((aligned(8))) py_kpu_net_obj_t;
 
+static int py_kpu_class_yolo2_print_to_buf(mp_obj_t self_in, char *buf);
+
 static void py_kpu_net_obj_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind)
 {
     py_kpu_net_obj_t *self = self_in;
 
-    const *path = NULL;
+    const char *path = NULL;
     if(MP_OBJ_IS_STR(self->model_path))
     {
         path = mp_obj_str_get_str(self->model_path);
@@ -50,12 +51,21 @@ static void py_kpu_net_obj_print(const mp_print_t *print, mp_obj_t self_in, mp_p
     {
         addr = mp_obj_get_int(self->model_addr);
     }
+
+    const char net_args[512];
+
+    if(py_kpu_class_yolo2_print_to_buf(self->net_args, net_args) != 0)
+    {
+        sprintf(net_args,"\"(null)\"");
+    }
+    
     mp_printf(print,
-              "{\"model_data\":%x, \"model_addr\":%x, \"model_size\":%x, \"model_path\": \"%s\"}",
+              "{\"model_data\": %d, \"model_addr\": %d, \"model_size\": %d, \"model_path\": \"%s\", \"net_args\": %s}",
                 mp_obj_new_int(MP_OBJ_TO_PTR(((py_kpu_net_obj_t *)self_in)->model_data)),
                 addr,
                 mp_obj_get_int(self->model_size),
-                path
+                path,
+                net_args
                 );
 }
 
@@ -263,7 +273,7 @@ static void py_kpu_class_yolo2_print(const mp_print_t *print, mp_obj_t self_in, 
 
     char msg[300];
 
-    uint8_t num = mp_obj_get_int(rl_arg->anchor_number);
+    uint8_t num = rl_arg->anchor_number;
 
     if(num>0)
     {
@@ -273,7 +283,7 @@ static void py_kpu_class_yolo2_print(const mp_print_t *print, mp_obj_t self_in, 
     }
 
     mp_printf(print,
-              "{\"threshold\":%f, \"nms_value\":%f, \"anchor_number\":%d, \"anchor\":(%s)}",
+              "{\"threshold\":%f, \"nms_value\":%f, \"anchor_number\":%d, \"anchor\":\"(%s)\"}",
                 rl_arg->threshold,
                 rl_arg->nms_value,
                 rl_arg->anchor_number,
@@ -307,6 +317,39 @@ static const mp_obj_type_t py_kpu_class_yolo_args_obj_type = {
     // .subscr = py_kpu_calss_yolo2_subscr,
     .locals_dict = (mp_obj_t) &py_kpu_class_yolo2_dict
 };
+
+static int py_kpu_class_yolo2_print_to_buf(mp_obj_t self_in, char *buf)
+{
+    if(buf == NULL)
+        return -1;
+
+    if(mp_obj_get_type(self_in) == &py_kpu_class_yolo_args_obj_type)
+    {
+        py_kpu_class_yolo_args_obj_t *yolo_args = self_in;
+
+        py_kpu_class_yolo_region_layer_arg_t *rl_arg = yolo_args->rl_args;
+
+        char msg[300];
+
+        uint8_t num = rl_arg->anchor_number;
+
+        if(num>0)
+        {
+            sprintf(msg,"%f",rl_arg->anchor[0]);
+            for(uint16_t i = 1; i < num * 2; i++)
+                sprintf(msg,"%s, %f",msg, rl_arg->anchor[i]);
+        }
+
+        sprintf(buf,
+                "{\"threshold\":%f, \"nms_value\":%f, \"anchor_number\":%d, \"anchor\":\"(%s)\"}",
+                    rl_arg->threshold,
+                    rl_arg->nms_value,
+                    rl_arg->anchor_number,
+                    msg);
+        return 0;
+    }
+    return -1;
+}
 
 mp_obj_t py_kpu_calss_yolo2_anchor(mp_obj_t self_in)
 {
@@ -738,8 +781,11 @@ static void py_kpu_fmap_print(const mp_print_t *print, mp_obj_t self_in, mp_prin
 {
 	py_kpu_fmap_obj_t *fmap_obj = MP_OBJ_TO_PTR(self_in);
 	fmap_t* fmap = &(fmap_obj->fmap);
-	printf("fmap: data=0x%x, index=%d, w=%d, h=%d, ch=%d\r\n",\
-			fmap->data, fmap->index, fmap->w, fmap->h, fmap->ch);
+
+    mp_printf(print,
+        "{\"fmap\": data=%d, \"index\": %d, \"w\": %d, \"h\": %d, \"ch\": %d}",
+        fmap->data, fmap->index, fmap->w, fmap->h, fmap->ch);
+
 	return;
 }
 
@@ -770,9 +816,20 @@ STATIC mp_obj_t py_kpu_forward(uint n_args, const mp_obj_t *pos_args, mp_map_t *
 		kpu_task_t *kpu_task = MP_OBJ_TO_PTR(kpu_net->kpu_task);  
 		int layers_length = args[ARG_len].u_int;	//计算的层数
 		
+        if (arg_img->pix_ai == NULL)
+        {
+            mp_raise_ValueError("[MAIXPY]kpu: pix_ai or pixels is NULL!\n");
+            return mp_const_false;
+        }
+        if(arg_img->w != 320 || arg_img->h != 240)
+        {
+            mp_raise_ValueError("[MAIXPY]kpu: img width or height error");
+            return mp_const_false;
+        }
+
         g_ai_done_flag = 0;
-        kpu_task->src = arg_img->pix_ai;
-        kpu_task->dma_ch = 5;
+        kpu_task->src = arg_img->pix_ai;    //need judge is not null
+        kpu_task->dma_ch = K210_DMA_CH_KPU;
         kpu_task->callback = ai_done;
 		if(layers_length > 0)
 		{	//设置计算的层数，注意在kpu_single_task_init中会自动使能第len层的dma输出
@@ -822,7 +879,11 @@ STATIC mp_obj_t py_kpu_fmap(mp_obj_t fmap_obj, mp_obj_t ch_obj)
 	fmap_t* fmap = &(((py_kpu_fmap_obj_t*)fmap_obj)->fmap);
 	if(ch<0 || ch>= (fmap->ch)) 
 	{
-		printf("channel out of range! input 0~%d\r\n", fmap->ch);
+        char str_ret[30];
+
+        sprintf(str_ret,"[MAIXPY]kpu: channel out of range! input 0~%d", fmap->ch);
+        mp_raise_ValueError(str_ret);
+
 		return mp_const_none;
 	}
 	
@@ -838,17 +899,168 @@ STATIC mp_obj_t py_kpu_fmap_free(mp_obj_t fmap_obj)
 	return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_fmap_free_obj, py_kpu_fmap_free);
+
+
+
+typedef struct py_kpu_netinfo_list_data {
+    uint16_t index;
+    uint16_t wi;
+    uint16_t hi;
+    uint16_t wo;
+    uint16_t ho;
+    uint16_t chi;
+	uint16_t cho;
+	uint16_t dw;
+	uint16_t kernel_type;
+	uint16_t pool_type;
+	uint32_t para_size;
+} __attribute__((aligned(8))) py_kpu_netinfo_list_data_t;
+
+typedef struct py_kpu_class_netinfo_find_obj {
+    mp_obj_base_t base;
+
+    mp_obj_t index,wi,hi,wo,ho,chi,cho,dw,kernel_type,pool_type,para_size;
+} __attribute__((aligned(8))) py_kpu_class_netinfo_find_obj_t;
+
+static void py_kpu_class_netinfo_find_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind)
+{
+    py_kpu_class_netinfo_find_obj_t *self = self_in;
+    mp_printf(print,
+              "{\"index\":%d, \"wi\":%d, \"hi\":%d, \"wo\":%d, \"ho\":%d, \"chi\":%d, \"cho\":%d, \"dw\":%d, \"kernel_type\":%d, \"pool_type\":%d, \"para_size\":%d}",
+              mp_obj_get_int(self->index),
+              mp_obj_get_int(self->wi),
+              mp_obj_get_int(self->hi),
+              mp_obj_get_int(self->wo),
+              mp_obj_get_int(self->ho),
+              mp_obj_get_int(self->chi),
+              mp_obj_get_int(self->cho),
+              mp_obj_get_int(self->dw),
+			  mp_obj_get_int(self->kernel_type),
+			  mp_obj_get_int(self->pool_type),
+			  mp_obj_get_int(self->para_size));
+}
+
+mp_obj_t py_kpu_class_netinfo_find_index (mp_obj_t self_in) { return ((py_kpu_class_netinfo_find_obj_t *)self_in)->index; }
+mp_obj_t py_kpu_class_netinfo_find_wi(mp_obj_t self_in) { return ((py_kpu_class_netinfo_find_obj_t *)self_in)->wi; }
+mp_obj_t py_kpu_class_netinfo_find_hi(mp_obj_t self_in) { return ((py_kpu_class_netinfo_find_obj_t *)self_in)->hi; }
+mp_obj_t py_kpu_class_netinfo_find_wo(mp_obj_t self_in) { return ((py_kpu_class_netinfo_find_obj_t *)self_in)->wo; }
+mp_obj_t py_kpu_class_netinfo_find_ho(mp_obj_t self_in) { return ((py_kpu_class_netinfo_find_obj_t *)self_in)->ho; }
+mp_obj_t py_kpu_class_netinfo_find_chi(mp_obj_t self_in) { return ((py_kpu_class_netinfo_find_obj_t *)self_in)->chi; }
+mp_obj_t py_kpu_class_netinfo_find_cho(mp_obj_t self_in) { return ((py_kpu_class_netinfo_find_obj_t *)self_in)->cho; }
+mp_obj_t py_kpu_class_netinfo_find_dw(mp_obj_t self_in) { return ((py_kpu_class_netinfo_find_obj_t *)self_in)->dw; }
+mp_obj_t py_kpu_class_netinfo_find_kernel_type(mp_obj_t self_in) { return ((py_kpu_class_netinfo_find_obj_t *)self_in)->kernel_type; }
+mp_obj_t py_kpu_class_netinfo_find_pool_type(mp_obj_t self_in) { return ((py_kpu_class_netinfo_find_obj_t *)self_in)->pool_type; }
+mp_obj_t py_kpu_class_netinfo_find_para_size(mp_obj_t self_in) { return ((py_kpu_class_netinfo_find_obj_t *)self_in)->para_size; }
+
+static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_netinfo_find_index_obj, py_kpu_class_netinfo_find_index);
+static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_netinfo_find_wi_obj, py_kpu_class_netinfo_find_wi);
+static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_netinfo_find_hi_obj, py_kpu_class_netinfo_find_hi);
+static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_netinfo_find_wo_obj, py_kpu_class_netinfo_find_wo);
+static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_netinfo_find_ho_obj, py_kpu_class_netinfo_find_ho);
+static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_netinfo_find_chi_obj, py_kpu_class_netinfo_find_chi);
+static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_netinfo_find_cho_obj, py_kpu_class_netinfo_find_cho);
+static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_netinfo_find_dw_obj, py_kpu_class_netinfo_find_dw);
+static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_netinfo_find_kernel_type_obj, py_kpu_class_netinfo_find_kernel_type);
+static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_netinfo_find_pool_type_obj, py_kpu_class_netinfo_find_pool_type);
+static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_class_netinfo_find_para_size_obj, py_kpu_class_netinfo_find_para_size);
+
+static const mp_rom_map_elem_t py_kpu_class_netinfo_find_type_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_index),       MP_ROM_PTR(&py_kpu_class_netinfo_find_index_obj) },
+    { MP_ROM_QSTR(MP_QSTR_wi),          MP_ROM_PTR(&py_kpu_class_netinfo_find_wi_obj) },
+    { MP_ROM_QSTR(MP_QSTR_hi),          MP_ROM_PTR(&py_kpu_class_netinfo_find_hi_obj) },
+    { MP_ROM_QSTR(MP_QSTR_wo),          MP_ROM_PTR(&py_kpu_class_netinfo_find_wo_obj) },
+    { MP_ROM_QSTR(MP_QSTR_ho),          MP_ROM_PTR(&py_kpu_class_netinfo_find_ho_obj) },
+    { MP_ROM_QSTR(MP_QSTR_chi),     	MP_ROM_PTR(&py_kpu_class_netinfo_find_chi_obj) },
+    { MP_ROM_QSTR(MP_QSTR_cho),       	MP_ROM_PTR(&py_kpu_class_netinfo_find_cho_obj) },
+    { MP_ROM_QSTR(MP_QSTR_dw),       	MP_ROM_PTR(&py_kpu_class_netinfo_find_dw_obj) },
+    { MP_ROM_QSTR(MP_QSTR_kernel_type),	MP_ROM_PTR(&py_kpu_class_netinfo_find_kernel_type_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_pool_type),   MP_ROM_PTR(&py_kpu_class_netinfo_find_pool_type_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_para_size),   MP_ROM_PTR(&py_kpu_class_netinfo_find_para_size_obj) },
+};
+
+static MP_DEFINE_CONST_DICT(py_kpu_class_netinfo_find_type_locals_dict, py_kpu_class_netinfo_find_type_locals_dict_table);
+
+static const mp_obj_type_t py_kpu_class_netinfo_find_type = {
+    { &mp_type_type },
+    .name  = MP_QSTR_kpu_netinfo_find,
+    .print = py_kpu_class_netinfo_find_print,
+    // .subscr = py_kpu_class_subscr,
+    .locals_dict = (mp_obj_t) &py_kpu_class_netinfo_find_type_locals_dict
+};
+
+
+STATIC mp_obj_t py_kpu_netinfo(mp_obj_t py_kpu_net_obj)
+{
+	py_kpu_net_obj_t *kpu_net = MP_OBJ_TO_PTR(py_kpu_net_obj);
+	kpu_task_t *kpu_task = MP_OBJ_TO_PTR(kpu_net->kpu_task);  
+	
+	int len = kpu_task->layers_length;
+	kpu_layer_argument_t *layer; 
+	list_t out;
+	list_init(&out, sizeof(py_kpu_netinfo_list_data_t));
+
+	for (uint8_t index = 0; index < len; index++)
+	{
+		py_kpu_netinfo_list_data_t data;
+		layer = &kpu_task->layers[index];
+		data.index = index;
+		data.wi = layer->image_size.data.i_row_wid+1;
+		data.hi = layer->image_size.data.i_col_high+1;
+		data.wo = layer->image_size.data.o_row_wid+1;
+		data.ho = layer->image_size.data.o_col_high+1;
+		data.chi = layer->image_channel_num.data.i_ch_num+1;
+		data.cho = layer->image_channel_num.data.o_ch_num+1;
+		data.dw = layer->interrupt_enabe.data.depth_wise_layer;
+		data.kernel_type = layer->kernel_pool_type_cfg.data.kernel_type;
+		data.pool_type = layer->kernel_pool_type_cfg.data.pool_type;
+		data.para_size = layer->kernel_load_cfg.data.para_size;
+		list_push_back(&out, &data);
+	}
+
+	mp_obj_list_t *objects_list = mp_obj_new_list(list_size(&out), NULL);
+
+	for (size_t i = 0; list_size(&out); i++)
+	{
+		py_kpu_netinfo_list_data_t lnk_data;
+		list_pop_front(&out, &lnk_data);
+
+		py_kpu_class_netinfo_find_obj_t *o = m_new_obj(py_kpu_class_netinfo_find_obj_t);
+
+		o->base.type = &py_kpu_class_netinfo_find_type;
+
+		o->index = mp_obj_new_int(lnk_data.index);
+		o->wi = mp_obj_new_int(lnk_data.wi);
+		o->hi = mp_obj_new_int(lnk_data.hi);
+		o->wo = mp_obj_new_int(lnk_data.wo);
+		o->ho = mp_obj_new_int(lnk_data.ho);
+		o->chi = mp_obj_new_int(lnk_data.chi);
+		o->cho= mp_obj_new_int(lnk_data.cho);
+		o->dw = mp_obj_new_int(lnk_data.dw);
+		o->kernel_type = mp_obj_new_int(lnk_data.kernel_type);
+		o->pool_type = mp_obj_new_int(lnk_data.pool_type);
+		o->para_size = mp_obj_new_int(lnk_data.para_size);
+
+		objects_list->items[i] = o;
+	}
+
+	return objects_list;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_netinfo_obj, py_kpu_netinfo);
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 static const mp_map_elem_t globals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__),                    MP_OBJ_NEW_QSTR(MP_QSTR_kpu) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_load),                        (mp_obj_t)&py_kpu_class_load_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_init_yolo2),                  (mp_obj_t)&py_kpu_class_init_yolo2_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_run_yolo2),                    (mp_obj_t)&py_kpu_class_run_yolo2_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_run_yolo2),                   (mp_obj_t)&py_kpu_class_run_yolo2_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_deinit),                      (mp_obj_t)&py_kpu_deinit_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_forward),                      (mp_obj_t)&py_kpu_forward_obj },
-	{ MP_OBJ_NEW_QSTR(MP_QSTR_fmap),                      (mp_obj_t)&py_kpu_fmap_obj },
-	{ MP_OBJ_NEW_QSTR(MP_QSTR_fmap_free),                      (mp_obj_t)&py_kpu_fmap_free_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_forward),                     (mp_obj_t)&py_kpu_forward_obj },
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_fmap),                      	(mp_obj_t)&py_kpu_fmap_obj },
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_fmap_free),                   (mp_obj_t)&py_kpu_fmap_free_obj },
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_netinfo),                   	(mp_obj_t)&py_kpu_netinfo_obj },
     { NULL, NULL },
 };
 

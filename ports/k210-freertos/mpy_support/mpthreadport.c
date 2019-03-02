@@ -66,8 +66,8 @@ void mp_thread_init(void *stack, uint32_t stack_len) {
    // MP_THREAD_GIL_EXIT();
 }
 
-void mp_thread_gc_others(void) {
-    mp_thread_mutex_lock(&thread_mutex, 1);
+int mp_thread_gc_others(void) {
+/*    mp_thread_mutex_lock(&thread_mutex, 1);
     for (thread_t *th = thread; th != NULL; th = th->next) {
         gc_collect_root((void**)&th, 1);
         gc_collect_root(&th->arg, 1); // probably not needed
@@ -80,14 +80,52 @@ void mp_thread_gc_others(void) {
         gc_collect_root(th->stack, th->stack_len); // probably not needed
     }
     mp_thread_mutex_unlock(&thread_mutex);
+*/
+    int n_th = 0;
+    void **ptrs;
+    mp_state_thread_t *state;
+
+    mp_thread_mutex_lock(&thread_mutex, 1);
+    for (thread_t *th = thread; th != NULL; th = th->next) {
+        if (!th->ready) continue;                               // thread not ready
+		//if (th->type == THREAD_TYPE_SERVICE) continue;          // Only scan PYTHON threads
+        if (th->id == xTaskGetCurrentTaskHandle()) continue;    // Do not process the running thread
+
+        //state = (mp_state_thread_t *)th->state_thread;
+        n_th++;
+
+        // Mark the root pointers on thread
+        //gc_collect_root((void **)state->dict_locals, 1);
+
+        if (th->arg) {
+            // Mark the pointers on thread arguments
+            ptrs = (void**)(void*)&th->arg;
+            gc_collect_root(ptrs, 1);
+        }
+
+        #if MICROPY_ENABLE_PYSTACK
+        // Mark the pointers on thread pystack
+        //ptrs = (void**)(void*)state->pystack_start;
+        //gc_collect_root(ptrs, (state->pystack_cur - state->pystack_start) / sizeof(void*));
+        #endif
+
+        // If PyStack is used, no pointers to MPy heap are placed on tasks stack
+        #if !MICROPY_ENABLE_PYSTACK
+        // Mark the pointers on thread stack
+        //gc_collect_root(th->curr_sp, ((void *)state->stack_top - th->curr_sp) / sizeof(void*)); // probably not needed
+        #endif
+    }
+    mp_thread_mutex_unlock(&thread_mutex);
+    return n_th;
+	
 }
 
 mp_state_thread_t *mp_thread_get_state(void) {
-    return pvTaskGetThreadLocalStoragePointer(NULL, 1);
+    return pvTaskGetThreadLocalStoragePointer(NULL, 0);
 }
 
 void mp_thread_set_state(void *state) {
-    vTaskSetThreadLocalStoragePointer(NULL, 1, state);
+    vTaskSetThreadLocalStoragePointer(NULL, 0, state);
 }
 
 void mp_thread_start(void) {
