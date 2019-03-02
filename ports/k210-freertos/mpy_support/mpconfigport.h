@@ -9,6 +9,8 @@
 #define MICROPY_OBJ_BASE_ALIGNMENT          __attribute__((aligned(8)))
 
 // object representation and NLR handling
+#define MICROPY_OBJ_BASE_ALIGNMENT  __attribute__((aligned(8)))
+
 #define MICROPY_OBJ_REPR                    (MICROPY_OBJ_REPR_A)
 #define MICROPY_NLR_SETJMP                  (1)
 #define MICROPY_READER_VFS                  (1)

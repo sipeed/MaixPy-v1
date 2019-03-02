@@ -56,6 +56,7 @@ int video_hal_file_write(avi_t* avi, uint8_t* data, uint32_t len);
 int video_hal_file_read(avi_t* avi, uint8_t* data, uint32_t len);
 int video_hal_file_close(avi_t* avi);
 int video_hal_file_seek(avi_t* avi, long offset, uint8_t whence);
+int video_hal_file_size(avi_t* avi);
 /**
  * 
  * @return mjpeg file size, <0 if error occurred

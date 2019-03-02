@@ -203,6 +203,7 @@ int avi_record_header_init(const char* path, avi_t* avi_config)
 	avih_header->usec_per_frame = avi_config->usec_per_frame;
 	avih_header->max_byte_sec = avi_config->max_byte_sec;
 	avih_header->streams = 2;                             //2 streams, video and audio
+	avih_header->ref_buf_size = 0x00100000;
 	avih_header->width = avi_config->width;
 	avih_header->height = avi_config->height;
 	buf += sizeof(avih_header_t);
@@ -218,9 +219,9 @@ int avi_record_header_init(const char* path, avi_t* avi_config)
 	strh_header->block_size = sizeof(strh_header_t)-8;   //0x38(56)
 	strh_header->stream_type = AVI_VIDS_STREAM;          //"vids"  //video befor audio info
 	strh_header->handler = AVI_FORMAT_MJPG;              //"MJPG"
-	strh_header->init_frames = 0x01;                     //first frame
+	strh_header->init_frames = 0x00;                     //first frame
 	strh_header->scale = 0x01;
-	strh_header->rate = (uint32_t)(1000/(avi_config->usec_per_frame*1000.0));
+	strh_header->rate = (uint32_t)(1000/(avi_config->usec_per_frame/1000.0));
 	strh_header->start = 0x000000;
 	strh_header->length = 0x00;
 	strh_header->ref_buf_size = 5128;
@@ -239,8 +240,8 @@ int avi_record_header_init(const char* path, avi_t* avi_config)
 
 	list_header_video->block_size =  sizeof(list_header_t)-8 + 
 	                           sizeof(strh_header_t) +  
-							   sizeof(strf_bmp_header_t);
-	buf += list_header_video->block_size+8;                       // video stream header ok
+							   sizeof(strf_bmp_header_t);// 29*4
+	buf += sizeof(strf_bmp_header_t);                       // video stream header ok
 
 	// LIST for audio header
 	list_header=(list_header_t*)(buf);
@@ -268,10 +269,10 @@ int avi_record_header_init(const char* path, avi_t* avi_config)
 	wav_header->block_align = 4;
 	wav_header->bits_depth  = 16;
 
-	list_header->block_size =  sizeof(list_header_t)-8 + 
-	                           sizeof(strh_header_t) +  
-							   sizeof(strf_wav_header_t);
-	buf += list_header->block_size+8;                       // video stream header ok
+	list_header->block_size =  sizeof(list_header_t)-8 +    // 1*4
+	                           sizeof(strh_header_t) +      //16*4
+							   sizeof(strf_wav_header_t);   // 6*4
+	buf += sizeof(strf_wav_header_t);                       // video stream header ok
 
 	list_header0->block_size = sizeof(list_header_t)-8 +  //sizeof(hdrl)
 	                           sizeof(avih_header_t) +    
@@ -311,9 +312,8 @@ int avi_record_append_video(avi_t* avi, image_t* img)
 {
 	int ret;
 	uint8_t* buf = NULL;
-	uint32_t len;
 	avi_data_t data = {
-		.id = AVI_VIDS_FLAG_TBL[0],
+		.id = *((uint32_t*)AVI_VIDS_FLAG_TBL[0]),
 		.len = 0,
 		.data = buf
 	};
@@ -321,12 +321,10 @@ int avi_record_append_video(avi_t* avi, image_t* img)
 	if( ret <= 0 )
 		return ret;
 	ret = video_hal_image_encode_mjpeg(avi, img);
-	printf("write mjpeg:%d\n", ret);
 	if (ret < 0 )
 		return ret;
-	printf("write mjpeg, len:%d\n", ret);
 	data.len = ret;
-	ret = video_hal_file_seek(avi, -(ret+4), VIDEO_HAL_FILE_SEEK_CUR);
+	ret = video_hal_file_seek(avi, -(data.len+4), VIDEO_HAL_FILE_SEEK_CUR);
 	if( ret != 0)
 		return -ret;
 	ret = video_hal_file_write(avi, (uint8_t*)&data.len, 4);
@@ -335,7 +333,9 @@ int avi_record_append_video(avi_t* avi, image_t* img)
 	ret = video_hal_file_seek(avi, data.len, VIDEO_HAL_FILE_SEEK_CUR);
 	if( ret != 0)
 		return -ret;
-	return ret;
+	avi->content_size += 8 + data.len; //header length + data length
+	++avi->total_frame;
+	return data.len;
 }
 
 int avi_record_append_audio(avi_t* avi, uint8_t* buf, uint32_t len)
@@ -361,6 +361,37 @@ int avi_record_fail(avi_t* avi)
 
 int avi_record_finish(avi_t* avi)
 {
+	
+	int ret;
+	uint32_t size;
+
+	//write content length
+	  //move cursor after to LIST(LIST....movi00dc)
+	ret = video_hal_file_seek(avi, -(avi->content_size+8), VIDEO_HAL_FILE_SEEK_CUR);
+	if( ret != 0)
+		return -ret;
+	size = avi->content_size+4; // len(content) + len(movi)
+	ret = video_hal_file_write(avi, (uint8_t*)&size, 4);
+	if( ret <= 0)
+		return -ret;
+	//write file length
+	size = video_hal_file_size(avi);
+	if(size <= 0)
+		return -ret;
+	size -= 8;  // not include AVI Header(RIFF)(4B) and size(4B)
+	ret = video_hal_file_seek(avi, 4, VIDEO_HAL_FILE_SEEK_SET);
+	if(ret!=0)
+		return -ret;
+	ret = video_hal_file_write(avi, (uint8_t*)&size, 4);
+	if( ret <= 0)
+		return -ret;
+	//write total_frame
+	ret = video_hal_file_seek(avi, 40, VIDEO_HAL_FILE_SEEK_CUR); //sizeof(avi_header_t) + sizeof(list_header_t) +4*6
+	if(ret!=0)
+		return -ret;
+	ret = video_hal_file_write(avi, (uint8_t*)avi->total_frame, 4);
+	if( ret <= 0)
+		return -ret;
 	video_hal_file_close(avi);
 	return 0;
 }

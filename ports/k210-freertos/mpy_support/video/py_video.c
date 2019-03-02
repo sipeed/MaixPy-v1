@@ -56,28 +56,27 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_video_volume_obj, 0, py_video_volume);
 static const mp_obj_type_t py_video_avi_type;
 STATIC mp_obj_t py_video_record(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
-    printf("--%p\n", args[0]);
+    static mp_uint_t tim = 0;
     py_video_avi_obj_t* arg_avi = (py_video_avi_obj_t*)args[0];
-    printf("--\n");
     avi_t* avi = &arg_avi->obj;
     if( !avi->record )
         mp_raise_OSError(MP_EPERM);
-    printf("--\n");
     //TODO:resolve align error
     // if( !py_image_obj_is_image(args[1]) )
     //     mp_raise_ValueError("param must be image obj");
-    image_t* img = (image_t*)py_image_cobj(args[1]);
-    printf("--\n");
+    image_t* img = (image_t*)py_image_cobj(args[1]); //TODO: optimize, add option get image dirrectly from sensor
     int ret = avi_record_append_video(avi, img);
-    printf("--\n");
     if( ret == 0)
         ret = -MP_EIO;
     if( ret <= 0 )
         mp_raise_OSError(-ret);
+    //TODO: optimize
+    while(mp_hal_ticks_us() - tim < avi->usec_per_frame);
+    tim = mp_hal_ticks_us();
     return mp_obj_new_int(ret);
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_video_record_obj, 2, py_video_record);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_video_record_obj, 1, py_video_record);
 
 STATIC mp_obj_t py_video_record_finish(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
@@ -131,12 +130,24 @@ mp_obj_t py_video_open(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     const char *path = mp_obj_str_get_str(args[0]);
     GET_STR_LEN(args[0], len);
-    enum { ARG_record,
-           ARG_quality
+    enum {  ARG_record,
+            ARG_interval,
+            ARG_quality,
+            ARG_width,
+            ARG_height,
+            ARG_audio,
+            ARG_sample_rate,         // audio sample rate
+            ARG_channels
         };
     const mp_arg_t machine_video_open_allowed_args[] = {
         { MP_QSTR_record,    MP_ARG_BOOL|MP_ARG_KW_ONLY, {.u_bool = false} },
-        { MP_QSTR_quality,    MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = 50} }
+        { MP_QSTR_interval,    MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = 100000} },  // default 10 fps
+        { MP_QSTR_quality,    MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = 50} },        // default 50%, jpeg size ~= 5k
+        { MP_QSTR_width,    MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = 320} },         // default 320
+        { MP_QSTR_height,    MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = 240} },         // default 240
+        { MP_QSTR_audio,    MP_ARG_BOOL|MP_ARG_KW_ONLY, {.u_bool = false} },       // default not record audio
+        { MP_QSTR_sample_rate,    MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = 44100} },  // default 44100Hz
+        { MP_QSTR_channels,    MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = 1} }          // default 44100Hz
     };
     mp_arg_val_t args_parsed[MP_ARRAY_SIZE(machine_video_open_allowed_args)];
     mp_arg_parse_all(n_args - 1, args + 1, kw_args,
@@ -150,13 +161,14 @@ mp_obj_t py_video_open(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
         if(args_parsed[ARG_record].u_bool)// record avi
         {
             avi->record = true;
-            avi->usec_per_frame = 200000; // 5fps
-            avi->max_byte_sec   = 220525; //TODO:
-            avi->width = 320;
-            avi->height = 240;
+            avi->usec_per_frame = args_parsed[ARG_interval].u_int;
+            // avi->max_byte_sec   = 220525; //TODO:
+            avi->width = args_parsed[ARG_width].u_int;
+            avi->height = args_parsed[ARG_height].u_int;
             avi->mjpeg_quality = args_parsed[ARG_quality].u_int;
-            avi->audio_sample_rate = 44100;
-            avi->audio_channels = 1;
+            avi->record_audio = args_parsed[ARG_audio].u_bool;
+            avi->audio_sample_rate = args_parsed[ARG_sample_rate].u_int;
+            avi->audio_channels = args_parsed[ARG_channels].u_int;;
             avi->audio_format = AVI_AUDIO_FORMAT_PCM;
             int err = avi_record_header_init(path, avi);
             if( err != 0)
@@ -180,7 +192,7 @@ mp_obj_t py_video_open(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
         mp_raise_NotImplementedError("[MaixPy] video: format not support");
     }
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_video_open_obj, 2, py_video_open);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_video_open_obj, 1, py_video_open);
 
 
 static const mp_map_elem_t globals_dict_table[] = {

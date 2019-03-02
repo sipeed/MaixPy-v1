@@ -108,7 +108,7 @@ typedef struct
 		short right;
 		short bottom;
 	}frame;				
-}strh_header_t;
+}strh_header_t;//uint32_t * 16
 
 
 typedef struct
@@ -199,7 +199,9 @@ typedef struct
 	uint8_t  volume;
 
 	bool     record;
+	bool     record_audio;
 	uint8_t  mjpeg_quality;
+	uint64_t content_size;       //video and audio data size(include audio and video header size)
 } avi_t __attribute__((aligned(8)));
 
 

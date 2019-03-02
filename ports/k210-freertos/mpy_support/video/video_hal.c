@@ -91,7 +91,7 @@ int video_hal_audio_init(avi_t* avi)
         /*TRIGGER_LEVEL_1*/TRIGGER_LEVEL_4,
         RIGHT_JUSTIFYING_MODE
         );
-    uint32_t ret = i2s_set_sample_rate(I2S_DEVICE_0, avi->audio_sample_rate/2);//TODO: /2 ?
+    uint32_t ret = i2s_set_sample_rate(I2S_DEVICE_0, avi->audio_sample_rate);//TODO: /2 ?
 
     dmac_set_irq(DMAC_CHANNEL3, on_irq_dma3, (void*)avi, 1);
     avi->audio_buf[0].buf = (uint8_t*)malloc(avi->audio_buf_size+8);
@@ -179,7 +179,6 @@ int video_hal_file_open(avi_t* avi, const char* path, bool write)
         avi->file = (void*)vfs_internal_open(path, "rb", &err);
     if( err!=0 )
         return -err;
-    printf("open file:%p\n", avi->file);
     return 0;
 }
 
@@ -190,9 +189,7 @@ int video_hal_file_write(avi_t* avi, uint8_t* data, uint32_t len)
 
     if( !avi->file )
         return -EPERM;
-    printf("=======file:%p %p %d\n", avi->file, data, len);
     ret = vfs_internal_write( (mp_obj_t)avi->file, data, len, &err );
-    printf("=======write end, len:%d\n", ret);
     if( err<0 )
         return -err;
     return ret;
@@ -217,7 +214,6 @@ int video_hal_file_close(avi_t* avi)
     if( !avi->file )
         return -EPERM;
     vfs_internal_close( (mp_obj_t)avi->file, &err );
-    printf("file close\n");
     avi->file = NULL;
     if( err!=0 )
         return -err;
@@ -231,10 +227,14 @@ int video_hal_file_seek(avi_t* avi, long offset, uint8_t whence)
     if( !avi->file )
         return -EPERM;
     vfs_internal_seek( (mp_obj_t)avi->file, (mp_int_t)offset, whence, &err );
-    printf("seek:%d\n", err);
     if( err!=0 )
         return -err;
     return 0;
+}
+
+int video_hal_file_size(avi_t* avi)
+{
+    return vfs_internal_size((mp_obj_t)avi->file);
 }
 
 /**
@@ -252,14 +252,11 @@ int video_hal_image_encode_mjpeg(avi_t* avi, image_t* img)
     // will try to realloc. MP will detect that the pointer is outside of
     // the heap and return NULL which will cause an out of memory error.
     jpeg_compress(img, &out, avi->mjpeg_quality, false);
-    printf("encode ok:%d\n", out.bpp);
     if(out.bpp%8)//align
     {
         out.bpp += (8 - out.bpp%8);
     }
-    printf("final encode len:%d\n", out.bpp);
     int ret = video_hal_file_write(avi, out.pixels, out.bpp);
-    printf("write to fs :%d\n", ret);
     fb_free();
     fb_alloc_free_till_mark();
     if(ret < 0)

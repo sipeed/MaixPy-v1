@@ -118,7 +118,7 @@ mp_obj_t vfs_internal_fatfs_open(fs_user_mount_t* vfs, const char* path, const c
         }
     }
 
-    pyb_file_fatfs_obj_t *o = m_new_obj(pyb_file_spiffs_obj_t);
+    pyb_file_fatfs_obj_t *o = m_new_obj(pyb_file_fatfs_obj_t);
     o->base.type = type;
     FRESULT res = f_open(&vfs->fatfs, &o->fp, path, mode);
     if (res != FR_OK) {
