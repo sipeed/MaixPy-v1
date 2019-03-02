@@ -34,6 +34,7 @@
 #include "py/gc.h"
 #include "py/mpthread.h"
 #include "gccollect.h"
+#include <sysctl.h>
 
 #define K210_NUM_AREGS 32
 
@@ -58,14 +59,16 @@ static void gc_collect_inner(int level)
         gc_collect_root((void**)sp, ((mp_uint_t)MP_STATE_THREAD(stack_top) - (mp_uint_t)sp) / sizeof(void*));
         return;
     }
-
+#if MICROPY_PY_THREAD
     // Trace root pointers from other threads
-    //int n_th = mp_thread_gc_others();
+    int n_th = mp_thread_gc_others();
+#endif
 }
 
 
 void gc_collect(void) {
     // start the GC
+	//uint64_t cycle = read_cycle();
     gc_collect_start();
 	gc_collect_inner(0);
 #if MICROPY_PY_THREAD
@@ -73,5 +76,6 @@ void gc_collect(void) {
 #endif
     // end the GC
     gc_collect_end();
+	//printf("#gc use: %d us\r\n",(read_cycle() - cycle)/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU) / 1000000UL));
 }
 
