@@ -94,7 +94,7 @@ int avi_init(uint8_t* buf, uint32_t size, avi_t* avi)
 		avi->width=bmp_header->bmi_header.width;
 		avi->height=bmp_header->bmi_header.height; 	
 	}
-	offset=avi_srarch_id(buf_start,size,(uint8_t*)AVI_MOVI_ID);
+	offset=avi_srarch_id(buf_start,size,(uint8_t*)"movi");
 	if(offset==0)
         return AVI_STATUS_ERR_MOVI;
 	avi->offset_movi = offset;
@@ -182,7 +182,14 @@ int avi_record_header_init(const char* path, avi_t* avi_config)
 	strf_bmp_header_t* bmp_header; 
 	strf_wav_header_t* wav_header; 
 
-	//TODO: check buf_size
+
+	//TODO: check parameters
+	if(!avi_config->record_audio)
+	{
+		avi_config->audio_sample_rate = 0;
+		avi_config->audio_format = 0;
+		avi_config->audio_channels = 0;
+	}
 
 	header=(avi_header_t*)buf;
 	memset(header, 0, sizeof(avi_header_t));

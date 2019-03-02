@@ -15,6 +15,7 @@ int video_play_avi_init(const char* path, avi_t* avi)
 
     if(file==MP_OBJ_NULL || err!=0)
         return err;
+    avi->file = (void*)file;
     mp_uint_t read_size = vfs_internal_read(file, buf, VIDEO_AVI_BUFF_SIZE, &err);
     if(err != 0 )
     {
@@ -42,7 +43,6 @@ int video_play_avi_init(const char* path, avi_t* avi)
     {
         video_hal_audio_init(avi);
     }
-    avi->file = (void*)file;
     avi->video_buf = buf;
     avi->frame_count = 0;
     avi->status = VIDEO_STATUS_RESUME;
