@@ -45,6 +45,7 @@ typedef struct{
 int video_play_avi_init(const char* path, avi_t* avi);
 int video_play_avi(avi_t* avi);
 int video_stop_play();
+int video_hal_display_init();
 int video_hal_display(image_t* img, video_display_roi_t img_roi);
 uint64_t video_hal_ticks_us(void);
 int video_hal_audio_init(avi_t* avi);

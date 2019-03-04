@@ -39,16 +39,16 @@ int video_play_avi_init(const char* path, avi_t* avi)
     }
     // printf("----2--:%d %d\n", avi->stream_id, avi->stream_size);
     vfs_internal_seek(file, avi->offset_movi+12, VFS_SEEK_SET, &err);
-    if(avi->audio_sample_rate)//init audio device
-    {
-        video_hal_audio_init(avi);
-    }
     avi->video_buf = buf;
     avi->frame_count = 0;
     avi->status = VIDEO_STATUS_RESUME;
     avi->time_us_fps_ctrl = video_hal_ticks_us();
     avi->volume = 80;
     avi->audio_count = 0;
+    if(avi->audio_sample_rate)//init audio device
+    {
+        video_hal_audio_init(avi);
+    }
 #ifdef VIDEO_DEBUG
     avi_debug_info(avi);
 #endif

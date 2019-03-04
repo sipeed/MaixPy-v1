@@ -93,7 +93,8 @@
 #define SPI_SLAVE_SELECT        3
 /* clang-format on */
 
-void tft_hard_init(void);
+void tft_hard_init(uint32_t freq);
+void tft_set_clk_freq(uint32_t freq);
 void tft_write_command(uint8_t cmd);
 void tft_write_byte(uint8_t *data_buf, uint32_t length);
 void tft_write_half(uint16_t *data_buf, uint32_t length);

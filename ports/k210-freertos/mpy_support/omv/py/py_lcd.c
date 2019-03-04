@@ -88,11 +88,21 @@ static mp_obj_t py_lcd_deinit()
     return mp_const_none;
 }
 
-static mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
+static mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
-	
     py_lcd_deinit();
-	switch (py_helper_keyword_int(n_args, args, 0, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_type), LCD_SHIELD)) {
+	enum { 
+		ARG_type,
+        ARG_freq
+    };
+    static const mp_arg_t allowed_args[] = {
+		{ MP_QSTR_type, MP_ARG_INT, {.u_int = LCD_SHIELD} },
+        { MP_QSTR_freq, MP_ARG_INT, {.u_int = 20000000} }
+    };
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+	switch (args[ARG_type].u_int) {
 		case LCD_NONE:
 			return mp_const_none;
 		case LCD_SHIELD:
@@ -105,7 +115,7 @@ static mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *args, mp_map_t *kw_args
 			fpioa_set_function(38, FUNC_GPIOHS0 + DCX_GPIONUM);
 			fpioa_set_function(36, FUNC_SPI0_SS3);
 			fpioa_set_function(39, FUNC_SPI0_SCLK);
-			lcd_init();
+			lcd_init(args[ARG_freq].u_int);
 			lcd_clear(BLACK);
 			return mp_const_none;
         }
@@ -268,12 +278,21 @@ STATIC mp_obj_t py_lcd_draw_string(uint n_args, const mp_obj_t *args)
 	return mp_const_none;
 }
 
+static mp_obj_t py_lcd_freq(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
+{
+	mp_int_t freq = lcd_get_freq();
+	if(n_args >= 1)
+		freq =  mp_obj_get_int(pos_args[0]);
+	lcd_set_freq(freq);
+	return mp_obj_new_int(freq);
+}
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_lcd_init_obj, 0, py_lcd_init);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_lcd_deinit_obj, py_lcd_deinit);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_lcd_width_obj, py_lcd_width);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_lcd_height_obj, py_lcd_height);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_lcd_type_obj, py_lcd_type);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_lcd_freq_obj, 0, py_lcd_freq);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_lcd_set_backlight_obj, py_lcd_set_backlight);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_lcd_get_backlight_obj, py_lcd_get_backlight);
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_lcd_display_obj, 1, py_lcd_display);
@@ -287,6 +306,7 @@ static const mp_map_elem_t globals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_width),           (mp_obj_t)&py_lcd_width_obj         },
     { MP_OBJ_NEW_QSTR(MP_QSTR_height),          (mp_obj_t)&py_lcd_height_obj        },
     { MP_OBJ_NEW_QSTR(MP_QSTR_type),            (mp_obj_t)&py_lcd_type_obj          },
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_freq),            (mp_obj_t)&py_lcd_freq_obj          },
     { MP_OBJ_NEW_QSTR(MP_QSTR_set_backlight),   (mp_obj_t)&py_lcd_set_backlight_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_backlight),   (mp_obj_t)&py_lcd_get_backlight_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_display),         (mp_obj_t)&py_lcd_display_obj       },

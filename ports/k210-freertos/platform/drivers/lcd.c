@@ -40,11 +40,11 @@ void lcd_interrupt_enable(void)
     lcd_ctl.mode = 1;
 }
 
-void lcd_init(void)
+void lcd_init(uint32_t freq)
 {
     uint8_t data = 0;
 
-    tft_hard_init();
+    tft_hard_init(freq);
     /*soft reset*/
     tft_write_command(SOFTWARE_RESET);
     usleep(100000);
@@ -80,6 +80,19 @@ void lcd_set_direction(lcd_dir_t dir)
     tft_write_command(MEMORY_ACCESS_CTL);
     tft_write_byte((uint8_t *)&dir, 1);
 }
+
+static uint32_t lcd_freq = 20000000; // default to 20MHz
+void lcd_set_freq(uint32_t freq)
+{
+    tft_set_clk_freq(freq);
+    lcd_freq = freq;
+}
+
+uint32_t lcd_get_freq()
+{
+    return lcd_freq;
+}
+
 
 void lcd_set_area(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 {

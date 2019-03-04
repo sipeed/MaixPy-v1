@@ -47,8 +47,9 @@ static mp_obj_t py_nes_init(mp_obj_t stick_obj)//, mp_obj_t wait_obj, mp_obj_t a
 	fpioa_set_function(38, FUNC_GPIOHS0 + DCX_GPIONUM);
 	fpioa_set_function(36, FUNC_SPI0_SS3);
 	fpioa_set_function(39, FUNC_SPI0_SCLK);
-	lcd_init();
+	// lcd_init();
 	lcd_set_direction(DIR_YX_LRUD|0x08);  //RLDU
+	//we DO NOT initialize here for we want user to set in python layer
 	lcd_clear(BLACK);
 	if(nes_stick == 1)
 	{

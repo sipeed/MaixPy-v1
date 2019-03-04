@@ -68,8 +68,10 @@ typedef struct _lcd_ctl
 
 void lcd_polling_enable(void);
 void lcd_interrupt_enable(void);
-void lcd_init();
+void lcd_init(uint32_t freq);
 void lcd_clear(uint16_t color);
+void lcd_set_freq(uint32_t freq);
+uint32_t lcd_get_freq();
 void lcd_set_direction(lcd_dir_t dir);
 void lcd_set_area(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
 void lcd_draw_point(uint16_t x, uint16_t y, uint16_t color);

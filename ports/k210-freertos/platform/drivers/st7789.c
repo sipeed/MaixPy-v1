@@ -28,13 +28,18 @@ static void set_rst(uint8_t val)
     gpiohs_set_pin(RST_GPIONUM, val);
 }
 
-void tft_hard_init(void)
+void tft_set_clk_freq(uint32_t freq)
+{
+    spi_set_clk_rate(SPI_CHANNEL, freq);
+}
+
+void tft_hard_init(uint32_t freq)
 {
     init_dcx();
     init_rst();
     set_rst(0);
     spi_init(SPI_CHANNEL, SPI_WORK_MODE_0, SPI_FF_OCTAL, 8, 0);
-    spi_set_clk_rate(SPI_CHANNEL, 19000000);
+    tft_set_clk_freq(freq);
     set_rst(1);
 }
 

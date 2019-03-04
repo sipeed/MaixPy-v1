@@ -80,6 +80,12 @@ static int on_irq_dma3(void *ctx)
     return 0;
 }
 
+int video_hal_display_init()
+{
+    // ! don't init here, init on system start up
+    // so we can use `lcd.freq(freq)` to set lcd spi frequency 
+    return 0;
+}
 
 
 int video_hal_audio_init(avi_t* avi)
