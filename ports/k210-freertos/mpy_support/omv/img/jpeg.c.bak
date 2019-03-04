@@ -26,6 +26,8 @@
 
 #define printf 
 
+#define DUAL_CORE 0
+
 #if OMV_HARDWARE_JPEG
 
 #define MCU_W                       (8)
@@ -1031,27 +1033,55 @@ bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc)
                 int8_t YDU[128], UDU[64], VDU[64];
                 for (int y=0; y<src->h; y+=8) {
                     for (int x=0; x<src->w; x+=16) {
-				
+t0=read_cycle();				
                         jpeg_get_mcu(src, 16, 8, x, y, src->bpp, pixels);
-
+printf("%d: %dus\r\n", __LINE__, (read_cycle()-t0)/(400UL));
+t0=read_cycle();
                         for (int idx=0, ofs=0; ofs<128; ofs+=16, idx+=8) {
 							pix_fill_8yuv(pixels, ofs, &YDU[idx + 0], &UDU[idx + 0], &VDU[idx + 0]);
 							pix_fill_8y(pixels, ofs + 8, &YDU[idx+64]);
                           
                         }
-
+printf("%d: %dus\r\n", __LINE__, (read_cycle()-t0)/(400UL));
+t0=read_cycle();
+#if DUAL_CORE
+						{
+						int DUQ_U[64];
+						int DUQ_V[64];
+						int end0pos_u;
+						int end0pos_v;
+						g_core1_ok=0;
+						DCUV_part1_parm.UDU = UDU;
+						DCUV_part1_parm.DUQ_U = DUQ_U;
+						DCUV_part1_parm.end0pos_u = &end0pos_u;
+						DCUV_part1_parm.VDU = VDU;
+						DCUV_part1_parm.DUQ_V = DUQ_V;
+						DCUV_part1_parm.end0pos_v = &end0pos_v;
+						//register_core1(cal_DCUV_part1, NULL);
+						
+                        DCY = jpeg_processDU(&jpeg_buf, YDU,    fdtbl_Y, DCY, YDC_HT, YAC_HT);
+                        DCY = jpeg_processDU(&jpeg_buf, YDU+64, fdtbl_Y, DCY, YDC_HT, YAC_HT);
+						//while(g_core1_ok==0){};
+						cal_DCUV_part2(&jpeg_buf, DUQ_U, end0pos_u, DUQ_V, end0pos_v);
+                        //DCU = jpeg_processDU(&jpeg_buf, UDU, fdtbl_UV, DCU, UVDC_HT, UVAC_HT);
+                        //DCV = jpeg_processDU(&jpeg_buf, VDU, fdtbl_UV, DCV, UVDC_HT, UVAC_HT);
+						
+						}
+#else
 						DCY = jpeg_processDU(&jpeg_buf, YDU,    fdtbl_Y, DCY, YDC_HT, YAC_HT);
                         DCY = jpeg_processDU(&jpeg_buf, YDU+64, fdtbl_Y, DCY, YDC_HT, YAC_HT);
 						DCU = jpeg_processDU(&jpeg_buf, UDU, fdtbl_UV, DCU, UVDC_HT, UVAC_HT);
 						DCV = jpeg_processDU(&jpeg_buf, VDU, fdtbl_UV, DCV, UVDC_HT, UVAC_HT);
-
+#endif
+printf("%d: %dus\r\n", __LINE__, (read_cycle()-t0)/(400UL));
+t0=read_cycle();
                     }
                     if (jpeg_buf.overflow) {
                         goto jpeg_overflow;
                     }
                 }
 				printf("%d: %dus\r\n", __LINE__, (read_cycle()-t0)/(400UL));
-
+t0=read_cycle();
                 break;
             }
             case JPEG_SUBSAMPLE_2x2: {
@@ -1059,9 +1089,10 @@ bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc)
                 int8_t YDU[256], UDU[64], VDU[64];
                 for (int y=0; y<src->h; y+=16) {
                     for (int x=0; x<src->w; x+=16) {
-
+t0=read_cycle();
                         jpeg_get_mcu(src, 16, 16, x, y, src->bpp, pixels);
-
+printf("%d: %dus\r\n", __LINE__, (read_cycle()-t0)/(400UL));
+t0=read_cycle();
                         for (int r=0, idx=0; r<8; r++, idx+=8) {
                             int ofs = r*16;
 							pix_fill_8y(pixels, ofs, &YDU[idx]);
@@ -1075,15 +1106,45 @@ bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc)
                             // Just toss the odd U/V pixels (could average for better quality)
 							pix_fill_8uv2(pixels, ofs, &UDU[idx + 0], &VDU[idx + 0]);
                         }
+printf("%d: %dus\r\n", __LINE__, (read_cycle()-t0)/(400UL));
+t0=read_cycle();
+#if DUAL_CORE
+						{
+							int DUQ_U[64];
+							int DUQ_V[64];
+							int end0pos_u;
+							int end0pos_v;
+							
+							g_core1_ok=0;
+							DCUV_part1_parm.UDU = UDU;
+							DCUV_part1_parm.DUQ_U = DUQ_U;
+							DCUV_part1_parm.end0pos_u = &end0pos_u;
+							DCUV_part1_parm.VDU = VDU;
+							DCUV_part1_parm.DUQ_V = DUQ_V;
+							DCUV_part1_parm.end0pos_v = &end0pos_v;
+							//register_core1(cal_DCUV_part1, NULL);
 
+							DCY = jpeg_processDU(&jpeg_buf, YDU,     fdtbl_Y, DCY, YDC_HT, YAC_HT);
+							DCY = jpeg_processDU(&jpeg_buf, YDU+64,  fdtbl_Y, DCY, YDC_HT, YAC_HT);
+							DCY = jpeg_processDU(&jpeg_buf, YDU+128, fdtbl_Y, DCY, YDC_HT, YAC_HT);
+							DCY = jpeg_processDU(&jpeg_buf, YDU+192, fdtbl_Y, DCY, YDC_HT, YAC_HT);
+							//DCU = jpeg_processDU(&jpeg_buf, UDU, fdtbl_UV, DCU, UVDC_HT, UVAC_HT);
+							//DCV = jpeg_processDU(&jpeg_buf, VDU, fdtbl_UV, DCV, UVDC_HT, UVAC_HT);
+							//cal_DCUV_part2(jpeg_buf_t *jpeg_buf, int8* DUQ_U, int end0pos_u, int8* DUQ_V, int end0pos_v)
+							//while(g_core1_ok==0){};
+							cal_DCUV_part2(&jpeg_buf, DUQ_U, end0pos_u, DUQ_V, end0pos_v);
+						}
+#else
 						DCY = jpeg_processDU(&jpeg_buf, YDU,     fdtbl_Y, DCY, YDC_HT, YAC_HT);
 						DCY = jpeg_processDU(&jpeg_buf, YDU+64,  fdtbl_Y, DCY, YDC_HT, YAC_HT);
 						DCY = jpeg_processDU(&jpeg_buf, YDU+128, fdtbl_Y, DCY, YDC_HT, YAC_HT);
 						DCY = jpeg_processDU(&jpeg_buf, YDU+192, fdtbl_Y, DCY, YDC_HT, YAC_HT);
 						DCU = jpeg_processDU(&jpeg_buf, UDU, fdtbl_UV, DCU, UVDC_HT, UVAC_HT);
 						DCV = jpeg_processDU(&jpeg_buf, VDU, fdtbl_UV, DCV, UVDC_HT, UVAC_HT);
+#endif
 
-
+printf("%d: %dus\r\n", __LINE__, (read_cycle()-t0)/(400UL));
+t0=read_cycle();
                     }
                     if (jpeg_buf.overflow) {
                         goto jpeg_overflow;

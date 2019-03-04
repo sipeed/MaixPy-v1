@@ -4,12 +4,12 @@
 baud=2000000
 
 #### Dan dock Or Maix Bit
-device=/dev/ttyUSB0
-Board=dan
+#device=/dev/ttyUSB0
+#Board=dan
 
 #### Maix Go with open-ec firmware
-# device=/dev/ttyUSB1
-# Board=goE
+ device=/dev/ttyUSB1
+ Board=goE
 
 #### Maix Go with CMSIS-DAP firmware
 # device=/dev/ttyACM0
