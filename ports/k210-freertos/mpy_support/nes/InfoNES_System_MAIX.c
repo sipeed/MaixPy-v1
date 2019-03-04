@@ -24,9 +24,8 @@
 extern uint8_t g_dvp_buf[];
 extern NES_DWORD * FrameBuffer;
 
-extern int wait_us;
-extern int audio_turn;	//63
-int g_sample_rate = 44100;
+extern int nes_cycle_us;
+extern int nes_volume;
 uint16_t final_wave[2048];
 int waveptr=0;
 int wavflag=0;
@@ -229,26 +228,25 @@ void InfoNES_PadState( NES_DWORD *pdwPad1, NES_DWORD *pdwPad2, NES_DWORD *pdwSys
 			  break;
 			/**********************/
 			case 'r':
-				wait_us++;
-				printf("wait_us:%d\r\n",wait_us);
+				nes_cycle_us++;
+				printf("nes_cycle_us:%d\r\n",nes_cycle_us);
 				break;
 			case 'f':
-				wait_us--;
-				if(wait_us<0)wait_us=0;
-				printf("wait_us:%d\r\n",wait_us);
+				nes_cycle_us--;
+				if(nes_cycle_us<0)nes_cycle_us=0;
+				printf("nes_cycle_us:%d\r\n",nes_cycle_us);
 				break;
 			case 't':
-				audio_turn++;
-				i2s_set_sample_rate(I2S_DEVICE_0, g_sample_rate*audio_turn/100);	
-				printf("audio_turn:%d\r\n",audio_turn);
+				nes_volume++;
+				if(nes_volume>8)nes_volume=8;
+				printf("nes_volume:%d\r\n",nes_volume);
 				break;
 			case 'g':
-				audio_turn--;
-				if(audio_turn<0)audio_turn=0;
-				i2s_set_sample_rate(I2S_DEVICE_0, g_sample_rate*audio_turn/100);	
-				printf("audio_turn:%d\r\n",audio_turn);
+				nes_volume--;
+				if(nes_volume<0)nes_volume=0;
+				printf("nes_volume:%d\r\n",nes_volume);
 				break;
-			case 0x1B://ESC
+			case 0x1B:   //ESC
 				printf("exit\r\n");
 				dwKeySystem |= PAD_SYS_QUIT;
 				is_exit_to_menu = true;
@@ -301,24 +299,23 @@ void InfoNES_PadState( NES_DWORD *pdwPad1, NES_DWORD *pdwPad2, NES_DWORD *pdwSys
         dwKeyPad1 = (cro<<0)|(rec<<1)|(select<<2)|(start<<3)|(up<<4)|(down<<5)|(left<<6)|(right<<7);
 		
 		if(l1){
-			wait_us++;
-			printf("wait_us:%d\r\n",wait_us);
+			nes_cycle_us++;
+			printf("nes_cycle_us:%d\r\n",nes_cycle_us);
 		}
 		if(l2){
-			wait_us--;
-			if(wait_us<0)wait_us=0;
-			printf("wait_us:%d\r\n",wait_us);
+			nes_cycle_us--;
+			if(nes_cycle_us<0)nes_cycle_us=0;
+			printf("nes_cycle_us:%d\r\n",nes_cycle_us);
 		}
 		if(r1){
-			audio_turn++;
-			i2s_set_sample_rate(I2S_DEVICE_0, g_sample_rate*audio_turn/100);	
-			printf("audio_turn:%d\r\n",audio_turn);
+			nes_volume++;
+			if(nes_volume>8)nes_volume=8;
+			printf("nes_volume:%d\r\n",nes_volume);
 		}
 		if(r2){
-			audio_turn--;
-			if(audio_turn<0)audio_turn=0;
-			i2s_set_sample_rate(I2S_DEVICE_0, g_sample_rate*audio_turn/100);	
-			printf("audio_turn:%d\r\n",audio_turn);
+			nes_volume--;
+			if(nes_volume<0)nes_volume=0;
+			printf("nes_volume:%d\r\n",nes_volume);
 		}
 	}
 	*pdwPad1   = dwKeyPad1;
@@ -349,9 +346,12 @@ void InfoNES_DebugPrint( char *pszMsg )
 
 
 /* Wait */
+static unsigned long int t0=0;
 void InfoNES_Wait()
 {
-	usleep(wait_us); //
+	while(read_cycle()<t0+nes_cycle_us*(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU) / 1000000UL)){};
+	t0 = read_cycle();
+	return;
 }
 
 
@@ -384,10 +384,8 @@ int InfoNES_SoundOpen( int samples_per_sync, int sample_rate )
                           RESOLUTION_16_BIT, SCLK_CYCLES_32,
                           /*TRIGGER_LEVEL_1*/ TRIGGER_LEVEL_4,
                           RIGHT_JUSTIFYING_MODE);
-	g_sample_rate = sample_rate;
-	printf("samples_per_sync=%d, sample_rate=%d\r\n", samples_per_sync, sample_rate*audio_turn/100);
-	// i2s_set_sample_rate(I2S_DEVICE_0, g_sample_rate*audio_turn/100);	
-	i2s_set_sample_rate(I2S_DEVICE_0, g_sample_rate);	
+	printf("samples_per_sync=%d, sample_rate=%d\r\n", samples_per_sync, sample_rate);
+	i2s_set_sample_rate(I2S_DEVICE_0, sample_rate);	
 	dmac_set_irq(DMAC_CHANNEL3, on_irq_dma3, NULL, 1);
 	/* Successful */
 	is_exit_to_menu = false;
@@ -420,10 +418,7 @@ void InfoNES_SoundOutput(int samples, BYTE *wave1, BYTE *wave2, BYTE *wave3, BYT
 	for (i = 0; i < samples; i++) 
 	{
 		final_wave[ waveptr ] = 
-		 (( wave1[i]>>2 + wave2[i] + wave3[i] + wave4[i] + wave5[i] ) / 5)<<8;
-		//tmp = (int16_t)wave1[i] +(int16_t)wave2[i] +(int16_t)wave3[i] +(int16_t)wave4[i] +(int16_t)wave5[i];
-		//tmp = (int16_t)tmp/5.0*256;
-		//final_wave[ waveptr ] = wave1[i]<<8;
+		 (( (uint16_t)wave1[i] + (uint16_t)wave2[i] + (uint16_t)wave3[i] + (uint16_t)wave4[i] + (uint16_t)wave5[i] ) / 5)<<(nes_volume);
 		waveptr++;
 		if ( waveptr == 2048 ) 
 		{
@@ -439,7 +434,7 @@ void InfoNES_SoundOutput(int samples, BYTE *wave1, BYTE *wave2, BYTE *wave3, BYT
 	if ( i2s_idle && wavflag )
 	{
 		i2s_idle = false;
-		i2s_play(I2S_DEVICE_0, DMAC_CHANNEL3, &final_wave[(wavflag - 1) << 10], 1024,1024, 16, 1);
+		i2s_play(I2S_DEVICE_0, DMAC_CHANNEL3, &final_wave[(wavflag - 1) << 10], samples*2,samples*2, 16, 1);
 		//i2s_send_data_dma(I2S_DEVICE_0, &final_wave[(wavflag - 1) << 10], samples * 2, DMAC_CHANNEL3);
 		wavflag = 0;
 	}

@@ -33,8 +33,8 @@ extern uint8_t g_dvp_buf[];
 #define LCD_H 240
 
 int nes_stick=0;
-int wait_us=5;
-int audio_turn=63;
+int nes_volume=8;  //0~8
+int nes_cycle_us=63;  //60fps,  63us per cycle
 
 static mp_obj_t py_nes_init(mp_obj_t stick_obj)//, mp_obj_t wait_obj, mp_obj_t audio_obj)
 {
