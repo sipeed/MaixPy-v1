@@ -2,8 +2,19 @@
 
 ############### SETTINGS #############
 baud=2000000
+
+#### Dan dock Or Maix Bit
 device=/dev/ttyUSB0
 Board=dan
+
+#### Maix Go with open-ec firmware
+# device=/dev/ttyUSB1
+# Board=goE
+
+#### Maix Go with CMSIS-DAP firmware
+# device=/dev/ttyACM0
+# Board=goD
+
 #######################################
 
 monitor=false
@@ -21,6 +32,8 @@ fi
 function help()
 {
     echo ""
+    echo "       !! Edit flash.sh SETTINGS zone first !!       "
+    echo ""
     echo "help:"
     echo "      ./flash.sh install:   download flash script"
     echo "      ./flash.sh uninstall: remove flash script"
@@ -33,7 +46,7 @@ function help()
     echo ""
 }
 
-if [[ "x$1" == "xhelp" ]]; then
+if [[ "x$1" == "xhelp" || "x$1" == "x--help" || "x$1" == "x-h" ]]; then
     help
     exit 0
 elif [[ "x$1" == "xinstall" ]]; then
