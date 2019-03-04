@@ -286,6 +286,11 @@ int sensor_reset()
     sensor.framesize   = 0;
     sensor.framerate   = 0;
     sensor.gainceiling = 0;
+    if(sensor.reset == NULL)
+    {
+        printf("[MAIXPY]: sensor reset function is null\n");
+        return -1;
+    }
     // Call sensor-specific reset function
     if (sensor.reset(&sensor) != 0) {	//rst reg, set default cfg.
         return -1;
@@ -345,16 +350,16 @@ int binocular_sensor_scan()
     //reset both sensor
     DCMI_PWDN_HIGH();
     mp_hal_ticks_ms(10);
-    DCMI_RESET_HIGH();
-    mp_hal_ticks_ms(10);
     DCMI_RESET_LOW();
+    mp_hal_ticks_ms(10);
+    DCMI_RESET_HIGH();
     mp_hal_ticks_ms(10);
 
     DCMI_PWDN_LOW();
     mp_hal_ticks_ms(10);
-    DCMI_RESET_HIGH();
-    mp_hal_ticks_ms(10);
     DCMI_RESET_LOW();
+    mp_hal_ticks_ms(10);
+    DCMI_RESET_HIGH();
     mp_hal_ticks_ms(10);
 
     /* Probe the first sensor */
@@ -362,6 +367,7 @@ int binocular_sensor_scan()
     mp_hal_ticks_ms(10);   
     sensor.slv_addr = cambus_scan();
     if (sensor.slv_addr == 0) {
+        printf("[MAIXPY]: Can not find sensor first\n");
         /* Sensor has been held in reset,
            so the reset line is active low */
         sensor.reset_pol = ACTIVE_LOW;
@@ -408,6 +414,7 @@ int binocular_sensor_scan()
 					/*ov9650_init*/
                     break;
                 case OV2640_ID:
+                    printf("[MAIXPY]: ov2640_init\n");
                     init_ret = ov2640_init(&sensor);
                     break;
                 case OV7725_ID:
@@ -452,6 +459,11 @@ int binocular_sensor_reset()
     //select first sensor ,  Call sensor-specific reset function
     DCMI_PWDN_HIGH();
     mp_hal_ticks_ms(10);
+    DCMI_RESET_LOW();
+    mp_hal_ticks_ms(10);
+    DCMI_RESET_HIGH();
+    mp_hal_ticks_ms(10); 
+      
     if (sensor.reset(&sensor) != 0) {	//rst reg, set default cfg.
         printf("[MAIXPY]: First sensor reset failed\n");
         return -1;
@@ -460,6 +472,11 @@ int binocular_sensor_reset()
     //select second sensor ,  Call sensor-specific reset function
     DCMI_PWDN_LOW();
     mp_hal_ticks_ms(10);
+    DCMI_RESET_LOW();
+    mp_hal_ticks_ms(10);
+    DCMI_RESET_HIGH();
+    mp_hal_ticks_ms(10);
+
     if (sensor.reset(&sensor) != 0) {	//rst reg, set default cfg.
         printf("[MAIXPY]: Second sensor reset failed\n");
         return -1;
@@ -527,6 +544,7 @@ int sensor_set_pixformat(pixformat_t pixformat)
         // No change
         return 0;
     }
+
     if (sensor.set_pixformat == NULL
         || sensor.set_pixformat(&sensor, pixformat) != 0) {
         // Operation not supported
@@ -536,6 +554,7 @@ int sensor_set_pixformat(pixformat_t pixformat)
     sensor.pixformat = pixformat;
     // Skip the first frame.
     MAIN_FB()->bpp = -1;
+
     return 0;
 }
 
