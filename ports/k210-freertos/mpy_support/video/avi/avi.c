@@ -187,8 +187,8 @@ int avi_record_header_init(const char* path, avi_t* avi_config)
 	if(!avi_config->record_audio)
 	{
 		avi_config->audio_sample_rate = 0;
-		avi_config->audio_format = 0;
-		avi_config->audio_channels = 0;
+		// avi_config->audio_format = 0;
+		// avi_config->audio_channels = 0;
 	}
 
 	header=(avi_header_t*)buf;
@@ -244,6 +244,10 @@ int avi_record_header_init(const char* path, avi_t* avi_config)
 	bmp_header->bmi_header.bmp_size = sizeof(bmp_header_t);
 	bmp_header->bmi_header.width = avi_config->width;
 	bmp_header->bmi_header.height = avi_config->height;
+	bmp_header->bmi_header.planes = 1;
+	bmp_header->bmi_header.bit_count = 24;
+	bmp_header->bmi_header.compression = AVI_FORMAT_MJPG;
+
 
 	list_header_video->block_size =  sizeof(list_header_t)-8 + 
 	                           sizeof(strh_header_t) +  
@@ -308,6 +312,7 @@ int avi_record_header_init(const char* path, avi_t* avi_config)
 		video_hal_file_close(avi_config);
 		return -ret;
 	}
+	avi_config->total_frame = 0;
 	return 0;
 }
 
@@ -392,11 +397,11 @@ int avi_record_finish(avi_t* avi)
 	ret = video_hal_file_write(avi, (uint8_t*)&size, 4);
 	if( ret <= 0)
 		return -ret;
-	//write total_frame
-	ret = video_hal_file_seek(avi, 40, VIDEO_HAL_FILE_SEEK_CUR); //sizeof(avi_header_t) + sizeof(list_header_t) +4*6
+	//write total_frame in avih
+	ret = video_hal_file_seek(avi, 40, VIDEO_HAL_FILE_SEEK_CUR); //4+ sizeof(list_header_t) +4*6
 	if(ret!=0)
 		return -ret;
-	ret = video_hal_file_write(avi, (uint8_t*)avi->total_frame, 4);
+	ret = video_hal_file_write(avi, (uint8_t*)(&avi->total_frame), 4);
 	if( ret <= 0)
 		return -ret;
 	video_hal_file_close(avi);
