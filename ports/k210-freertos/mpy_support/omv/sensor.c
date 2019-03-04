@@ -463,7 +463,7 @@ int binocular_sensor_reset()
     mp_hal_ticks_ms(10);
     DCMI_RESET_HIGH();
     mp_hal_ticks_ms(10); 
-      
+
     if (sensor.reset(&sensor) != 0) {	//rst reg, set default cfg.
         printf("[MAIXPY]: First sensor reset failed\n");
         return -1;
@@ -540,11 +540,6 @@ int sensor_write_reg(uint8_t reg_addr, uint16_t reg_data)
 int sensor_set_pixformat(pixformat_t pixformat)
 {
 
-    if (sensor.pixformat == pixformat) {
-        // No change
-        return 0;
-    }
-
     if (sensor.set_pixformat == NULL
         || sensor.set_pixformat(&sensor, pixformat) != 0) {
         // Operation not supported
@@ -560,10 +555,6 @@ int sensor_set_pixformat(pixformat_t pixformat)
 
 int sensor_set_framesize(framesize_t framesize)
 {
-    if (sensor.framesize == framesize) {
-        // No change
-        return 0;
-    }
     // Call the sensor specific function
     if (sensor.set_framesize == NULL
         || sensor.set_framesize(&sensor, framesize) != 0) {
