@@ -21,18 +21,28 @@ sys.path.append('/flash')
 
 # detect boot.py
 boot_py = '''
+from board import board_info
+from fpioa_manager import *
 import os, Maix, lcd
 from Maix import FPIOA, GPIO
 
-test_pin=15
+test_pin=16
 fpioa = FPIOA()
 fpioa.set_function(test_pin,FPIOA.GPIO7)
 test_gpio=GPIO(GPIO.GPIO7,GPIO.IN)
 lcd.init()
 lcd.draw_string(100,120,"Welcome to MaixPy")
 if test_gpio.value() == 0:
-    print('PIN 15 pulled down, enter test mode')
-
+    print('PIN 16 pulled down, enter test mode')
+    import sensor
+    import image
+    sensor.reset()
+    sensor.set_pixformat(sensor.RGB565)
+    sensor.set_framesize(sensor.QVGA)
+    sensor.run(1)
+    while True:
+        img=sensor.snapshot()
+        lcd.display(img)
 '''
 flash_ls = os.listdir()
 if not "boot.py" in flash_ls:
