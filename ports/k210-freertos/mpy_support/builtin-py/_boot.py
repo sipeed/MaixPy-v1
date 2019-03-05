@@ -6,6 +6,7 @@ import machine
 from board import board_info
 from fpioa_manager import *
 from pye_mp import pye
+from Maix import GPIO
 
 board_info=board_info()
 sys.path.append('.')
@@ -31,10 +32,7 @@ fpioa = FPIOA()
 fpioa.set_function(test_pin,FPIOA.GPIO7)
 test_gpio=GPIO(GPIO.GPIO7,GPIO.IN)
 lcd.init(color=(255,0,0))
-lcd.draw_string(100,120, "Welcom to MaixPy", lcd.WHITE, lcd.RED)
-img = image.Image()
-img.draw_string(25,120, "Welcome to MaixPy", scale=2)
-lcd.display(img)
+lcd.draw_string(100,120, "Welcome to MaixPy", lcd.WHITE, lcd.RED)
 if test_gpio.value() == 0:
     print('PIN 16 pulled down, enter test mode')
     import sensor
@@ -43,14 +41,18 @@ if test_gpio.value() == 0:
     sensor.set_pixformat(sensor.RGB565)
     sensor.set_framesize(sensor.QVGA)
     sensor.run(1)
-    lcd.freq(freq=16000000)
+    lcd.freq(16000000)
     while True:
         img=sensor.snapshot()
         lcd.display(img)
 '''
 
 flash_ls = os.listdir()
-if not "boot.py" in flash_ls:
+test_pin=16
+fpioa = FPIOA()
+fpioa.set_function(test_pin,FPIOA.GPIO7)
+test_gpio=GPIO(GPIO.GPIO7,GPIO.IN)
+if (not "boot.py" in flash_ls) or (test_gpio.value() == 0):
     f = open("boot.py", "wb")
     f.write(boot_py)
     f.close()
