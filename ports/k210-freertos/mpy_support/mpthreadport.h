@@ -36,7 +36,7 @@
 typedef struct _mp_thread_mutex_t {
     SemaphoreHandle_t handle;
     StaticSemaphore_t buffer;
-} mp_thread_mutex_t;
+} __attribute__((aligned(8))) mp_thread_mutex_t;
 
 void mp_thread_init(void *stack, uint32_t stack_len);
 int mp_thread_gc_others(void);

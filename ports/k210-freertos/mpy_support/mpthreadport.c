@@ -45,13 +45,14 @@ typedef struct _thread_t {
     void *stack;            // pointer to the stack
     size_t stack_len;       // number of words in the stack
     struct _thread_t *next;
-} thread_t;
+} __attribute__((aligned(8))) thread_t;
 
 // the mutex controls access to the linked list
-STATIC mp_thread_mutex_t thread_mutex;
-STATIC thread_t thread_entry0;
-STATIC thread_t *thread; // root pointer, handled by mp_thread_gc_others
-STATIC uint32_t thread_num; // 
+STATIC volatile mp_thread_mutex_t thread_mutex;
+STATIC volatile thread_t thread_entry0;
+STATIC volatile thread_t *thread; // root pointer, handled by mp_thread_gc_others
+STATIC volatile uint32_t thread_num; // 
+
 void mp_thread_init(void *stack, uint32_t stack_len) {
     mp_thread_set_state(&mp_state_ctx.thread);
     // create the first entry in the linked list of all threads
@@ -166,7 +167,9 @@ void mp_thread_create_ex(void *(*entry)(void*), void *arg, size_t *stack_size, i
 
     // allocate TCB, stack and linked-list node (must be outside thread_mutex lock)
     StackType_t *stack = NULL;
-    thread_t *th = m_new_obj(thread_t);
+
+    // thread_t *th = m_new_obj(thread_t);
+    thread_t *th = (thread_t*)malloc(sizeof(thread_t));
 
     mp_thread_mutex_lock(&thread_mutex, 1);
 
@@ -183,7 +186,8 @@ void mp_thread_create_ex(void *(*entry)(void*), void *arg, size_t *stack_size, i
 						   &thread_id);//task handle
     //printf("[MAIXPY]: thread_id %p created \n",thread_id);
     if (thread_id == NULL) {
-        m_del_obj(thread_t,th);
+        // m_del_obj(thread_t,th);
+        free(th);
         mp_thread_mutex_unlock(&thread_mutex);
         nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "can't create thread"));
     }
@@ -243,7 +247,8 @@ void mp_thread_mutex_unlock(mp_thread_mutex_t *mutex) {
 void mp_thread_delete(thread_t *pre_th,thread_t *th) {
     pre_th->next = th->next;
     vTaskDelete(th->id);
-    m_del_obj(thread_t,th);
+    // m_del_obj(thread_t,th);
+    free(th);
 }
 
 void mp_thread_deinit(void) {
@@ -255,7 +260,8 @@ void mp_thread_deinit(void) {
             continue;
         }
         vTaskDelete(th->id);
-        m_del_obj(thread_t,th);
+        // m_del_obj(thread_t,th);
+        free(th);
     }
     mp_thread_mutex_unlock(&thread_mutex);
     // allow FreeRTOS to clean-up the threads
