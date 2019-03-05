@@ -24,7 +24,6 @@
 #include "sysctl.h"
 
 
-#define printf(...)
 // extern uint8_t g_lcd_buf[];
 
 #define LCD_W 320
@@ -90,17 +89,33 @@ static mp_obj_t py_lcd_deinit()
 
 static mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
+	uint16_t color = BLACK;
     py_lcd_deinit();
 	enum { 
 		ARG_type,
-        ARG_freq
+        ARG_freq,
+		ARG_color
     };
     static const mp_arg_t allowed_args[] = {
 		{ MP_QSTR_type, MP_ARG_INT, {.u_int = LCD_SHIELD} },
-        { MP_QSTR_freq, MP_ARG_INT, {.u_int = 20000000} }
+        { MP_QSTR_freq, MP_ARG_INT, {.u_int = 20000000} },
+		{ MP_QSTR_color, MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} }
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+	if(args[ARG_color].u_obj != MP_OBJ_NULL)
+	{
+		if (mp_obj_is_integer(args[ARG_color].u_obj)) {
+			color = mp_obj_get_int(args[ARG_color].u_obj);
+		} else {
+			mp_obj_t *arg_color;
+			mp_obj_get_array_fixed_n(args[ARG_color].u_obj, 3, &arg_color);
+			color = COLOR_R8_G8_B8_TO_RGB565(IM_MAX(IM_MIN(mp_obj_get_int(arg_color[0]), COLOR_R8_MAX), COLOR_R8_MIN),
+													IM_MAX(IM_MIN(mp_obj_get_int(arg_color[1]), COLOR_G8_MAX), COLOR_G8_MIN),
+													IM_MAX(IM_MIN(mp_obj_get_int(arg_color[2]), COLOR_B8_MAX), COLOR_B8_MIN));
+			color = color<<8 | (color>>8 & 0xFF);
+		}
+	}
 
 	switch (args[ARG_type].u_int) {
 		case LCD_NONE:
@@ -116,7 +131,7 @@ static mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_
 			fpioa_set_function(36, FUNC_SPI0_SS3);
 			fpioa_set_function(39, FUNC_SPI0_SCLK);
 			lcd_init(args[ARG_freq].u_int);
-			lcd_clear(BLACK);
+			lcd_clear(color);
 			return mp_const_none;
         }
     }
@@ -185,7 +200,6 @@ static mp_obj_t py_lcd_display(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
 			l_pad = adjust / 2;
 			r_pad = (adjust + 1) / 2;
 		}
-		printf("l_pad %d r_pad %d\n",l_pad,r_pad);
 		// Fit Y. bigger or smaller, cut or pad to center
 		if (rect.h > height) {
 			int adjust = rect.h - height;
@@ -196,7 +210,6 @@ static mp_obj_t py_lcd_display(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
 			t_pad = adjust / 2;
 			b_pad = (adjust + 1) / 2;
 		}
-		printf("t_pad %d b_pad %d\n",t_pad,b_pad);
 	}
 	else
 	{
@@ -205,8 +218,6 @@ static mp_obj_t py_lcd_display(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
 	}
 	is_cut =((rect.x != 0) || (rect.y != 0) || \
 			(rect.w != arg_img->w) || (rect.h != arg_img->h));
-    printf("is_cut=%d; rect:w %d h %d, x %d y%d; img: w %d h %d;\n",\
-		is_cut, rect.w,rect.h,rect.x,rect.y,arg_img->w,arg_img->h);
     switch (type) {
         case LCD_NONE:
             return mp_const_none;
@@ -240,13 +251,27 @@ static mp_obj_t py_lcd_display(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
     return mp_const_none;
 }
 
-static mp_obj_t py_lcd_clear()
+static mp_obj_t py_lcd_clear(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
+	uint16_t color = BLACK;
+	if(n_args >= 1)
+	{
+		if (mp_obj_is_integer(pos_args[0])) {
+			color = mp_obj_get_int(pos_args[0]);
+		} else {
+			mp_obj_t *arg_color;
+			mp_obj_get_array_fixed_n(pos_args[0], 3, &arg_color);
+			color = COLOR_R8_G8_B8_TO_RGB565(IM_MAX(IM_MIN(mp_obj_get_int(arg_color[0]), COLOR_R8_MAX), COLOR_R8_MIN),
+													IM_MAX(IM_MIN(mp_obj_get_int(arg_color[1]), COLOR_G8_MAX), COLOR_G8_MIN),
+													IM_MAX(IM_MIN(mp_obj_get_int(arg_color[2]), COLOR_B8_MAX), COLOR_B8_MIN));
+			color = color<<8 | (color>>8 & 0xFF);
+		}
+	}
     switch (type) {
         case LCD_NONE:
             return mp_const_none;
         case LCD_SHIELD:
-            lcd_clear(BLACK);
+            lcd_clear(color);
             return mp_const_none;
     }
     return mp_const_none;
@@ -278,12 +303,14 @@ STATIC mp_obj_t py_lcd_draw_string(uint n_args, const mp_obj_t *args)
 	return mp_const_none;
 }
 
-static mp_obj_t py_lcd_freq(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
+STATIC mp_obj_t py_lcd_freq(uint n_args, const mp_obj_t *pos_args)
 {
 	mp_int_t freq = lcd_get_freq();
 	if(n_args >= 1)
+	{
 		freq =  mp_obj_get_int(pos_args[0]);
-	lcd_set_freq(freq);
+		lcd_set_freq(freq);
+	}
 	return mp_obj_new_int(freq);
 }
 
@@ -292,11 +319,11 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_lcd_deinit_obj, py_lcd_deinit);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_lcd_width_obj, py_lcd_width);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_lcd_height_obj, py_lcd_height);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_lcd_type_obj, py_lcd_type);
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_lcd_freq_obj, 0, py_lcd_freq);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_freq_obj, 0, 1, py_lcd_freq);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_lcd_set_backlight_obj, py_lcd_set_backlight);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_lcd_get_backlight_obj, py_lcd_get_backlight);
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_lcd_display_obj, 1, py_lcd_display);
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_lcd_clear_obj, py_lcd_clear);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_lcd_clear_obj, 0, py_lcd_clear);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_lcd_direction_obj, py_lcd_direction);
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_draw_string_obj, 3, 5, py_lcd_draw_string);
 static const mp_map_elem_t globals_dict_table[] = {
