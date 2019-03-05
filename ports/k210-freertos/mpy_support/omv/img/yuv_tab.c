@@ -2092,6 +2092,171 @@ int8_t yuv_table(uint32_t idx)
 	return yuv_table_small[idx%TABLE_SIZE]+rest_yuv_table[((idx%3)<<3)+(idx/TABLE_SIZE)];
 }
 
+//idx must %3 ==0
+void pix_fill_yuv(uint32_t idx, int8_t* y, int8_t* u, int8_t* v)
+{
+	int8_t* ptr=&yuv_table_small[idx%TABLE_SIZE];
+	*y = *(ptr+0)+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+	*u = *(ptr+1)+rest_yuv_table[(1<<3)+(idx/TABLE_SIZE)];
+	*v = *(ptr+2)+rest_yuv_table[(2<<3)+(idx/TABLE_SIZE)];
+	return;
+}
+
+
+void pix_fill_8y(uint16_t* pixels, uint32_t ofs, int8_t* y)
+{
+	int8_t* ptr;
+	uint32_t idx;
+	uint64_t data[2];
+	data[0] = *((uint64_t*)(pixels+ofs));
+	data[1] = *((uint64_t*)(pixels+ofs+4));	
+	uint16_t* dat = (uint16_t*)&data;
+	
+	idx=dat[0]*3;
+	y[0] = yuv_table_small[idx%TABLE_SIZE]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+	idx=dat[1]*3;
+	y[1] = yuv_table_small[idx%TABLE_SIZE]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+	idx=dat[2]*3;
+	y[2] = yuv_table_small[idx%TABLE_SIZE]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+	idx=dat[3]*3;
+	y[3] = yuv_table_small[idx%TABLE_SIZE]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+	idx=dat[4]*3;
+	y[4] = yuv_table_small[idx%TABLE_SIZE]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+	idx=dat[5]*3;
+	y[5] = yuv_table_small[idx%TABLE_SIZE]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+	idx=dat[6]*3;
+	y[6] = yuv_table_small[idx%TABLE_SIZE]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+	idx=dat[7]*3;
+	y[7] = yuv_table_small[idx%TABLE_SIZE]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+	
+	/*idx=pixels[ofs + 0]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	y[0] = ptr[0]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+	
+	idx=pixels[ofs + 1]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	y[1] = ptr[0]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+	
+	idx=pixels[ofs + 2]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	y[2] = ptr[0]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+	
+	idx=pixels[ofs + 3]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	y[3] = ptr[0]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+
+	idx=pixels[ofs + 4]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	y[4] = ptr[0]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+
+	idx=pixels[ofs + 5]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	y[5] = ptr[0]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+
+	idx=pixels[ofs + 6]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	y[6] = ptr[0]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+
+	idx=pixels[ofs + 7]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	y[7] = ptr[0]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+*/
+	return;
+}
+
+void pix_fill_8uv2(uint16_t* pixels, uint32_t ofs, int8_t* u, int8_t* v)
+{
+	int8_t* ptr;
+	uint32_t idx;
+	
+	idx=pixels[ofs+0]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	u[0] = ptr[1]+rest_yuv_table[(1<<3)+(idx/TABLE_SIZE)];
+	v[0] = ptr[2]+rest_yuv_table[(2<<3)+(idx/TABLE_SIZE)];
+	idx=pixels[ofs+2]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	u[1] = ptr[1]+rest_yuv_table[(1<<3)+(idx/TABLE_SIZE)];
+	v[1] = ptr[2]+rest_yuv_table[(2<<3)+(idx/TABLE_SIZE)];
+	idx=pixels[ofs+4]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	u[2] = ptr[1]+rest_yuv_table[(1<<3)+(idx/TABLE_SIZE)];
+	v[2] = ptr[2]+rest_yuv_table[(2<<3)+(idx/TABLE_SIZE)];
+	idx=pixels[ofs+6]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	u[3] = ptr[1]+rest_yuv_table[(1<<3)+(idx/TABLE_SIZE)];
+	v[3] = ptr[2]+rest_yuv_table[(2<<3)+(idx/TABLE_SIZE)];
+	idx=pixels[ofs+8]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	u[4] = ptr[1]+rest_yuv_table[(1<<3)+(idx/TABLE_SIZE)];
+	v[4] = ptr[2]+rest_yuv_table[(2<<3)+(idx/TABLE_SIZE)];
+	idx=pixels[ofs+10]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	u[5] = ptr[1]+rest_yuv_table[(1<<3)+(idx/TABLE_SIZE)];
+	v[5] = ptr[2]+rest_yuv_table[(2<<3)+(idx/TABLE_SIZE)];
+	idx=pixels[ofs+12]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	u[6] = ptr[1]+rest_yuv_table[(1<<3)+(idx/TABLE_SIZE)];
+	v[6] = ptr[2]+rest_yuv_table[(2<<3)+(idx/TABLE_SIZE)];
+	idx=pixels[ofs+14]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	u[7] = ptr[1]+rest_yuv_table[(1<<3)+(idx/TABLE_SIZE)];
+	v[7] = ptr[2]+rest_yuv_table[(2<<3)+(idx/TABLE_SIZE)];
+}
+
+
+void pix_fill_8yuv(uint16_t* pixels, uint32_t ofs, int8_t* y, int8_t* u, int8_t* v)
+{
+	int8_t* ptr;
+	uint32_t idx;
+	uint64_t data[2];
+	data[0] = *((uint64_t*)(pixels+ofs));
+	data[1] = *((uint64_t*)(pixels+ofs+4));	
+	uint16_t* dat = (uint16_t*)&data;
+	
+	idx=dat[0]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	y[0] = ptr[0]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+	u[0] = ptr[1]+rest_yuv_table[(1<<3)+(idx/TABLE_SIZE)];
+	v[0] = ptr[2]+rest_yuv_table[(2<<3)+(idx/TABLE_SIZE)];
+	idx=dat[1]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	y[1] = ptr[0]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+	u[1] = ptr[1]+rest_yuv_table[(1<<3)+(idx/TABLE_SIZE)];
+	v[1] = ptr[2]+rest_yuv_table[(2<<3)+(idx/TABLE_SIZE)];
+	idx=dat[2]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	y[2] = ptr[0]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+	u[2] = ptr[1]+rest_yuv_table[(1<<3)+(idx/TABLE_SIZE)];
+	v[2] = ptr[2]+rest_yuv_table[(2<<3)+(idx/TABLE_SIZE)];
+	idx=dat[3]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	y[3] = ptr[0]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+	u[3] = ptr[1]+rest_yuv_table[(1<<3)+(idx/TABLE_SIZE)];
+	v[3] = ptr[2]+rest_yuv_table[(2<<3)+(idx/TABLE_SIZE)];
+	idx=dat[4]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	y[4] = ptr[0]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+	u[4] = ptr[1]+rest_yuv_table[(1<<3)+(idx/TABLE_SIZE)];
+	v[4] = ptr[2]+rest_yuv_table[(2<<3)+(idx/TABLE_SIZE)];
+	idx=dat[5]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	y[5] = ptr[0]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+	u[5] = ptr[1]+rest_yuv_table[(1<<3)+(idx/TABLE_SIZE)];
+	v[5] = ptr[2]+rest_yuv_table[(2<<3)+(idx/TABLE_SIZE)];
+	idx=dat[6]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	y[6] = ptr[0]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+	u[6] = ptr[1]+rest_yuv_table[(1<<3)+(idx/TABLE_SIZE)];
+	v[6] = ptr[2]+rest_yuv_table[(2<<3)+(idx/TABLE_SIZE)];
+	idx=dat[7]*3;
+	ptr=&yuv_table_small[idx%TABLE_SIZE];
+	y[7] = ptr[0]+rest_yuv_table[(0<<3)+(idx/TABLE_SIZE)];
+	u[7] = ptr[1]+rest_yuv_table[(1<<3)+(idx/TABLE_SIZE)];
+	v[7] = ptr[2]+rest_yuv_table[(2<<3)+(idx/TABLE_SIZE)];
+	
+}
+
+
 #endif
 #else
 const int8_t yuv_table[196608] = {
