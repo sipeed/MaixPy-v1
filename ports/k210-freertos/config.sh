@@ -3,16 +3,16 @@
 config_file=config.conf
 if [ ! -f $config_file ]; then
     echo "Please config toolchain path first in config.conf"
-    echo "toolchain_path=/opt/kendryte-toolchain" > config.conf
+    echo -e "toolchain_path=/opt/kendryte-toolchain\nbaud=2000000\ndevice=/dev/ttyUSB0\nBoard=dan\n" > config.conf
     exit 1
 fi
 build_config=`cat $config_file`
-toolchain_setting=`echo ${build_config} |grep toolchain_path`
+toolchain_setting=`echo "${build_config}" |grep toolchain_path`
 toolchain_path="/"`echo -e ${toolchain_setting#*/}`
 
 if [ ! -d $toolchain_path ]; then
     echo "can not find toolchain, please set toolchain path in config.conf"
-    echo "toolchain_path=/opt/kendryte-toolchain/bin" > config.conf
+    echo -e "toolchain_path=/opt/kendryte-toolchain\nbaud=2000000\ndevice=/dev/ttyUSB0\nBoard=dan\n" > config.conf
     exit 1
 fi
 

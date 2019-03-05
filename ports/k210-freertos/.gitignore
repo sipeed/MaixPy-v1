@@ -11,5 +11,6 @@ config.conf
 !k210.mk
 !common_c.mk
 !common.mk
-
+./kflash.py
+asm.txt
 

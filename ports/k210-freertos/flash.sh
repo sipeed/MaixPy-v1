@@ -1,21 +1,22 @@
 #!/bin/bash
 
-############### SETTINGS #############
-baud=2000000
 
-#### Dan dock Or Maix Bit
-#device=/dev/ttyUSB0
-#Board=dan
+config_file=config.conf
+build_config=`cat $config_file`
+tmp=`echo "${build_config}" |grep baud`
+baud=`echo -e ${tmp#*=}`
+tmp=`echo "${build_config}" |grep device`
+device=`echo -e ${tmp#*=}`
+tmp=`echo "${build_config}" |grep Board`
+Board=`echo -e ${tmp#*=}`
 
-#### Maix Go with open-ec firmware
- device=/dev/ttyUSB1
- Board=goE
+echo $baud
 
-#### Maix Go with CMSIS-DAP firmware
-# device=/dev/ttyACM0
-# Board=goD
-
-#######################################
+if [[ "x$baud" == "x" || "x$Board" == "x" || "x$device" == "x" ]]; then
+    echo "can not find config, please set configuration in config.conf"
+    echo -e "toolchain_path=/opt/kendryte-toolchain\nbaud=2000000\ndevice=/dev/ttyUSB0\nBoard=dan\n" > config.conf
+    exit 1
+fi
 
 monitor=false
 kflash_py=tools/kflash.py/kflash.py

@@ -17,12 +17,39 @@ make -C mpy-cross
 
 * Downlaod toolchain from [kendryte](https://kendryte.com/downloads/) (toolchain V8.2)
 
-* Decompress and copy to somewhere `/opt/kendryte-toolchain` for example , then set path
+* Decompress and copy to somewhere `/opt/kendryte-toolchain` for example , then set path and burn parameters
+
+```shell
+cd ports/k210-freertos
+chmod +x build.sh
+./build.sh
+```
+Then edit `config.conf` file:
 
 ```
-cd ports/k210-freertos
-echo "toolchain_path=/opt/kendryte-toolchain" > config.conf
+toolchain_path=/opt/kendryte-toolchain
+baud=2000000
+device=/dev/ttyUSB0
+Board=dan
 ```
+
+**Attention**: The different board have different configuration as follows:
+
+```shell
+#### Dan dock Or Maix Bit
+device=/dev/ttyUSB0
+Board=dan
+
+#### Maix Go with open-ec firmware
+device=/dev/ttyUSB1
+Board=goE
+
+#### Maix Go with CMSIS-DAP firmware
+device=/dev/ttyACM0
+Board=goD
+```
+
+
 
 * Install dependence
 
@@ -50,16 +77,31 @@ Then we can get bin file(s) in `output` folder
 
 2. Change default settings
 
-Edit `flash.sh`
+Edit `config.conf`
 
 ```
-############### SETTINGS #############
+toolchain_path=/opt/kendryte-toolchain
 baud=2000000
 device=/dev/ttyUSB0
-#######################################
+Board=dan
+```
+**Attention**: The different board have different configuration as follows:
+
+```shell
+#### Dan dock Or Maix Bit
+device=/dev/ttyUSB0
+Board=dan
+
+#### Maix Go with open-ec firmware
+device=/dev/ttyUSB1
+Board=goE
+
+#### Maix Go with CMSIS-DAP firmware
+device=/dev/ttyACM0
+Board=goD
 ```
 
-3. Burn/Flash to board
+1. Burn/Flash to board
 
 ```
 ./flash.sh
