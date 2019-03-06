@@ -18,6 +18,8 @@
 #include "InfoNES_System.h"
 #include "InfoNES_pAPU.h"
 
+#if MAIXPY_NES_EMULATOR_SUPPORT
+
 /*===================================================================*/
 /*                                                                   */
 /*            K6502_ReadZp() : Reading from the zero page            */
@@ -497,4 +499,5 @@ static inline WORD K6502_ReadW2( WORD wAddr )
   }
 }
 
+#endif //MAIXPY_NES_EMULATOR_SUPPORT
 #endif /* !K6502_RW_H_INCLUDED */

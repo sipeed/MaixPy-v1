@@ -16,6 +16,8 @@
 // built-in cascades
 #include "cascade.h"
 
+#ifndef OMV_MINIMUM
+
 static int eval_weak_classifier(cascade_t *cascade, point_t pt, int t_idx, int w_idx, int r_idx)
 {
     int32_t sumw=0;
@@ -291,3 +293,5 @@ int imlib_load_cascade(cascade_t *cascade, const char *path)
     }
     return FR_OK;
 }
+
+#endif //OMV_MINIMUM

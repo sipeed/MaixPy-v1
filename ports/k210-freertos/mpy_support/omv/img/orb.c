@@ -17,6 +17,8 @@
 #include "xalloc.h"
 #include "fb_alloc.h"
 
+#ifndef OMV_MINIMUM
+
 #define PATCH_SIZE  (31) // 31x31 pixels
 #define KDESC_SIZE  (32) // 32 bytes
 #define MAX_KP_DIST (KDESC_SIZE*8)
@@ -802,3 +804,5 @@ float orb_cluster_dist(int cx, int cy, void *kp_in)
     return fast_sqrtf(sum);
 
 }
+
+#endif //OMV_MINIMUM

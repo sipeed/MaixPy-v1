@@ -141,6 +141,7 @@ void imlib_get_similarity(image_t *img, const char *path, image_t *other, int sc
 }
 #endif //IMLIB_ENABLE_GET_SIMILARITY
 
+#ifndef OMV_MINIMUM
 void imlib_get_histogram(histogram_t *out, image_t *ptr, rectangle_t *roi, list_t *thresholds, bool invert)
 {
     switch(ptr->bpp) {
@@ -1021,3 +1022,6 @@ bool imlib_get_regression(find_lines_list_lnk_data_t *out, image_t *ptr, rectang
 
     return result;
 }
+
+#endif //OMV_MINIMUM
+

@@ -5,7 +5,6 @@
 /*  2000/05/18  InfoNES Project ( based on pNesX )                   */
 /*                                                                   */
 /*===================================================================*/
-
 /*-------------------------------------------------------------------
  * File List :
  *
@@ -44,6 +43,8 @@
 #include "InfoNES_System.h"
 #include "InfoNES.h"
 #include "sysctl.h"
+
+#if MAIXPY_NES_EMULATOR_SUPPORT
 
 #define _D //printf("%d\n",__LINE__)
 
@@ -1199,3 +1200,5 @@ void InfoNES_SetupChr()
   // Reset update flag
   ChrBufUpdate = 0;
 }
+
+#endif //MAIXPY_NES_EMULATOR_SUPPORT

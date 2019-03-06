@@ -1040,9 +1040,8 @@ lcd.display(img)
 
 ```python
 
-import sensor  
-import lcd
-lcd.init()  
+import sensor, lcd
+lcd.init()
 sensor.reset()
 sensor.set_pixformat(sensor.RGB565)
 sensor.set_framesize(sensor.QVGA)
@@ -1418,7 +1417,7 @@ while True:
 	clock.tick()
 	img = sensor.snapshot()
 	print("fps = ",clock.fps())
-```
+
 
 
 ## video

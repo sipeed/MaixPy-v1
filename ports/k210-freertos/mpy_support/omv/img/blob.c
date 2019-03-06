@@ -5,6 +5,8 @@
 
 #include "imlib.h"
 
+#ifndef OMV_MINIMUM
+
 typedef struct xylf
 {
     int16_t x, y, l, r;
@@ -943,3 +945,5 @@ void imlib_flood_fill_int(image_t *out, image_t *img, int x, int y,
 
     lifo_free(&lifo);
 }
+
+#endif //OMV_MINIMUM

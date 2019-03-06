@@ -5,7 +5,6 @@
 /*  2000/05/29  InfoNES Project ( based on DarcNES and NesterJ )     */
 /*                                                                   */
 /*===================================================================*/
-
 /*-------------------------------------------------------------------*/
 /*  Include files                                                    */
 /*-------------------------------------------------------------------*/
@@ -13,6 +12,8 @@
 #include "K6502_rw.h"
 #include "InfoNES_System.h"
 #include "InfoNES_pAPU.h"
+
+#if MAIXPY_NES_EMULATOR_SUPPORT
 
 /*-------------------------------------------------------------------*/
 /*   APU Event resources                                             */
@@ -1066,3 +1067,6 @@ void InfoNES_pAPUDone(void)
 /*
  * End of InfoNES_pAPU.cpp
  */
+
+#endif //MAIXPY_NES_EMULATOR_SUPPORT
+

@@ -13,6 +13,7 @@
 #include "fft.h"
 // http://processors.wiki.ti.com/index.php/Efficient_FFT_Computation_of_Real_Input
 
+#ifndef OMV_MINIMUM
 
 
 const static float fft_cos_table[512] = {
@@ -801,3 +802,5 @@ void fft2d_run_again(fft2d_controller_t *controller)
         do_fft(p, controller->h_pow2, (1 << controller->w_pow2));
     }
 }
+
+#endif //OMV_MINIMUM

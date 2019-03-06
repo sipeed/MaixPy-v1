@@ -6,11 +6,11 @@
 //////////////////// VIDEO BUFF ///////////////////////
 #include "framebuffer.h"
 #include "omv_boardconfig.h"
-extern uint8_t g_jpg_buf[OMV_JPEG_BUF_SIZE];
-#define   VIDEO_BUFF()  g_jpg_buf  // we use omv module's framebuff here
-#define   VIDEO_AVI_BUFF_SIZE  OMV_JPEG_BUF_SIZE
+extern uint8_t g_ai_buf_in[OMV_INIT_W * OMV_INIT_H * 3]; // usually for sensor( camera )
+#define   VIDEO_BUFF()  g_ai_buf_in  // we use omv module's framebuff here
+#define   VIDEO_AVI_BUFF_SIZE  (20*1024) // just satisfy avi header length (~=10k) and data length should less than this
 
-extern uint8_t g_dvp_buf[OMV_INIT_W * OMV_INIT_H * 2];
+extern uint8_t g_dvp_buf[OMV_INIT_W * OMV_INIT_H * 2]; // usually for lcd display(RGB565 16bit)
 #define   IMAGE_BUFF()  g_dvp_buf
 
 #define LCD_W 320

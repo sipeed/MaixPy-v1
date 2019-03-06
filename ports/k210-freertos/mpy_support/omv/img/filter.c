@@ -7,6 +7,7 @@
 #include "imlib.h"
 #include <stdio.h>
 
+#ifndef OMV_MINIMUM
 void imlib_histeq(image_t *img, image_t *mask)
 {
     switch(img->bpp) {
@@ -107,6 +108,7 @@ void imlib_histeq(image_t *img, image_t *mask)
         }
     }
 }
+#endif //OMV_MINIMUM
 
 // ksize == 0 -> 1x1 kernel
 // ksize == 1 -> 3x3 kernel

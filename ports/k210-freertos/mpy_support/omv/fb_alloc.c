@@ -12,10 +12,6 @@
 #include "omv_boardconfig.h"
 
 
-// #define OMV_FB_ALLOC_SIZE 1*1024*1024
-
-#define OMV_FB_ALLOC_SIZE 512*1024
-
 char fballoc_start[OMV_FB_ALLOC_SIZE] __attribute__((aligned(64)));;
 char* _fballoc = NULL;
 static char *pointer = NULL;

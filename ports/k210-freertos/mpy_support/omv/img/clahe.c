@@ -6,6 +6,8 @@
 #include "imlib.h"
 #define BYTE_IMAGE
 
+#ifndef OMV_MINIMUM
+
 /*
  * ANSI C code from the article
  * "Contrast Limited Adaptive Histogram Equalization"
@@ -417,3 +419,5 @@ void imlib_clahe_histeq(image_t *img, float clip_limit, image_t *mask)
 
     fb_free();
 }
+
+#endif //OMV_MINIMUM

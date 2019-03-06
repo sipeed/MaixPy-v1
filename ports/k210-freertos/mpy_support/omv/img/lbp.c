@@ -17,6 +17,8 @@
 #include "xalloc.h"
 #include "ff.h"
 
+#ifndef OMV_MINIMUM
+
 #define LBP_HIST_SIZE   (59)    //58 uniform hist + 1
 #define LBP_NUM_REGIONS (7)     //7x7 regions
 #define LBP_DESC_SIZE   (LBP_NUM_REGIONS*LBP_NUM_REGIONS*LBP_HIST_SIZE)
@@ -116,3 +118,5 @@ int imlib_lbp_desc_load(FIL *fp, uint8_t **desc)
 
     return res;
 }
+
+#endif //OMV_MINIMUM

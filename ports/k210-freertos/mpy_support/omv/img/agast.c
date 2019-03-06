@@ -5,6 +5,8 @@
 #include "fb_alloc.h"
 #include "gc.h"
 
+#ifndef OMV_MINIMUM
+
 #define MAX_ROW         (480)
 #define MAX_CORNERS     (2000)
 #define Compare(X, Y) ((X)>=(Y))
@@ -1271,3 +1273,6 @@ static int agast58_score(const unsigned char* p, int bstart)
 		b = (bmin + bmax) / 2;
 	}
 }
+
+#endif 
+

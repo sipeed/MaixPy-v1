@@ -6,9 +6,12 @@
 /*                                                                   */
 /*===================================================================*/
 
+
+
 #ifndef InfoNES_PAPU_H_INCLUDED
 #define InfoNES_PAPU_H_INCLUDED
-
+#include "InfoNES_Types.h"
+#if MAIXPY_NES_EMULATOR_SUPPORT
 /*-------------------------------------------------------------------*/
 /*  Macros                                                           */
 /*-------------------------------------------------------------------*/
@@ -193,6 +196,7 @@ extern NES_DWORD ApuC3Llc;                             /* Linear Length Counter 
 
 extern BYTE  ApuC4Atl;
 
+#endif //MAIXPY_NES_EMULATOR_SUPPORT
 #endif /* InfoNES_PAPU_H_INCLUDED */
 
 /*

@@ -9,6 +9,19 @@
 #ifndef __IMLIB_CONFIG_H__
 #define __IMLIB_CONFIG_H__
 
+#include "mpconfigport.h"
+
+#if MAIXPY_MINIMUM_FUNCTION
+
+#define IMLIB_ENABLE_YUV_LAB_FUNC
+
+#define OMV_MINIMUM
+
+/////////////////////////////////////////////////////////////////////////
+#else //MAIXPY_MINIMUM_FUNCTION
+/////////////////////////////////////////////////////////////////////////
+
+
 // Enable binary ops
 #define IMLIB_ENABLE_BINARY_OPS
 
@@ -124,5 +137,7 @@
 #define IMLIB_ENABLE_SELECTIVE_SEARCH
 
 #define IMLIB_ENABLE_YUV_LAB_FUNC
+
+#endif //MAIXPY_MINIMUM_FUNCTION
 
 #endif //__IMLIB_CONFIG_H__

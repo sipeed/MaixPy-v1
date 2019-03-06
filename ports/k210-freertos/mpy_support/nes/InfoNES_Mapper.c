@@ -15,6 +15,8 @@
 #include "InfoNES_Mapper.h"
 #include "K6502.h"
 
+
+#if MAIXPY_NES_EMULATOR_SUPPORT
 /*-------------------------------------------------------------------*/
 /*  Mapper resources                                                 */
 /*-------------------------------------------------------------------*/
@@ -313,3 +315,6 @@ struct MapperTable_tag MapperTable[] =
 #include "mapper/InfoNES_Mapper_255.h"
 
 /* End of InfoNES_Mapper.cpp */
+
+#endif //MAIXPY_NES_EMULATOR_SUPPORT
+

@@ -30,6 +30,8 @@ static const mp_obj_type_t py_image_type;
 //extern const char *ffs_strerror(FRESULT res);
 extern uint32_t systick_current_millis(void);
 
+#ifndef OMV_MINIMUM
+
 // Haar Cascade ///////////////////////////////////////////////////////////////
 
 typedef struct _py_cascade_obj_t {
@@ -228,6 +230,8 @@ static const mp_obj_type_t py_kptmatch_type = {
     .subscr = py_kptmatch_subscr,
     .locals_dict = (mp_obj_t) &py_kptmatch_locals_dict
 };
+
+#endif //OMV_MINIMUM
 
 // Image //////////////////////////////////////////////////////////////////////
 
@@ -1484,6 +1488,7 @@ STATIC mp_obj_t py_image_draw_image(uint n_args, const mp_obj_t *args, mp_map_t 
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_draw_image_obj, 3, py_image_draw_image);
 
+#ifndef OMV_MINIMUM
 STATIC mp_obj_t py_image_draw_keypoints(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     image_t *arg_img = py_helper_arg_to_image_mutable(args[0]);
@@ -1529,6 +1534,7 @@ STATIC mp_obj_t py_image_draw_keypoints(uint n_args, const mp_obj_t *args, mp_ma
     return args[0];
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_draw_keypoints_obj, 2, py_image_draw_keypoints);
+#endif //OMV_MINIMUM
 
 #ifdef IMLIB_ENABLE_FLOOD_FILL
 STATIC mp_obj_t py_image_flood_fill(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
@@ -2185,7 +2191,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_blend_obj, 2, py_image_blend);
 ////////////////////
 // Filtering Methods
 ////////////////////
-
+#ifndef OMV_MINIMUM
 static mp_obj_t py_image_histeq(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     image_t *arg_img =
@@ -2203,6 +2209,8 @@ static mp_obj_t py_image_histeq(uint n_args, const mp_obj_t *args, mp_map_t *kw_
     return args[0];
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_histeq_obj, 1, py_image_histeq);
+
+#endif //OMV_MINIMUM
 
 #ifdef IMLIB_ENABLE_MEAN
 STATIC mp_obj_t py_image_mean(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
@@ -2764,6 +2772,7 @@ static mp_obj_t py_image_get_similarity(mp_obj_t img_obj, mp_obj_t other_obj)
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(py_image_get_similarity_obj, py_image_get_similarity);
 #endif // IMLIB_ENABLE_GET_SIMILARITY
 
+#ifndef OMV_MINIMUM
 // Statistics Object //
 #define py_statistics_obj_size 24
 typedef struct py_statistics_obj {
@@ -3999,6 +4008,8 @@ static mp_obj_t py_image_find_blobs(uint n_args, const mp_obj_t *args, mp_map_t 
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_find_blobs_obj, 2, py_image_find_blobs);
 
+#endif //OMV_MINIMUM
+
 #ifdef IMLIB_ENABLE_FIND_LINES
 static mp_obj_t py_image_find_lines(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
@@ -5148,6 +5159,7 @@ static mp_obj_t py_image_find_displacement(uint n_args, const mp_obj_t *args, mp
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_find_displacement_obj, 2, py_image_find_displacement);
 #endif // IMLIB_ENABLE_FIND_DISPLACEMENT
 
+#ifndef OMV_MINIMUM
 static mp_obj_t py_image_find_template(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     image_t *arg_img = py_helper_arg_to_image_grayscale(args[0]);
@@ -5294,6 +5306,8 @@ static mp_obj_t py_image_find_keypoints(uint n_args, const mp_obj_t *args, mp_ma
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_find_keypoints_obj, 1, py_image_find_keypoints);
+
+#endif //OMV_MINIMUM
 
 #ifdef IMLIB_ENABLE_BINARY_OPS
 static mp_obj_t py_image_find_edges(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
@@ -5580,10 +5594,10 @@ static const mp_rom_map_elem_t locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_draw_image),          MP_ROM_PTR(&py_image_draw_image_obj)},
 #ifdef IMLIB_ENABLE_FLOOD_FILL
     {MP_ROM_QSTR(MP_QSTR_flood_fill),          MP_ROM_PTR(&py_image_flood_fill_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_flood_fill),          MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
+#ifndef OMV_MINIMUM
     {MP_ROM_QSTR(MP_QSTR_draw_keypoints),      MP_ROM_PTR(&py_image_draw_keypoints_obj)},
+#endif
     /* Binary Methods */
 #ifdef IMLIB_ENABLE_BINARY_OPS
     {MP_ROM_QSTR(MP_QSTR_binary),              MP_ROM_PTR(&py_image_binary_obj)},
@@ -5604,25 +5618,6 @@ static const mp_rom_map_elem_t locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_dilate),              MP_ROM_PTR(&py_image_dilate_obj)},
     {MP_ROM_QSTR(MP_QSTR_open),                MP_ROM_PTR(&py_image_open_obj)},
     {MP_ROM_QSTR(MP_QSTR_close),               MP_ROM_PTR(&py_image_close_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_binary),              MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_invert),              MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_and),                 MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_b_and),               MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_nand),                MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_b_nand),              MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_or),                  MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_b_or),                MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_nor),                 MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_b_nor),               MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_xor),                 MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_b_xor),               MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_xnor),                MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_b_xnor),              MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_erode),               MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_dilate),              MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_open),                MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_close),               MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_MATH_OPS
     {MP_ROM_QSTR(MP_QSTR_top_hat),             MP_ROM_PTR(&py_image_top_hat_obj)},
@@ -5641,112 +5636,66 @@ static const mp_rom_map_elem_t locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_max),                 MP_ROM_PTR(&py_image_max_obj)},
     {MP_ROM_QSTR(MP_QSTR_difference),          MP_ROM_PTR(&py_image_difference_obj)},
     {MP_ROM_QSTR(MP_QSTR_blend),               MP_ROM_PTR(&py_image_blend_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_top_hat),             MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_black_hat),           MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_negate),              MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_assign),              MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_replace),             MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_set),                 MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_add),                 MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_sub),                 MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_mul),                 MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_div),                 MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_min),                 MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_max),                 MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_difference),          MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_blend),               MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
     /* Filtering Methods */
+#ifndef OMV_MINIMUM
     {MP_ROM_QSTR(MP_QSTR_histeq),              MP_ROM_PTR(&py_image_histeq_obj)},
+#endif
 #ifdef IMLIB_ENABLE_MEAN
     {MP_ROM_QSTR(MP_QSTR_mean),                MP_ROM_PTR(&py_image_mean_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_mean),                MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_MEDIAN
     {MP_ROM_QSTR(MP_QSTR_median),              MP_ROM_PTR(&py_image_median_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_median),              MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_MODE
     {MP_ROM_QSTR(MP_QSTR_mode),                MP_ROM_PTR(&py_image_mode_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_mode),                MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_MIDPOINT
     {MP_ROM_QSTR(MP_QSTR_midpoint),            MP_ROM_PTR(&py_image_midpoint_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_midpoint),            MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_MORPH
     {MP_ROM_QSTR(MP_QSTR_morph),               MP_ROM_PTR(&py_image_morph_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_morph),               MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_GAUSSIAN
     {MP_ROM_QSTR(MP_QSTR_blur),                MP_ROM_PTR(&py_image_gaussian_obj)},
     {MP_ROM_QSTR(MP_QSTR_gaussian),            MP_ROM_PTR(&py_image_gaussian_obj)},
     {MP_ROM_QSTR(MP_QSTR_gaussian_blur),       MP_ROM_PTR(&py_image_gaussian_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_blur),                MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_gaussian),            MP_ROM_PTR(&py_func_unavailable_obj)},
-    {MP_ROM_QSTR(MP_QSTR_gaussian_blur),       MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_LAPLACIAN
     {MP_ROM_QSTR(MP_QSTR_laplacian),           MP_ROM_PTR(&py_image_laplacian_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_laplacian),           MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_BILATERAL
     {MP_ROM_QSTR(MP_QSTR_bilateral),           MP_ROM_PTR(&py_image_bilateral_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_bilateral),           MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_CARTOON
     {MP_ROM_QSTR(MP_QSTR_cartoon),             MP_ROM_PTR(&py_image_cartoon_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_cartoon),             MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
     /* Shadow Removal Methods */
 #ifdef IMLIB_ENABLE_REMOVE_SHADOWS
     {MP_ROM_QSTR(MP_QSTR_remove_shadows),      MP_ROM_PTR(&py_image_remove_shadows_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_remove_shadows),      MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_CHROMINVAR
     {MP_ROM_QSTR(MP_QSTR_chrominvar),          MP_ROM_PTR(&py_image_chrominvar_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_chrominvar),          MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_ILLUMINVAR
     {MP_ROM_QSTR(MP_QSTR_illuminvar),          MP_ROM_PTR(&py_image_illuminvar_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_illuminvar),          MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
     /* Geometric Methods */
 #ifdef IMLIB_ENABLE_LINPOLAR
     {MP_ROM_QSTR(MP_QSTR_linpolar),            MP_ROM_PTR(&py_image_linpolar_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_linpolar),            MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_LOGPOLAR
     {MP_ROM_QSTR(MP_QSTR_logpolar),            MP_ROM_PTR(&py_image_logpolar_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_logpolar),            MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
     {MP_ROM_QSTR(MP_QSTR_lens_corr),           MP_ROM_PTR(&py_image_lens_corr_obj)},
 #ifdef IMLIB_ENABLE_ROTATION_CORR
     {MP_ROM_QSTR(MP_QSTR_rotation_corr),       MP_ROM_PTR(&py_image_rotation_corr_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_rotation_corr),       MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
     /* Get Methods */
 #ifdef IMLIB_ENABLE_GET_SIMILARITY
     {MP_ROM_QSTR(MP_QSTR_get_similarity),      MP_ROM_PTR(&py_image_get_similarity_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_get_similarity),      MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
+#ifndef OMV_MINIMUM
     {MP_ROM_QSTR(MP_QSTR_get_hist),            MP_ROM_PTR(&py_image_get_histogram_obj)},
     {MP_ROM_QSTR(MP_QSTR_get_histogram),       MP_ROM_PTR(&py_image_get_histogram_obj)},
     {MP_ROM_QSTR(MP_QSTR_histogram),           MP_ROM_PTR(&py_image_get_histogram_obj)},
@@ -5756,70 +5705,49 @@ static const mp_rom_map_elem_t locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_get_regression),      MP_ROM_PTR(&py_image_get_regression_obj)},
     /* Find Methods */
     {MP_ROM_QSTR(MP_QSTR_find_blobs),          MP_ROM_PTR(&py_image_find_blobs_obj)},
+#endif //OMV_MINIMUM
 #ifdef IMLIB_ENABLE_FIND_LINES
     {MP_ROM_QSTR(MP_QSTR_find_lines),          MP_ROM_PTR(&py_image_find_lines_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_find_lines),          MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_FIND_LINE_SEGMENTS
     {MP_ROM_QSTR(MP_QSTR_find_line_segments),  MP_ROM_PTR(&py_image_find_line_segments_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_find_line_segments),  MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_FIND_CIRCLES
     {MP_ROM_QSTR(MP_QSTR_find_circles),        MP_ROM_PTR(&py_image_find_circles_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_find_circles),        MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_FIND_RECTS
     {MP_ROM_QSTR(MP_QSTR_find_rects),          MP_ROM_PTR(&py_image_find_rects_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_find_rects),          MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_QRCODES
     {MP_ROM_QSTR(MP_QSTR_find_qrcodes),        MP_ROM_PTR(&py_image_find_qrcodes_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_find_qrcodes),        MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_APRILTAGS
     {MP_ROM_QSTR(MP_QSTR_find_apriltags),      MP_ROM_PTR(&py_image_find_apriltags_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_find_apriltags),      MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_DATAMATRICES
     {MP_ROM_QSTR(MP_QSTR_find_datamatrices),   MP_ROM_PTR(&py_image_find_datamatrices_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_find_datamatrices),   MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_BARCODES
     {MP_ROM_QSTR(MP_QSTR_find_barcodes),       MP_ROM_PTR(&py_image_find_barcodes_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_find_barcodes),       MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_FIND_DISPLACEMENT
     {MP_ROM_QSTR(MP_QSTR_find_displacement),   MP_ROM_PTR(&py_image_find_displacement_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_find_displacement),   MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
+#ifndef OMV_MINIMUM
     {MP_ROM_QSTR(MP_QSTR_find_template),       MP_ROM_PTR(&py_image_find_template_obj)},
     {MP_ROM_QSTR(MP_QSTR_find_features),       MP_ROM_PTR(&py_image_find_features_obj)},
     {MP_ROM_QSTR(MP_QSTR_find_eye),            MP_ROM_PTR(&py_image_find_eye_obj)},
     {MP_ROM_QSTR(MP_QSTR_find_lbp),            MP_ROM_PTR(&py_image_find_lbp_obj)},
     {MP_ROM_QSTR(MP_QSTR_find_keypoints),      MP_ROM_PTR(&py_image_find_keypoints_obj)},
+#endif //OMV_MINIMUM
 #ifdef IMLIB_ENABLE_BINARY_OPS
     {MP_ROM_QSTR(MP_QSTR_find_edges),          MP_ROM_PTR(&py_image_find_edges_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_find_edges),          MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_HOG
     {MP_ROM_QSTR(MP_QSTR_find_hog),            MP_ROM_PTR(&py_image_find_hog_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_find_hog),            MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 #ifdef IMLIB_ENABLE_SELECTIVE_SEARCH
     {MP_ROM_QSTR(MP_QSTR_selective_search),    MP_ROM_PTR(&py_image_selective_search_obj)},
-#else
-    {MP_ROM_QSTR(MP_QSTR_selective_search),    MP_ROM_PTR(&py_func_unavailable_obj)},
 #endif
 	{MP_ROM_QSTR(MP_QSTR_dump_roi),    MP_ROM_PTR(&py_image_dump_roi_obj)},
 	{MP_ROM_QSTR(MP_QSTR_conv3),    MP_ROM_PTR(&py_image_conv3_obj)},
@@ -6193,6 +6121,7 @@ mp_obj_t py_image_load_image(uint n_args, const mp_obj_t *args, mp_map_t *kw_arg
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_load_image_obj, 0, py_image_load_image);
 
+#ifndef OMV_MINIMUM
 mp_obj_t py_image_load_cascade(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     cascade_t cascade;
@@ -6435,15 +6364,18 @@ int py_image_descriptor_from_roi(image_t *img, const char *path, rectangle_t *ro
     return 0;
 }
 
+#endif //OMV_MINIMUM
 
 static const mp_rom_map_elem_t globals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__),            MP_OBJ_NEW_QSTR(MP_QSTR_image)},
+#ifndef OMV_MINIMUM
     {MP_ROM_QSTR(MP_QSTR_SEARCH_EX),           MP_ROM_INT(SEARCH_EX)},
     {MP_ROM_QSTR(MP_QSTR_SEARCH_DS),           MP_ROM_INT(SEARCH_DS)},
     {MP_ROM_QSTR(MP_QSTR_EDGE_CANNY),          MP_ROM_INT(EDGE_CANNY)},
     {MP_ROM_QSTR(MP_QSTR_EDGE_SIMPLE),         MP_ROM_INT(EDGE_SIMPLE)},
     {MP_ROM_QSTR(MP_QSTR_CORNER_FAST),         MP_ROM_INT(CORNER_FAST)},
     {MP_ROM_QSTR(MP_QSTR_CORNER_AGAST),        MP_ROM_INT(CORNER_AGAST)},
+#endif
 #ifdef IMLIB_ENABLE_APRILTAGS
     {MP_ROM_QSTR(MP_QSTR_TAG16H5),             MP_ROM_INT(TAG16H5)},
     {MP_ROM_QSTR(MP_QSTR_TAG25H7),             MP_ROM_INT(TAG25H7)},
@@ -6470,17 +6402,19 @@ static const mp_rom_map_elem_t globals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_CODE93),              MP_ROM_INT(BARCODE_CODE93)},
     {MP_ROM_QSTR(MP_QSTR_CODE128),             MP_ROM_INT(BARCODE_CODE128)},
 #endif
+    {MP_ROM_QSTR(MP_QSTR_Image),               MP_ROM_PTR(&py_image_load_image_obj)},
     {MP_ROM_QSTR(MP_QSTR_ImageWriter),         MP_ROM_PTR(&py_image_imagewriter_obj)},
     {MP_ROM_QSTR(MP_QSTR_ImageReader),         MP_ROM_PTR(&py_image_imagereader_obj)},
     {MP_ROM_QSTR(MP_QSTR_rgb_to_lab),          MP_ROM_PTR(&py_image_rgb_to_lab_obj)},
     {MP_ROM_QSTR(MP_QSTR_lab_to_rgb),          MP_ROM_PTR(&py_image_lab_to_rgb_obj)},
     {MP_ROM_QSTR(MP_QSTR_rgb_to_grayscale),    MP_ROM_PTR(&py_image_rgb_to_grayscale_obj)},
     {MP_ROM_QSTR(MP_QSTR_grayscale_to_rgb),    MP_ROM_PTR(&py_image_grayscale_to_rgb_obj)},
-    {MP_ROM_QSTR(MP_QSTR_Image),               MP_ROM_PTR(&py_image_load_image_obj)},
+#ifndef OMV_MINIMUM
     {MP_ROM_QSTR(MP_QSTR_HaarCascade),         MP_ROM_PTR(&py_image_load_cascade_obj)},
     {MP_ROM_QSTR(MP_QSTR_load_descriptor),     MP_ROM_PTR(&py_image_load_descriptor_obj)},
     {MP_ROM_QSTR(MP_QSTR_save_descriptor),     MP_ROM_PTR(&py_image_save_descriptor_obj)},
     {MP_ROM_QSTR(MP_QSTR_match_descriptor),    MP_ROM_PTR(&py_image_match_descriptor_obj)},
+#endif
 };
 
 STATIC MP_DEFINE_CONST_DICT(globals_dict, globals_dict_table);

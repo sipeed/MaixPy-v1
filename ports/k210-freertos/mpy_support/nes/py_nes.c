@@ -25,6 +25,7 @@
 #include "sysctl.h"
 #include "myspi.h"
 
+#if MAIXPY_NES_EMULATOR_SUPPORT
 
 #define printf(...)
 extern uint8_t g_dvp_buf[];
@@ -78,10 +79,18 @@ static mp_obj_t py_nes_run(mp_obj_t path_obj)
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_nes_init_obj, py_nes_init);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_nes_run_obj, py_nes_run);
 
+#endif //MAIXPY_NES_EMULATOR_SUPPORT
+
+
+
 static const mp_map_elem_t globals_dict_table[] = {
+
+#if MAIXPY_NES_EMULATOR_SUPPORT	
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_nes) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_init),   (mp_obj_t)&py_nes_init_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_run),   (mp_obj_t)&py_nes_run_obj },
+#endif
+
 };
 
 STATIC MP_DEFINE_CONST_DICT(globals_dict, globals_dict_table);
@@ -90,3 +99,4 @@ const mp_obj_module_t nes_module = {
     .base = { &mp_type_module },
     .globals = (mp_obj_t)&globals_dict,
 };
+

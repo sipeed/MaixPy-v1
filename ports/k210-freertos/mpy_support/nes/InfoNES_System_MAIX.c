@@ -21,6 +21,8 @@
 #include "sysctl.h"
 #include "py/mpstate.h"
 
+#if MAIXPY_NES_EMULATOR_SUPPORT
+
 extern uint8_t g_dvp_buf[];
 extern NES_DWORD * FrameBuffer;
 
@@ -452,3 +454,5 @@ void InfoNES_MessageBox( char *pszMsg, ... )
 	va_end( args );
 	return;
 }
+
+#endif //MAIXPY_NES_EMULATOR_SUPPORT

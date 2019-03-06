@@ -11,6 +11,8 @@
 #include "xalloc.h"
 #include "fmath.h"
 
+#ifndef OMV_MINIMUM
+
 static void find_gradients(image_t *src, array_t *gradients, int x_off, int y_off, int box_w, int box_h)
 {
     for (int y=y_off; y<y_off+box_h-3; y++) {
@@ -134,3 +136,5 @@ void imlib_find_iris(image_t *src, point_t *iris, rectangle_t *roi)
 
     array_free(iris_gradients);
 }
+
+#endif //OMV_MINIMUM

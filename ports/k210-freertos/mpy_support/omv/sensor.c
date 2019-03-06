@@ -99,7 +99,7 @@ extern uint8_t* g_ai_buf_in;
 // extern uint8_t* g_ai_buf_out;
 extern uint8_t* g_dvp_buf;
 // extern uint8_t* g_lcd_buf;
-extern uint8_t* g_jpg_buf;
+// extern uint8_t* g_jpg_buf;
 
 void sensor_init_fb()
 {
@@ -108,7 +108,7 @@ void sensor_init_fb()
     // mutex_init(&JPEG_FB()->lock);
 
     // Save fb_enabled flag state
-    int fb_enabled = JPEG_FB()->enabled;
+    // int fb_enabled = JPEG_FB()->enabled;
 
     // Clear framebuffers
 	MAIN_FB()->x=0;MAIN_FB()->y=0;
@@ -117,16 +117,16 @@ void sensor_init_fb()
 	MAIN_FB()->bpp=0;
 	MAIN_FB()->pixels = &g_dvp_buf;
 	MAIN_FB()->pix_ai = &g_ai_buf_in;
-	JPEG_FB()->w=0;JPEG_FB()->h=0;
-	JPEG_FB()->size=0;JPEG_FB()->enabled=0;
-	JPEG_FB()->quality=0;
-	JPEG_FB()->pixels = &g_jpg_buf;
+	// JPEG_FB()->w=0;JPEG_FB()->h=0;
+	// JPEG_FB()->size=0;JPEG_FB()->enabled=0;
+	// JPEG_FB()->quality=0;
+	// JPEG_FB()->pixels = &g_jpg_buf;
 	//printf("pixels=0x%x, pix_ai=0x%x, jpg=0x%x\n", MAIN_FB()->pixels, MAIN_FB()->pix_ai, JPEG_FB()->pixels);
     // Set default quality
-    JPEG_FB()->quality = 35;
+    // JPEG_FB()->quality = 35;
 
     // Set fb_enabled
-    JPEG_FB()->enabled = fb_enabled;
+    // JPEG_FB()->enabled = fb_enabled;
 }
 
 //-------------------------------Monocular--------------------------------------
@@ -256,7 +256,7 @@ int sensor_init_dvp()
 	
     // Clear fb_enabled flag
     // This is executed only once to initialize the FB enabled flag.
-    JPEG_FB()->enabled = 0;
+    // JPEG_FB()->enabled = 0;
 
     /* All good! */
 	printf("[MAIXPY]: exit sensor_init\n");
@@ -433,7 +433,7 @@ int binocular_sensor_scan()
     }
     // Clear fb_enabled flag
     // This is executed only once to initialize the FB enabled flag.
-    JPEG_FB()->enabled = 0;
+    // JPEG_FB()->enabled = 0;
 
     /* All good! */
 	printf("[MAIXPY]: exit sensor_init\n");
