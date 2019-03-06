@@ -108,14 +108,6 @@ spiffs_user_mount_t spiffs_user_mount_handle;
 
 void do_str(const char *src, mp_parse_input_kind_t input_kind);
 
-const char Banner[] = {"\r\n __  __              _____  __   __  _____   __     __ \r\n\
-|  \\/  |     /\\     |_   _| \\ \\ / / |  __ \\  \\ \\   / /\r\n\
-| \\  / |    /  \\      | |    \\ V /  | |__) |  \\ \\_/ / \r\n\
-| |\\/| |   / /\\ \\     | |     > <   |  ___/    \\   /  \r\n\
-| |  | |  / ____ \\   _| |_   / . \\  | |         | |   \r\n\
-|_|  |_| /_/    \\_\\ |_____| /_/ \\_\\ |_|         |_|\r\n\
-Official Site:https://www.sipeed.com/\r\n\
-Wiki:https://maixpy.sipeed.com/\r\n"};
 
 STATIC bool init_sdcard_fs(void) {
     bool first_part = true;
@@ -306,7 +298,6 @@ soft_reset:
 		// run boot-up scripts
 		mp_hal_set_interrupt_char(CHAR_CTRL_C);
 		pyexec_frozen_module("_boot.py");
-		mp_hal_stdout_tx_strn(Banner, strlen(Banner));
 
 		for (;;) {
 			if (pyexec_mode_kind == PYEXEC_MODE_RAW_REPL) {

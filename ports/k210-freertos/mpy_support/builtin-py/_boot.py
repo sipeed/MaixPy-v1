@@ -57,6 +57,19 @@ if (not "boot.py" in flash_ls) or (test_gpio.value() == 0):
     f.write(boot_py)
     f.close()
 
+banner = '''
+ __  __              _____  __   __  _____   __     __
+|  \/  |     /\     |_   _| \ \ / / |  __ \  \ \   / /
+| \  / |    /  \      | |    \ V /  | |__) |  \ \_/ /
+| |\/| |   / /\ \     | |     > <   |  ___/    \   /
+| |  | |  / ____ \   _| |_   / . \  | |         | |
+|_|  |_| /_/    \_\ |_____| /_/ \_\ |_|         |_|
+
+Official Site : https://www.sipeed.com
+Wiki          : https://maixpy.sipeed.com
+'''
+print(banner)
+
 # run boot.py
 import boot
 

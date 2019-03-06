@@ -100,10 +100,11 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_LONGINT_IMPL                (MICROPY_LONGINT_IMPL_MPZ)
 
 #define MICROPY_FLOAT_IMPL                  (MICROPY_FLOAT_IMPL_DOUBLE)
-#define MICROPY_PY_BUILTINS_HELP    (1)
+#define MICROPY_PY_BUILTINS_HELP            (1)
 #define MICROPY_PY_BUILTINS_HELP_TEXT       kendryte_k210_help_text
-#define MICROPY_PY_BUILTINS_COMPLEX (1)
-#define MICROPY_PY_BUILTINS_FLOAT   (1)
+#define MICROPY_PY_BUILTINS_HELP_MODULES    (1)
+#define MICROPY_PY_BUILTINS_COMPLEX         (1)
+#define MICROPY_PY_BUILTINS_FLOAT           (1)
 
 
 // control over Python builtins
@@ -211,6 +212,17 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_PY_NETWORK                  (1)
 #define MICROPY_PY_USOCKET                  (1)
 #define MICROPY_PY_LWIP                     (0)
+
+// MaixPy modules
+
+
+#define MAIXPY_MINIMUM_FUNCTION             (0) // Minimum function
+#if MAIXPY_MINIMUM_FUNCTION
+#define MAIXPY_NES_EMULATOR_SUPPORT         (0) // NES gamer emulator
+#else
+#define MAIXPY_NES_EMULATOR_SUPPORT         (1) // NES gamer emulator
+#endif
+
 
 //disable ext str pool
 #define MICROPY_QSTR_EXTRA_POOL             mp_qstr_frozen_const_pool
