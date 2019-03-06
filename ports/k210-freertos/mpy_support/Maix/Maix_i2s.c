@@ -27,7 +27,7 @@
 #include "modMaix.h"
 #include "py_audio.h"
 #include "Maix_i2s.h"
-#define MAX_SAMPLE_RATE (60*1024)
+#define MAX_SAMPLE_RATE (4*1024*1024)
 #define MAX_SAMPLE_POINTS (64*1024)
 
 const mp_obj_type_t Maix_i2s_type;

@@ -98,7 +98,7 @@ wav_err_t wav_init(wav_decode_t *wav_obj,void* head, uint32_t file_size, uint32_
 	return OK;
 }
 
-mp_obj_t wav_play_process(audio_t* audio)
+mp_obj_t wav_play_process(audio_t* audio,uint32_t file_size)
 {
 	uint32_t head_len = 0;
 	uint32_t err_code = 0;
@@ -179,7 +179,7 @@ mp_obj_t wav_play(audio_t* audio)
 				read_num,
 				play_points,
 				decode_obj->bitspersample,
-				decode_obj->numchannels);//play readed data  
+				decode_obj->numchannels);//play readed data
 	return mp_const_true;
 }
 
@@ -189,9 +189,15 @@ mp_obj_t wav_record_process(audio_t* audio,uint32_t channels)
     uint32_t err_code = 0;
     uint32_t close_code = 0;
 	Maix_i2s_obj_t* i2s_dev = audio->dev;
+    for(int i = 0; i < 4; i++){
+        if(I2S_RECEIVER == i2s_dev->channel[i].mode){//find the received channel
+            audio->align_mode = i2s_dev->channel[i].align_mode;//get align mode
+            break;
+        }
+    }
     mp_obj_list_t* ret_list = (mp_obj_list_t*)m_new(mp_obj_list_t,sizeof(mp_obj_list_t));//m_new
     mp_obj_list_init(ret_list, 0);
-	//创建编码实例
+	//create encode object
 	audio->encode_obj = m_new(wav_encode_t,1);//new format obj
 	if(NULL == audio->encode_obj)
 	{
@@ -255,33 +261,81 @@ mp_obj_t wav_record_process(audio_t* audio,uint32_t channels)
 mp_obj_t wav_record(audio_t* audio,dmac_channel_number_t DMA_channel)
 {
 	Maix_i2s_obj_t* i2s_dev = audio->dev;//get device
-	i2s_receive_data_dma(i2s_dev->i2s_num, audio->buf, audio->points , DMAC_CHANNEL5);
-    i2s_work_mode_t align_mode = 0;
-    for(int i = 0; i < 4; i++){
-        if(I2S_RECEIVER == i2s_dev->channel[i].mode){//find the received channel
-            align_mode = i2s_dev->channel[i].align_mode;//get align mode
-            break;
-        }
-    }
-	wav_encode_t* wav_encode = audio->encode_obj;//get format
-	format_chunk_t* wav_fmt = &wav_encode->format;
-	dmac_wait_idle(DMA_channel);
-	wav_encode->data.chunk_size +=  audio->points * sizeof(uint32_t);
-	if(align_mode == RIGHT_JUSTIFYING_MODE)//only support right justifying
-		wav_right_justifying_record(audio->buf,wav_fmt->numchannels)
+	i2s_receive_data_dma(i2s_dev->i2s_num, audio->buf, audio->points , DMA_channel);
+	dmac_wait_idle(DMA_channel);	
+	wav_process_data(audio);
 	return mp_const_true;
 }
-int wav_right_justifying_record(audio_t* audio)
+int wav_process_data(audio_t* audio)
 {
-	if(1 == numchannels){//mono audio
-		for(int i = 0; i < audio->points; i++){
-			printf("LSB = %x\n",buf[i] & 0xff);
-			printf("MSB = %x\n",buf[i] >> 16 & 0xff);
-		}
+	wav_encode_t* wav_encode = audio->encode_obj;
+	uint32_t err_code = 0;
+	// for(int i = 0; i < audio->points; i++){
+	// 	printf("data[%d] : LSB = %x | MSB = %x\n",i, audio->buf[i] & 0xffff, (audio->buf[i] >> 16) & 0xffff);
+	// }
+	for(int i = 0; i < audio->points; i++){
+		audio->buf[i] = (audio->buf[i] >> 8) & 0xffff;
 	}
-	else if(2 == wav_fmt->numchannels){
-		//TODO
-	}//stereo audio
+	vfs_internal_write(audio->fp,audio->buf,audio->points * sizeof(uint32_t),&err_code);
+	wav_encode->data.chunk_size +=  audio->points * sizeof(uint32_t);
+	
+	// if(1 == wav_encode->format.numchannels){//mono audio
+	// 	uint16_t* buf = (uint16_t*)malloc(audio->points * sizeof(uint16_t));
+	// 	for(int i = 0; i < audio->points; i++){
+	// 		buf[i] = audio->buf[i] & 0xffff;
+	// 		//printf("data[%d] : LSB = %x | MSB = %x\n",i, audio->buf[i] & 0xffff, (audio->buf[i] >> 16) & 0xffff);
+	// 	}
+	// 	vfs_internal_write(audio->fp,buf,audio->points * sizeof(uint16_t),&err_code);
+	// 	wav_encode->data.chunk_size +=  audio->points * sizeof(uint16_t);
+	// 	free(buf);
+	// }
+	// else if(2 == wav_encode->format.numchannels){
+	// 	//TODO
+	// }//stereo audio
 
 	return 0;
+}
+void wav_finish(audio_t* audio)
+{
+	uint32_t err_code = 0;
+    uint32_t close_code = 0;
+	if(audio->decode_obj != NULL)
+	{
+		m_del(wav_decode_t,audio->decode_obj,1);
+		audio->decode_obj = NULL;
+	}
+	if(audio->encode_obj != NULL)
+	{
+		//write head data
+		vfs_internal_seek(audio->fp,0,VFS_SEEK_SET,&err_code);//
+		wav_encode_t* wav_encode = audio->encode_obj;
+		wav_encode->file.file_size = 44 - 8 + wav_encode->data.chunk_size;
+		vfs_internal_write(audio->fp, &wav_encode->file, 12, &err_code);//write file chunk
+		if(err_code != 0)
+		{
+			printf("[MAIXPY]: write file chunk error  close file\n");
+			m_del(wav_encode_t,audio->encode_obj,1);
+			vfs_internal_close(audio->fp,&close_code);
+			mp_raise_OSError(err_code);
+		}
+		vfs_internal_write(audio->fp, &wav_encode->format, 24, &err_code);//write fromate chunk
+		if(err_code != 0)
+		{
+			printf("[MAIXPY]: write formate chunk error  close file\n");
+			m_del(wav_encode_t,audio->encode_obj,1);
+			vfs_internal_close(audio->fp,&close_code);
+			mp_raise_OSError(err_code);
+		}
+		vfs_internal_write(audio->fp, &wav_encode->data, 8 ,&err_code);//write data chunk
+		if(err_code != 0)
+		{
+			printf("[MAIXPY]: write data chunk error  close file\n");
+			m_del(wav_encode_t,audio->encode_obj,1);
+			vfs_internal_close(audio->fp,&close_code);
+			mp_raise_OSError(err_code);
+		}
+		m_del(wav_encode_t,audio->encode_obj,1);
+		audio->encode_obj = NULL;
+	}
+	vfs_internal_close(audio->fp,&close_code);
 }

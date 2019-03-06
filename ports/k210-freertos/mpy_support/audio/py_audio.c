@@ -81,7 +81,7 @@ STATIC mp_obj_t Maix_audio_init_helper(Maix_audio_obj_t *self, size_t n_args, co
         }
     }else if(args[ARG_path].u_obj != mp_const_none)
     {
-        printf("[MAIXPY] : audiof file init\n");    
+        printf("[MAIXPY] : audiof file init\n");
         int err = 0;
         char* path_str = mp_obj_str_get_str(args[ARG_path].u_obj);
         mp_obj_t fp = vfs_internal_open(path_str,"+b",&err);
@@ -94,9 +94,9 @@ STATIC mp_obj_t Maix_audio_init_helper(Maix_audio_obj_t *self, size_t n_args, co
         audio_obj->fp = fp;
         audio_obj->type = FILE_AUDIO;
         //We can find the format of audio by path_str,but now just support wav
-        //if(-1 != strstr(path_str,"wav"))
+        if(NULL != strstr(path_str,".wav"))
             audio_obj->format = AUDIO_WAV_FMT;
-        //else if(-1 != strstr(path_str,"mp3"))
+        //else if(NULL != strstr(path_str,"mp3"))
         //    audio_obj->format = AUDIO_MP3_FMT;
     }
     else
@@ -161,7 +161,7 @@ STATIC mp_obj_t Maix_audio_play_process(mp_obj_t self_in,mp_obj_t I2S_dev) {
     switch(audio->format)
     {
         case AUDIO_WAV_FMT:
-            return wav_play_process(audio);
+            return wav_play_process(audio,file_size);
             break;
         default:
             break;
@@ -258,53 +258,15 @@ MP_DEFINE_CONST_FUN_OBJ_1(Maix_audio_record_obj,Maix_audio_record);
 STATIC mp_obj_t Maix_audio_finish(mp_obj_t self_in) {
     Maix_audio_obj_t *self = MP_OBJ_TO_PTR(self_in);//get auduio obj
     audio_t* audio = &self->audio; 
-    uint32_t err_code = 0;
-    uint32_t close_code = 0;
+
     switch(audio->format)
     {
         case AUDIO_WAV_FMT:
-            if(audio->decode_obj != NULL)
-            {
-                m_del(wav_decode_t,audio->decode_obj,1);
-                audio->decode_obj = NULL;
-            }
-            if(audio->encode_obj != NULL)
-            {
-                //write head data
-                vfs_internal_seek(audio->fp,0,VFS_SEEK_SET,&err_code);//
-                wav_encode_t* wav_encode = audio->encode_obj;
-                wav_encode->file.file_size = 44 - 8 + wav_encode->data.chunk_size;
-                vfs_internal_write(audio->fp, &wav_encode->file, 12, &err_code);//write file chunk
-                if(err_code != 0)
-                {
-                    printf("[MAIXPY]: write file chunk error  close file\n");
-                    m_del(wav_encode_t,audio->encode_obj,1);
-                    vfs_internal_close(audio->fp,&close_code);
-                    mp_raise_OSError(err_code);
-                }
-                vfs_internal_write(audio->fp, &wav_encode->format, 24, &err_code);//write fromate chunk
-                if(err_code != 0)
-                {
-                    printf("[MAIXPY]: write formate chunk error  close file\n");
-                    m_del(wav_encode_t,audio->encode_obj,1);
-                    vfs_internal_close(audio->fp,&close_code);
-                    mp_raise_OSError(err_code);
-                }
-                vfs_internal_write(audio->fp, &wav_encode->data, 8 ,&err_code);//write data chunk
-                if(err_code != 0)
-                {
-                    printf("[MAIXPY]: write data chunk error  close file\n");
-                    m_del(wav_encode_t,audio->encode_obj,1);
-                    vfs_internal_close(audio->fp,&close_code);
-                    mp_raise_OSError(err_code);
-                }
-                m_del(wav_encode_t,audio->encode_obj,1);
-            }
+            wav_finish(audio);
             break;
         default:
             break;
     }
-    vfs_internal_close(audio->fp,&close_code);
     return mp_const_none;
 }
 

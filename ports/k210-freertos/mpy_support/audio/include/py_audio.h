@@ -38,6 +38,7 @@ typedef struct _audio_t{//This may be chaos, it need to sort it out
     mp_obj_t fp;
     audio_type_t type;
     audio_fmt_t format;
+    i2s_work_mode_t align_mode;
     //-----------play------------
     void* decode_obj;
     //-----------record------------
