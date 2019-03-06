@@ -11,7 +11,7 @@ sinclude $(COMMON_MK)
 LIB_NAME ?= drivers
 OUTPUT_DIR := build
 OUTPUT_BIN := $(BIN_DIR)/$(LIB_NAME).a
-INCLUDE := -I $(CUR_DIR) -I $(CUR_DIR)/include
+INCLUDE := -I $(CUR_DIR) -I $(CUR_DIR)/include  
 
 ##############################################################################
 # USER CONFIG MAKE METHOD

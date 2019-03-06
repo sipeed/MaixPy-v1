@@ -580,10 +580,6 @@ int sensor_set_framesize(framesize_t framesize)
 
 int sensor_set_framerate(framerate_t framerate)
 {
-    if (sensor.framerate == framerate) {
-       /* no change */
-        return 0;
-    }
 
     /* call the sensor specific function */
     if (sensor.set_framerate == NULL
@@ -633,10 +629,6 @@ int sensor_set_saturation(int level)
 
 int sensor_set_gainceiling(gainceiling_t gainceiling)
 {
-    if (sensor.gainceiling == gainceiling) {
-        /* no change */
-        return 0;
-    }
 
     /* call the sensor specific function */
     if (sensor.set_gainceiling == NULL
@@ -761,10 +753,6 @@ int sensor_set_vflip(int enable)
 
 int sensor_set_special_effect(sde_t sde)
 {
-    if (sensor.sde == sde) {
-        /* no change */
-        return 0;
-    }
 
     /* call the sensor specific function */
     if (sensor.set_special_effect == NULL

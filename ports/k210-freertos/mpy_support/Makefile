@@ -17,6 +17,7 @@ LIB_NAME ?= mpy_support
 OUTPUT_DIR := build
 OUTPUT_BIN := $(BIN_DIR)/$(LIB_NAME).a
 FROZEN_MPY_DIR ?= builtin-py
+
 INCLUDE := -I $(CUR_DIR) \
 			-I $(CUR_DIR)/Maix/include \
 			-I $(CUR_DIR)/network/include/ \
@@ -33,6 +34,9 @@ INCLUDE := -I $(CUR_DIR) \
 			-I $(CUR_DIR)/../../../lib/mp-readline/ \
 			-I $(CUR_DIR)/$(OUTPUT_DIR) \
 			-I $(CUR_DIR)/nes/include/ \
+			-I $(CUR_DIR)/audio/include/ \
+			-I $(CUR_DIR)/audio/wav/include/ \
+
 
 
 

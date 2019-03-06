@@ -23,13 +23,15 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/mphal.h"
-#include "mphalport.h"
-#include "modMaix.h"
 
+#include "modMaix.h"
+#include "py_audio.h"
+#include "Maix_i2s.h"
 #define MAX_SAMPLE_RATE (60*1024)
 #define MAX_SAMPLE_POINTS (64*1024)
 
 const mp_obj_type_t Maix_i2s_type;
+
 
 STATIC void Maix_i2s_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     Maix_i2s_obj_t *self = MP_OBJ_TO_PTR(self_in);
@@ -202,7 +204,7 @@ STATIC mp_obj_t Maix_i2s_record(size_t n_args, const mp_obj_t *pos_args, mp_map_
     
     Maix_i2s_obj_t *self = pos_args[0];//get i2s obj
     Maix_audio_obj_t *audio_obj = m_new_obj(Maix_audio_obj_t);
-    audio_obj->type = IS2_AUDIO;
+    audio_obj->audio.type = I2S_AUDIO;
     enum{ARG_points, 
          ARG_time,
     };
@@ -238,7 +240,7 @@ STATIC mp_obj_t Maix_i2s_record(size_t n_args, const mp_obj_t *pos_args, mp_map_
     {
         mp_raise_ValueError("[MAIXPY]I2S:please input recording points or time");
     }
-    i2s_receive_data_dma(self->i2s_num, audio_obj->audio.buf, audio_obj->audio.points * sizeof(uint32_t), DMAC_CHANNEL5);
+    i2s_receive_data_dma(self->i2s_num, audio_obj->audio.buf, audio_obj->audio.points , DMAC_CHANNEL5);
     dmac_wait_idle(DMAC_CHANNEL5);//wait to finish recv
     return MP_OBJ_FROM_PTR(audio_obj);
 }
@@ -247,53 +249,10 @@ MP_DEFINE_CONST_FUN_OBJ_KW(Maix_i2s_record_obj,1,Maix_i2s_record);
 STATIC mp_obj_t Maix_i2s_play(Maix_i2s_obj_t *self,mp_obj_t audio_obj)
 {
     Maix_audio_obj_t *audio_p = MP_OBJ_TO_PTR(audio_obj);
-    i2s_send_data_dma(self->i2s_num, audio_p->audio.buf, audio_p->audio.points * sizeof(uint32_t), DMAC_CHANNEL4);
+    i2s_send_data_dma(self->i2s_num, audio_p->audio.buf, audio_p->audio.points, DMAC_CHANNEL4);
     return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_2(Maix_i2s_play_obj,Maix_i2s_play);
-
-STATIC mp_obj_t Maix_i2s_play_PCM(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
-{
-    Maix_i2s_obj_t *self = pos_args[0];//get i2s obj
-    enum{ARG_frame_len,
-         ARG_bps,
-         ARG_track_num,
-         ARG_audio,
-    };
-    static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_frame_len, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 128} },
-        { MP_QSTR_bps, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 16} },
-        { MP_QSTR_track_num, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 1} },
-        { MP_QSTR_audio, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} },
-    };
-    //parse parameter
-    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
-    mp_arg_parse_all(n_args-1, pos_args+1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
-
-    //get frame_len
-    uint32_t frame_len = args[ARG_frame_len].u_int;
-    if(frame_len > 1024)
-    {
-        mp_raise_ValueError("[MAIXPY]I2S:invalid i2s frame_len");
-    }
-    //get bps
-    uint32_t bps = args[ARG_bps].u_int;
-    if(bps > 32)
-    {
-        mp_raise_ValueError("[MAIXPY]I2S:invalid i2s bits/per_sample");
-    }    
-    //get track num
-    uint32_t track_num = args[ARG_track_num].u_int;
-    if(bps > 32)
-    {
-        mp_raise_ValueError("[MAIXPY]I2S:invalid i2s track num");
-    } 
-    //get audio
-    Maix_audio_obj_t *audio_obj = args[ARG_audio].u_obj;
-    i2s_play(self->i2s_num,DMAC_CHANNEL4,audio_obj->audio.buf,audio_obj->audio.points * sizeof(uint32_t),frame_len,bps,track_num);
-}
-
-MP_DEFINE_CONST_FUN_OBJ_KW(Maix_i2s_play_PCM_obj, 0, Maix_i2s_play_PCM);
 
 STATIC mp_obj_t Maix_i2s_deinit(Maix_i2s_obj_t *self)
 {
@@ -314,7 +273,6 @@ STATIC const mp_rom_map_elem_t Maix_i2s_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_set_sample_rate), MP_ROM_PTR(&Maix_i2s_set_sample_rate_obj) },
     { MP_ROM_QSTR(MP_QSTR_record), MP_ROM_PTR(&Maix_i2s_record_obj) },
     { MP_ROM_QSTR(MP_QSTR_play), MP_ROM_PTR(&Maix_i2s_play_obj) },
-    { MP_ROM_QSTR(MP_QSTR_play_PCM), MP_ROM_PTR(&Maix_i2s_play_PCM_obj) },
     //advance interface , some user don't use it
     // { MP_ROM_QSTR(MP_QSTR_set_dma_divede_16), MP_ROM_PTR(&Maix_i2s_set_dma_divede_16_obj) },
     // { MP_ROM_QSTR(MP_QSTR_set_dma_divede_16), MP_ROM_PTR(&Maix_i2s_get_dma_divede_16_obj) },
@@ -327,9 +285,17 @@ STATIC const mp_rom_map_elem_t Maix_i2s_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_CHANNEL_2), MP_ROM_INT(I2S_CHANNEL_2) },
     { MP_ROM_QSTR(MP_QSTR_CHANNEL_3), MP_ROM_INT(I2S_CHANNEL_3) },
 
+    { MP_ROM_QSTR(MP_QSTR_IGNORE_WORD_LENGTH), MP_ROM_INT(IGNORE_WORD_LENGTH) },
+    { MP_ROM_QSTR(MP_QSTR_RESOLUTION_12_BIT), MP_ROM_INT(RESOLUTION_12_BIT) },
+    { MP_ROM_QSTR(MP_QSTR_RESOLUTION_16_BIT), MP_ROM_INT(RESOLUTION_16_BIT) },
+    { MP_ROM_QSTR(MP_QSTR_RESOLUTION_20_BIT), MP_ROM_INT(RESOLUTION_20_BIT) },
+    { MP_ROM_QSTR(MP_QSTR_RESOLUTION_24_BIT), MP_ROM_INT(RESOLUTION_24_BIT) },
+    { MP_ROM_QSTR(MP_QSTR_RESOLUTION_32_BIT), MP_ROM_INT(RESOLUTION_32_BIT) },
+
     { MP_ROM_QSTR(MP_QSTR_SCLK_CYCLES_16), MP_ROM_INT(SCLK_CYCLES_16) },
     { MP_ROM_QSTR(MP_QSTR_SCLK_CYCLES_24), MP_ROM_INT(SCLK_CYCLES_24) },
     { MP_ROM_QSTR(MP_QSTR_SCLK_CYCLES_32), MP_ROM_INT(SCLK_CYCLES_32) },
+
 
 
     { MP_ROM_QSTR(MP_QSTR_TRANSMITTER), MP_ROM_INT(I2S_TRANSMITTER) },

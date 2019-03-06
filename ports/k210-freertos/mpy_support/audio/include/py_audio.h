@@ -13,15 +13,39 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#ifndef MICROPY_INCLUDED_MAIX_MAIX_H
-#define MICROPY_INCLUDED_MAIX_MAIX_H
+#ifndef MICROPY_AUDIO_H
+#define MICROPY_AUDIO_H
 
 #include "py/obj.h"
 #include "i2s.h"
+#include "Maix_i2s.h"
+typedef enum _audio_type
+{
+    I2S_AUDIO,
+    EXT_AUDIO,
+    FILE_AUDIO,
+}audio_type_t;
 
-extern const mp_obj_type_t Maix_fpioa_type;
-extern const mp_obj_type_t Maix_gpio_type;
-extern const mp_obj_type_t Maix_i2s_type;
-extern const mp_obj_type_t Maix_audio_type;
-extern const mp_obj_type_t Maix_fft_type;
+typedef enum _audio_fmt
+{
+    AUDIO_WAV_FMT,
+}audio_fmt_t;
+
+typedef struct _audio_t{//This may be chaos, it need to sort it out
+    uint32_t points;
+    uint32_t* buf;
+    Maix_i2s_obj_t* dev;
+    mp_obj_t fp;
+    audio_type_t type;
+    audio_fmt_t format;
+    //-----------play------------
+    void* decode_obj;
+    //-----------record------------
+    void* encode_obj;
+}audio_t;
+
+typedef struct _Maix_audio_obj_t {
+    mp_obj_base_t base;
+    audio_t audio;
+} Maix_audio_obj_t;
 #endif // MICROPY_INCLUDED_MAIX_MAIX_H
