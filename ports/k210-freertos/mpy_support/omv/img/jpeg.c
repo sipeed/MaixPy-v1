@@ -1050,7 +1050,6 @@ bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc)
                         goto jpeg_overflow;
                     }
                 }
-				printf("%d: %dus\r\n", __LINE__, (read_cycle()-t0)/(400UL));
 
                 break;
             }

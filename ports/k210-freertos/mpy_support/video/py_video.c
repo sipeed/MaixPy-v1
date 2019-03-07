@@ -6,6 +6,8 @@
 
 #include "py_image.h"
 
+#if MAIXPY_VIDEO_SUPPORT
+
 typedef struct {
     mp_obj_base_t base;
     avi_t         obj;
@@ -194,10 +196,13 @@ mp_obj_t py_video_open(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_video_open_obj, 1, py_video_open);
 
+#endif //MAIXPY_VIDEO_SUPPORT
 
 static const mp_map_elem_t globals_dict_table[] = {
+#if MAIXPY_VIDEO_SUPPORT    
     {MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_video)},
     {MP_OBJ_NEW_QSTR(MP_QSTR_open), (mp_obj_t)&py_video_open_obj},
+#endif //MAIXPY_VIDEO_SUPPORT
 };
 
 STATIC MP_DEFINE_CONST_DICT(globals_dict, globals_dict_table);

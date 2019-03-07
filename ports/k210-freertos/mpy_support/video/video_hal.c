@@ -8,6 +8,8 @@
 #include <errno.h>
 #include "io.h"
 
+#if MAIXPY_VIDEO_SUPPORT
+
 extern volatile i2s_t *const i2s[3]; //TODO: remove register, replace with function
 
 int video_hal_display(image_t* img, video_display_roi_t img_roi)
@@ -281,3 +283,5 @@ uint8_t* video_hal_free(uint8_t* ptr)
 {
     free(ptr);
 }
+
+#endif //MAIXPY_VIDEO_SUPPORT

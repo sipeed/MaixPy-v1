@@ -3,6 +3,8 @@
 
 #include "avi.h"
 
+#if MAIXPY_VIDEO_SUPPORT
+
 //////////////////// VIDEO BUFF ///////////////////////
 #include "framebuffer.h"
 #include "omv_boardconfig.h"
@@ -65,6 +67,8 @@ int video_hal_file_size(avi_t* avi);
 int video_hal_image_encode_mjpeg(avi_t* avi, image_t* img);
 uint8_t* video_hal_malloc(uint32_t size);
 uint8_t* video_hal_free(uint8_t* ptr);
+
+#endif //MAIXPY_VIDEO_SUPPORT
 
 #endif
 

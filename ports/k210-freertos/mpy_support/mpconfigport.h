@@ -219,8 +219,10 @@ extern const struct _mp_print_t mp_debug_print;
 #define MAIXPY_MINIMUM_FUNCTION             (0) // Minimum function
 #if MAIXPY_MINIMUM_FUNCTION
 #define MAIXPY_NES_EMULATOR_SUPPORT         (0) // NES gamer emulator
+#define MAIXPY_VIDEO_SUPPORT                (0) // avi video support
 #else
 #define MAIXPY_NES_EMULATOR_SUPPORT         (1) // NES gamer emulator
+#define MAIXPY_VIDEO_SUPPORT                (1) // avi video support
 #endif
 
 

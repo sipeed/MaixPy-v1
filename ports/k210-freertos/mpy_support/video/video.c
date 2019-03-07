@@ -4,6 +4,7 @@
 #include "stdio.h"
 #include "picojpeg_util.h"
 
+#if MAIXPY_VIDEO_SUPPORT
 
 int video_play_avi_init(const char* path, avi_t* avi)
 {
@@ -188,4 +189,7 @@ void video_avi_record_success(avi_t* avi)
     vfs_internal_close(avi->file, &err);
 }
 
+
+
+#endif //MAIXPY_VIDEO_SUPPORT
 
