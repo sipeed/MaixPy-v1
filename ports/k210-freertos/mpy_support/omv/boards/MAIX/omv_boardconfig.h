@@ -20,12 +20,14 @@
 #ifndef OMV_MINIMUM
 
 // #define OMV_JPEG_BUF_SIZE 23 * 1024 // IDE JPEG buffer (header + data).
-#define OMV_FB_ALLOC_SIZE 512 * 1024 // minimum fb alloc size
+#define OMV_FB_ALLOC_SIZE 700 * 1024 // minimum fb alloc size
+#define FB_MAX_ALLOC_TIMES    100
 
 #else  //OMV_MINIMUM
 
 // #define OMV_JPEG_BUF_SIZE 15 * 1024 // IDE JPEG buffer (header + data).
-#define OMV_FB_ALLOC_SIZE 512 * 1024 // minimum fb alloc size
+#define OMV_FB_ALLOC_SIZE 300 * 1024 // minimum fb alloc size
+#define FB_MAX_ALLOC_TIMES    50
 
 #endif //OMV_MINIMUM
 

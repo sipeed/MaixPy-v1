@@ -10,19 +10,34 @@
 #include "fb_alloc.h"
 #include "framebuffer.h"
 #include "omv_boardconfig.h"
+#include "stdlib.h"
 
 
-char fballoc_start[OMV_FB_ALLOC_SIZE] __attribute__((aligned(64)));;
-char* _fballoc = NULL;
-static char *pointer = NULL;
+typedef struct 
+{
+    bool valid;
+    uint8_t count;
+    uint8_t mark;
+    void* p;
+}fb_alloc_addr_info_t __attribute__((aligned(8)));
 
-#define nlr_raise_for_fb_alloc_mark(obj) nlr_raise(obj)
+static fb_alloc_addr_info_t m_fb_alloc_addr[FB_MAX_ALLOC_TIMES]; //must <255
+static uint8_t m_count_max_now = 0;
+static uint8_t m_mark_max_now = 0;
+
 
 NORETURN void fb_alloc_fail()
 {
     nlr_raise(mp_obj_new_exception_msg(&mp_type_MemoryError,
-        "Out of fast Frame Buffer Stack Memory!"
+        "Out of Memory!"
         " Please reduce the resolution of the image you are running this algorithm on to bypass this issue!"));
+}
+
+NORETURN void fb_alloc_fail_2()
+{
+    nlr_raise(mp_obj_new_exception_msg(&mp_type_MemoryError,
+        "Too many fb_alloc! no space save!"
+        " try again or reduce img size!"));
 }
 
 void fb_alloc_init_once()
@@ -32,62 +47,80 @@ void fb_alloc_init_once()
 
 void fb_alloc_init0()
 {
-    _fballoc = fballoc_start + OMV_FB_ALLOC_SIZE; 
-    pointer = _fballoc;
+    memset(m_fb_alloc_addr, 0, sizeof(m_fb_alloc_addr));
 }
 
 uint64_t fb_avail()
 {
-    int64_t temp = pointer - fballoc_start - sizeof(uint64_t);
-
-    return (temp < sizeof(uint64_t)) ? 0 : temp;
+    return OMV_FB_ALLOC_SIZE;
 }
 
 void fb_alloc_mark()
 {
-    char *new_pointer = pointer - sizeof(uint64_t);
+    ++m_mark_max_now;
 
-    // Check if allocation overwrites the framebuffer pixels
-    if (new_pointer < fballoc_start) {
-        nlr_raise_for_fb_alloc_mark(mp_obj_new_exception_msg(&mp_type_MemoryError,
-            "Out of fast Frame Buffer Stack Memory!"
-            " Please reduce the resolution of the image you are running this algorithm on to bypass this issue!"));
-    }
-
-    // fb_alloc does not allow regions which are a size of 0 to be alloced,
-    // meaning that the value below is always 8 or more but never 4. So,
-    // we will use a size value of 4 as a marker in the alloc stack.
-    *((uint64_t *) new_pointer) = sizeof(uint64_t); // Save size.
-    pointer = new_pointer;
 }
 
 void fb_alloc_free_till_mark()
 {
-    while (pointer < _fballoc) {
-        int size = *((uint64_t *) pointer);
-        pointer += size; // Get size and pop.
-        if (size == sizeof(uint64_t)) break; // Break on first marker.
+    uint8_t i;
+    
+    // printf("--------------\n");
+    // printf("maxi mark:%d\n", m_mark_max_now);
+    // printf("maxi count:%d\n", m_count_max_now);
+    for(i=0; i<FB_MAX_ALLOC_TIMES; ++i)
+    {
+        if( m_fb_alloc_addr[i].valid && m_fb_alloc_addr[i].mark==m_mark_max_now)
+        {
+            free(m_fb_alloc_addr[i].p);
+            m_fb_alloc_addr[i].p = NULL;
+            m_fb_alloc_addr[i].valid = false;
+            --m_count_max_now;
+        }
     }
+    --m_mark_max_now;
+    // printf("maxi mark:%d\n", m_mark_max_now);
+    // printf("maxi count:%d\n\n", m_count_max_now);
 }
-
+// uint8_t index_max = 0;
 // returns null pointer without error if size==0
 void *fb_alloc(uint64_t size)
 {
+    uint8_t i;
+
     if (!size) {
         return NULL;
     }
     size=((size+sizeof(uint64_t)-1)/sizeof(uint64_t))*sizeof(uint64_t);// Round Up
-    char *result = pointer - size;
-    char *new_pointer = result - sizeof(uint64_t);
-    // Check if allocation overwrites the framebuffer pixels
-    if (new_pointer < fballoc_start) {
+    // printf("malloc size:%d\n",size);
+    void* p = malloc(size);
+    if(!p)
         fb_alloc_fail();
+    // printf("%p\n", p);
+
+    for(i=0; i<FB_MAX_ALLOC_TIMES; ++i)
+    {
+        if( !m_fb_alloc_addr[i].valid )
+        {
+            // if(i>index_max)
+            // {
+            //     index_max = i;
+            //     printf("index_max:%d\n", index_max);
+            // }
+            m_fb_alloc_addr[i].valid = true;
+            m_fb_alloc_addr[i].p = p;
+            m_fb_alloc_addr[i].mark = m_mark_max_now;
+            ++m_count_max_now;
+            m_fb_alloc_addr[i].count = m_count_max_now;
+            break;
+        }
     }
-    // size is always 4/8/12/etc. so the value below must be 8 or more.
-    *((uint64_t *) new_pointer) = size + sizeof(uint64_t); // Save size.
-    pointer = new_pointer;
-	//printf("###fb_alloc: p-> 0x%x\n", pointer);
-    return result;
+    if(i == FB_MAX_ALLOC_TIMES)
+    {
+        free(p);
+        fb_alloc_fail_2();
+    }
+    return m_fb_alloc_addr[i].p;
 }
 
 // returns null pointer without error if passed size==0
@@ -100,21 +133,36 @@ void *fb_alloc0(uint64_t size)
 
 void *fb_alloc_all(uint64_t *size)
 {
-	//printf("#size addr=0x%x\n", size);
-    int32_t temp = pointer - fballoc_start - sizeof(uint64_t);
-    if (temp < sizeof(uint64_t)) {
-        *size = 0;
-        return NULL;
-    }
-	temp = (temp / sizeof(uint64_t)) * sizeof(uint64_t);
-    *size = (uint64_t)temp; // Round Down
-    char *result = pointer - *size;
-    char *new_pointer = result - sizeof(uint64_t);
+    uint8_t i =0;
 
-    // size is always 4/8/12/etc. so the value below must be 8 or more.
-    *((uint64_t *) new_pointer) = *size + sizeof(uint64_t); // Save size.
-    pointer = new_pointer;
-    return result;
+    void* p = malloc(OMV_FB_ALLOC_SIZE);
+    if( !p )
+        fb_alloc_fail();
+    for(i=0; i<FB_MAX_ALLOC_TIMES; ++i)
+    {
+        if( !m_fb_alloc_addr[i].valid )
+        {
+            // if(i>index_max)
+            // {
+            //     index_max = i;
+            //     printf("index_max:%d\n", index_max);
+            // }
+            m_fb_alloc_addr[i].valid = true;
+            m_fb_alloc_addr[i].p = p;
+            m_fb_alloc_addr[i].mark = m_mark_max_now;
+            ++m_count_max_now;
+            m_fb_alloc_addr[i].count = m_count_max_now;
+            break;
+        }
+    }
+    if(i == FB_MAX_ALLOC_TIMES)
+    {
+        free(p);
+        // printf("fb_alloc_all: i:%d,%d\n", i, FB_MAX_ALLOC_TIMES);
+        fb_alloc_fail_2();
+    }
+    *size = OMV_FB_ALLOC_SIZE;
+    return m_fb_alloc_addr[i].p;
 }
 
 // returns null pointer without error if returned size==0
@@ -127,14 +175,35 @@ void *fb_alloc0_all(uint64_t *size)
 
 void fb_free()
 {
-    if (pointer < _fballoc) {
-        pointer += *((uint64_t *) pointer); // Get size and pop.
+    uint8_t i;
+
+    for(i=0; i<FB_MAX_ALLOC_TIMES; ++i)
+    {
+        if( m_fb_alloc_addr[i].valid && m_fb_alloc_addr[i].count==m_count_max_now)
+        {
+            // printf("free %p\n", m_fb_alloc_addr[i].p);
+            free(m_fb_alloc_addr[i].p);
+            m_fb_alloc_addr[i].p = NULL;
+            m_fb_alloc_addr[i].valid = false;
+            --m_count_max_now;
+            break;
+        }
     }
 }
 
 void fb_free_all()
 {
-    while (pointer < _fballoc) {
-        pointer += *((uint64_t *) pointer); // Get size and pop.
+    uint8_t i;
+
+    for(i=0; i<FB_MAX_ALLOC_TIMES; ++i)
+    {
+        if( m_fb_alloc_addr[i].valid )
+        {
+            free(m_fb_alloc_addr[i].p);
+            m_fb_alloc_addr[i].p = NULL;
+            m_fb_alloc_addr[i].valid = false;
+        }
     }
+    m_count_max_now = 0;
+    m_mark_max_now  = 0;
 }
