@@ -268,18 +268,20 @@ int sensor_init_irq()
 	plic_set_priority(IRQN_DVP_INTERRUPT, 2);
     /* set irq handle */
 	plic_irq_register(IRQN_DVP_INTERRUPT, sensor_irq, (void*)&sensor);
-	
+
 	plic_irq_disable(IRQN_DVP_INTERRUPT);
 	dvp_clear_interrupt(DVP_STS_FRAME_START | DVP_STS_FRAME_FINISH);
 	dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 1);
-	
+
 	return 0;
 }
 
 int sensor_reset()
 {
 	sensor_init_fb();		//init FB
-	sensor_init_dvp();		//init pins, scan I2C, do ov2640 init
+    if (sensor_init_dvp() != 0) { //init pins, scan I2C, do ov2640 init
+      return -1;
+    }
     // Reset the sesnor state
     sensor.sde         = 0;
     sensor.pixformat   = 0;
