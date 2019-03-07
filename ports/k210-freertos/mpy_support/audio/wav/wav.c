@@ -195,14 +195,11 @@ mp_obj_t wav_record_process(audio_t* audio,uint32_t channels)
             break;
         }
     }
-    mp_obj_list_t* ret_list = (mp_obj_list_t*)m_new(mp_obj_list_t,sizeof(mp_obj_list_t));//m_new
-    mp_obj_list_init(ret_list, 0);
 	//create encode object
 	audio->encode_obj = m_new(wav_encode_t,1);//new format obj
 	if(NULL == audio->encode_obj)
 	{
 		printf("[MAIXPY]: Can not create encode object\n");
-		m_del(mp_obj_list_t,ret_list,1);
 		m_del(wav_encode_t,audio->encode_obj,1);
 		vfs_internal_close(audio->fp,&close_code);
 	}
@@ -219,44 +216,32 @@ mp_obj_t wav_record_process(audio_t* audio,uint32_t channels)
 	wav_fmt->numchannels = channels;
 	wav_fmt->samplerate = i2s_dev->sample_rate;
 	wav_fmt->bitspersample = 0;
-	for(int i = 0; i < 4; i++)
-	{
-		if(I2S_RECEIVER == i2s_dev->channel[i].mode)//find the received channel
-		{
-			if(0 != i2s_dev->channel[i].resolution)//set resolution
-				wav_fmt->bitspersample = (i2s_dev->channel[i].resolution + 2) * 4;
-			if(RESOLUTION_32_BIT == i2s_dev->channel[i].resolution)
-				wav_fmt->bitspersample = 32;
-			break;
-		}
-	}
-	wav_fmt->blockalign = wav_fmt->numchannels * (wav_fmt->bitspersample/8);
-	wav_fmt->byterate = wav_encode->format.samplerate * wav_encode->format.blockalign; // samplerate * blockalign
+	wav_fmt->bitspersample = 16;//only support 16bit resolution
+	// for(int i = 0; i < 4; i++)//find the received channel
+	// {
+	// 	if(I2S_RECEIVER == i2s_dev->channel[i].mode)//find the first received channel
+	// 	{
+	// 		if(0 != i2s_dev->channel[i].resolution)//set resolution
+	// 			wav_fmt->bitspersample = (i2s_dev->channel[i].resolution + 2) * 4;
+	// 		if(RESOLUTION_32_BIT == i2s_dev->channel[i].resolution)
+	// 			wav_fmt->bitspersample = 32;
+	// 		break;
+	// 	}
+	// }
 	//data chunk
 	wav_encode->data.data_ID = 0x61746164;//'data'
 	wav_encode->data.chunk_size = 0; 
-	wav_encode->data.wave_data = audio->buf;
-	printf("[MAIXPY]: numchannels = %d\n", wav_fmt->numchannels);
-	printf("[MAIXPY]: samplerate = %d\n", wav_fmt->samplerate);
-	printf("[MAIXPY]: byterate = %d\n", wav_fmt->byterate);
-	printf("[MAIXPY]: blockalign = %d\n", wav_fmt->blockalign);
-	printf("[MAIXPY]: bitspersample = %d\n", wav_fmt->bitspersample);
-	mp_obj_list_append(ret_list, mp_obj_new_int(wav_fmt->numchannels));
-	mp_obj_list_append(ret_list, mp_obj_new_int(wav_fmt->samplerate));
-	mp_obj_list_append(ret_list, mp_obj_new_int(wav_fmt->byterate));
-	mp_obj_list_append(ret_list, mp_obj_new_int(wav_fmt->blockalign));
-	mp_obj_list_append(ret_list, mp_obj_new_int(wav_fmt->bitspersample));
+    wav_encode->data.wave_data = audio->buf;
 	vfs_internal_seek(audio->fp,44,VFS_SEEK_SET,&err_code);//head length 44
 	if(err_code != 0)
 	{
 		printf("[MAIXPY]: seek error  close file\n");
-		m_del(mp_obj_list_t,ret_list,1);
 		m_del(wav_encode_t,audio->encode_obj,1);
 		vfs_internal_close(audio->fp,&close_code);
 		mp_raise_OSError(err_code);
 	}
 	memset(audio->buf, audio->points * sizeof(uint32_t), 0);//clear buffer
-	return MP_OBJ_FROM_PTR(ret_list);
+	return mp_const_none;
 }
 mp_obj_t wav_record(audio_t* audio,dmac_channel_number_t DMA_channel)
 {
@@ -266,32 +251,30 @@ mp_obj_t wav_record(audio_t* audio,dmac_channel_number_t DMA_channel)
 	wav_process_data(audio);
 	return mp_const_true;
 }
-int wav_process_data(audio_t* audio)
+int wav_process_data(audio_t* audio)//GO righit channel record, right chnanel play
 {
 	wav_encode_t* wav_encode = audio->encode_obj;
 	uint32_t err_code = 0;
+
 	// for(int i = 0; i < audio->points; i++){
 	// 	printf("data[%d] : LSB = %x | MSB = %x\n",i, audio->buf[i] & 0xffff, (audio->buf[i] >> 16) & 0xffff);
 	// }
-	for(int i = 0; i < audio->points; i++){
-		audio->buf[i] = (audio->buf[i] >> 8) & 0xffff;
+	if(1 == wav_encode->format.numchannels){//mono audio record | Go mic right 
+
+		uint16_t* buf = (uint16_t*)malloc(audio->points * sizeof(uint32_t));//
+		int j = 0;
+		for(int i = 0; i < audio->points; i += 1){
+			buf[i*2] = 0;//left channel
+			buf[i*2+1] = audio->buf[i] & 0xffff;//right channle 16 bit resolution
+			// buf[i*2+1] = (audio->buf[i] >> 8) & 0xffff;//24 bit resolution
+		}
+		vfs_internal_write(audio->fp,buf,audio->points * sizeof(uint32_t),&err_code);
+		wav_encode->data.chunk_size +=  audio->points * sizeof(uint32_t);
+		free(buf);
 	}
-	vfs_internal_write(audio->fp,audio->buf,audio->points * sizeof(uint32_t),&err_code);
-	wav_encode->data.chunk_size +=  audio->points * sizeof(uint32_t);
-	
-	// if(1 == wav_encode->format.numchannels){//mono audio
-	// 	uint16_t* buf = (uint16_t*)malloc(audio->points * sizeof(uint16_t));
-	// 	for(int i = 0; i < audio->points; i++){
-	// 		buf[i] = audio->buf[i] & 0xffff;
-	// 		//printf("data[%d] : LSB = %x | MSB = %x\n",i, audio->buf[i] & 0xffff, (audio->buf[i] >> 16) & 0xffff);
-	// 	}
-	// 	vfs_internal_write(audio->fp,buf,audio->points * sizeof(uint16_t),&err_code);
-	// 	wav_encode->data.chunk_size +=  audio->points * sizeof(uint16_t);
-	// 	free(buf);
-	// }
-	// else if(2 == wav_encode->format.numchannels){
-	// 	//TODO
-	// }//stereo audio
+	else if(2 == wav_encode->format.numchannels){//stereo audio record
+		//TODO
+	}
 
 	return 0;
 }
@@ -318,6 +301,15 @@ void wav_finish(audio_t* audio)
 			vfs_internal_close(audio->fp,&close_code);
 			mp_raise_OSError(err_code);
 		}
+		format_chunk_t* wav_fmt = &wav_encode->format;
+		wav_fmt->numchannels = 2;//always is 2,because i2s_play only play 2-channels audoi
+		wav_fmt->blockalign = wav_fmt->numchannels * (wav_fmt->bitspersample/8);// channel * (bit_per_second / 8)
+		wav_fmt->byterate = wav_fmt->samplerate * wav_fmt->blockalign; // samplerate * blockalign
+		printf("[MAIXPY]: numchannels = %d\n", wav_fmt->numchannels);
+		printf("[MAIXPY]: samplerate = %d\n", wav_fmt->samplerate);
+		printf("[MAIXPY]: byterate = %d\n", wav_fmt->byterate);
+		printf("[MAIXPY]: blockalign = %d\n", wav_fmt->blockalign);
+		printf("[MAIXPY]: bitspersample = %d\n", wav_fmt->bitspersample);
 		vfs_internal_write(audio->fp, &wav_encode->format, 24, &err_code);//write fromate chunk
 		if(err_code != 0)
 		{
