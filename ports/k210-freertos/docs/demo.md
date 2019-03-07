@@ -1093,7 +1093,7 @@ while True:
     sensor.shutdown(True)
     img=sensor.snapshot()
     lcd.display(img)
-    time.sleep_ms(00)
+    time.sleep_ms(100)
 ```
 
 
