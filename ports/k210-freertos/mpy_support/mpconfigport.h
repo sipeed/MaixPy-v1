@@ -212,9 +212,12 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_PY_NETWORK                  (1)
 #define MICROPY_PY_USOCKET                  (1)
 #define MICROPY_PY_LWIP                     (0)
+#define MICROPY_PY_UHASHLIB_MAIX            (1)
+#define MICROPY_PY_UHASHLIB_SHA256_MAIX     (1)
+#define MICROPY_PY_UCRYPTOLIB_MAIX          (1)
+
 
 // MaixPy modules
-
 
 #define MAIXPY_MINIMUM_FUNCTION             (0) // Minimum function
 #if MAIXPY_MINIMUM_FUNCTION
@@ -224,7 +227,6 @@ extern const struct _mp_print_t mp_debug_print;
 #define MAIXPY_NES_EMULATOR_SUPPORT         (1) // NES gamer emulator
 #define MAIXPY_VIDEO_SUPPORT                (1) // avi video support
 #endif
-
 
 //disable ext str pool
 #define MICROPY_QSTR_EXTRA_POOL             mp_qstr_frozen_const_pool
@@ -265,6 +267,9 @@ extern const struct _mp_obj_module_t cpufreq_module;
 extern const struct _mp_obj_module_t video_module;
 extern const struct _mp_obj_module_t kpu_module;
 extern const struct _mp_obj_module_t nes_module;
+extern const struct _mp_obj_module_t audio_module;
+extern const struct _mp_obj_module_t mp_module_uhashlib_maix;
+extern const struct _mp_obj_module_t mp_module_ucryptolib;
 
 #define MICROPY_PORT_BUILTIN_MODULES \
     { MP_OBJ_NEW_QSTR(MP_QSTR_uos), (mp_obj_t)&uos_module }, \
@@ -283,8 +288,9 @@ extern const struct _mp_obj_module_t nes_module;
     { MP_OBJ_NEW_QSTR(MP_QSTR_video), (mp_obj_t)&video_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_KPU), (mp_obj_t)&kpu_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_nes), (mp_obj_t)&nes_module }, \
-    
-
+    { MP_OBJ_NEW_QSTR(MP_QSTR_audio), (mp_obj_t)&audio_module }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_uhashlib), (mp_obj_t)&mp_module_uhashlib_maix }, \
+     { MP_OBJ_NEW_QSTR(MP_QSTR_ucryptolib), (mp_obj_t)&mp_module_ucryptolib }, \
 
 #define MICROPY_PORT_BUILTIN_MODULE_WEAK_LINKS \
     { MP_OBJ_NEW_QSTR(MP_QSTR_binascii), (mp_obj_t)&mp_module_ubinascii }, \
@@ -298,6 +304,7 @@ extern const struct _mp_obj_module_t nes_module;
     { MP_OBJ_NEW_QSTR(MP_QSTR_re), (mp_obj_t)&mp_module_ure }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_struct), (mp_obj_t)&mp_module_ustruct }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_zlib), (mp_obj_t)&mp_module_uzlib }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_hashlib), (mp_obj_t)&mp_module_uhashlib_maix }, \
 
 #define MICROPY_PY_MACHINE                  (1)
 #define MICROPY_PY_MACHINE_PIN_MAKE_NEW     mp_pin_make_new
