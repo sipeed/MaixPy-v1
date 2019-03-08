@@ -44,6 +44,7 @@ STATIC int init_colormap_parula_rect()
     }
     return 0;
 }
+STATIC uint8_t lib_init_flag = 0;
 
 STATIC volatile uint8_t mic_done = 0;
 STATIC uint8_t thermal_map_data[256];
@@ -82,7 +83,7 @@ STATIC mp_obj_t Maix_mic_array_init(size_t n_args, const mp_obj_t *pos_args, mp_
         mp_raise_ValueError(tmp);
         return mp_const_false;
     }
-    
+    lib_init_flag = 1;
     // sysctl_enable_irq();
     return mp_const_true;
 }
@@ -93,7 +94,11 @@ MP_DEFINE_CONST_FUN_OBJ_KW(Maix_mic_array_init_obj, 0, Maix_mic_array_init);
 
 STATIC mp_obj_t Maix_mic_array_deinit(void)
 {
-    lib_mic_deinit();
+    if(lib_init_flag)
+    {
+        lib_mic_deinit();
+        lib_init_flag = 0;
+    }
     return mp_const_true;
 }
 
