@@ -237,29 +237,6 @@ void sk9822_breath(uint8_t r, uint8_t g, uint8_t b, uint32_t interval)
     }
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//led colormap
-
-uint8_t led_brightness[12] = {0}; //mic array led brightness,to figure the direction
-
-uint8_t voice_strength_len[12] = {14, 20, 14, 14, 20, 14, 14, 20, 14, 14, 20, 14};
-
-//voice strength, to calc direction
-uint8_t voice_strength[12][32] = {
-    {197, 198, 199, 213, 214, 215, 228, 229, 230, 231, 244, 245, 246, 247},                               //14
-    {178, 179, 192, 193, 194, 195, 196, 208, 209, 210, 211, 212, 224, 225, 226, 227, 240, 241, 242, 243}, //20
-    {128, 129, 130, 131, 144, 145, 146, 147, 160, 161, 162, 163, 176, 177},
-    {64, 65, 80, 81, 82, 83, 96, 97, 98, 99, 112, 113, 114, 115},
-    {0, 1, 2, 3, 16, 17, 18, 19, 32, 33, 34, 35, 36, 48, 49, 50, 51, 52, 66, 67},
-    {4, 5, 6, 7, 20, 21, 22, 23, 37, 38, 39, 53, 54, 55},
-    {8, 9, 10, 11, 24, 25, 26, 27, 40, 41, 42, 56, 57, 58},
-    {12, 13, 14, 15, 28, 29, 30, 31, 43, 44, 45, 46, 47, 59, 60, 61, 62, 63, 76, 77},
-    {78, 79, 92, 93, 94, 95, 108, 109, 110, 111, 124, 125, 126, 127},
-    {140, 141, 142, 143, 156, 157, 158, 159, 173, 172, 174, 175, 190, 191},
-    {188, 189, 203, 204, 205, 206, 207, 219, 220, 221, 222, 223, 236, 237, 238, 239, 252, 253, 254, 255},
-    {200, 201, 202, 216, 217, 218, 232, 233, 234, 235, 248, 249, 250, 251},
-};
-
 void sipeed_init_mic_array_led(void)
 {
     sk9822_init();
@@ -269,27 +246,27 @@ void sipeed_init_mic_array_led(void)
     sk9822_flash(0xffeec900, 0xff000000, 200);
 }
 
-void sipeed_calc_voice_strength(uint8_t voice_data[])
-{
-    uint32_t tmp_sum[12] = {0};
-    uint32_t led_color[12];
-    uint8_t i, index, tmp;
+// void sipeed_calc_voice_strength(uint8_t voice_data[])
+// {
+//     uint32_t tmp_sum[12] = {0};
+//     uint32_t led_color[12];
+//     uint8_t i, index, tmp;
 
-    for (index = 0; index < 12; index++)
-    {
-        tmp_sum[index] = 0;
-        for (i = 0; i < voice_strength_len[index]; i++)
-        {
-            tmp_sum[index] += voice_data[voice_strength[index][i]];
-        }
-        tmp = (uint8_t)tmp_sum[index] / voice_strength_len[index];
-        led_brightness[index] = tmp > 15 ? 15 : tmp;
-    }
-    sk9822_start_frame();
-    for (index = 0; index < 12; index++)
-    {
-        led_color[index] = (led_brightness[index] / 2) > 1 ? (((0xe0 | (led_brightness[index] * 2)) << 24) | 0xcd3333) : 0xe0000000;
-        sk9822_send_data(led_color[index]);
-    }
-    sk9822_stop_frame();
-}
+//     for (index = 0; index < 12; index++)
+//     {
+//         tmp_sum[index] = 0;
+//         for (i = 0; i < voice_strength_len[index]; i++)
+//         {
+//             tmp_sum[index] += voice_data[voice_strength[index][i]];
+//         }
+//         tmp = (uint8_t)tmp_sum[index] / voice_strength_len[index];
+//         led_brightness[index] = tmp > 15 ? 15 : tmp;
+//     }
+//     sk9822_start_frame();
+//     for (index = 0; index < 12; index++)
+//     {
+//         led_color[index] = (led_brightness[index] / 2) > 1 ? (((0xe0 | (led_brightness[index] * 2)) << 24) | 0xcd3333) : 0xe0000000;
+//         sk9822_send_data(led_color[index]);
+//     }
+//     sk9822_stop_frame();
+// }

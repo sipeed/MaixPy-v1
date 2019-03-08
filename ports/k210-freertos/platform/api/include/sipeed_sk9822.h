@@ -17,7 +17,7 @@
 #define SK9822_DAT_GPIONUM 14
 #define SK9822_CLK_GPIONUM 15
 
-void init_mic_array_led(void);
-void calc_voice_strength(uint8_t voice_data[]);
+void sipeed_init_mic_array_led(void);
+// void sipeed_calc_voice_strength(uint8_t voice_data[]);
 
 #endif

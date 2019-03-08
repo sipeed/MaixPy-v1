@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <plic.h>
 #include <i2s.h>
@@ -13,11 +14,9 @@
 #include <dmac.h>
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+typedef void (*mic_array_calc_done)(void);
 
-//uint8_t data[256];
-typedef void (*get_thermal_map_cb)(uint8_t *data);
-
-int lib_mic_init(uint8_t dma_ch, get_thermal_map_cb cb);
+int lib_mic_init(uint8_t dma_ch, mic_array_calc_done cb, uint8_t *thermal_map_data);
 int lib_mic_deinit(void);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
