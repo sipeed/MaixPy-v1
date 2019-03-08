@@ -93,6 +93,7 @@ BIN_LDFLAGS := \
 		$(BIN_DIR)/drivers.a \
 		$(BIN_DIR)/api.a \
 		$(BIN_DIR)/libkendryte.a \
+		ports/k210-freertos/platform/api/lib_mic.a\
 		-lm -latomic -lc -lstdc++ \
 		-Wl,--start-group \
 		-lc \
