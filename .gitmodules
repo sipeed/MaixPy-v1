@@ -18,3 +18,6 @@
 [submodule "lib/nrfx"]
 	path = lib/nrfx
 	url = https://github.com/NordicSemiconductor/nrfx.git
+[submodule "ports/k210-freertos/mpy_support/lvgl/lv_bindings"]
+	path = ports/k210-freertos/mpy_support/lvgl/lv_bindings
+	url = https://github.com/littlevgl/lv_binding_micropython.git
