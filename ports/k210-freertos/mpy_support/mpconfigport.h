@@ -6,7 +6,9 @@
 // config option to 0.  If you do this then you won't get a REPL prompt, but you
 // will still be able to execute pre-compiled scripts, compiled with mpy-cross.
 
-#define MICROPY_OBJ_BASE_ALIGNMENT          __attribute__((aligned(8)))
+#ifndef _MPCONFIGPORT_H_
+#define _MPCONFIGPORT_H_
+
 
 // object representation and NLR handling
 #define MICROPY_OBJ_BASE_ALIGNMENT  __attribute__((aligned(8)))
@@ -79,7 +81,7 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_ENABLE_GC           (1)
 #define MICROPY_GC_ALLOC_THRESHOLD  (1)
 #define MICROPY_REPL_EVENT_DRIVEN   (0)
-#define MICROPY_MALLOC_USES_ALLOCATED_SIZE 200*1024
+#define MICROPY_MALLOC_USES_ALLOCATED_SIZE (1)
 #define MICROPY_HELPER_REPL         (1)
 #define MICROPY_HELPER_LEXER_UNIX   (1)
 #define MICROPY_ENABLE_SOURCE_LINE  (1)
@@ -217,17 +219,6 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_PY_UCRYPTOLIB_MAIX          (1)
 
 
-// MaixPy modules
-
-#define MAIXPY_MINIMUM_FUNCTION             (0) // Minimum function
-#if MAIXPY_MINIMUM_FUNCTION
-#define MAIXPY_NES_EMULATOR_SUPPORT         (0) // NES gamer emulator
-#define MAIXPY_VIDEO_SUPPORT                (0) // avi video support
-#else
-#define MAIXPY_NES_EMULATOR_SUPPORT         (1) // NES gamer emulator
-#define MAIXPY_VIDEO_SUPPORT                (1) // avi video support
-#endif
-
 //disable ext str pool
 #define MICROPY_QSTR_EXTRA_POOL             mp_qstr_frozen_const_pool
 
@@ -264,12 +255,57 @@ extern const struct _mp_obj_module_t sensor_module;
 extern const struct _mp_obj_module_t lcd_module;
 extern const struct _mp_obj_module_t time_module;
 extern const struct _mp_obj_module_t cpufreq_module;
-extern const struct _mp_obj_module_t video_module;
 extern const struct _mp_obj_module_t kpu_module;
-extern const struct _mp_obj_module_t nes_module;
 extern const struct _mp_obj_module_t audio_module;
 extern const struct _mp_obj_module_t mp_module_uhashlib_maix;
 extern const struct _mp_obj_module_t mp_module_ucryptolib;
+
+
+// openmv minimum
+#ifndef MAIXPY_OMV_MINIMUM_FUNCTION
+#define MAIXPY_OMV_MINIMUM_FUNCTION         (0) // Minimum function
+#endif //MAIXPY_OMV_MINIMUM_FUNCTION
+
+// video record play
+#ifndef MAIXPY_VIDEO_SUPPORT
+#define MAIXPY_VIDEO_SUPPORT                (0) // avi video support
+#endif //MAIXPY_VIDEO_SUPPORT
+#if MAIXPY_VIDEO_SUPPORT
+extern const struct _mp_obj_module_t video_module;
+#define MAIXPY_PY_VIDEO_DEF \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_video), (mp_obj_t)&video_module },
+#else
+#define MAIXPY_PY_VIDEO_DEF 
+#endif
+
+// nes game emulator
+#ifndef MAIXPY_NES_EMULATOR_SUPPORT
+#define MAIXPY_NES_EMULATOR_SUPPORT         (0) // NES gamer emulator
+#endif //MAIXPY_NES_EMULATOR_SUPPORT
+#if MAIXPY_NES_EMULATOR_SUPPORT
+extern const struct _mp_obj_module_t nes_module;
+#define MAIXPY_PY_NES_DEF \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_nes), (mp_obj_t)&nes_module },
+#else
+#define MAIXPY_PY_NES_DEF 
+#endif
+
+// lvgl GUI lib
+#ifndef MAIXPY_LVGL_SUPPORT
+#define MAIXPY_LVGL_SUPPORT                 (0) // lvgl GUI lib
+#endif
+#if MAIXPY_LVGL_SUPPORT
+#undef MAIXPY_LVGL_SUPPORT
+#define MAIXPY_LVGL_SUPPORT                 (1) // lvgl GUI lib
+extern const struct _mp_obj_module_t mp_module_lvgl;
+extern const struct _mp_obj_module_t mp_module_lvgl_helper;
+#define MAIXPY_PY_LVGL_DEF \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_lvgl), (mp_obj_t)&mp_module_lvgl }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_lvgl_helper), (mp_obj_t)&mp_module_lvgl_helper },
+#else
+#define MAIXPY_PY_LVGL_DEF
+#endif // MAIXPY_LVGL_SUPPORT
+
 
 #define MICROPY_PORT_BUILTIN_MODULES \
     { MP_OBJ_NEW_QSTR(MP_QSTR_uos), (mp_obj_t)&uos_module }, \
@@ -285,12 +321,16 @@ extern const struct _mp_obj_module_t mp_module_ucryptolib;
     { MP_OBJ_NEW_QSTR(MP_QSTR_lcd), (mp_obj_t)&lcd_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_clock), (mp_obj_t)&time_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_cpufreq), (mp_obj_t)&cpufreq_module }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_video), (mp_obj_t)&video_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_KPU), (mp_obj_t)&kpu_module }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_nes), (mp_obj_t)&nes_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_audio), (mp_obj_t)&audio_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_uhashlib), (mp_obj_t)&mp_module_uhashlib_maix }, \
-     { MP_OBJ_NEW_QSTR(MP_QSTR_ucryptolib), (mp_obj_t)&mp_module_ucryptolib }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_ucryptolib), (mp_obj_t)&mp_module_ucryptolib }, \
+    MAIXPY_PY_NES_DEF \
+    MAIXPY_PY_VIDEO_DEF \
+    MAIXPY_PY_LVGL_DEF
+
+
+
 
 #define MICROPY_PORT_BUILTIN_MODULE_WEAK_LINKS \
     { MP_OBJ_NEW_QSTR(MP_QSTR_binascii), (mp_obj_t)&mp_module_ubinascii }, \
@@ -340,8 +380,15 @@ extern const struct _mp_obj_module_t mp_module_ucryptolib;
 
 #define MP_STATE_PORT MP_STATE_VM
 
+
 #define MICROPY_PORT_ROOT_POINTERS \
     const char *readline_hist[16];  \
     struct _machine_uart_obj_t *Maix_stdio_uart; \
 	struct _nic_obj_t *modnetwork_nic; \
-    mp_obj_t Maix_gpio_irq_handler[40];
+
+
+
+
+
+#endif // _MPCONFIGPORT_H_
+

@@ -11,6 +11,12 @@ config.conf
 !k210.mk
 !common_c.mk
 !common.mk
+!tools/mk
+!tools/mk/*.mk
+!modules_conf_default.mk
 ./kflash.py
 asm.txt
+yacctab.py
+lextab.py
+
 

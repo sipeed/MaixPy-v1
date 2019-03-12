@@ -6,6 +6,7 @@
 ##############################################################################
 # common.mk, include include.mk & platform.mk
 sinclude $(COMMON_MK)
+sinclude $(MAIXPY_MODULES_CONFIG_MK)
 CFLAGS += -DFFCONF_H=\"lib/oofatfs/ffconf.h\"
 include ../../../py/mkenv.mk
 QSTR_DEFS = qstrdefsport.h
@@ -17,6 +18,8 @@ LIB_NAME ?= mpy_support
 OUTPUT_DIR := build
 OUTPUT_BIN := $(BIN_DIR)/$(LIB_NAME).a
 FROZEN_MPY_DIR ?= builtin-py
+SRC_C := 
+AllDirs :=
 
 INCLUDE := -I $(CUR_DIR) \
 			-I $(CUR_DIR)/Maix/include \
@@ -33,7 +36,6 @@ INCLUDE := -I $(CUR_DIR) \
 			-I $(CUR_DIR)/../../../py/ \
 			-I $(CUR_DIR)/../../../lib/mp-readline/ \
 			-I $(CUR_DIR)/$(OUTPUT_DIR) \
-			-I $(CUR_DIR)/nes/include/ \
 			-I $(CUR_DIR)/audio/include/ \
 			-I $(CUR_DIR)/audio/wav/include/ \
 
@@ -54,7 +56,100 @@ MPY_EXT_SRC_C := \
 		lib/utils/sys_stdio_mphal.c \
 		lib/oofatfs/ff.c \
 		lib/oofatfs/option/ccsbcs.c
-AllDirs := $(shell ls -R | grep '^\./.*:$$' | awk '{gsub(":","");print}') .
+AllDirs += $(shell ls -R | grep '^\./.*:$$' | grep -v "lvgl" |grep -v "nes" | grep -v "video" |grep -v "./build" | awk '{gsub(":","");print}') .
+
+###### LVGL #######
+ifeq (${CFG_MAIXPY_LVGL_SUPPORT},y)
+
+LVGL_DIR := $(CUR_DIR)/lvgl
+LVGL_DIR_REL := ./lvgl
+
+LVGL_BINDING_DIR := $(LVGL_DIR)/lv_bindings
+LVGL_CORE_DIR := $(LVGL_BINDING_DIR)/lvgl
+LVGL_CORE_DIR_REL := ./lvgl/lv_bindings/lvgl
+LVGL_BUILD_DIR := $(OUTPUT_DIR)/lvgl
+ALL_LVGL_SRC := \
+			${wildcard ${LVGL_DIR_REL}/*.c} \
+			${wildcard ${LVGL_CORE_DIR_REL}/*.c} \
+			${wildcard ${LVGL_CORE_DIR_REL}/lv_core/*.c} \
+			${wildcard ${LVGL_CORE_DIR_REL}/lv_draw/*.c} \
+			${wildcard ${LVGL_CORE_DIR_REL}/lv_fonts/*.c} \
+			${wildcard ${LVGL_CORE_DIR_REL}/lv_hal/*.c} \
+			${wildcard ${LVGL_CORE_DIR_REL}/lv_misc/*.c} \
+			${wildcard ${LVGL_CORE_DIR_REL}/lv_objx/*.c} \
+			${wildcard ${LVGL_CORE_DIR_REL}/lv_themes/*.c} 
+
+LVGL_INCLUDE := \
+			-I $(LVGL_DIR)/include \
+			-I $(LVGL_BINDING_DIR)/include \
+			-I $(LVGL_CORE_DIR) \
+			-I $(LVGL_CORE_DIR)/lv_core \
+			-I $(LVGL_CORE_DIR)/lv_draw \
+			-I $(LVGL_CORE_DIR)/lv_fonts \
+			-I $(LVGL_CORE_DIR)/lv_hal \
+			-I $(LVGL_CORE_DIR)/lv_misc \
+			-I $(LVGL_CORE_DIR)/lv_objx \
+			-I $(LVGL_CORE_DIR)/lv_themes  
+
+LVGL_MPY = $(LVGL_BUILD_DIR)/lv_mpy.c
+LVGL_PP = $(LVGL_BUILD_DIR)/lvgl.pp.c
+INCLUDE += $(LVGL_INCLUDE) 
+LV_CFLAGS += -DLV_CONF_INCLUDE_SIMPLE -DMAIXPY_LVGL_SUPPORT=1
+CFLAGS_MOD += $(LV_CFLAGS)
+
+$(LVGL_MPY): $(LVGL_BINDING_DIR)/gen/gen_mpy.py 
+	$(ECHO) "LVGL-GEN $@"
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CPP) $(LV_CFLAGS) $(INCLUDE) -I $(LVGL_BINDING_DIR)/pycparser/utils/fake_libc_include $(LVGL_CORE_DIR)/lvgl.h > $(LVGL_PP)
+	$(Q)$(PYTHON) $(LVGL_BINDING_DIR)/gen/gen_mpy.py -X anim -X group -X task -E $(LVGL_PP) $(LVGL_CORE_DIR)/lvgl.h > $@
+
+SRC_C += $(LVGL_MPY)
+SRC_C += $(ALL_LVGL_SRC)
+
+endif
+###### LVGL END #######
+
+
+###### OMV #######
+ifeq (${CFG_MAIXPY_OMV_MINIMUM},y)
+CFLAGS_MOD += -DMAIXPY_OMV_MINIMUM_FUNCTION=1
+endif
+###### OMV END ####
+
+###### VIDEO #######
+ifeq (${CFG_MAIXPY_VIDEO_SUPPORT},y)
+CFLAGS_MOD += -DMAIXPY_VIDEO_SUPPORT=1
+VIDEO_DIR_REL := ./video
+VIDEO_DIR := $(CUR_DIR)/video
+SRC_VIDEO := \
+			${wildcard ${VIDEO_DIR_REL}/*.c} \
+			${wildcard ${VIDEO_DIR_REL}/avi/*.c} 
+
+VIDEO_INCLUDE := \
+			-I $(VIDEO_DIR)/include \
+			-I $(VIDEO_DIR)/avi/include 
+
+INCLUDE += $(VIDEO_INCLUDE)
+SRC_C += $(SRC_VIDEO)
+endif
+###### VIDEO END ####
+
+###### NES #######
+ifeq (${CFG_MAIXPY_NES_SUPPORT},y)
+CFLAGS_MOD += -DMAIXPY_NES_EMULATOR_SUPPORT=1
+NES_DIR_REL := ./nes
+NES_DIR := $(CUR_DIR)/nes
+SRC_NES := \
+			${wildcard ${NES_DIR_REL}/*.c} 
+
+NES_INCLUDE := \
+			-I $(NES_DIR)/include 
+
+INCLUDE += $(NES_INCLUDE)
+SRC_C += $(SRC_NES)
+endif
+###### NES END ####
+
 
 #$(BUILD)/_frozen_mpy.c:  $(BUILD)/genhdr/qstrdefs.generated.h
 #	$(ECHO) "MISC freezing bytecode"
@@ -69,7 +164,7 @@ sinclude $(INC_DIR)/spiffs.mk
 sinclude $(INC_DIR)/platform.mk
 CFLAGS+=$(INCLUDE) $(INCLUDE_ALL)
 TEMP_DIRS := $(subst build,,$(AllDirs))
-SRC_C := $(foreach n,$(TEMP_DIRS) , $(wildcard $(n)/*.c))
+SRC_C += $(foreach n,$(TEMP_DIRS) , $(wildcard $(n)/*.c))
 SRC_CPP := $(foreach n,$(TEMP_DIRS) , $(wildcard $(n)/*.cpp))
 SRC_C += $(MPY_EXT_SRC_C) 
 SRC_QSTR += $(SRC_C)
@@ -87,11 +182,12 @@ SRC_QSTR_AUTO_DEPS +=
 $(CXX_OBJ):%.o:%.cpp
 	$(Q)$(CXX)  -o $(OUTPUT_DIR)/$@ -c $< -I$(INC) $(CXXFLAGS) -lstdc++
 
+MAKE_J_NUMBER=$(shell cat /proc/cpuinfo | grep vendor_id | wc -l)
 # $(HEADER_BUILD)/qstr.i.last $(HEADER_BUILD)/qstrdefs.generated.h $(BUILD)/_frozen_mpy.c
 compile: $(BUILD)/genhdr/qstrdefs.generated.h mkbuild $(OUTPUT_BIN)
 	$(call echo_info,"Making compile ...")
-	$(foreach n,${SUBDIRS},make -C ${n} compile || exit "$$?";)
-	
+	$(foreach n,${SUBDIRS},make -j${MAKE_J_NUMBER} -C ${n} compile || exit "$$?";)
+
 $(OUTPUT_BIN): $(OBJ) $(CXX_OBJ) 
 	@$(AR) rcs -o $@ $(CXX_OBJ) $(OBJ) $(LIBS) $(LDFLAGS)
 

@@ -4,7 +4,7 @@
 #
 ###############################################################################
 # basic & header & platform options
-CUR_DIR := `pwd`
+CUR_DIR := $(shell pwd)
 sinclude $(INCLUDE_MK)	
 sinclude $(PLATFORM_MK)
 SUBDIRS := $(shell find . -maxdepth 1 -type d)

@@ -16,6 +16,11 @@ function help()
 if [[ "$1x" == "cleanx" ]]; then
     make clean
     exit 0
+elif [[ "$1x" == "distcleanx" ]]; then
+    make clean
+    rm mpy_support/lextab.py mpy_support/yacctab.py
+    rm platform/sdk/kendryte-standalone-sdk -rf
+    exit 0
 elif [[ "$1x" != "x" ]]; then
     help
     exit 0
@@ -27,6 +32,13 @@ echo "=============================="
 echo "CORE number: $MAKE_J_NUMBER"
 echo "=============================="
 
+CFG_MODE_DEFAULT=`wc -l modules_conf_default.mk |awk '{print $1}'`
+CFG_MODE=`wc -l modules_conf.mk |awk '{print $1}'`
+
+if [[ ! -f modules_conf.mk || ${CFG_MODE_DEFAULT} != ${CFG_MODE} ]]; then
+    cp modules_conf.mk modules_conf_bak.mk
+    cp modules_conf_default.mk modules_conf.mk
+fi
 
 # make -j$MAKE_J_NUMBER all
 make include_mk

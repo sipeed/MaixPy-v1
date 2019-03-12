@@ -28,6 +28,7 @@ export PLATFORM_MK=`pwd`/${PLATFORM}.mk
 export INCLUDE_MK=include.mk
 export COMMON_MK=`pwd`/common.mk
 export COMMON_C_MK=`pwd`/common_c.mk
+export MAIXPY_MODULES_CONFIG_MK=`pwd`/modules_conf.mk
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${TOOLCHAIN_PATH}/bin
 export CROSS_COMPILE=${TOOLCHAIN_PATH}/bin/riscv64-unknown-elf-
 export TOOLCHAIN_LIB_DIR=${TOOLCHAIN_PATH}/lib/gcc/riscv64-unknown-elf/8.2.0

@@ -1,5 +1,6 @@
 # SHELL:=/bin/bash
 CC = $(CROSS_COMPILE)gcc
+CPP = $(CC) -E
 CXX = $(CROSS_COMPILE)c++
 AR = $(CROSS_COMPILE)ar
 OBJCOPY = $(CROSS_COMPILE)objcopy

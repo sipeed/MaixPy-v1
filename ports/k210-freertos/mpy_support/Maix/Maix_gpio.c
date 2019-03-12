@@ -159,7 +159,7 @@ STATIC const Maix_gpio_obj_t Maix_gpio_obj[] = {
 STATIC const Maix_gpio_irq_obj_t Maix_gpio_irq_object[];
 
 void Maix_gpios_init(void) {
-    memset(&MP_STATE_PORT(Maix_gpio_irq_handler[0]), 0, sizeof(MP_STATE_PORT(Maix_gpio_irq_handler)));
+    // memset(&MP_STATE_PORT(Maix_gpio_irq_handler[0]), 0, sizeof(MP_STATE_PORT(Maix_gpio_irq_handler)));
 }
 
 void Maix_gpios_deinit(void) {
