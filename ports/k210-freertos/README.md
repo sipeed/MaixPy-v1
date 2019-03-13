@@ -61,18 +61,21 @@ Board=goD
 
 ### Initialize submodules
 
-If use lvgl
 
 ```shell
-cd mpy_support/lvgl
+git submodule init
 git submodule update --recursive
 ```
+
+### Config modules
+
+Edit modules_confg.mk
+
 
 ### Build
 
 Build port
 ```
-chmod +x build.sh
 ./build.sh
 ```
 

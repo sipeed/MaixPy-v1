@@ -166,7 +166,9 @@ STATIC int machine_timer_isr(void *self_in) {
 	debug_print("[MAIXPY]Timer:type->call = %p\n",type->call);
 	if(type != NULL)
 	{
-        mp_call_function_2(self->callback, MP_OBJ_FROM_PTR(self), self->arg);
+            mp_sched_schedule(self->callback, self);
+            mp_hal_wake_main_task_from_isr();
+            // mp_call_function_2(self->callback, MP_OBJ_FROM_PTR(self), self->arg);
 	}
 	else
 	{
@@ -375,6 +377,13 @@ STATIC mp_obj_t machine_timer_restart(mp_obj_t self_in) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(machine_timer_restart_obj, machine_timer_restart);
 
+STATIC mp_obj_t machine_timer_callback_arg(mp_obj_t self_in) {
+    machine_timer_obj_t *self = self_in;
+    return self->arg;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(machine_timer_callback_arg_obj, machine_timer_callback_arg);
+
 STATIC mp_obj_t machine_timer_start(mp_obj_t self_in) {
     machine_timer_obj_t *self = self_in;
 	if(self->active == 0)
@@ -412,6 +421,7 @@ STATIC const mp_rom_map_elem_t machine_timer_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_start), MP_ROM_PTR(&machine_timer_start_obj) },
     { MP_ROM_QSTR(MP_QSTR_stop), MP_ROM_PTR(&machine_timer_stop_obj) },
     { MP_ROM_QSTR(MP_QSTR_restart), MP_ROM_PTR(&machine_timer_restart_obj) },
+    { MP_ROM_QSTR(MP_QSTR_callback_arg), MP_ROM_PTR(&machine_timer_callback_arg_obj) },
     // { MP_ROM_QSTR(MP_QSTR_time_left), MP_ROM_PTR(&machine_timer_time_left_obj) },
     // { MP_ROM_QSTR(MP_QSTR_freq), MP_ROM_PTR(&machine_timer_freq_obj) },
     // { MP_ROM_QSTR(MP_QSTR_value), MP_ROM_PTR(&machine_timer_value_obj) },

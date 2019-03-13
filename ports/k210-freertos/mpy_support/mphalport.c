@@ -92,3 +92,13 @@ void mp_hal_delay_us(mp_uint_t us) {
 
 
 mp_uint_t systick_current_millis(void) __attribute__((weak, alias("mp_hal_ticks_ms")));
+
+// Wake up the main task if it is sleeping
+void mp_hal_wake_main_task_from_isr(void) {
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    vTaskNotifyGiveFromISR(mp_main_task_handle, &xHigherPriorityTaskWoken);
+    if (xHigherPriorityTaskWoken == pdTRUE) {
+		//TODO: not implement yet
+        // portYIELD_FROM_ISR();
+    }
+}
