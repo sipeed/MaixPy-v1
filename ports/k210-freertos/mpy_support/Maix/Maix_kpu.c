@@ -114,6 +114,150 @@ static const mp_obj_type_t py_kpu_net_obj_type = {
     .locals_dict = (mp_obj_t) &py_kpu_net_dict
 };
 
+typedef struct {
+                uint32_t magic_number;
+                uint32_t layer_number;
+                uint32_t layer_cfg_addr_offset;
+                uint32_t eight_bit_mode;
+                float scale;
+                float bias;
+            } model_config_t;
+
+
+typedef struct {
+                uint32_t reg_addr_offset;
+                uint32_t act_addr_offset;
+                uint32_t bn_addr_offset;
+                uint32_t bn_len;
+                uint32_t weights_addr_offset;
+                uint32_t weights_len;
+            } layer_config_t;
+
+
+int model_init(kpu_task_t *task, const char *path)
+{
+    uint32_t layer_cfg_addr;
+    model_config_t model_cfg;
+    layer_config_t layer_cfg;
+    kpu_layer_argument_t *layer_arg_ptr;
+    void *ptr;
+    mp_obj_t file;
+    int ferr;
+
+    file = vfs_internal_open(path,"rb", &ferr);
+    if(file == MP_OBJ_NULL || ferr != 0)
+        mp_raise_OSError(ferr);
+
+    memset(task, 0, sizeof(kpu_task_t));
+    //model_read(addr, (uint8_t *)&model_cfg, sizeof(model_config_t));
+    vfs_internal_read(file, (uint8_t *)&model_cfg, sizeof(model_config_t), &ferr);
+    if( ferr != 0)
+        mp_raise_OSError(ferr);
+
+    if (model_cfg.magic_number != 0x12345678)
+        return -1;
+    layer_arg_ptr = (kpu_layer_argument_t *)malloc(12 * 8 * model_cfg.layer_number);
+    if (layer_arg_ptr == NULL)
+        return -2;
+
+    memset(layer_arg_ptr, 0, 12 * 8 * model_cfg.layer_number);
+    task->layers = layer_arg_ptr;
+    task->layers_length = model_cfg.layer_number;
+    task->eight_bit_mode = model_cfg.eight_bit_mode;
+    task->output_scale = model_cfg.scale;
+    task->output_bias = model_cfg.bias;
+
+    layer_cfg_addr =  model_cfg.layer_cfg_addr_offset;
+    for (uint32_t i = 0; i < model_cfg.layer_number; i++)
+    {
+        // read layer config
+        //model_read(layer_cfg_addr, (uint8_t *)&layer_cfg, sizeof(layer_config_t));
+        vfs_internal_seek(file, layer_cfg_addr, VFS_SEEK_SET, &ferr);
+        if(ferr != 0)
+            mp_raise_OSError(ferr);
+
+        vfs_internal_read(file, (uint8_t *)&layer_cfg, sizeof(layer_config_t), &ferr);
+        if( ferr != 0)
+            mp_raise_OSError(ferr);
+
+        // read reg arg
+        //model_read(addr + layer_cfg.reg_addr_offset, (uint8_t *)layer_arg_ptr, sizeof(kpu_layer_argument_t));
+        vfs_internal_seek(file, layer_cfg.reg_addr_offset, VFS_SEEK_SET, &ferr);
+        if(ferr != 0)
+            mp_raise_OSError(ferr);
+
+        vfs_internal_read(file, (uint8_t *)layer_arg_ptr, sizeof(kpu_layer_argument_t), &ferr);
+        if( ferr != 0)
+            mp_raise_OSError(ferr);
+
+
+
+        // read act arg
+        ptr = malloc(sizeof(kpu_activate_table_t));
+        if (ptr == NULL)
+            return -2;
+        //model_read(addr + layer_cfg.act_addr_offset, (uint8_t *)ptr, sizeof(kpu_activate_table_t));
+        
+        vfs_internal_seek(file, layer_cfg.act_addr_offset, VFS_SEEK_SET, &ferr);
+        if(ferr != 0)
+            mp_raise_OSError(ferr);
+
+        vfs_internal_read(file,  (uint8_t *)ptr, sizeof(kpu_activate_table_t), &ferr);
+        if( ferr != 0)
+            mp_raise_OSError(ferr);
+
+
+        layer_arg_ptr->kernel_calc_type_cfg.data.active_addr = (uint32_t)ptr;
+        // read bn arg
+        ptr = malloc(layer_cfg.bn_len);
+        if (ptr == NULL)
+            return -2;
+        //model_read(addr + layer_cfg.bn_addr_offset, (uint8_t *)ptr, layer_cfg.bn_len);
+        vfs_internal_seek(file, layer_cfg.bn_addr_offset, VFS_SEEK_SET, &ferr);
+        if(ferr != 0)
+            mp_raise_OSError(ferr);
+
+        vfs_internal_read(file,  (uint8_t *)ptr, layer_cfg.bn_len, &ferr);
+        if( ferr != 0)
+            mp_raise_OSError(ferr);
+
+        layer_arg_ptr->kernel_pool_type_cfg.data.bwsx_base_addr = (uint32_t)ptr;
+        // read weights arg
+        ptr = malloc(layer_cfg.weights_len);
+        if (ptr == NULL)
+            return -2;
+        //model_read(addr + layer_cfg.weights_addr_offset, (uint8_t *)ptr, layer_cfg.weights_len);
+        vfs_internal_seek(file, layer_cfg.weights_addr_offset, VFS_SEEK_SET, &ferr);
+        if(ferr != 0)
+            mp_raise_OSError(ferr);
+
+        vfs_internal_read(file, (uint8_t *)ptr, layer_cfg.weights_len, &ferr);
+        if( ferr != 0)
+            mp_raise_OSError(ferr);
+
+        layer_arg_ptr->kernel_load_cfg.data.para_start_addr = (uint32_t)ptr;
+        // next layer
+        layer_cfg_addr += sizeof(layer_config_t);
+        layer_arg_ptr++;
+    }
+    vfs_internal_close(file, &ferr);
+    if( ferr != 0)
+        mp_raise_OSError(ferr);
+    return 0;
+}
+
+int model_deinit(kpu_task_t *task)
+{
+    for (uint32_t i = 0; i < task->layers_length; i++)
+    {
+        free(task->layers[i].kernel_calc_type_cfg.data.active_addr);
+        free(task->layers[i].kernel_pool_type_cfg.data.bwsx_base_addr);
+        free(task->layers[i].kernel_load_cfg.data.para_start_addr);
+    }
+    free(task->layers);
+    return 0;
+}
+
 STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
     int err = 0;
@@ -175,6 +319,12 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
             err = -2;//read error
             goto error;
         }
+        int ret = kpu_model_load_from_buffer(kpu_task, model_data, NULL);
+        if(ret != 0)
+        {
+            err = -3; //load error
+            goto error;
+        }
     }
     else if(mp_obj_get_type(pos_args[0]) == &mp_type_str)
     {
@@ -183,46 +333,77 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
         o->model_path = mp_obj_new_str(path,strlen(path));
         o->model_addr = mp_const_none;
 
-        int ferr;
-        mp_obj_t file;
-        uint16_t tmp;
-        uint8_t model_header[sizeof(kpu_model_header_t) + 1];
-
-        file = vfs_internal_open(path,"rb", &ferr);
-        if(file == MP_OBJ_NULL || ferr != 0)
-            mp_raise_OSError(ferr);
-
-        vfs_internal_read(file, model_header, sizeof(kpu_model_header_t), &ferr);
-        if( ferr != 0)
-            mp_raise_OSError(ferr);
-
-        model_size = kpu_model_get_size(model_header);
-
-        if(model_size == -1)
+        if(NULL != strstr(path,".bin"))
         {
-            err = -2;//read error
+            err=model_init(kpu_task,path);
+            if( err != 0 )
+            {
+                model_deinit(kpu_task);
+                goto error;
+            }
+
+        }
+        else
+        if(NULL != strstr(path,".kmodel"))
+        {
+     
+
+            int ferr;
+            mp_obj_t file;
+            uint16_t tmp;
+            uint8_t model_header[sizeof(kpu_model_header_t) + 1];
+
+            file = vfs_internal_open(path,"rb", &ferr);
+            if(file == MP_OBJ_NULL || ferr != 0)
+                mp_raise_OSError(ferr);
+
+            vfs_internal_read(file, model_header, sizeof(kpu_model_header_t), &ferr);
+            if( ferr != 0)
+                mp_raise_OSError(ferr);
+
+            model_size = kpu_model_get_size(model_header);
+
+            if(model_size == -1)
+            {
+                err = -2;//read error
+                vfs_internal_close(file, &ferr);
+                goto error;
+            }
+
+            model_data = (uint8_t *)malloc(model_size * sizeof(uint8_t));
+            if(model_data == NULL)
+            {
+                err = -1;//malloc error
+                goto error;
+            }
+
+            vfs_internal_seek(file, 0, VFS_SEEK_SET, &ferr);
+            if(ferr != 0)
+                mp_raise_OSError(ferr);
+
+            vfs_internal_read(file, model_data, model_size, &ferr);
+            if( ferr != 0)
+                mp_raise_OSError(ferr);
+
             vfs_internal_close(file, &ferr);
-            goto error;
+            if( ferr != 0)
+                mp_raise_OSError(ferr);
+
+            int ret = kpu_model_load_from_buffer(kpu_task, model_data, NULL);
+            if(ret != 0)
+            {
+                err = -3; //load error
+                goto error;
+            }
+
         }
-
-        model_data = (uint8_t *)malloc(model_size * sizeof(uint8_t));
-        if(model_data == NULL)
-        {
-            err = -1;//malloc error
-            goto error;
+        else
+        {   
+            m_del(py_kpu_net_obj_t, o,sizeof(py_kpu_net_obj_t));
+            mp_raise_ValueError("[MAIXPY]kpu: model format don't match, only supply .bin or .kmodel ");
+            return mp_const_false;
         }
-
-        vfs_internal_seek(file, 0, VFS_SEEK_SET, &ferr);
-        if(ferr != 0)
-            mp_raise_OSError(ferr);
-
-        vfs_internal_read(file, model_data, model_size, &ferr);
-        if( ferr != 0)
-            mp_raise_OSError(ferr);
-
-        vfs_internal_close(file, &ferr);
-        if( ferr != 0)
-            mp_raise_OSError(ferr);
+        
     }
     else
     {
@@ -231,12 +412,7 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
         return mp_const_false;
     }
 
-    int ret = kpu_model_load_from_buffer(kpu_task, model_data, NULL);
-    if(ret != 0)
-    {
-        err = -3; //load error
-        goto error;
-    }
+    
 
     o->base.type = &py_kpu_net_obj_type;
     o->net_args = mp_const_none;
@@ -756,23 +932,23 @@ STATIC mp_obj_t py_kpu_deinit(uint n_args, const mp_obj_t *pos_args, mp_map_t *k
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_deinit_obj, 1, py_kpu_deinit);
 ///////////////////////////////////////////////////////////////////////////////
 /*forward
-	单纯的网络前向运算
-	输入参数：
+	单纯的网络前向运�?
+	输入参数�?
 		net结构体的obj（必须）
 		是否使用softmax（可选）
-		stride（可选，默认1）
-		计算到第几层（可选）：默认为计算完，可选计算到第n层
-			计算到第n层，即修改第n层的send_data_out为1，使能dma输出，方法为：
+		stride（可选，默认1�?
+		计算到第几层（可选）：默认为计算完，可选计算到第n�?
+			计算到第n层，即修改第n层的send_data_out�?，使能dma输出，方法为�?
 			修改原自动生成的kpu_task_init，设置layers_length为n
 		
-	输出为 
+	输出�?
 		特征图obj
 			即n个通道的m*n的图片，0~255灰度，可以使用color map映射为伪彩色
-			m*n即为最后一个layer的输出尺寸
+			m*n即为最后一个layer的输出尺�?
 			last_layer->image_size.data.o_row_wid，o_col_high
 			新建一个类型，直接存储特征图数组，
 			对外提供转化某通道特征图到Image对象的方法，
-			并且提供deinit方向释放特征图空间。
+			并且提供deinit方向释放特征图空间�?
 */
 
 
@@ -830,7 +1006,7 @@ STATIC mp_obj_t py_kpu_forward(uint n_args, const mp_obj_t *pos_args, mp_map_t *
 		py_kpu_net_obj_t *kpu_net = MP_OBJ_TO_PTR(args[ARG_kpu_net].u_obj);
 		image_t *arg_img = py_image_cobj(args[ARG_img].u_obj);
 		kpu_task_t *kpu_task = MP_OBJ_TO_PTR(kpu_net->kpu_task);  
-		int layers_length = args[ARG_len].u_int;	//计算的层数
+		int layers_length = args[ARG_len].u_int;	//计算的层�?
 		
         if (arg_img->pix_ai == NULL)
         {
@@ -868,7 +1044,7 @@ STATIC mp_obj_t py_kpu_forward(uint n_args, const mp_obj_t *pos_args, mp_map_t *
 		fmap->h = last_layer->image_size.data.o_col_high + 1;
 		fmap->ch = last_layer->image_channel_num.data.o_ch_num + 1;
 		return MP_OBJ_FROM_PTR(o);
-		//kpu_single_task_deinit	//最后需要释放
+		//kpu_single_task_deinit	//最后需要释�?
 	}
 
     return mp_const_none;
