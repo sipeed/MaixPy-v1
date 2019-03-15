@@ -20,14 +20,17 @@ sinclude $(INC_DIR)/sdk.mk
 CFLAGS += $(INCLUDE)
 CFLAGS += $(INCLUDE_ALL)
 
+lib_mic.a:
+	wget https://fdvad021asfd8q.oss-cn-hangzhou.aliyuncs.com/Sipeed_M1/software/lib_mic.a
+	touch lib_mic.a
 
-all: compile
+all: lib_mic.a compile
 	$(call echo_info,"CUR_DIR "$(CUR_DIR)" ...")
 
 $(OUTPUT_BIN):$(SRC_C_OBJ) 
 	$(Q)$(AR) rcs -o $@ $(SRC_C_OUTPUT_OBJ) 
 
-compile: $(OUTPUT_BIN)	
+compile: lib_mic.a $(OUTPUT_BIN)	
 
 include_mk:
 	echo "INCLUDE_ALL += \\" > $(INCLUDE_MK)

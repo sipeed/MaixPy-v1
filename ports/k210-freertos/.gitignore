@@ -13,4 +13,4 @@ config.conf
 !common.mk
 ./kflash.py
 asm.txt
-
+*.a
