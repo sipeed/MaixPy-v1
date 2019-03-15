@@ -35,7 +35,7 @@ extern uint8_t g_dvp_buf[];
 
 int nes_stick=0;
 int nes_volume=8;  //0~8
-int nes_cycle_us=63;  //60fps,  63us per cycle
+int nes_cycle_us=0;  //60fps,  63us per cycle
 
 static mp_obj_t py_nes_init(mp_obj_t stick_obj)//, mp_obj_t wait_obj, mp_obj_t audio_obj)
 {
@@ -49,7 +49,7 @@ static mp_obj_t py_nes_init(mp_obj_t stick_obj)//, mp_obj_t wait_obj, mp_obj_t a
 	fpioa_set_function(36, FUNC_SPI0_SS3);
 	fpioa_set_function(39, FUNC_SPI0_SCLK);
 	// lcd_init();
-	lcd_set_direction(DIR_YX_LRUD|0x08);  //RLDU
+	lcd_set_direction(DIR_YX_RLDU|0x08);  //RLDU
 	//we DO NOT initialize here for we want user to set in python layer
 	lcd_clear(BLACK);
 	if(nes_stick == 1)

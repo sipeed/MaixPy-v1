@@ -22,18 +22,20 @@
 #include "py/mpstate.h"
 
 #if MAIXPY_NES_EMULATOR_SUPPORT
+#define MAX_SAMPLES_PER_SYNC 750
 
 extern uint8_t g_dvp_buf[];
 extern NES_DWORD * FrameBuffer;
 
 extern int nes_cycle_us;
 extern int nes_volume;
-uint16_t final_wave[2048];
+uint32_t final_wave[MAX_SAMPLES_PER_SYNC*2];
 int waveptr=0;
 int wavflag=0;
 bool i2s_idle = true;
 bool is_exit_to_menu = true;
 BYTE* g_rom_file_content = NULL;
+int g_samples_per_sync = 0;
 
 #define _D //printf("%d\n",__LINE__)
 
@@ -212,11 +214,11 @@ void InfoNES_PadState( NES_DWORD *pdwPad1, NES_DWORD *pdwPad2, NES_DWORD *pdwSys
 			  dwKeyPad1 |= ( 1 << 4 );state[4]=REPEAT_N;
 			  break;
 
-			case '\n':
+			case 0x0d://Enter
 			case 'm':	//start
 			  dwKeyPad1 |= ( 1 << 3 );state[3]=0;
 			  break;
-
+			case '\\':
 			case 'n':	//select
 			  dwKeyPad1 |= ( 1 << 2 );state[2]=0;
 			  break;
@@ -231,24 +233,24 @@ void InfoNES_PadState( NES_DWORD *pdwPad1, NES_DWORD *pdwPad2, NES_DWORD *pdwSys
 			/**********************/
 			case 'r':
 				nes_cycle_us++;
-				printf("nes_cycle_us:%d\r\n",nes_cycle_us);
+				printf("cycle_us:%d\r\n",nes_cycle_us);
 				break;
 			case 'f':
 				nes_cycle_us--;
 				if(nes_cycle_us<0)nes_cycle_us=0;
-				printf("nes_cycle_us:%d\r\n",nes_cycle_us);
+				printf("cycle_us:%d\r\n",nes_cycle_us);
 				break;
-			case 't':
+			case '=':
 				nes_volume++;
 				if(nes_volume>8)nes_volume=8;
-				printf("nes_volume:%d\r\n",nes_volume);
+				printf("volume:%d\r\n",nes_volume);
 				break;
-			case 'g':
+			case '-':
 				nes_volume--;
 				if(nes_volume<0)nes_volume=0;
-				printf("nes_volume:%d\r\n",nes_volume);
+				printf("volume:%d\r\n",nes_volume);
 				break;
-			case 0x1B:   //ESC
+			case 0x03:   //Ctrl+C
 				printf("exit\r\n");
 				dwKeySystem |= PAD_SYS_QUIT;
 				is_exit_to_menu = true;
@@ -302,22 +304,22 @@ void InfoNES_PadState( NES_DWORD *pdwPad1, NES_DWORD *pdwPad2, NES_DWORD *pdwSys
 		
 		if(l1){
 			nes_cycle_us++;
-			printf("nes_cycle_us:%d\r\n",nes_cycle_us);
+			printf("cycle_us:%d\r\n",nes_cycle_us);
 		}
 		if(l2){
 			nes_cycle_us--;
 			if(nes_cycle_us<0)nes_cycle_us=0;
-			printf("nes_cycle_us:%d\r\n",nes_cycle_us);
+			printf("cycle_us:%d\r\n",nes_cycle_us);
 		}
 		if(r1){
 			nes_volume++;
 			if(nes_volume>8)nes_volume=8;
-			printf("nes_volume:%d\r\n",nes_volume);
+			printf("volume:%d\r\n",nes_volume);
 		}
 		if(r2){
 			nes_volume--;
 			if(nes_volume<0)nes_volume=0;
-			printf("nes_volume:%d\r\n",nes_volume);
+			printf("volume:%d\r\n",nes_volume);
 		}
 	}
 	*pdwPad1   = dwKeyPad1;
@@ -351,9 +353,11 @@ void InfoNES_DebugPrint( char *pszMsg )
 static unsigned long int t0=0;
 void InfoNES_Wait()
 {
-	while(read_cycle()<t0+nes_cycle_us*(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU) / 1000000UL)){};
-	t0 = read_cycle();
-	return;
+	if(nes_cycle_us != 0)
+	{
+		while(read_cycle()<t0+nes_cycle_us*(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU) / 1000000UL)){};
+		t0 = read_cycle();
+	}
 }
 
 
@@ -368,7 +372,6 @@ void InfoNES_SoundInit( void )
 static int on_irq_dma3(void *ctx)
 {
 	i2s_idle = true;
-	// printk("play ok\n");
 }
 
 /* Sound Open */
@@ -388,7 +391,15 @@ int InfoNES_SoundOpen( int samples_per_sync, int sample_rate )
                           /*TRIGGER_LEVEL_1*/ TRIGGER_LEVEL_4,
                           RIGHT_JUSTIFYING_MODE);
 	printf("samples_per_sync=%d, sample_rate=%d\r\n", samples_per_sync, sample_rate);
-	i2s_set_sample_rate(I2S_DEVICE_0, sample_rate/8);	
+	if(nes_stick==0)
+		printf("key: WASD, JK, -=, \\, Enter, Ctrl+C\r\n");
+	if(samples_per_sync > MAX_SAMPLES_PER_SYNC)
+	{
+		printf("samples per sync too big, max:%d\n",MAX_SAMPLES_PER_SYNC);
+		return 0;
+	}
+	g_samples_per_sync = samples_per_sync;
+	i2s_set_sample_rate(I2S_DEVICE_0, sample_rate);	
 	dmac_set_irq(DMAC_CHANNEL3, on_irq_dma3, NULL, 1);
 	/* Successful */
 	is_exit_to_menu = false;
@@ -414,7 +425,6 @@ void InfoNES_SoundClose( void )
 
 uint8_t play_index = 0;
 bool full=false;
-int count=0;
 /* Sound Output 5 Waves - 2 Pulse, 1 Triangle, 1 Noise, 1 DPCM */
 void InfoNES_SoundOutput(int samples, BYTE *wave1, BYTE *wave2, BYTE *wave3, BYTE *wave4, BYTE *wave5)
 {
@@ -422,22 +432,19 @@ void InfoNES_SoundOutput(int samples, BYTE *wave1, BYTE *wave2, BYTE *wave3, BYT
 	int16_t tmp;
 	for (i = 0; i < samples; i++) 
 	{
-		// printf("%d %x\n",wave2[i], wave2[i]);
-		final_wave[ waveptr ] = 
-		 (( (uint16_t)wave2[i] ) )<<(nes_volume);
+		tmp = (( (uint16_t)wave1[i] +(uint16_t)wave2[i] +(uint16_t)wave3[i] +(uint16_t)wave4[i] +(uint16_t)wave5[i] ) )<<(nes_volume);
+		final_wave[ waveptr ] = tmp<<16 | tmp;
 		waveptr++;
-		if ( waveptr == 2048 ) 
+		if ( waveptr == g_samples_per_sync*2 ) 
 		{
 			waveptr = 0;
 			wavflag = 2;
 			full = true;
-			// printf("buffer 2 full\n");
 		} 
-		else if ( waveptr == 1024)
+		else if ( waveptr == g_samples_per_sync)
 		{
 			wavflag = 1;
 			full = true;
-			// printf("buffer 1 full\n");
 		}
 	}
 
@@ -445,9 +452,7 @@ void InfoNES_SoundOutput(int samples, BYTE *wave1, BYTE *wave2, BYTE *wave3, BYT
 	{
 		i2s_idle = false;
 		full = false;
-		// printf("play:%d\n", play_index);
-		i2s_play(I2S_DEVICE_0, DMAC_CHANNEL3, final_wave+1024*play_index, 1024,1024, 16, 1);
-		//i2s_send_data_dma(I2S_DEVICE_0, &final_wave[(wavflag - 1) << 10], samples * 2, DMAC_CHANNEL3);
+		i2s_play(I2S_DEVICE_0, DMAC_CHANNEL3, final_wave+g_samples_per_sync*play_index, g_samples_per_sync*4,1024, 16, 2);
 		if(wavflag == 1)
 			play_index = 1;
 		else if(wavflag == 2)
