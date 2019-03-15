@@ -185,7 +185,7 @@ NES_DWORD dwKeyPad2;
 NES_DWORD dwKeySystem;
 static int state[8]={0};
 
-#define REPEAT_N 16
+extern int repeat_n ;
 void InfoNES_PadState( NES_DWORD *pdwPad1, NES_DWORD *pdwPad2, NES_DWORD *pdwSystem )
 {
 	int ch;
@@ -199,19 +199,19 @@ void InfoNES_PadState( NES_DWORD *pdwPad1, NES_DWORD *pdwPad2, NES_DWORD *pdwSys
 			switch((char)ch)
 			{
 			case 'd':	//right
-			  dwKeyPad1 |= ( 1 << 7 );state[7]=REPEAT_N;
+			  dwKeyPad1 |= ( 1 << 7 );state[7]=repeat_n;
 			  break;
 
 			case 'a':	//left
-			  dwKeyPad1 |= ( 1 << 6 );state[6]=REPEAT_N;
+			  dwKeyPad1 |= ( 1 << 6 );state[6]=repeat_n;
 			  break;
 
 			case 's':	//down
-			  dwKeyPad1 |= ( 1 << 5 );state[5]=REPEAT_N;
+			  dwKeyPad1 |= ( 1 << 5 );state[5]=repeat_n;
 			  break;
 			  
 			case 'w':	//up
-			  dwKeyPad1 |= ( 1 << 4 );state[4]=REPEAT_N;
+			  dwKeyPad1 |= ( 1 << 4 );state[4]=repeat_n;
 			  break;
 
 			case 0x0d://Enter
@@ -224,11 +224,11 @@ void InfoNES_PadState( NES_DWORD *pdwPad1, NES_DWORD *pdwPad2, NES_DWORD *pdwSys
 			  break;
 
 			case 'j':   // 'A'
-			  dwKeyPad1 |= ( 1 << 1 );state[1]=REPEAT_N;
+			  dwKeyPad1 |= ( 1 << 1 );state[1]=repeat_n;
 			  break;
 
 			case 'k': 	// 'B' 
-			  dwKeyPad1 |= ( 1 << 0 );state[0]=REPEAT_N;
+			  dwKeyPad1 |= ( 1 << 0 );state[0]=repeat_n;
 			  break;
 			/**********************/
 			case 'r':
