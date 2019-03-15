@@ -8,7 +8,6 @@
 #include <errno.h>
 #include "io.h"
 
-#if MAIXPY_VIDEO_SUPPORT
 
 extern volatile i2s_t *const i2s[3]; //TODO: remove register, replace with function
 
@@ -77,7 +76,7 @@ static int on_irq_dma3(void *ctx)
     if( !avi->audio_buf[avi->index_buf_play].empty )
     {
         // printk("irq play %d\r\n",avi->index_buf_play);
-        video_hal_audio_play(avi->audio_buf[avi->index_buf_play].buf, avi->audio_buf[avi->index_buf_play].len);
+        video_hal_audio_play(avi->audio_buf[avi->index_buf_play].buf, avi->audio_buf[avi->index_buf_play].len, (uint8_t)avi->audio_channels);
     }
     return 0;
 }
@@ -164,9 +163,9 @@ int video_hal_audio_deinit(avi_t* avi)
     writel(u_ccr.reg_data, &i2s[I2S_DEVICE_0]->ccr);
 }
 
-int video_hal_audio_play(uint8_t* data, uint32_t len)
+int video_hal_audio_play(uint8_t* data, uint32_t len, uint8_t channels)
 {
-    i2s_play(I2S_DEVICE_0, DMAC_CHANNEL3, data, len, 1024, 16, 2);
+    i2s_play(I2S_DEVICE_0, DMAC_CHANNEL3, data, len, 1024, 16, channels);
     return 0;
 }
 
@@ -284,4 +283,4 @@ uint8_t* video_hal_free(uint8_t* ptr)
     free(ptr);
 }
 
-#endif //MAIXPY_VIDEO_SUPPORT
+

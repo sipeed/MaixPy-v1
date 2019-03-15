@@ -3,14 +3,13 @@
 
 #include "avi.h"
 
-#if MAIXPY_VIDEO_SUPPORT
 
 //////////////////// VIDEO BUFF ///////////////////////
 #include "framebuffer.h"
 #include "omv_boardconfig.h"
 extern uint8_t g_ai_buf_in[OMV_INIT_W * OMV_INIT_H * 3]; // usually for sensor( camera )
 #define   VIDEO_BUFF()  g_ai_buf_in  // we use omv module's framebuff here
-#define   VIDEO_AVI_BUFF_SIZE  (20*1024) // just satisfy avi header length (~=10k) and data length should less than this
+#define   VIDEO_AVI_BUFF_SIZE  (35*1024) // just satisfy avi header length (~=10k) plus first data block size(e.g. mjepg maybe 15k) and data length should less than this
 
 extern uint8_t g_dvp_buf[OMV_INIT_W * OMV_INIT_H * 2]; // usually for lcd display(RGB565 16bit)
 #define   IMAGE_BUFF()  g_dvp_buf
@@ -51,7 +50,7 @@ int video_hal_display_init();
 int video_hal_display(image_t* img, video_display_roi_t img_roi);
 uint64_t video_hal_ticks_us(void);
 int video_hal_audio_init(avi_t* avi);
-int video_hal_audio_play(uint8_t* data, uint32_t len);
+int video_hal_audio_play(uint8_t* data, uint32_t len, uint8_t channels);
 void video_avi_record_fail(avi_t* avi);
 void video_avi_record_success(avi_t* avi);
 int video_hal_file_open(avi_t* avi, const char* path, bool write);
@@ -68,7 +67,6 @@ int video_hal_image_encode_mjpeg(avi_t* avi, image_t* img);
 uint8_t* video_hal_malloc(uint32_t size);
 uint8_t* video_hal_free(uint8_t* ptr);
 
-#endif //MAIXPY_VIDEO_SUPPORT
 
 #endif
 

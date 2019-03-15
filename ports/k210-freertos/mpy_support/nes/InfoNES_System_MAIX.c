@@ -368,6 +368,7 @@ void InfoNES_SoundInit( void )
 static int on_irq_dma3(void *ctx)
 {
 	i2s_idle = true;
+	// printk("play ok\n");
 }
 
 /* Sound Open */
@@ -387,7 +388,7 @@ int InfoNES_SoundOpen( int samples_per_sync, int sample_rate )
                           /*TRIGGER_LEVEL_1*/ TRIGGER_LEVEL_4,
                           RIGHT_JUSTIFYING_MODE);
 	printf("samples_per_sync=%d, sample_rate=%d\r\n", samples_per_sync, sample_rate);
-	i2s_set_sample_rate(I2S_DEVICE_0, sample_rate);	
+	i2s_set_sample_rate(I2S_DEVICE_0, sample_rate/8);	
 	dmac_set_irq(DMAC_CHANNEL3, on_irq_dma3, NULL, 1);
 	/* Successful */
 	is_exit_to_menu = false;
@@ -411,7 +412,9 @@ void InfoNES_SoundClose( void )
     writel(u_ccr.reg_data, &i2s[I2S_DEVICE_0]->ccr);
 }
 
-
+uint8_t play_index = 0;
+bool full=false;
+int count=0;
 /* Sound Output 5 Waves - 2 Pulse, 1 Triangle, 1 Noise, 1 DPCM */
 void InfoNES_SoundOutput(int samples, BYTE *wave1, BYTE *wave2, BYTE *wave3, BYTE *wave4, BYTE *wave5)
 {
@@ -419,26 +422,39 @@ void InfoNES_SoundOutput(int samples, BYTE *wave1, BYTE *wave2, BYTE *wave3, BYT
 	int16_t tmp;
 	for (i = 0; i < samples; i++) 
 	{
+		// printf("%d %x\n",wave2[i], wave2[i]);
 		final_wave[ waveptr ] = 
-		 (( (uint16_t)wave1[i] + (uint16_t)wave2[i] + (uint16_t)wave3[i] + (uint16_t)wave4[i] + (uint16_t)wave5[i] ) / 5)<<(nes_volume);
+		 (( (uint16_t)wave2[i] ) )<<(nes_volume);
 		waveptr++;
 		if ( waveptr == 2048 ) 
 		{
 			waveptr = 0;
 			wavflag = 2;
+			full = true;
+			// printf("buffer 2 full\n");
 		} 
 		else if ( waveptr == 1024)
 		{
 			wavflag = 1;
+			full = true;
+			// printf("buffer 1 full\n");
 		}
 	}
 
-	if ( i2s_idle && wavflag )
+	if ( i2s_idle && full )
 	{
 		i2s_idle = false;
-		i2s_play(I2S_DEVICE_0, DMAC_CHANNEL3, &final_wave[(wavflag - 1) << 10], samples*2,samples*2, 16, 1);
+		full = false;
+		// printf("play:%d\n", play_index);
+		i2s_play(I2S_DEVICE_0, DMAC_CHANNEL3, final_wave+1024*play_index, 1024,1024, 16, 1);
 		//i2s_send_data_dma(I2S_DEVICE_0, &final_wave[(wavflag - 1) << 10], samples * 2, DMAC_CHANNEL3);
-		wavflag = 0;
+		if(wavflag == 1)
+			play_index = 1;
+		else if(wavflag == 2)
+		{
+			play_index = 0;
+			wavflag = 0;
+		}
 	}
 }
 

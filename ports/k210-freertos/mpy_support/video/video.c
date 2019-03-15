@@ -4,7 +4,7 @@
 #include "stdio.h"
 #include "picojpeg_util.h"
 
-#if MAIXPY_VIDEO_SUPPORT
+
 
 int video_play_avi_init(const char* path, avi_t* avi)
 {
@@ -129,7 +129,7 @@ video_status_t video_play_avi(avi_t* avi)
             ++avi->index_buf_play;
             if(!avi->audio_buf[avi->index_buf_play].empty)
             {
-                video_hal_audio_play(avi->audio_buf[avi->index_buf_play].buf, avi->audio_buf[avi->index_buf_play].len);
+                video_hal_audio_play(avi->audio_buf[avi->index_buf_play].buf, avi->audio_buf[avi->index_buf_play].len, avi->audio_channels);
                 // printf("play index:%d\n", avi->index_buf_play);
             }
         }
@@ -137,7 +137,7 @@ video_status_t video_play_avi(avi_t* avi)
         {
             if(!avi->audio_buf[avi->index_buf_play].empty)
             {
-                video_hal_audio_play(avi->audio_buf[avi->index_buf_play].buf, avi->audio_buf[avi->index_buf_play].len);
+                video_hal_audio_play(avi->audio_buf[avi->index_buf_play].buf, avi->audio_buf[avi->index_buf_play].len, avi->audio_channels);
                 // printf("play index:%d\n", avi->index_buf_play);
             }
         }
@@ -191,5 +191,4 @@ void video_avi_record_success(avi_t* avi)
 
 
 
-#endif //MAIXPY_VIDEO_SUPPORT
 

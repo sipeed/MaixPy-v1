@@ -3,7 +3,6 @@
 #include "stdio.h"
 #include "video.h"
 
-#if MAIXPY_VIDEO_SUPPORT
 
 uint8_t* const AVI_VIDS_FLAG_TBL[2]={"00dc","01dc"};
 uint8_t* const AVI_AUDS_FLAG_TBL[2]={"00wb","01wb"};
@@ -410,4 +409,3 @@ int avi_record_finish(avi_t* avi)
 	return 0;
 }
 
-#endif

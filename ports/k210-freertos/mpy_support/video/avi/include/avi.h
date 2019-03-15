@@ -6,7 +6,6 @@
 
 #include "mpconfigport.h"
 
-#if MAIXPY_VIDEO_SUPPORT
 
 #include "imlib.h" // need image_t related
 
@@ -230,7 +229,6 @@ int avi_record_append_audio(avi_t* avi, uint8_t* buf, uint32_t len);
 int avi_record_fail(avi_t* avi);
 int avi_record_finish(avi_t* avi);
 
-#endif //MAIXPY_VIDEO_SUPPORT
 
 #endif
 
