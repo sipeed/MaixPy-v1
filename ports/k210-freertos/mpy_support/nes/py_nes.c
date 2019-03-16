@@ -59,10 +59,10 @@ mp_obj_t py_nes_init(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 	lcd_clear(BLACK);
 	if(nes_stick == 1)
 	{
-		fpioa_set_function(20, FUNC_GPIOHS0 + SS_GPIONUM);   //ss
-		fpioa_set_function(19, FUNC_GPIOHS0 + SCLK_GPIONUM); //clk
-		fpioa_set_function(21, FUNC_GPIOHS0 + MOSI_GPIONUM); //mosi
-		fpioa_set_function(18, FUNC_GPIOHS0 + MISO_GPIONUM); //miso
+		fpioa_set_function(19, FUNC_GPIOHS0 + SS_GPIONUM);   //ss
+		fpioa_set_function(18, FUNC_GPIOHS0 + SCLK_GPIONUM); //clk
+		fpioa_set_function(23, FUNC_GPIOHS0 + MOSI_GPIONUM); //mosi
+		fpioa_set_function(21, FUNC_GPIOHS0 + MISO_GPIONUM); //miso
 		soft_spi_init();
 		ps2_mode_config();
 	}

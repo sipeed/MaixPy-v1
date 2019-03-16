@@ -54,9 +54,9 @@ WORD NesPalette[64]={
 /* Menu screen */
 int InfoNES_Menu()
 {
-	if(is_exit_to_menu)
-		return -1;
-	return 0;
+    if(is_exit_to_menu)
+        return -1;
+    return 0;
 }
 
 
@@ -73,24 +73,24 @@ int InfoNES_ReadRom( const char *pszFileName )
  *     0 : Normally
  *    -1 : Error
  */
-	BYTE* rom = NULL;
-	int err;
+    BYTE* rom = NULL;
+    int err;
 
-	mp_obj_t file = vfs_internal_open(pszFileName, "rb", &err);
-	if( file == MP_OBJ_NULL || err!=0)
-		return -1;
-	mp_uint_t size = vfs_internal_size(file);
-	if(!g_rom_file_content)
-	{
-		g_rom_file_content = (BYTE*)malloc(size);
-		if(!g_rom_file_content)
-			return -1;
-	}
-	rom =g_rom_file_content;
+    mp_obj_t file = vfs_internal_open(pszFileName, "rb", &err);
+    if( file == MP_OBJ_NULL || err!=0)
+        return -1;
+    mp_uint_t size = vfs_internal_size(file);
+    if(!g_rom_file_content)
+    {
+        g_rom_file_content = (BYTE*)malloc(size);
+        if(!g_rom_file_content)
+            return -1;
+    }
+    rom =g_rom_file_content;
   // Read ROM Header 
   mp_uint_t ret = vfs_internal_read(file, (void*)rom, size, &err);
-	if(ret != size || err!=0)
-		return -1;
+    if(ret != size || err!=0)
+        return -1;
   memcpy( &NesHeader, rom, sizeof(NesHeader));
   if ( memcmp( NesHeader.byID, "NES\x1a", 4 ) != 0 )
   {
@@ -106,7 +106,7 @@ int InfoNES_ReadRom( const char *pszFileName )
   if ( NesHeader.byInfo1 & 4 )
   {
     //memcpy( &SRAM[ 0x1000 ], rom, 512);
-		rom += 512;
+        rom += 512;
   }
 
   // Allocate Memory for ROM Image 
@@ -116,8 +116,8 @@ int InfoNES_ReadRom( const char *pszFileName )
   if ( NesHeader.byVRomSize > 0 )
   {
     // Allocate Memory for VROM Image 
-	VROM = (BYTE*)rom;
-	rom += NesHeader.byVRomSize * 0x2000;
+    VROM = (BYTE*)rom;
+    rom += NesHeader.byVRomSize * 0x2000;
   }
 
   // Successful
@@ -128,10 +128,10 @@ int InfoNES_ReadRom( const char *pszFileName )
 /* Release a memory for ROM */
 void InfoNES_ReleaseRom()
 {
-	lcd_clear(BLACK);
-	if(g_rom_file_content)
-		free(g_rom_file_content);
-	g_rom_file_content = NULL;
+    lcd_clear(BLACK);
+    if(g_rom_file_content)
+        free(g_rom_file_content);
+    g_rom_file_content = NULL;
 }
 
 static int exchang_data_byte(uint8_t* addr,uint32_t length)
@@ -151,32 +151,32 @@ static int exchang_data_byte(uint8_t* addr,uint32_t length)
 /* Transfer the contents of work frame on the screen */
 void InfoNES_LoadFrame()
 {
-	exchang_data_byte(WorkFrame, NES_DISP_WIDTH*NES_DISP_HEIGHT*2);
-	lcd_draw_picture(32, 0, NES_DISP_WIDTH, NES_DISP_HEIGHT, (uint32_t *)WorkFrame);
-	return;
+    exchang_data_byte(WorkFrame, NES_DISP_WIDTH*NES_DISP_HEIGHT*2);
+    lcd_draw_picture(32, 0, NES_DISP_WIDTH, NES_DISP_HEIGHT, (uint32_t *)WorkFrame);
+    return;
 }
 
 
 /* Get a joypad state */
 //wasd:上下左右  kl:AB nm:sel,start
 
-#define SELECT_MASK	(1<<0)
-#define L3_MASK		(1<<1)
-#define R3_MASK		(1<<2)
-#define START_MASK	(1<<3)
-#define UP_MASK		(1<<4)
-#define RIGHT_MASK	(1<<5)
-#define DOWN_MASK	(1<<6)
-#define LEFT_MASK	(1<<7)
+#define SELECT_MASK    (1<<0)
+#define L3_MASK        (1<<1)
+#define R3_MASK        (1<<2)
+#define START_MASK    (1<<3)
+#define UP_MASK        (1<<4)
+#define RIGHT_MASK    (1<<5)
+#define DOWN_MASK    (1<<6)
+#define LEFT_MASK    (1<<7)
 
-#define L2_MASK		(1<<0)
-#define R2_MASK		(1<<1)
-#define L1_MASK		(1<<2)
-#define R1_MASK		(1<<3)
-#define TRI_MASK	(1<<4)
-#define CIR_MASK	(1<<5)
-#define CRO_MASK	(1<<6)
-#define REC_MASK	(1<<7)
+#define L2_MASK        (1<<0)
+#define R2_MASK        (1<<1)
+#define L1_MASK        (1<<2)
+#define R1_MASK        (1<<3)
+#define TRI_MASK    (1<<4)
+#define CIR_MASK    (1<<5)
+#define CRO_MASK    (1<<6)
+#define REC_MASK    (1<<7)
 
 extern int nes_stick;
 
@@ -188,144 +188,147 @@ static int state[8]={0};
 extern int repeat_n ;
 void InfoNES_PadState( NES_DWORD *pdwPad1, NES_DWORD *pdwPad2, NES_DWORD *pdwSystem )
 {
-	int ch;
-	dwKeyPad1=0;
-	dwKeyPad2=0;
-	dwKeySystem=0;
-	if(nes_stick==0)
-	{
-		while((ch=uart_rx_char(MP_STATE_PORT(Maix_stdio_uart)))!=-1)
-		{
-			switch((char)ch)
-			{
-			case 'd':	//right
-			  dwKeyPad1 |= ( 1 << 7 );state[7]=repeat_n;
-			  break;
+    int ch;
+    dwKeyPad1=0;
+    dwKeyPad2=0;
+    dwKeySystem=0;
+    if(nes_stick==0)
+    {
+        while((ch=uart_rx_char(MP_STATE_PORT(Maix_stdio_uart)))!=-1)
+        {
+            switch((char)ch)
+            {
+            case 'd':    //right
+              dwKeyPad1 |= ( 1 << 7 );state[7]=repeat_n;
+              break;
 
-			case 'a':	//left
-			  dwKeyPad1 |= ( 1 << 6 );state[6]=repeat_n;
-			  break;
+            case 'a':    //left
+              dwKeyPad1 |= ( 1 << 6 );state[6]=repeat_n;
+              break;
 
-			case 's':	//down
-			  dwKeyPad1 |= ( 1 << 5 );state[5]=repeat_n;
-			  break;
-			  
-			case 'w':	//up
-			  dwKeyPad1 |= ( 1 << 4 );state[4]=repeat_n;
-			  break;
+            case 's':    //down
+              dwKeyPad1 |= ( 1 << 5 );state[5]=repeat_n;
+              break;
+              
+            case 'w':    //up
+              dwKeyPad1 |= ( 1 << 4 );state[4]=repeat_n;
+              break;
+            case 0x0d: // Enter
+                dwKeyPad1 |= ( 1 << 3 );state[3]=0;
+                break;
+            case 'm':    //start
+                dwKeyPad1 |= ( 1 << 3 );state[3]=0;
+                break;
+            case 0x5c: // "\"
+                dwKeyPad1 |= ( 1 << 2 );state[2]=0;
+                break;
+            case 'n':    //select
+                dwKeyPad1 |= ( 1 << 2 );state[2]=0;
+                break;
 
-			case 0x0d://Enter
-			case 'm':	//start
-			  dwKeyPad1 |= ( 1 << 3 );state[3]=0;
-			  break;
-			case '\\':
-			case 'n':	//select
-			  dwKeyPad1 |= ( 1 << 2 );state[2]=0;
-			  break;
+            case 'j':   // 'A'
+                dwKeyPad1 |= ( 1 << 1 );state[1]=repeat_n;
+                break;
 
-			case 'j':   // 'A'
-			  dwKeyPad1 |= ( 1 << 1 );state[1]=repeat_n;
-			  break;
-
-			case 'k': 	// 'B' 
-			  dwKeyPad1 |= ( 1 << 0 );state[0]=repeat_n;
-			  break;
-			/**********************/
-			case 'r':
-				nes_cycle_us++;
-				printf("cycle_us:%d\r\n",nes_cycle_us);
-				break;
-			case 'f':
-				nes_cycle_us--;
-				if(nes_cycle_us<0)nes_cycle_us=0;
-				printf("cycle_us:%d\r\n",nes_cycle_us);
-				break;
-			case '=':
-				nes_volume++;
-				if(nes_volume>8)nes_volume=8;
-				printf("volume:%d\r\n",nes_volume);
-				break;
-			case '-':
-				nes_volume--;
-				if(nes_volume<0)nes_volume=0;
-				printf("volume:%d\r\n",nes_volume);
-				break;
-			case 0x03:   //Ctrl+C
-				printf("exit\r\n");
-				dwKeySystem |= PAD_SYS_QUIT;
-				is_exit_to_menu = true;
-				break;
-			default:
-				break;
-			}
-		}
-		for(int i=0;i<8;i++)
-		{
-			if(state[i])
-			{
-				state[i]--;
-				dwKeyPad1 |= (1<<i);
-			}
-		}
-	}
-	else if(nes_stick==1)
-	{
-		uint8_t buf[9];
-		uint8_t select,l3,r3,start,up,right,down,left;
-		uint8_t l2,r2,l1,r1,tri,cir,cro,rec;
-		ps2_read_status(buf);
-		for (uint8_t i = 0; i < 9; i++)
+            case 'k':     // 'B' 
+              dwKeyPad1 |= ( 1 << 0 );state[0]=repeat_n;
+              break;
+            /**********************/
+            case 'r':
+                nes_cycle_us++;
+                printf("cycle_us:%d\r\n",nes_cycle_us);
+                break;
+            case 'f':
+                nes_cycle_us--;
+                if(nes_cycle_us<0)nes_cycle_us=0;
+                printf("cycle_us:%d\r\n",nes_cycle_us);
+                break;
+            case '=':
+                nes_volume++;
+                if(nes_volume>8)nes_volume=8;
+                printf("volume:%d\r\n",nes_volume);
+                break;
+            case '-':
+                nes_volume--;
+                if(nes_volume<0)nes_volume=0;
+                printf("volume:%d\r\n",nes_volume);
+                break;
+            case 0x1b:   //ESC
+                printf("exit\r\n");
+                dwKeySystem |= PAD_SYS_QUIT;
+                is_exit_to_menu = true;
+                break;
+            default:
+                break;
+            }
+        }
+        for(int i=0;i<8;i++)
+        {
+            if(state[i])
+            {
+                state[i]--;
+                dwKeyPad1 |= (1<<i);
+            }
+        }
+    }
+    else if(nes_stick==1)
+    {
+        uint8_t buf[9];
+        uint8_t select,l3,r3,start,up,right,down,left;
+        uint8_t l2,r2,l1,r1,tri,cir,cro,rec;
+        ps2_read_status(buf);
+        for (uint8_t i = 0; i < 9; i++)
         {
             //printf("0x%x ", buf[i]);
         }
-		//printf("\r\n");
-		select=!(buf[3]&SELECT_MASK);
-		l3=!(buf[3]&L3_MASK);
-		r3=!(buf[3]&R3_MASK);
-		start=!(buf[3]&START_MASK);
-		up=!(buf[3]&UP_MASK);
-		right=!(buf[3]&RIGHT_MASK);
-		down=!(buf[3]&DOWN_MASK);
-		left=!(buf[3]&LEFT_MASK);
+        //printf("\r\n");
+        select=!(buf[3]&SELECT_MASK);
+        l3=!(buf[3]&L3_MASK);
+        r3=!(buf[3]&R3_MASK);
+        start=!(buf[3]&START_MASK);
+        up=!(buf[3]&UP_MASK);
+        right=!(buf[3]&RIGHT_MASK);
+        down=!(buf[3]&DOWN_MASK);
+        left=!(buf[3]&LEFT_MASK);
 //printf("select=%d, l3=%d, r3=%d, start=%d, up=%d, right=%d, down=%d, left=%d\r\n",\
-				select,l3,r3,start,up,right,down,left);
-		l2=!(buf[4]&L2_MASK);
-		r2=!(buf[4]&R2_MASK);
-		l1=!(buf[4]&L1_MASK);
-		r1=!(buf[4]&R1_MASK);
-		tri=!(buf[4]&TRI_MASK);
-		cir=!(buf[4]&CIR_MASK);
-		cro=!(buf[4]&CRO_MASK);
-		rec=!(buf[4]&REC_MASK);
+                select,l3,r3,start,up,right,down,left);
+        l2=!(buf[4]&L2_MASK);
+        r2=!(buf[4]&R2_MASK);
+        l1=!(buf[4]&L1_MASK);
+        r1=!(buf[4]&R1_MASK);
+        tri=!(buf[4]&TRI_MASK);
+        cir=!(buf[4]&CIR_MASK);
+        cro=!(buf[4]&CRO_MASK);
+        rec=!(buf[4]&REC_MASK);
 //printf("l2=%d, r2=%d, l1=%d, r1=%d, tri=%d, cir=%d, cro=%d, rec=%d\r\n",\
-				l2,r2,l1,r1,tri,cir,cro,rec);
-		//				B 		A 		sel 		start 		up 		down 	left 		right
+                l2,r2,l1,r1,tri,cir,cro,rec);
+        //                B         A         sel         start         up         down     left         right
         dwKeyPad1 = (cro<<0)|(rec<<1)|(select<<2)|(start<<3)|(up<<4)|(down<<5)|(left<<6)|(right<<7);
-		
-		if(l1){
-			nes_cycle_us++;
-			printf("cycle_us:%d\r\n",nes_cycle_us);
-		}
-		if(l2){
-			nes_cycle_us--;
-			if(nes_cycle_us<0)nes_cycle_us=0;
-			printf("cycle_us:%d\r\n",nes_cycle_us);
-		}
-		if(r1){
-			nes_volume++;
-			if(nes_volume>8)nes_volume=8;
-			printf("volume:%d\r\n",nes_volume);
-		}
-		if(r2){
-			nes_volume--;
-			if(nes_volume<0)nes_volume=0;
-			printf("volume:%d\r\n",nes_volume);
-		}
-	}
-	*pdwPad1   = dwKeyPad1;
-	*pdwPad2   = dwKeyPad2;
-	*pdwSystem = dwKeySystem;
-	return;
+        
+        if(l1){
+            nes_cycle_us++;
+            printf("cycle_us:%d\r\n",nes_cycle_us);
+        }
+        if(l2){
+            nes_cycle_us--;
+            if(nes_cycle_us<0)nes_cycle_us=0;
+            printf("cycle_us:%d\r\n",nes_cycle_us);
+        }
+        if(r1){
+            nes_volume++;
+            if(nes_volume>8)nes_volume=8;
+            printf("volume:%d\r\n",nes_volume);
+        }
+        if(r2){
+            nes_volume--;
+            if(nes_volume<0)nes_volume=0;
+            printf("volume:%d\r\n",nes_volume);
+        }
+    }
+    *pdwPad1   = dwKeyPad1;
+    *pdwPad2   = dwKeyPad2;
+    *pdwSystem = dwKeySystem;
+    return;
 }
 
 
@@ -353,11 +356,11 @@ void InfoNES_DebugPrint( char *pszMsg )
 static unsigned long int t0=0;
 void InfoNES_Wait()
 {
-	if(nes_cycle_us != 0)
-	{
-		while(read_cycle()<t0+nes_cycle_us*(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU) / 1000000UL)){};
-		t0 = read_cycle();
-	}
+    if(nes_cycle_us != 0)
+    {
+        while(read_cycle()<t0+nes_cycle_us*(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU) / 1000000UL)){};
+        t0 = read_cycle();
+    }
 }
 
 
@@ -366,44 +369,44 @@ void InfoNES_Wait()
 
 /* Sound Initialize */
 void InfoNES_SoundInit( void )
-{				  
+{                  
 }
 
 static int on_irq_dma3(void *ctx)
 {
-	i2s_idle = true;
+    i2s_idle = true;
 }
 
 /* Sound Open */
 int InfoNES_SoundOpen( int samples_per_sync, int sample_rate )
 {
-	  waveptr = 0;
-  	wavflag = 0;
+      waveptr = 0;
+      wavflag = 0;
 
-	//speaker's dac
+    //speaker's dac
     fpioa_set_function(34, FUNC_I2S0_OUT_D0);
     fpioa_set_function(35, FUNC_I2S0_SCLK);
-    fpioa_set_function(33, FUNC_I2S0_WS);	
-	//dmac_init();
-	i2s_init(I2S_DEVICE_0, I2S_TRANSMITTER, 0x03); //mask of ch
-	i2s_tx_channel_config(I2S_DEVICE_0, I2S_CHANNEL_0,
+    fpioa_set_function(33, FUNC_I2S0_WS);    
+    //dmac_init();
+    i2s_init(I2S_DEVICE_0, I2S_TRANSMITTER, 0x03); //mask of ch
+    i2s_tx_channel_config(I2S_DEVICE_0, I2S_CHANNEL_0,
                           RESOLUTION_16_BIT, SCLK_CYCLES_32,
                           /*TRIGGER_LEVEL_1*/ TRIGGER_LEVEL_4,
                           RIGHT_JUSTIFYING_MODE);
-	printf("samples_per_sync=%d, sample_rate=%d\r\n", samples_per_sync, sample_rate);
-	if(nes_stick==0)
-		printf("key: WASD, JK, -=, \\, Enter, Ctrl+C\r\n");
-	if(samples_per_sync > MAX_SAMPLES_PER_SYNC)
-	{
-		printf("samples per sync too big, max:%d\n",MAX_SAMPLES_PER_SYNC);
-		return 0;
-	}
-	g_samples_per_sync = samples_per_sync;
-	i2s_set_sample_rate(I2S_DEVICE_0, sample_rate);	
-	dmac_set_irq(DMAC_CHANNEL3, on_irq_dma3, NULL, 1);
-	/* Successful */
-	is_exit_to_menu = false;
-	return 1;
+    printf("samples_per_sync=%d, sample_rate=%d\r\n", samples_per_sync, sample_rate);
+    if(nes_stick==0)
+        printf("key: WASD, JK, -=, \\, Enter, ESC\r\n");
+    if(samples_per_sync > MAX_SAMPLES_PER_SYNC)
+    {
+        printf("samples per sync too big, max:%d\n",MAX_SAMPLES_PER_SYNC);
+        return 0;
+    }
+    g_samples_per_sync = samples_per_sync;
+    i2s_set_sample_rate(I2S_DEVICE_0, sample_rate);    
+    dmac_set_irq(DMAC_CHANNEL3, on_irq_dma3, NULL, 1);
+    /* Successful */
+    is_exit_to_menu = false;
+    return 1;
 }
 
 #include "io.h"
@@ -412,7 +415,7 @@ extern volatile i2s_t *const i2s[3]; //TODO: remove register, replace with funct
 /* Sound Close */
 void InfoNES_SoundClose( void )
 {
-		//TODO: replace register version with function
+        //TODO: replace register version with function
     ier_t u_ier;
     u_ier.reg_data = readl(&i2s[I2S_DEVICE_0]->ier);
     u_ier.ier.ien = 0;
@@ -428,52 +431,52 @@ bool full=false;
 /* Sound Output 5 Waves - 2 Pulse, 1 Triangle, 1 Noise, 1 DPCM */
 void InfoNES_SoundOutput(int samples, BYTE *wave1, BYTE *wave2, BYTE *wave3, BYTE *wave4, BYTE *wave5)
 {
-	int i;
-	int16_t tmp;
-	for (i = 0; i < samples; i++) 
-	{
-		tmp = (( (uint16_t)wave1[i] +(uint16_t)wave2[i] +(uint16_t)wave3[i] +(uint16_t)wave4[i] +(uint16_t)wave5[i] ) )<<(nes_volume);
-		final_wave[ waveptr ] = tmp<<16 | tmp;
-		waveptr++;
-		if ( waveptr == g_samples_per_sync*2 ) 
-		{
-			waveptr = 0;
-			wavflag = 2;
-			full = true;
-		} 
-		else if ( waveptr == g_samples_per_sync)
-		{
-			wavflag = 1;
-			full = true;
-		}
-	}
+    int i;
+    int16_t tmp;
+    for (i = 0; i < samples; i++) 
+    {
+        tmp = (( (uint16_t)wave1[i] +(uint16_t)wave2[i] +(uint16_t)wave3[i] +(uint16_t)wave4[i] +(uint16_t)wave5[i] ) )<<(nes_volume);
+        final_wave[ waveptr ] = tmp<<16 | tmp;
+        waveptr++;
+        if ( waveptr == g_samples_per_sync*2 ) 
+        {
+            waveptr = 0;
+            wavflag = 2;
+            full = true;
+        } 
+        else if ( waveptr == g_samples_per_sync)
+        {
+            wavflag = 1;
+            full = true;
+        }
+    }
 
-	if ( i2s_idle && full )
-	{
-		i2s_idle = false;
-		full = false;
-		i2s_play(I2S_DEVICE_0, DMAC_CHANNEL3, final_wave+g_samples_per_sync*play_index, g_samples_per_sync*4,1024, 16, 2);
-		if(wavflag == 1)
-			play_index = 1;
-		else if(wavflag == 2)
-		{
-			play_index = 0;
-			wavflag = 0;
-		}
-	}
+    if ( i2s_idle && full )
+    {
+        i2s_idle = false;
+        full = false;
+        i2s_play(I2S_DEVICE_0, DMAC_CHANNEL3, final_wave+g_samples_per_sync*play_index, g_samples_per_sync*4,1024, 16, 2);
+        if(wavflag == 1)
+            play_index = 1;
+        else if(wavflag == 2)
+        {
+            play_index = 0;
+            wavflag = 0;
+        }
+    }
 }
 
 
 /* Print system message */
 void InfoNES_MessageBox( char *pszMsg, ... )
 {
-	char pszErr[ 128 ];
-	va_list args;
-	// Create the message body
-	va_start( args, pszMsg );
-	vsprintf( pszErr, pszMsg, args );  pszErr[ 127 ] = '\0';
-	va_end( args );
-	return;
+    char pszErr[ 128 ];
+    va_list args;
+    // Create the message body
+    va_start( args, pszMsg );
+    vsprintf( pszErr, pszMsg, args );  pszErr[ 127 ] = '\0';
+    va_end( args );
+    return;
 }
 
 #endif //MAIXPY_NES_EMULATOR_SUPPORT
