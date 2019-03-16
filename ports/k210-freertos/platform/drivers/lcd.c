@@ -19,6 +19,8 @@
 
 static lcd_ctl_t lcd_ctl;
 
+uint16_t g_lcd_display_buff[LCD_Y_MAX*LCD_X_MAX];
+
 static uint16_t gray2rgb565[64]={
 0x0000, 0x2000, 0x4108, 0x6108, 0x8210, 0xa210, 0xc318, 0xe318, 
 0x0421, 0x2421, 0x4529, 0x6529, 0x8631, 0xa631, 0xc739, 0xe739, 
@@ -236,10 +238,21 @@ void lcd_draw_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint
     tft_write_byte(data_buf, ((y2 - y1 + 1) * width + 1)*2 );
 }
 
+
+#define SWAP_16(x) ((x>>8&0xff) | (x<<8))
+
 void lcd_draw_picture(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height, uint32_t *ptr)
 {
+    uint32_t i;
+    uint16_t* p = (uint16_t*)ptr;
     lcd_set_area(x1, y1, x1 + width - 1, y1 + height - 1);
-    tft_write_byte(ptr, width * height*2);// lcd_ctl.mode ? 2 : 0);
+    for(i=0; i< LCD_MAX_PIXELS; i+=2)
+    {
+        g_lcd_display_buff[i] = SWAP_16(*(p+1));
+        g_lcd_display_buff[i+1] = SWAP_16(*(p));
+        p+=2;
+    }
+    tft_write_word(g_lcd_display_buff, width * height / 2);
 }
 
 //draw pic's roi on (x,y)
