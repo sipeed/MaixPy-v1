@@ -98,7 +98,7 @@ static mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_
     };
     static const mp_arg_t allowed_args[] = {
 		{ MP_QSTR_type, MP_ARG_INT, {.u_int = LCD_SHIELD} },
-        { MP_QSTR_freq, MP_ARG_INT, {.u_int = 20000000} },
+        { MP_QSTR_freq, MP_ARG_INT, {.u_int = 15000000} },
 		{ MP_QSTR_color, MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} }
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
