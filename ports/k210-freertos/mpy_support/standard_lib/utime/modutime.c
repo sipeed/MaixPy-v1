@@ -110,9 +110,9 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(time_mktime_obj, time_mktime);
 
 STATIC mp_obj_t time_time(void) {
     timeutils_struct_time_t tm;
-    mp_int_t seconds;
-	uint32_t year = 0;uint32_t mon = 0;uint32_t mday = 0;uint32_t hour = 0;
-	uint32_t min = 0;uint32_t sec = 0;
+    mp_uint_t seconds;
+	volatile int year = 0, mon = 0, mday = 0, hour = 0;
+	volatile int min = 0, sec = 0;
 	rtc_timer_get(&year,&mon,&mday,&hour,&min,&sec);
 	seconds = timeutils_seconds_since_1970(year,mon, mday, hour, min,sec);
     return mp_obj_new_int(seconds);
