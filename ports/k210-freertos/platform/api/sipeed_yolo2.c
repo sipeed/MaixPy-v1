@@ -1,4 +1,6 @@
 #include "sipeed_yolo2.h"
+#include <stdlib.h>
+#include <math.h>
 
 // #include "lcd.h"
 

@@ -45,3 +45,5 @@ genrst/
 
 # VS Code Settings
 .vscode
+
+!ports/k210-freertos/platform/api/lib_mic.a

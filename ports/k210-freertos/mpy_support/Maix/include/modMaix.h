@@ -24,4 +24,5 @@ extern const mp_obj_type_t Maix_gpio_type;
 extern const mp_obj_type_t Maix_i2s_type;
 extern const mp_obj_type_t Maix_audio_type;
 extern const mp_obj_type_t Maix_fft_type;
+extern const mp_obj_type_t Maix_mic_array_type;
 #endif // MICROPY_INCLUDED_MAIX_MAIX_H

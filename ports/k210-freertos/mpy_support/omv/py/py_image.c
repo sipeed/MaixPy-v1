@@ -6090,7 +6090,7 @@ mp_obj_t py_image_load_image(uint n_args, const mp_obj_t *args, mp_map_t *kw_arg
     {
         if( MP_OBJ_IS_STR(args[0]) )
         {
-            imlib_load_image(&image, args[0], NULL);
+            imlib_load_image(&image, mp_obj_str_get_str(args[0]), NULL);
         }
         else
         {

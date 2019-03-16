@@ -18,5 +18,6 @@ config.conf
 asm.txt
 yacctab.py
 lextab.py
+*.a
 
 
