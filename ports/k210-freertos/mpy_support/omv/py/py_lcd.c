@@ -134,6 +134,9 @@ static mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_
 			lcd_clear(color);
 			return mp_const_none;
         }
+		default:
+			mp_raise_ValueError("type error");
+			break;
     }
     return mp_const_none;
 
