@@ -11,6 +11,7 @@
 #include <stdint.h>
 int cambus_init(uint8_t reg_wid);
 int cambus_scan();
+int cambus_scan_gc0328(void);
 int cambus_readb(uint8_t slv_addr, uint8_t reg_addr,  uint8_t *reg_data);
 int cambus_writeb(uint8_t slv_addr, uint8_t reg_addr, uint8_t reg_data);
 int cambus_readw(uint8_t slv_addr, uint8_t reg_addr,  uint16_t *reg_data);

@@ -1052,6 +1052,22 @@ while 1:
     lcd.display(img)
 ```
 
+### gc3028 sensor
+
+```python
+import sensor, lcd
+lcd.init()
+lcd.freq(15000000)
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.run(1)
+i = 0
+while 1:
+    img = sensor.snapshot()
+    lcd.display(img)
+```
+
 
 ### save snapshot image
 

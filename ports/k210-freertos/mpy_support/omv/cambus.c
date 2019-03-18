@@ -10,6 +10,7 @@
 #include "omv_boardconfig.h"
 #include "cambus.h"
 #include "dvp.h"
+#include "gc0328.h"
 #define I2C_FREQUENCY   (100000)
 #define I2C_TIMEOUT     (1000)
 
@@ -42,7 +43,17 @@ int cambus_scan()
     }
     return 0;
 }
-
+int cambus_scan_gc0328(void)
+{
+    dvp_sccb_send_data(GC0328_ADDR, 0xFE, 0x00);
+    uint8_t id = dvp_sccb_receive_data(GC0328_ADDR, 0xf0);
+    if (id != 0x9d)
+    {
+        printf("error gc0328 detect, ret id is 0x%x\r\n", id);
+        return 0;
+    }
+    return id;
+}
 int cambus_readb(uint8_t slv_addr, uint8_t reg_addr, uint8_t *reg_data)
 {
 
