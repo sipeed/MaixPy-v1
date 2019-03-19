@@ -29,8 +29,11 @@ Finally, the data chunk contains the sample data:
 
 #include "stdint.h"
 
+#define WAV_PLAY_DMA_CHANNEL DMAC_CHANNEL5
+#define WAV_RECORD_DMA_CHANNEL DMAC_CHANNEL5
+
 //---------------------------------decode-----------------------------
-#define WAV_DMA_CHANNEL DMAC_CHANNEL5
+
 typedef struct _wav_audio_buf_t
 {
 	uint8_t* buf;
@@ -39,8 +42,8 @@ typedef struct _wav_audio_buf_t
 } wav_audio_buf_t __attribute__((aligned(8)));
 
 /* Audio file information structure */
-#define MAX_BUF_NUM 4
-typedef struct _wav_t
+#define MAX_PLAY_BUF_NUM 4
+typedef struct _wav_decode_t
 {
 	uint16_t numchannels;
 	uint32_t samplerate;
@@ -51,7 +54,7 @@ typedef struct _wav_t
   /* play */
   uint32_t read_order;
   uint32_t play_order;
-  wav_audio_buf_t audio_buf[MAX_BUF_NUM];
+  wav_audio_buf_t audio_buf[MAX_PLAY_BUF_NUM];
 }wav_decode_t __attribute__((aligned(8)));
 
 /* Error Identification structure */
@@ -102,14 +105,18 @@ typedef struct
 {
   uint32_t data_ID;  /* {'d', 'a', 't', 'a'}  */
   uint32_t chunk_size;
-  uint32_t* wave_data;
 } data_chunk_t;
 
+#define MAX_RECORD_BUF_NUM 4
 typedef struct _wav_encode_t
 {
 	file_chunk_t file;
 	format_chunk_t format;
 	data_chunk_t data;
-}wav_encode_t;
+  //record
+  uint32_t record_order;
+  uint32_t write_order;
+  wav_audio_buf_t audio_buf[MAX_RECORD_BUF_NUM];
+}wav_encode_t __attribute__((aligned(8)));
 
 #endif /* _WAV_DECODE_H */
