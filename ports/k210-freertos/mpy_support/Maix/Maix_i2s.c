@@ -34,8 +34,8 @@ const mp_obj_type_t Maix_i2s_type;
 
 
 STATIC void Maix_i2s_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
-    Maix_i2s_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    i2s_channle_t* channel_iter = &self->channel[0];
+    Maix_i2s_obj_t* self = MP_OBJ_TO_PTR(self_in);
+    i2s_channle_t*  channel_iter = &self->channel[0];
     mp_printf(print, "[MAIXPY]i2s%d:(sampling rate=%u, sampling points=%u)\n",
         self->i2s_num,self->sample_rate,self->points_num);
     for(int channel_iter = 0; channel_iter < 4; channel_iter++)
@@ -50,9 +50,12 @@ STATIC void Maix_i2s_print(const mp_print_t *print, mp_obj_t self_in, mp_print_k
     }
 }
 STATIC mp_obj_t Maix_i2s_init_helper(Maix_i2s_obj_t *self, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum {ARG_sample_points,
-         };
-    static const mp_arg_t allowed_args[] = {
+    enum 
+    {
+        ARG_sample_points,
+    };
+    static const mp_arg_t allowed_args[] = 
+    {
         { MP_QSTR_sample_points, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 1024} },
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -65,25 +68,33 @@ STATIC mp_obj_t Maix_i2s_init_helper(Maix_i2s_obj_t *self, size_t n_args, const 
     }
     self->points_num = args[ARG_sample_points].u_int;
     self->buf = m_new(uint32_t,self->points_num);
+
+    //set i2s channel mask
+    self->chn_mask = 0;
+
     return mp_const_true;
 }
 STATIC mp_obj_t Maix_i2s_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     mp_arg_check_num(n_args, n_kw, 1, MP_OBJ_FUN_ARGS_MAX, true);
-    // get uart id
+
+    // get i2s num
     mp_int_t i2s_num = mp_obj_get_int(args[0]);
     if (i2s_num >= I2S_DEVICE_MAX) {
     	nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "[MAIXPY]I2S%d:does not exist", i2s_num));
     }
+
     // create instance
     Maix_i2s_obj_t *self = m_new_obj(Maix_i2s_obj_t);
     self->base.type = &Maix_i2s_type;
-
     self->i2s_num = i2s_num;
     self->sample_rate = 0;
     memset(&self->channel,0,4 * sizeof(i2s_channle_t));
+
+    // init instance
     mp_map_t kw_args;
     mp_map_init_fixed_table(&kw_args, n_kw, args + n_args);
     Maix_i2s_init_helper(self, n_args - 1, args + 1, &kw_args);
+
     return MP_OBJ_FROM_PTR(self);
 }
 
@@ -94,7 +105,10 @@ MP_DEFINE_CONST_FUN_OBJ_KW(Maix_i2s_init_obj, 0, Maix_i2s_init);
 
 STATIC mp_obj_t Maix_i2s_channel_config(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
-    Maix_i2s_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);//get i2s obj
+    //get i2s obj
+    Maix_i2s_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+
+    //parse parameter
     enum{ARG_channel, 
          ARG_mode,
          ARG_resolution,
@@ -108,16 +122,16 @@ STATIC mp_obj_t Maix_i2s_channel_config(size_t n_args, const mp_obj_t *pos_args,
         { MP_QSTR_cycles, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = SCLK_CYCLES_32} },
         { MP_QSTR_align_mode, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = STANDARD_MODE} },
     };
-    //parse parameter
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args-1, pos_args+1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
     //set channel
     if(args[ARG_channel].u_int > I2S_CHANNEL_3)
     {
         mp_raise_ValueError("[MAIXPY]I2S:invalid i2s channle");
     }
     i2s_channel_num_t channel_num = args[ARG_channel].u_int;
-    i2s_channle_t* channle = &self->channel[channel_num];
+    i2s_channle_t*    channle = &self->channel[channel_num];
     
     //set resolution
     if(args[ARG_resolution].u_int >  RESOLUTION_32_BIT )
@@ -149,8 +163,8 @@ STATIC mp_obj_t Maix_i2s_channel_config(size_t n_args, const mp_obj_t *pos_args,
     //running config
     if(channle->mode == I2S_RECEIVER)
     {
-        uint32_t chn_mask = 0x3 << (channel_num * 2);
-        i2s_init(self->i2s_num, I2S_RECEIVER, chn_mask);
+        self->chn_mask |= 0x3 << (channel_num * 2);
+        i2s_init(self->i2s_num, I2S_RECEIVER, self->chn_mask);
         i2s_rx_channel_config(self->i2s_num,
                             channel_num,
                             channle->resolution,
@@ -160,8 +174,8 @@ STATIC mp_obj_t Maix_i2s_channel_config(size_t n_args, const mp_obj_t *pos_args,
     }
     else
     {
-        uint32_t chn_mask = 0x3 << (channel_num * 2);
-        i2s_init(self->i2s_num, I2S_TRANSMITTER,chn_mask);
+        self->chn_mask |= 0x3 << (channel_num * 2);
+        i2s_init(self->i2s_num, I2S_TRANSMITTER,self->chn_mask);
         i2s_tx_channel_config(self->i2s_num,
                             channel_num,
                             channle->resolution,
@@ -181,6 +195,7 @@ STATIC mp_obj_t Maix_i2s_set_sample_rate(Maix_i2s_obj_t *self, mp_obj_t sample_r
         mp_raise_ValueError("[MAIXPY]I2S:invalid sample rate");
     }
     int res = i2s_set_sample_rate(self->i2s_num,smp_rate);
+
     //judege cycles,which channel should we select ?
     if(self->cycles == SCLK_CYCLES_16)
     {
@@ -201,10 +216,11 @@ MP_DEFINE_CONST_FUN_OBJ_2(Maix_i2s_set_sample_rate_obj,Maix_i2s_set_sample_rate)
 
 STATIC mp_obj_t Maix_i2s_record(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)//point_nums,time
 {
-    
-    Maix_i2s_obj_t *self = pos_args[0];//get i2s obj
+    //get i2s obj
+    Maix_i2s_obj_t *self = pos_args[0];
     Maix_audio_obj_t *audio_obj = m_new_obj(Maix_audio_obj_t);
     audio_obj->audio.type = I2S_AUDIO;
+    //parse parameter
     enum{ARG_points, 
          ARG_time,
     };
@@ -212,10 +228,10 @@ STATIC mp_obj_t Maix_i2s_record(size_t n_args, const mp_obj_t *pos_args, mp_map_
         { MP_QSTR_points, MP_ARG_INT, {.u_int = 0} },
         { MP_QSTR_time, MP_ARG_INT | MP_ARG_KW_ONLY, {.u_int = 0} },
     };
-    //parse parameter
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args-1, pos_args+1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
     audio_obj->base.type = &Maix_audio_type;
+
     //compute buffer length
     if(args[ARG_points].u_int > 0)
     {
@@ -240,6 +256,8 @@ STATIC mp_obj_t Maix_i2s_record(size_t n_args, const mp_obj_t *pos_args, mp_map_
     {
         mp_raise_ValueError("[MAIXPY]I2S:please input recording points or time");
     }
+
+    //record 
     i2s_receive_data_dma(self->i2s_num, audio_obj->audio.buf, audio_obj->audio.points , DMAC_CHANNEL5);
     dmac_wait_idle(DMAC_CHANNEL5);//wait to finish recv
     return MP_OBJ_FROM_PTR(audio_obj);
@@ -267,12 +285,12 @@ MP_DEFINE_CONST_FUN_OBJ_1(Maix_i2s_deinit_obj,Maix_i2s_deinit);
 
 
 STATIC const mp_rom_map_elem_t Maix_i2s_locals_dict_table[] = {
-    { MP_ROM_QSTR(MP_QSTR___deinit__), MP_ROM_PTR(&Maix_i2s_deinit_obj) },
-    { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&Maix_i2s_init_obj) },
-    { MP_ROM_QSTR(MP_QSTR_channel_config), MP_ROM_PTR(&Maix_i2s_channel_config_obj) },
+    { MP_ROM_QSTR(MP_QSTR___deinit__),      MP_ROM_PTR(&Maix_i2s_deinit_obj) },
+    { MP_ROM_QSTR(MP_QSTR_init),            MP_ROM_PTR(&Maix_i2s_init_obj) },
+    { MP_ROM_QSTR(MP_QSTR_channel_config),  MP_ROM_PTR(&Maix_i2s_channel_config_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_sample_rate), MP_ROM_PTR(&Maix_i2s_set_sample_rate_obj) },
-    { MP_ROM_QSTR(MP_QSTR_record), MP_ROM_PTR(&Maix_i2s_record_obj) },
-    { MP_ROM_QSTR(MP_QSTR_play), MP_ROM_PTR(&Maix_i2s_play_obj) },
+    { MP_ROM_QSTR(MP_QSTR_record),          MP_ROM_PTR(&Maix_i2s_record_obj) },
+    { MP_ROM_QSTR(MP_QSTR_play),            MP_ROM_PTR(&Maix_i2s_play_obj) },
     //advance interface , some user don't use it
     // { MP_ROM_QSTR(MP_QSTR_set_dma_divede_16), MP_ROM_PTR(&Maix_i2s_set_dma_divede_16_obj) },
     // { MP_ROM_QSTR(MP_QSTR_set_dma_divede_16), MP_ROM_PTR(&Maix_i2s_get_dma_divede_16_obj) },
@@ -286,24 +304,22 @@ STATIC const mp_rom_map_elem_t Maix_i2s_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_CHANNEL_3), MP_ROM_INT(I2S_CHANNEL_3) },
 
     { MP_ROM_QSTR(MP_QSTR_IGNORE_WORD_LENGTH), MP_ROM_INT(IGNORE_WORD_LENGTH) },
-    { MP_ROM_QSTR(MP_QSTR_RESOLUTION_12_BIT), MP_ROM_INT(RESOLUTION_12_BIT) },
-    { MP_ROM_QSTR(MP_QSTR_RESOLUTION_16_BIT), MP_ROM_INT(RESOLUTION_16_BIT) },
-    { MP_ROM_QSTR(MP_QSTR_RESOLUTION_20_BIT), MP_ROM_INT(RESOLUTION_20_BIT) },
-    { MP_ROM_QSTR(MP_QSTR_RESOLUTION_24_BIT), MP_ROM_INT(RESOLUTION_24_BIT) },
-    { MP_ROM_QSTR(MP_QSTR_RESOLUTION_32_BIT), MP_ROM_INT(RESOLUTION_32_BIT) },
+    { MP_ROM_QSTR(MP_QSTR_RESOLUTION_12_BIT),  MP_ROM_INT(RESOLUTION_12_BIT) },
+    { MP_ROM_QSTR(MP_QSTR_RESOLUTION_16_BIT),  MP_ROM_INT(RESOLUTION_16_BIT) },
+    { MP_ROM_QSTR(MP_QSTR_RESOLUTION_20_BIT),  MP_ROM_INT(RESOLUTION_20_BIT) },
+    { MP_ROM_QSTR(MP_QSTR_RESOLUTION_24_BIT),  MP_ROM_INT(RESOLUTION_24_BIT) },
+    { MP_ROM_QSTR(MP_QSTR_RESOLUTION_32_BIT),  MP_ROM_INT(RESOLUTION_32_BIT) },
 
     { MP_ROM_QSTR(MP_QSTR_SCLK_CYCLES_16), MP_ROM_INT(SCLK_CYCLES_16) },
     { MP_ROM_QSTR(MP_QSTR_SCLK_CYCLES_24), MP_ROM_INT(SCLK_CYCLES_24) },
     { MP_ROM_QSTR(MP_QSTR_SCLK_CYCLES_32), MP_ROM_INT(SCLK_CYCLES_32) },
 
-
-
     { MP_ROM_QSTR(MP_QSTR_TRANSMITTER), MP_ROM_INT(I2S_TRANSMITTER) },
-    { MP_ROM_QSTR(MP_QSTR_RECEIVER), MP_ROM_INT(I2S_RECEIVER) },
+    { MP_ROM_QSTR(MP_QSTR_RECEIVER),    MP_ROM_INT(I2S_RECEIVER) },
 
-    { MP_ROM_QSTR(MP_QSTR_STANDARD_MODE), MP_ROM_INT(STANDARD_MODE) },
+    { MP_ROM_QSTR(MP_QSTR_STANDARD_MODE),         MP_ROM_INT(STANDARD_MODE) },
     { MP_ROM_QSTR(MP_QSTR_RIGHT_JUSTIFYING_MODE), MP_ROM_INT(RIGHT_JUSTIFYING_MODE) },
-    { MP_ROM_QSTR(MP_QSTR_LEFT_JUSTIFYING_MODE), MP_ROM_INT(LEFT_JUSTIFYING_MODE) },
+    { MP_ROM_QSTR(MP_QSTR_LEFT_JUSTIFYING_MODE),  MP_ROM_INT(LEFT_JUSTIFYING_MODE) },
     
 };
 
