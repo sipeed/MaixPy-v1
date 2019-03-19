@@ -65,6 +65,7 @@ STATIC mp_obj_t Maix_i2s_init_helper(Maix_i2s_obj_t *self, size_t n_args, const 
     }
     self->points_num = args[ARG_sample_points].u_int;
     self->buf = m_new(uint32_t,self->points_num);
+    self->chn_mask = 0;
     return mp_const_true;
 }
 STATIC mp_obj_t Maix_i2s_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
@@ -149,8 +150,8 @@ STATIC mp_obj_t Maix_i2s_channel_config(size_t n_args, const mp_obj_t *pos_args,
     //running config
     if(channle->mode == I2S_RECEIVER)
     {
-        uint32_t chn_mask = 0x3 << (channel_num * 2);
-        i2s_init(self->i2s_num, I2S_RECEIVER, chn_mask);
+        self->chn_mask |= 0x3 << (channel_num * 2);
+        i2s_init(self->i2s_num, I2S_RECEIVER, self->chn_mask);
         i2s_rx_channel_config(self->i2s_num,
                             channel_num,
                             channle->resolution,
@@ -160,8 +161,8 @@ STATIC mp_obj_t Maix_i2s_channel_config(size_t n_args, const mp_obj_t *pos_args,
     }
     else
     {
-        uint32_t chn_mask = 0x3 << (channel_num * 2);
-        i2s_init(self->i2s_num, I2S_TRANSMITTER,chn_mask);
+        self->chn_mask |= 0x3 << (channel_num * 2);
+        i2s_init(self->i2s_num, I2S_TRANSMITTER,self->chn_mask);
         i2s_tx_channel_config(self->i2s_num,
                             channel_num,
                             channle->resolution,

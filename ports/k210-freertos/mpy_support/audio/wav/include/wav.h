@@ -30,8 +30,16 @@ Finally, the data chunk contains the sample data:
 #include "stdint.h"
 
 //---------------------------------decode-----------------------------
+#define WAV_DMA_CHANNEL DMAC_CHANNEL5
+typedef struct _wav_audio_buf_t
+{
+	uint8_t* buf;
+	uint32_t len;
+	volatile bool empty;
+} wav_audio_buf_t __attribute__((aligned(8)));
 
 /* Audio file information structure */
+#define MAX_BUF_NUM 4
 typedef struct _wav_t
 {
 	uint16_t numchannels;
@@ -40,7 +48,11 @@ typedef struct _wav_t
 	uint16_t blockalign;
 	uint16_t bitspersample;
 	uint32_t datasize;
-}wav_decode_t;
+  /* play */
+  uint32_t read_order;
+  uint32_t play_order;
+  wav_audio_buf_t audio_buf[MAX_BUF_NUM];
+}wav_decode_t __attribute__((aligned(8)));
 
 /* Error Identification structure */
 typedef enum _wav_err_t
@@ -70,7 +82,7 @@ typedef struct
 	uint32_t  riff_id;  /* {'r', 'i', 'f', 'f'}  */
 	uint32_t  file_size;
 	uint32_t  wave_id;
-} file_chunk_t;
+} file_chunk_t __attribute__((aligned(8)));
 
 typedef struct
 {

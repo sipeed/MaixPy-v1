@@ -40,9 +40,9 @@ typedef struct _audio_t{//This may be chaos, it need to sort it out
     audio_fmt_t format;
     i2s_work_mode_t align_mode;
     //-----------play------------
-    void* decode_obj;
+    void* play_obj;//decode_obj
     //-----------record------------
-    void* encode_obj;
+    void* record_obj;//encode_obj
 }audio_t;
 
 typedef struct _Maix_audio_obj_t {

@@ -17,5 +17,6 @@ typedef struct _Maix_i2s_obj_t {
     uint32_t points_num;
     uint32_t* buf;
     i2s_word_select_cycles_t cycles;
+    uint32_t chn_mask;
 } Maix_i2s_obj_t;
 #endif
