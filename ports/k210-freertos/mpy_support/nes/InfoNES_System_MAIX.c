@@ -13,6 +13,7 @@
 #include "bsp.h"
 #include "lcd.h"
 #include "vfs_internal.h"
+#include "ps2.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -273,35 +274,24 @@ void InfoNES_PadState( NES_DWORD *pdwPad1, NES_DWORD *pdwPad2, NES_DWORD *pdwSys
     }
     else if(nes_stick==1)
     {
-        uint8_t buf[9];
-        uint8_t select,l3,r3,start,up,right,down,left;
-        uint8_t l2,r2,l1,r1,tri,cir,cro,rec;
-        ps2_read_status(buf);
-        for (uint8_t i = 0; i < 9; i++)
-        {
-            //printf("0x%x ", buf[i]);
-        }
-        //printf("\r\n");
-        select=!(buf[3]&SELECT_MASK);
-        l3=!(buf[3]&L3_MASK);
-        r3=!(buf[3]&R3_MASK);
-        start=!(buf[3]&START_MASK);
-        up=!(buf[3]&UP_MASK);
-        right=!(buf[3]&RIGHT_MASK);
-        down=!(buf[3]&DOWN_MASK);
-        left=!(buf[3]&LEFT_MASK);
-//printf("select=%d, l3=%d, r3=%d, start=%d, up=%d, right=%d, down=%d, left=%d\r\n",\
-                select,l3,r3,start,up,right,down,left);
-        l2=!(buf[4]&L2_MASK);
-        r2=!(buf[4]&R2_MASK);
-        l1=!(buf[4]&L1_MASK);
-        r1=!(buf[4]&R1_MASK);
-        tri=!(buf[4]&TRI_MASK);
-        cir=!(buf[4]&CIR_MASK);
-        cro=!(buf[4]&CRO_MASK);
-        rec=!(buf[4]&REC_MASK);
-//printf("l2=%d, r2=%d, l1=%d, r1=%d, tri=%d, cir=%d, cro=%d, rec=%d\r\n",\
-                l2,r2,l1,r1,tri,cir,cro,rec);
+        uint8_t select,start,up,right,down,left;
+        uint8_t l2,r2,l1,r1,cro,rec;
+
+        PS2X_read_gamepad(0,0);
+
+        select =    PS2X_Button(PSB_SELECT);
+        start =     PS2X_Button(PSB_START);
+        up =        PS2X_Button(PSB_PAD_UP);
+        right =     PS2X_Button(PSB_PAD_RIGHT);
+        down =      PS2X_Button(PSB_PAD_DOWN);
+        left =      PS2X_Button(PSB_PAD_LEFT);
+        l2 =        PS2X_Button(PSB_L2);
+        r2 =        PS2X_Button(PSB_R2);
+        l1 =        PS2X_Button(PSB_L1);
+        r1 =        PS2X_Button(PSB_R1);
+        cro =       PS2X_Button(PSB_CROSS);
+        rec =       PS2X_Button(PSB_SQUARE);
+
         //                B         A         sel         start         up         down     left         right
         dwKeyPad1 = (cro<<0)|(rec<<1)|(select<<2)|(start<<3)|(up<<4)|(down<<5)|(left<<6)|(right<<7);
         
@@ -309,16 +299,19 @@ void InfoNES_PadState( NES_DWORD *pdwPad1, NES_DWORD *pdwPad2, NES_DWORD *pdwSys
             nes_cycle_us++;
             printf("cycle_us:%d\r\n",nes_cycle_us);
         }
+
         if(l2){
             nes_cycle_us--;
             if(nes_cycle_us<0)nes_cycle_us=0;
             printf("cycle_us:%d\r\n",nes_cycle_us);
         }
+
         if(r1){
             nes_volume++;
             if(nes_volume>8)nes_volume=8;
             printf("volume:%d\r\n",nes_volume);
         }
+        
         if(r2){
             nes_volume--;
             if(nes_volume<0)nes_volume=0;

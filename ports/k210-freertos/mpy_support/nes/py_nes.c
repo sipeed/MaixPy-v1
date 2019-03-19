@@ -17,17 +17,19 @@
 #include "py_image.h"
 #include "lcd.h"
 #include "sleep.h"
+
 /*****freeRTOS****/
 #include "FreeRTOS.h"
 #include "task.h"
 #include "InfoNES_System.h"
 #include "InfoNES.h"
 #include "sysctl.h"
-#include "myspi.h"
+#include "fpioa.h"
+#include "ps2.h"
 
 #if MAIXPY_NES_EMULATOR_SUPPORT
 
-#define printf(...)
+// #define printf(...)
 extern uint8_t g_dvp_buf[];
 
 #define LCD_W 320
@@ -40,32 +42,117 @@ int repeat_n = 16;
 
 mp_obj_t py_nes_init(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
+	int cs_num, mosi_num, miso_num, clk_num;
+
 	enum {  ARG_rc_type,
-            ARG_repeat
+			ARG_CS,
+			ARG_MOSI,
+			ARG_MISO,
+			ARG_CLK,
+			ARG_repeat
         };
+
     const mp_arg_t machine_nes_init_allowed_args[] = {
-        { MP_QSTR_rc_type,    MP_ARG_INT, {.u_int = 0} },
-        { MP_QSTR_repeat,     MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = 16} }
+        { MP_QSTR_rc_type,    	MP_ARG_INT, {.u_int = 0} },
+		{ MP_QSTR_CS,     	 	MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = -1} },
+		{ MP_QSTR_MOSI,			MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = -1} },
+		{ MP_QSTR_MISO,			MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = -1} },
+		{ MP_QSTR_CLK,     	 	MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = -1} },
+		{ MP_QSTR_repeat,     	MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = 16} }
     };
+
     mp_arg_val_t args_parsed[MP_ARRAY_SIZE(machine_nes_init_allowed_args)];
-    mp_arg_parse_all(n_args, args, kw_args,
-        MP_ARRAY_SIZE(machine_nes_init_allowed_args), machine_nes_init_allowed_args, args_parsed);
+    mp_arg_parse_all(n_args, args, kw_args, MP_ARRAY_SIZE(machine_nes_init_allowed_args), machine_nes_init_allowed_args, args_parsed);
+
 	//0->uart, 1->ps2
 	nes_stick = args_parsed[ARG_rc_type].u_int;
 	repeat_n  = args_parsed[ARG_repeat].u_int;
-	lcd_init(20000000);
+
+	if(nes_stick == 1)
+	{
+		cs_num = args_parsed[ARG_CS].u_int;
+		if(cs_num == -1 || cs_num > FUNC_GPIOHS31 || cs_num < FUNC_GPIOHS0)
+		{
+			mp_raise_ValueError("CS value error");
+			return mp_const_false;
+		}
+
+		mosi_num = args_parsed[ARG_MOSI].u_int;
+		if(mosi_num == -1 || mosi_num > FUNC_GPIOHS31 || mosi_num < FUNC_GPIOHS0)
+		{
+			mp_raise_ValueError("MOSI value error");
+			return mp_const_false;
+		}
+
+		miso_num = args_parsed[ARG_MISO].u_int;
+		if(miso_num == -1 || miso_num > FUNC_GPIOHS31 || miso_num < FUNC_GPIOHS0)
+		{
+			mp_raise_ValueError("MISO value error");
+			return mp_const_false;
+		}
+
+		clk_num = args_parsed[ARG_CLK].u_int;
+		if(clk_num == -1 || clk_num > FUNC_GPIOHS31 || clk_num < FUNC_GPIOHS0)
+		{
+			mp_raise_ValueError("CLK value error");
+			return mp_const_false;
+		}
+
+		PS2X_confg_io(cs_num - FUNC_GPIOHS0, clk_num - FUNC_GPIOHS0, mosi_num - FUNC_GPIOHS0, miso_num - FUNC_GPIOHS0);
+
+		int err = 0;
+		uint8_t type;
+
+		err = PS2X_config_gamepad(0, 0);
+		if (err == 0)
+		{
+			printf("Found Controller, configured successful \r\n");
+		}
+		else if (err == 1)
+		{
+			printf("No controller found, check wiring. \r\n");
+			return mp_const_false;
+		}
+		else if (err == 2)
+		{
+			printf("Controller found but not accepting commands. \r\n");
+			return mp_const_false;
+		}
+		else if (err == 3)
+		{
+			printf("Controller refusing to enter Pressures mode, may not support it. \r\n");
+			return mp_const_false;
+		}
+		else
+		{
+			mp_raise_OSError(MP_EFAULT);
+			return mp_const_false;
+		}
+		
+		type = PS2X_readType();
+		switch (type)
+		{
+		case 0:
+			printf("Unknown Controller type found \r\n");
+			break;
+		case 1:
+			printf("DualShock Controller found \r\n");
+			break;
+		case 2:
+			printf("GuitarHero Controller found \r\n");
+			mp_raise_OSError(MP_EFAULT);
+			return mp_const_false;
+			break;
+		case 3:
+			printf("Wireless Sony DualShock Controller found \r\n");
+			break;
+		}
+	}
+
 	lcd_set_direction(DIR_YX_RLDU|0x08);  //RLDU
 	//we DO NOT initialize here for we want user to set in python layer
 	lcd_clear(BLACK);
-	if(nes_stick == 1)
-	{
-		fpioa_set_function(19, FUNC_GPIOHS0 + SS_GPIONUM);   //ss
-		fpioa_set_function(18, FUNC_GPIOHS0 + SCLK_GPIONUM); //clk
-		fpioa_set_function(23, FUNC_GPIOHS0 + MOSI_GPIONUM); //mosi
-		fpioa_set_function(21, FUNC_GPIOHS0 + MISO_GPIONUM); //miso
-		soft_spi_init();
-		ps2_mode_config();
-	}
+
     return mp_const_none;
 }
 
@@ -85,8 +172,6 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_nes_init_obj, 1, py_nes_init);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_nes_run_obj, py_nes_run);
 
 #endif //MAIXPY_NES_EMULATOR_SUPPORT
-
-
 
 static const mp_map_elem_t globals_dict_table[] = {
 
