@@ -449,7 +449,7 @@ uint8_t sensor_default_regs[][2] = {
 
     {0xfe, 0x00},
     {0x05, 0x00},//HB MSB | HBlank 02
-    {0x06, 0x2c},//HB LSB | HBlank 2c
+    {0x06, 0xef},//HB LSB | HBlank 2c
     {0x07, 0x00},//VB MSB | VBLANK
     {0x08, 0x18},//VB LSB | VBLANK b8
 
