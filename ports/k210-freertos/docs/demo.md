@@ -1518,21 +1518,25 @@ fm.register(8,fm.fpioa.GPIO0)
 wifi_en=GPIO(GPIO.GPIO0,GPIO.OUT)
 wifi_en.value(0)
 
+fm.register(32,fm.fpioa.GPIO1)
+pa_en=GPIO(GPIO.GPIO1,GPIO.OUT)
+pa_en.value(1)
+
 fm.register(18,fm.fpioa.GPIOHS10)
-aa,ss=fm.register(18,fm.fpioa.GPIOHS10)
+aa,clk=fm.register(18,fm.fpioa.GPIOHS10)
 
 fm.register(19,fm.fpioa.GPIOHS11)
-aa,clk=fm.register(19,fm.fpioa.GPIOHS11)
+aa,ss=fm.register(19,fm.fpioa.GPIOHS11)
 
 fm.register(21,fm.fpioa.GPIOHS12)
-aa,mosi=fm.register(21,fm.fpioa.GPIOHS12)
+aa,miso=fm.register(21,fm.fpioa.GPIOHS12)
 
-fm.register(20,fm.fpioa.GPIOHS13)
-aa,miso=fm.register(20,fm.fpioa.GPIOHS13)
+fm.register(23,fm.fpioa.GPIOHS13)
+aa,mosi=fm.register(23,fm.fpioa.GPIOHS13)
 
-nes.init(1,CS=ss,MOSI=mosi,CLK=clk,MISO=miso)
+nes.init(1,vol=5,CS=ss,MOSI=mosi,CLK=clk,MISO=miso)
 
-nes.run("/sd/sdkuaida.nes")
+nes.run("/sd/mario.nes")
 
 ```
 

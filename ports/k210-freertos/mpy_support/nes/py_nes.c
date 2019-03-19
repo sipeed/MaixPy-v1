@@ -36,7 +36,7 @@ extern uint8_t g_dvp_buf[];
 #define LCD_H 240
 
 int nes_stick=0;
-int nes_volume=8;  //0~8
+int nes_volume=5;  //0~8
 int nes_cycle_us=0;  //60fps,  63us per cycle
 int repeat_n = 16;
 
@@ -49,7 +49,8 @@ mp_obj_t py_nes_init(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 			ARG_MOSI,
 			ARG_MISO,
 			ARG_CLK,
-			ARG_repeat
+			ARG_repeat,
+			ARG_vol
         };
 
     const mp_arg_t machine_nes_init_allowed_args[] = {
@@ -58,7 +59,8 @@ mp_obj_t py_nes_init(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 		{ MP_QSTR_MOSI,			MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = -1} },
 		{ MP_QSTR_MISO,			MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = -1} },
 		{ MP_QSTR_CLK,     	 	MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = -1} },
-		{ MP_QSTR_repeat,     	MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = 16} }
+		{ MP_QSTR_repeat,     	MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = 16} },
+		{ MP_QSTR_vol,     		MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = 5} }
     };
 
     mp_arg_val_t args_parsed[MP_ARRAY_SIZE(machine_nes_init_allowed_args)];
@@ -67,6 +69,7 @@ mp_obj_t py_nes_init(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 	//0->uart, 1->ps2
 	nes_stick = args_parsed[ARG_rc_type].u_int;
 	repeat_n  = args_parsed[ARG_repeat].u_int;
+	nes_volume = args_parsed[ARG_vol].u_int;
 
 	if(nes_stick == 1)
 	{
