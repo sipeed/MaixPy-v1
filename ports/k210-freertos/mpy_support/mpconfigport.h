@@ -306,6 +306,19 @@ extern const struct _mp_obj_module_t mp_module_lvgl_helper;
 #define MAIXPY_PY_LVGL_DEF
 #endif // MAIXPY_LVGL_SUPPORT
 
+// touchscreen
+#ifndef MAIXPY_TOUCH_SCREEN_SUPPORT
+#define MAIXPY_TOUCH_SCREEN_SUPPORT          (0)
+#endif
+#if MAIXPY_TOUCH_SCREEN_SUPPORT
+extern const struct _mp_obj_module_t mp_module_touchscreen;
+#define MAIXPY_PY_TOUCHSCREEN_DEF \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_touchscreen), (mp_obj_t)&mp_module_touchscreen },
+#else
+#define MAIXPY_PY_TOUCHSCREEN_DEF 
+#endif
+
+/////////////////////////////////////////////////////////////////////////////////
 
 #define MICROPY_PORT_BUILTIN_MODULES \
     { MP_OBJ_NEW_QSTR(MP_QSTR_uos), (mp_obj_t)&uos_module }, \
@@ -327,7 +340,8 @@ extern const struct _mp_obj_module_t mp_module_lvgl_helper;
     { MP_OBJ_NEW_QSTR(MP_QSTR_ucryptolib), (mp_obj_t)&mp_module_ucryptolib }, \
     MAIXPY_PY_NES_DEF \
     MAIXPY_PY_VIDEO_DEF \
-    MAIXPY_PY_LVGL_DEF
+    MAIXPY_PY_LVGL_DEF \
+    MAIXPY_PY_TOUCHSCREEN_DEF
 
 
 

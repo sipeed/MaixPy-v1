@@ -31,36 +31,13 @@
 #include "py/mphal.h"
 #include "py/mperrno.h"
 #include "extmod/machine_i2c.h"
-#include "i2c.h"
-#include "sipeed_i2c.h"
 #include "mpconfigport.h"
-#include "fpioa.h"
 #include "sleep.h"
+#include "machine_i2c.h"
 
 #if MICROPY_PY_MACHINE_HW_I2C
 
 const mp_obj_type_t machine_hard_i2c_type;
-
-typedef enum{
-    MACHINE_I2C_MODE_MASTER = 0,
-    MACHINE_I2C_MODE_SLAVE,
-    MACHINE_I2C_MODE_MAX
-} machine_i2c_mode_t;
-
-typedef struct _machine_hard_i2c_obj_t {
-    mp_obj_base_t         base;
-    i2c_device_number_t   i2c;
-    machine_i2c_mode_t    mode;
-    uint32_t              freq;         // Hz
-    uint32_t              timeout;      // reserved
-    uint16_t              addr;
-    uint8_t               addr_size;
-    mp_obj_t              on_receive;
-    mp_obj_t              on_transmit;
-    mp_obj_t              on_event;
-    int                   pin_scl;
-    int                   pin_sda; 
-} machine_hard_i2c_obj_t;
 
 STATIC i2c_slave_handler_t slave_callback[I2C_DEVICE_MAX];
 STATIC machine_hard_i2c_obj_t* i2c_obj[I2C_DEVICE_MAX]={NULL, NULL, NULL};

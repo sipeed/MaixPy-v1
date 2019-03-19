@@ -150,6 +150,30 @@ SRC_C += $(SRC_NES)
 endif
 ###### NES END ####
 
+##### TOUCHSCREEN #####
+ifeq (${CFG_MAIXPY_TOUCH_SCREEN_SUPPORT},y)
+TOUCHSCREEN_ROOT_DIR := $(CUR_DIR)/touchscreen
+TOUCHSCREEN_ROOT_DIR_REL := ./touchscreen
+CFLAGS_MOD += -DMAIXPY_TOUCH_SCREEN_SUPPORT=1
+TOUCHSCREEN_INLCUDE := -I $(TOUCHSCREEN_ROOT_DIR)/include
+
+ifeq (${CFG_MAIXPY_TOUCH_SCREEN_DRIVER},ns2009)
+TOUCHSCREEN_DRIVER_DIR_REL := ./touchscreen/ns2009
+TOUCHSCREEN_DRIVER_DIR := $(CUR_DIR)/touchscreen/ns2009
+TOUCHSCREEN_INLCUDE += \
+					-I $(TOUCHSCREEN_DRIVER_DIR)/include 
+
+endif
+SRC_TOUCHSCREEN := \
+			${wildcard ${TOUCHSCREEN_ROOT_DIR_REL}/*.c} \
+			${wildcard ${TOUCHSCREEN_DRIVER_DIR_REL}/*.c}
+
+INCLUDE += $(TOUCHSCREEN_INLCUDE)
+SRC_C += $(SRC_TOUCHSCREEN)
+endif
+#######################
+
+
 
 #$(BUILD)/_frozen_mpy.c:  $(BUILD)/genhdr/qstrdefs.generated.h
 #	$(ECHO) "MISC freezing bytecode"
