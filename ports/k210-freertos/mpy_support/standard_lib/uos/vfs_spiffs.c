@@ -356,7 +356,9 @@ STATIC mp_obj_t spiffs_vfs_stat(mp_obj_t vfs_in, mp_obj_t path_in) {
 		fno.type = SPIFFS_TYPE_DIR;
     } else {
         int res = 0;
-        res = SPIFFS_stat(&self->fs, path, &fno);
+        while(path[res] == '/')res++;
+	    char* open_name = &path[res];
+        res = SPIFFS_stat(&self->fs, open_name, &fno);
         if (res != SPIFFS_OK) {
 //			printf("[MaixPy]:SPIFFS Error Code %d\n",res);
             mp_raise_OSError(SPIFFS_errno_table[GET_ERR_CODE(res)]);
