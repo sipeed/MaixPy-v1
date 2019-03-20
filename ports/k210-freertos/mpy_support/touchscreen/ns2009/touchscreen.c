@@ -8,6 +8,7 @@
 
 static struct ts_ns2009_pdata_t *ts_ns2009_pdata;
 i2c_device_number_t m_i2c_num = 0;
+static bool is_init = false;
 
 int ns2009_hal_i2c_init_default();
 
@@ -26,7 +27,12 @@ int touchscreen_init( void* arg)
     ts_ns2009_pdata = ts_ns2009_probe(config->calibration, &err);
     if (ts_ns2009_pdata == NULL || err!=0)
         return err;
+    is_init = true;
     return 0;
+}
+bool touchscreen_is_init()
+{
+    return is_init;
 }
 
 int touchscreen_read( int* type, int* x, int* y)
@@ -45,7 +51,7 @@ int touchscreen_read( int* type, int* x, int* y)
         case TOUCH_MOVE:
             *x = ts_ns2009_pdata->event->x;
             *y = ts_ns2009_pdata->event->y;
-            *type = TOUCHSCREEN_STATUS_PRESS;
+            *type = TOUCHSCREEN_STATUS_MOVE;
             break;
 
         case TOUCH_END:
@@ -62,12 +68,13 @@ int touchscreen_read( int* type, int* x, int* y)
 int touchscreen_deinit()
 {
     ts_ns2009_remove(ts_ns2009_pdata);
+    is_init = false;
     return 0;
 }
 
-int touchscreen_calibrate(int w, int h)
+int touchscreen_calibrate(int w, int h, int* cal)
 {
-    return do_tscal(ts_ns2009_pdata, w, h);
+    return do_tscal(ts_ns2009_pdata, w, h, cal);
 }
 
 //////////// HAL ////////////
@@ -77,7 +84,7 @@ int ns2009_hal_i2c_init_default()
     m_i2c_num = 0; // default i2c 0
     fpioa_set_function(30, FUNC_I2C0_SCLK +  m_i2c_num* 2);
     fpioa_set_function(31, FUNC_I2C0_SDA + m_i2c_num * 2);
-    maix_i2c_init(m_i2c_num, NS2009_SLV_ADDR, 100000);
+    maix_i2c_init(m_i2c_num, 7, 400000);
 }
 
 int ns2009_hal_i2c_recv(const uint8_t *send_buf, size_t send_buf_len, uint8_t *receive_buf,

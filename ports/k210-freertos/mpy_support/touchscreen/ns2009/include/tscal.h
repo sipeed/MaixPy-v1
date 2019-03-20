@@ -10,6 +10,6 @@ struct tscal_t
     int a[7];
 };
 
-int do_tscal(struct ts_ns2009_pdata_t *ts_ns2009_pdata, int w, int h);
+int do_tscal(struct ts_ns2009_pdata_t *ts_ns2009_pdata, int w, int h, int* cal_ret);
 
 #endif

@@ -163,16 +163,22 @@ static void cairo_draw_string(int x, int y, const char *title)
     lcd_draw_string(x, y, title, WHITE);
 }
 
-int do_tscal(struct ts_ns2009_pdata_t *ts_ns2009_pdata, int width, int height)
+int do_tscal(struct ts_ns2009_pdata_t *ts_ns2009_pdata, int width, int height, int* c)
 {
     struct tscal_t cal;
     lcd_ctl_t lcd_ctl;
 
-    char buffer[256];
-    int c[7] = {1, 0, 0, 0, 1, 0, 1};
+    // char buffer[256];
     int index;
+    c[0] = 1;
+    c[1] = 0;
+    c[2] = 0;
+    c[3] = 0;
+    c[4] = 1;
+    c[5] = 0;
+    c[6] = 1;
 
-    ts_ns2009_set_calibration(ts_ns2009_pdata, NS2009_IOCTL_SET_CALBRATION, &c[0]);
+    ts_ns2009_set_calibration(ts_ns2009_pdata, NS2009_IOCTL_SET_CALBRATION, c);
 
 
     cal.xfb[0] = 50;
@@ -191,7 +197,7 @@ int do_tscal(struct ts_ns2009_pdata_t *ts_ns2009_pdata, int width, int height)
     cal.yfb[4] = height / 2;
 
     index = 0;
-
+    lcd_clear(BLACK);
     lcd_draw_cross(cal.xfb[index], cal.yfb[index], RED);
 
     while (1)
@@ -207,14 +213,15 @@ int do_tscal(struct ts_ns2009_pdata_t *ts_ns2009_pdata, int width, int height)
                 if (perform_calibration(&cal))
                 {
                     ts_ns2009_set_calibration(ts_ns2009_pdata, NS2009_IOCTL_SET_CALBRATION, &cal.a[0]);
-                    sprintf(buffer, "[%d,%d,%d,%d,%d,%d,%d]", cal.a[0], cal.a[1], cal.a[2], cal.a[3], cal.a[4], cal.a[5], cal.a[6]);
+                    // sprintf(buffer, "[%d,%d,%d,%d,%d,%d,%d]", cal.a[0], cal.a[1], cal.a[2], cal.a[3], cal.a[4], cal.a[5], cal.a[6]);
                 }
                 else
                 {
-                    sprintf(buffer, "%s", "calibration failed");
+                    // sprintf(buffer, "%s", "calibration failed");
                 }
                 lcd_clear(BLACK);
-                cairo_draw_string(0, height / 2, buffer);
+                // cairo_draw_string(0, height / 2, buffer);
+                memcpy(c, cal.a, 7*sizeof(int));
                 ts_ns2009_pdata->event->type = TOUCH_NONE;
                 break;
             }

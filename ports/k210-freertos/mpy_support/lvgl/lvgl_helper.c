@@ -6,6 +6,7 @@
 #include "lvgl.h"
 #include "lcd.h"
 #include "mperrno.h"
+#include "touchscreen.h"
 
 
 typedef struct mp_ptr_t
@@ -78,14 +79,62 @@ STATIC void lcd_flush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const lv_c
 	lv_flush_ready();
 }
 
+
+/**
+ * Get the current position and state of the mouse
+ * @param data store the mouse data here
+ * @return false: because the points are not buffered, so no more data to be read
+ */
+bool mouse_read(lv_indev_data_t * data)
+{
+	int ret, status, x, y;
+	if(!touchscreen_is_init())
+	{
+		touchscreen_config_t config;
+		config.i2c = NULL;
+        config.calibration[0] = -6;
+        config.calibration[1] = -5941;
+        config.calibration[2] = 22203576;
+        config.calibration[3] = 4232;
+        config.calibration[4] = -8;
+        config.calibration[5] = -700369;
+        config.calibration[6] = 65536;
+		ret = touchscreen_init((void*)&config);
+		if( ret != 0)
+			mp_raise_OSError(ret);
+	}
+	ret = touchscreen_read(&status, &x, &y);
+	if(ret != 0)
+		mp_raise_OSError(ret);
+    /*Store the collected data*/
+	switch(status)
+	{
+		case TOUCHSCREEN_STATUS_RELEASE:
+    		data->state =  LV_INDEV_STATE_REL;
+			break;
+		case TOUCHSCREEN_STATUS_PRESS:
+		case TOUCHSCREEN_STATUS_MOVE:
+			data->state = LV_INDEV_STATE_PR;
+			break;
+		default:
+			return false;
+	}
+    data->point.x = x;
+    data->point.y = y;
+    return false;
+}
+
+
 DEFINE_PTR_OBJ(lcd_fill);
 DEFINE_PTR_OBJ(lcd_flush);
+DEFINE_PTR_OBJ(mouse_read);
 
 
 STATIC const mp_rom_map_elem_t lvgl_helper_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_lvgl_helper) },
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_fill), MP_ROM_PTR(&PTR_OBJ(lcd_fill)) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_flush), MP_ROM_PTR(&PTR_OBJ(lcd_flush)) },
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_read), MP_ROM_PTR(&PTR_OBJ(mouse_read))},
 };
 
 

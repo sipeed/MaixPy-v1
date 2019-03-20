@@ -78,13 +78,25 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_touchscreen_read_obj, 0, py_touchscreen_rea
 
 mp_obj_t py_touchscreen_calibrate(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
+    //TODO: add args(width height etc.)
     int w = 320;
     int h = 240;
+    int* cal = malloc(sizeof(int)*7);
+    if(!cal)
+        mp_raise_OSError(MP_ENOMEM);
     //TODO:  lcd optimize
-    int ret = touchscreen_calibrate(w, h);
+    int ret = touchscreen_calibrate(w, h, cal);
     if( ret!=0 )
+    {
+        free(cal);
         mp_raise_OSError(ret);
-    return mp_const_none;
+    }
+    mp_obj_t value[7];
+    for(uint8_t i=0; i<7; ++i)
+        value[i] = mp_obj_new_int(cal[i]);
+    mp_obj_t t = mp_obj_new_tuple(7, value);
+    free(cal);
+    return t;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_touchscreen_calibrate_obj, 0, py_touchscreen_calibrate);
 
@@ -97,6 +109,7 @@ STATIC const mp_map_elem_t globals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_STATUS_IDLE),   MP_ROM_INT(TOUCHSCREEN_STATUS_IDLE) },
     { MP_ROM_QSTR(MP_QSTR_STATUS_RELEASE),   MP_ROM_INT(TOUCHSCREEN_STATUS_RELEASE) },
     { MP_ROM_QSTR(MP_QSTR_STATUS_PRESS),   MP_ROM_INT(TOUCHSCREEN_STATUS_PRESS) },
+    { MP_ROM_QSTR(MP_QSTR_STATUS_MOVE),   MP_ROM_INT(TOUCHSCREEN_STATUS_MOVE) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(globals_dict, globals_dict_table);

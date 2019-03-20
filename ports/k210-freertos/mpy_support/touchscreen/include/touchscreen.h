@@ -1,17 +1,20 @@
 #ifndef __TOUCHSCREEN_H_
 #define __TOUCHSCREEN_H_
 
+#include "stdbool.h"
 
 typedef enum{
     TOUCHSCREEN_STATUS_IDLE =0,
     TOUCHSCREEN_STATUS_RELEASE,
-    TOUCHSCREEN_STATUS_PRESS
+    TOUCHSCREEN_STATUS_PRESS,
+    TOUCHSCREEN_STATUS_MOVE
 } touchscreen_type_t;
 
 int touchscreen_init(void* arg);
 int touchscreen_read(int* type, int* x, int* y);
 int touchscreen_deinit();
-int touchscreen_calibrate(int w, int h);
+int touchscreen_calibrate(int w, int h, int* cal);
+bool touchscreen_is_init();
 
 /////////////// HAL ////////////////////
 

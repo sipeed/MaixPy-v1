@@ -53,7 +53,7 @@ int ts_ns2009_poll(struct ts_ns2009_pdata_t *ts_ns2009_pdata)
 
     if (ns2009_read(NS2009_LOW_POWER_READ_Z1, &z1))
     {
-        if ((z1 > 80) && (z1 < 2000))
+        if ((z1 > 70) && (z1 < 2000))
         {
             ns2009_read(NS2009_LOW_POWER_READ_X, &x);
             ns2009_read(NS2009_LOW_POWER_READ_Y, &y);
