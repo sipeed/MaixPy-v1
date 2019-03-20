@@ -55,10 +55,10 @@ mp_obj_t py_nes_init(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 
     const mp_arg_t machine_nes_init_allowed_args[] = {
         { MP_QSTR_rc_type,    	MP_ARG_INT, {.u_int = 0} },
-		{ MP_QSTR_CS,     	 	MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = -1} },
-		{ MP_QSTR_MOSI,			MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = -1} },
-		{ MP_QSTR_MISO,			MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = -1} },
-		{ MP_QSTR_CLK,     	 	MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = -1} },
+		{ MP_QSTR_cs,     	 	MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = -1} },
+		{ MP_QSTR_mosi,			MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = -1} },
+		{ MP_QSTR_miso,			MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = -1} },
+		{ MP_QSTR_clk,     	 	MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = -1} },
 		{ MP_QSTR_repeat,     	MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = 16} },
 		{ MP_QSTR_vol,     		MP_ARG_INT|MP_ARG_KW_ONLY, {.u_int = 5} }
     };
