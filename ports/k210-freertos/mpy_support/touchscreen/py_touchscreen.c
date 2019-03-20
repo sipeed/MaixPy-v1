@@ -5,7 +5,7 @@
 #include "touchscreen.h"
 
 
-mp_obj_t py_touchscreen_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
+mp_obj_t py_touchscreen_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
     enum{
         ARG_i2c,
@@ -37,12 +37,12 @@ mp_obj_t py_touchscreen_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw
     }
     else
     {
-        config.calibration[0] = 65;
-        config.calibration[1] = 5853;
-        config.calibration[2] = -1083592;
-        config.calibration[3] = -4292;
-        config.calibration[4] = -15;
-        config.calibration[5] = 16450115;
+        config.calibration[0] = -6;
+        config.calibration[1] = -5941;
+        config.calibration[2] = 22203576;
+        config.calibration[3] = 4232;
+        config.calibration[4] = -8;
+        config.calibration[5] = -700369;
         config.calibration[6] = 65536;
     }
     int ret = touchscreen_init((void*)&config);
@@ -52,7 +52,7 @@ mp_obj_t py_touchscreen_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_touchscreen_init_obj, 0, py_touchscreen_init);
 
-mp_obj_t py_touchscreen_deinit(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
+mp_obj_t py_touchscreen_deinit(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     int ret = touchscreen_deinit();
     if( ret != 0)
@@ -61,14 +61,14 @@ mp_obj_t py_touchscreen_deinit(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_touchscreen_deinit_obj, 0, py_touchscreen_deinit);
 
-mp_obj_t py_touchscreen_read(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
+mp_obj_t py_touchscreen_read(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
-    int ret, type=0, x=0, y=0;
-    ret = touchscreen_read(&type, &x, &y);
+    int ret, status=0, x=0, y=0;
+    ret = touchscreen_read(&status, &x, &y);
     if( ret != 0)
         mp_raise_OSError(ret);
     mp_obj_t value[3];
-    value[0] = mp_obj_new_int(type);
+    value[0] = mp_obj_new_int(status);
     value[1] = mp_obj_new_int(x);
     value[2] = mp_obj_new_int(y);
     mp_obj_t t = mp_obj_new_tuple(3, value);
@@ -76,9 +76,12 @@ mp_obj_t py_touchscreen_read(uint n_args, const mp_obj_t *args, mp_map_t *kw_arg
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_touchscreen_read_obj, 0, py_touchscreen_read);
 
-mp_obj_t py_touchscreen_calibrate(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
+mp_obj_t py_touchscreen_calibrate(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
-    int ret = touchscreen_calibrate();
+    int w = 320;
+    int h = 240;
+    //TODO:  lcd optimize
+    int ret = touchscreen_calibrate(w, h);
     if( ret!=0 )
         mp_raise_OSError(ret);
     return mp_const_none;
@@ -91,9 +94,9 @@ STATIC const mp_map_elem_t globals_dict_table[] = {
     {MP_OBJ_NEW_QSTR(MP_QSTR___del__), (mp_obj_t)&py_touchscreen_deinit_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_read), (mp_obj_t)&py_touchscreen_read_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_calibrate), (mp_obj_t)&py_touchscreen_calibrate_obj},
-    { MP_ROM_QSTR(MP_QSTR_TYPE_IDLE),   MP_ROM_INT(TOUCHSCREEN_TYPE_IDLE) },
-    { MP_ROM_QSTR(MP_QSTR_TYPE_RELEASE),   MP_ROM_INT(TOUCHSCREEN_TYPE_RELEASE) },
-    { MP_ROM_QSTR(MP_QSTR_TYPE_PRESS),   MP_ROM_INT(TOUCHSCREEN_TYPE_PRESS) },
+    { MP_ROM_QSTR(MP_QSTR_STATUS_IDLE),   MP_ROM_INT(TOUCHSCREEN_STATUS_IDLE) },
+    { MP_ROM_QSTR(MP_QSTR_STATUS_RELEASE),   MP_ROM_INT(TOUCHSCREEN_STATUS_RELEASE) },
+    { MP_ROM_QSTR(MP_QSTR_STATUS_PRESS),   MP_ROM_INT(TOUCHSCREEN_STATUS_PRESS) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(globals_dict, globals_dict_table);

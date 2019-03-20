@@ -32,25 +32,26 @@ int touchscreen_init( void* arg)
 int touchscreen_read( int* type, int* x, int* y)
 {
     ts_ns2009_poll(ts_ns2009_pdata);
-
+    *x = 0;
+    *y = 0;
     switch (ts_ns2009_pdata->event->type)
     {
         case TOUCH_BEGIN:
             *x = ts_ns2009_pdata->event->x;
             *y = ts_ns2009_pdata->event->y;
-            *type = TOUCHSCREEN_TYPE_PRESS;
+            *type = TOUCHSCREEN_STATUS_PRESS;
             break;
 
         case TOUCH_MOVE:
             *x = ts_ns2009_pdata->event->x;
             *y = ts_ns2009_pdata->event->y;
-            *type = TOUCHSCREEN_TYPE_PRESS;
+            *type = TOUCHSCREEN_STATUS_PRESS;
             break;
 
         case TOUCH_END:
             *x= ts_ns2009_pdata->event->x;
             *y= ts_ns2009_pdata->event->y;
-            *type = TOUCHSCREEN_TYPE_RELEASE;
+            *type = TOUCHSCREEN_STATUS_RELEASE;
             break;
         default:
             break;
@@ -64,9 +65,9 @@ int touchscreen_deinit()
     return 0;
 }
 
-int touchscreen_calibrate()
+int touchscreen_calibrate(int w, int h)
 {
-    return 0;
+    return do_tscal(ts_ns2009_pdata, w, h);
 }
 
 //////////// HAL ////////////

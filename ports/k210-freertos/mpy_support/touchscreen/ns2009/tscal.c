@@ -63,6 +63,90 @@ static int perform_calibration(struct tscal_t *cal)
     return 1;
 }
 
+//画线
+//x1,y1:起点坐标
+//x2,y2:终点坐标
+void lcd_draw_line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color)
+{
+    uint16_t t;
+    int xerr = 0, yerr = 0, delta_x, delta_y, distance;
+    int incx, incy, uRow, uCol;
+    delta_x = x2 - x1; //计算坐标增量
+    delta_y = y2 - y1;
+    uRow = x1;
+    uCol = y1;
+    if (delta_x > 0)
+        incx = 1; //设置单步方向
+    else if (delta_x == 0)
+        incx = 0; //垂直线
+    else
+    {
+        incx = -1;
+        delta_x = -delta_x;
+    }
+    if (delta_y > 0)
+        incy = 1;
+    else if (delta_y == 0)
+        incy = 0; //水平线
+    else
+    {
+        incy = -1;
+        delta_y = -delta_y;
+    }
+    if (delta_x > delta_y)
+        distance = delta_x; //选取基本增量坐标轴
+    else
+        distance = delta_y;
+    for (t = 0; t <= distance + 1; t++) //画线输出
+    {
+        lcd_draw_point(uRow, uCol, color); //画点
+        xerr += delta_x;
+        yerr += delta_y;
+        if (xerr > distance)
+        {
+            xerr -= distance;
+            uRow += incx;
+        }
+        if (yerr > distance)
+        {
+            yerr -= distance;
+            uCol += incy;
+        }
+    }
+}
+
+//在指定位置画一个指定大小的圆
+//(x,y):中心点
+//r    :半径
+void lcd_draw_circle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color)
+{
+    int a, b;
+    int di;
+    a = 0;
+    b = r;
+    di = 3 - (r << 1); //判断下个点位置的标志
+    while (a <= b)
+    {
+        lcd_draw_point(x0 + a, y0 - b, color); //5
+        lcd_draw_point(x0 + b, y0 - a, color); //0
+        lcd_draw_point(x0 + b, y0 + a, color); //4
+        lcd_draw_point(x0 + a, y0 + b, color); //6
+        lcd_draw_point(x0 - a, y0 + b, color); //1
+        lcd_draw_point(x0 - b, y0 + a, color);
+        lcd_draw_point(x0 - a, y0 - b, color); //2
+        lcd_draw_point(x0 - b, y0 - a, color); //7
+        a++;
+        //使用Bresenham算法画圆
+        if (di < 0)
+            di += 4 * a + 6;
+        else
+        {
+            di += 10 + 4 * (a - b);
+            b--;
+        }
+    }
+}
+
 static void lcd_draw_cross(int x, int y, uint16_t color)
 {
     lcd_draw_line(x - 12, y, x + 13, y, color); //横线
@@ -76,28 +160,20 @@ static void lcd_draw_cross(int x, int y, uint16_t color)
 
 static void cairo_draw_string(int x, int y, const char *title)
 {
-    lcd_draw_string(x, y, title, BLUE);
+    lcd_draw_string(x, y, title, WHITE);
 }
 
-int do_tscal(struct ts_ns2009_pdata_t *ts_ns2009_pdata)
+int do_tscal(struct ts_ns2009_pdata_t *ts_ns2009_pdata, int width, int height)
 {
     struct tscal_t cal;
     lcd_ctl_t lcd_ctl;
 
     char buffer[256];
     int c[7] = {1, 0, 0, 0, 1, 0, 1};
-    int width, height;
     int index;
-
-    printf("%s\r\n", __func__);
 
     ts_ns2009_set_calibration(ts_ns2009_pdata, NS2009_IOCTL_SET_CALBRATION, &c[0]);
 
-    //FIXME 需要更优雅的实现
-    lcd_get_info(&lcd_ctl);
-
-    width = lcd_ctl.width;
-    height = lcd_ctl.height;
 
     cal.xfb[0] = 50;
     cal.yfb[0] = 50;
@@ -131,18 +207,21 @@ int do_tscal(struct ts_ns2009_pdata_t *ts_ns2009_pdata)
                 if (perform_calibration(&cal))
                 {
                     ts_ns2009_set_calibration(ts_ns2009_pdata, NS2009_IOCTL_SET_CALBRATION, &cal.a[0]);
-                    sprintf(buffer, "[%d, %d, %d, %d, %d, %d, %d]", cal.a[0], cal.a[1], cal.a[2], cal.a[3], cal.a[4], cal.a[5], cal.a[6]);
+                    sprintf(buffer, "[%d,%d,%d,%d,%d,%d,%d]", cal.a[0], cal.a[1], cal.a[2], cal.a[3], cal.a[4], cal.a[5], cal.a[6]);
                 }
                 else
                 {
                     sprintf(buffer, "%s", "calibration failed");
                 }
-                cairo_draw_string(50, height / 2, buffer);
-                printf("%s\r\n", buffer);
+                lcd_clear(BLACK);
+                cairo_draw_string(0, height / 2, buffer);
+                ts_ns2009_pdata->event->type = TOUCH_NONE;
                 break;
             }
+            lcd_clear(BLACK);
             lcd_draw_cross(cal.xfb[index], cal.yfb[index], RED);
         }
+        ts_ns2009_pdata->event->type = TOUCH_NONE;
     }
 
     return 0;

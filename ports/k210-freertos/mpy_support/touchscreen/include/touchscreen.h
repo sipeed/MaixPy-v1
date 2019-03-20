@@ -3,21 +3,22 @@
 
 
 typedef enum{
-    TOUCHSCREEN_TYPE_IDLE =0,
-    TOUCHSCREEN_TYPE_RELEASE,
-    TOUCHSCREEN_TYPE_PRESS
+    TOUCHSCREEN_STATUS_IDLE =0,
+    TOUCHSCREEN_STATUS_RELEASE,
+    TOUCHSCREEN_STATUS_PRESS
 } touchscreen_type_t;
 
 int touchscreen_init(void* arg);
 int touchscreen_read(int* type, int* x, int* y);
 int touchscreen_deinit();
-int touchscreen_calibrate();
+int touchscreen_calibrate(int w, int h);
 
 /////////////// HAL ////////////////////
 
 #include "machine_i2c.h"
 #include "gc.h"
 #include "mp.h"
+#include "stdlib.h"
 
 #define CALIBRATION_SIZE 7
 
