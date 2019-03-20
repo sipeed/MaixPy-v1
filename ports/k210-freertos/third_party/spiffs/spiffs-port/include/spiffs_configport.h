@@ -26,9 +26,9 @@
 
 #define SPIFFS_OBJ_NAME_LEN (255)
 #define SPIFFS_SINGLETON(ignore)   (1)
-#define SPIFFS_CFG_PHYS_SZ(ignore)         (6 * 1024 * 1024)
+#define SPIFFS_CFG_PHYS_SZ(ignore)         (3 * 1024 * 1024)
 #define SPIFFS_CFG_PHYS_ERASE_SZ(ignore)         (4 * 1024)
-#define SPIFFS_CFG_PHYS_ADDR(ignore)          (0x600000)
+#define SPIFFS_CFG_PHYS_ADDR(ignore)          (0xD00000)
 
 #define PAGEN_EACH_BLOCK    32
 #define SPIFFS_CFG_LOG_BLOCK_SZ(ignore)         (4*32*1024)
