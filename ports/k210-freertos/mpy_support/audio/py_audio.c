@@ -45,6 +45,7 @@ STATIC void Maix_audio_print(const mp_print_t *print, mp_obj_t self_in, mp_print
 }
 
 STATIC mp_obj_t Maix_audio_init_helper(Maix_audio_obj_t *self, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+    //parse paremeter
     enum {ARG_array,
           ARG_path,
           ARG_points};
@@ -56,6 +57,7 @@ STATIC mp_obj_t Maix_audio_init_helper(Maix_audio_obj_t *self, size_t n_args, co
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
     audio_t* audio_obj = &self->audio;
+    
     //Use arrays first
     if(args[ARG_array].u_obj != mp_const_none)
     {
@@ -112,6 +114,8 @@ STATIC mp_obj_t Maix_audio_make_new(const mp_obj_type_t *type, size_t n_args, si
     memset(self,0,sizeof(Maix_audio_obj_t));
     self->base.type = &Maix_audio_type;
     self->audio.type = EXT_AUDIO;
+
+    // init instance
     mp_map_t kw_args;
     mp_map_init_fixed_table(&kw_args, n_kw, args + n_args);
     if(mp_const_false == Maix_audio_init_helper(self, n_args, args, &kw_args))

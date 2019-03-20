@@ -1052,6 +1052,22 @@ while 1:
     lcd.display(img)
 ```
 
+### gc3028 sensor
+
+```python
+import sensor, lcd
+lcd.init()
+lcd.freq(15000000)
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.run(1)
+i = 0
+while 1:
+    img = sensor.snapshot()
+    lcd.display(img)
+```
+
 
 ### save snapshot image
 
@@ -1506,6 +1522,37 @@ wifi_en.value(0)
 
 nes.init(0)
 nes.run("/sd/sdkuaida.nes")
+
+```
+
+```python
+import nes
+from Maix import GPIO
+from fpioa_manager import *
+
+fm.register(8,fm.fpioa.GPIO0)
+wifi_en=GPIO(GPIO.GPIO0,GPIO.OUT)
+wifi_en.value(0)
+
+fm.register(32,fm.fpioa.GPIO1)
+pa_en=GPIO(GPIO.GPIO1,GPIO.OUT)
+pa_en.value(1)
+
+fm.register(18,fm.fpioa.GPIOHS10)
+aa,clk=fm.register(18,fm.fpioa.GPIOHS10)
+
+fm.register(19,fm.fpioa.GPIOHS11)
+aa,ss=fm.register(19,fm.fpioa.GPIOHS11)
+
+fm.register(21,fm.fpioa.GPIOHS12)
+aa,miso=fm.register(21,fm.fpioa.GPIOHS12)
+
+fm.register(23,fm.fpioa.GPIOHS13)
+aa,mosi=fm.register(23,fm.fpioa.GPIOHS13)
+
+nes.init(1,vol=5,CS=ss,MOSI=mosi,CLK=clk,MISO=miso)
+
+nes.run("/sd/mario.nes")
 
 ```
 

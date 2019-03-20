@@ -20,6 +20,7 @@
 #include "fpioa.h"
 #include "syslog.h"
 #include "ff.h"
+#include "gc0328.h"
 extern volatile dvp_t* const dvp;
 
 #define OV_CHIP_ID      (0x0A)
@@ -130,6 +131,115 @@ void sensor_init_fb()
 }
 
 //-------------------------------Monocular--------------------------------------
+int sensro_ov_detect(sensor_t* sensor)
+{
+    int init_ret = 0;
+    /* Reset the sensor */
+    DCMI_RESET_HIGH();
+    mp_hal_ticks_ms(10);
+
+    DCMI_RESET_LOW();
+    mp_hal_ticks_ms(10);
+
+    /* Probe the ov sensor */
+    sensor->slv_addr = cambus_scan();
+    if (sensor->slv_addr == 0) {
+        /* Sensor has been held in reset,
+           so the reset line is active low */
+        sensor->reset_pol = ACTIVE_LOW;
+
+        /* Pull the sensor out of the reset state,systick_sleep() */
+        DCMI_RESET_HIGH();
+        mp_hal_delay_ms(10);
+
+        /* Probe again to set the slave addr */
+        sensor->slv_addr = cambus_scan();
+        if (sensor->slv_addr == 0) {
+            sensor->pwdn_pol = ACTIVE_LOW;
+
+            DCMI_PWDN_HIGH();
+            mp_hal_delay_ms(10);
+
+            sensor->slv_addr = cambus_scan();
+            if (sensor->slv_addr == 0) {
+                sensor->reset_pol = ACTIVE_HIGH;
+
+                DCMI_RESET_LOW();
+                mp_hal_delay_ms(10);
+
+                sensor->slv_addr = cambus_scan();
+                if(sensor->slv_addr == 0) {
+                    //should do something?
+                    return -2;
+                }
+            }
+        }
+    }
+
+    // Clear sensor chip ID.
+    sensor->chip_id = 0;
+
+    // Set default snapshot function.
+    sensor->snapshot = sensor_snapshot;
+	sensor->flush = sensor_flush;
+    if (sensor->slv_addr == LEPTON_ID) {
+        sensor->chip_id = LEPTON_ID;
+		/*set LEPTON xclk rate*/
+		/*lepton_init*/
+    } else {
+        // Read ON semi sensor ID.
+        cambus_readb(sensor->slv_addr, ON_CHIP_ID, &sensor->chip_id);
+        if (sensor->chip_id == MT9V034_ID) {
+			/*set MT9V034 xclk rate*/
+			/*mt9v034_init*/
+        } else { // Read OV sensor ID.
+            cambus_readb(sensor->slv_addr, OV_CHIP_ID, &sensor->chip_id);
+            // Initialize sensor struct.
+            switch (sensor->chip_id) {
+                case OV9650_ID:
+					/*ov9650_init*/
+                    break;
+                case OV2640_ID:
+                    init_ret = ov2640_init(sensor);
+                    break;
+                case OV7725_ID:
+					/*ov7725_init*/
+                    break;
+                default:
+                    // Sensor is not supported.
+                    return -3;
+            }
+        }
+    }
+
+    if (init_ret != 0 ) {
+        // Sensor init failed.
+        return -4;
+    }
+    return 0;
+}
+
+int sensro_gc_detect(sensor_t* sensor)
+{
+    DCMI_PWDN_HIGH();//enable gc0328 要恢复 normal 工作模式，需将 PWDN pin 接入低电平即可，同时写入初始化寄存器即可
+    DCMI_RESET_LOW();//reset gc3028
+    mp_hal_delay_ms(10);
+    DCMI_RESET_HIGH();
+    mp_hal_delay_ms(10);
+    uint8_t id = cambus_scan_gc0328();
+    if(0 == id)
+    {
+        return -3;
+    }
+    else
+    {
+        printf("[MAIXPY]: gc0328 id = %x\n",id); 
+        sensor->slv_addr = GC0328_ADDR;
+        sensor->chip_id = id;
+        gc0328_init(sensor);
+    }
+    return 0;
+}
 
 int sensor_init_dvp()
 {
@@ -171,87 +281,11 @@ int sensor_init_dvp()
     sensor.pwdn_pol = ACTIVE_HIGH;
     sensor.reset_pol = ACTIVE_HIGH;
 
-    /* Reset the sensor */
-    DCMI_RESET_HIGH();
-    mp_hal_ticks_ms(10);
-
-    DCMI_RESET_LOW();
-    mp_hal_ticks_ms(10);
-
-    /* Probe the sensor */
-    sensor.slv_addr = cambus_scan();
-    if (sensor.slv_addr == 0) {
-        /* Sensor has been held in reset,
-           so the reset line is active low */
-        sensor.reset_pol = ACTIVE_LOW;
-
-        /* Pull the sensor out of the reset state,systick_sleep() */
-        DCMI_RESET_HIGH();
-        mp_hal_delay_ms(10);
-
-        /* Probe again to set the slave addr */
-        sensor.slv_addr = cambus_scan();
-        if (sensor.slv_addr == 0) {
-            sensor.pwdn_pol = ACTIVE_LOW;
-
-            DCMI_PWDN_HIGH();
-            mp_hal_delay_ms(10);
-
-            sensor.slv_addr = cambus_scan();
-            if (sensor.slv_addr == 0) {
-                sensor.reset_pol = ACTIVE_HIGH;
-
-                DCMI_RESET_LOW();
-                mp_hal_delay_ms(10);
-
-                sensor.slv_addr = cambus_scan();
-                if (sensor.slv_addr == 0) {
-                    return -2;
-                }
-            }
-        }
+    if(0 == sensro_ov_detect(&sensor)){//find ov sensor
+        printf("[MAIXPY]:find ov sensor\n");
     }
-
-    // Clear sensor chip ID.
-    sensor.chip_id = 0;
-
-    // Set default snapshot function.
-    sensor.snapshot = sensor_snapshot;
-	sensor.flush = sensor_flush;
-    if (sensor.slv_addr == LEPTON_ID) {
-        sensor.chip_id = LEPTON_ID;
-		/*set LEPTON xclk rate*/
-		/*lepton_init*/
-    } else {
-        // Read ON semi sensor ID.
-        cambus_readb(sensor.slv_addr, ON_CHIP_ID, &sensor.chip_id);
-        if (sensor.chip_id == MT9V034_ID) {
-			/*set MT9V034 xclk rate*/
-			/*mt9v034_init*/
-        } else { // Read OV sensor ID.
-            cambus_readb(sensor.slv_addr, OV_CHIP_ID, &sensor.chip_id);
-            // Initialize sensor struct.
-            switch (sensor.chip_id) {
-                case OV9650_ID:
-					/*ov9650_init*/
-                    break;
-                case OV2640_ID:
-                    init_ret = ov2640_init(&sensor);
-                    break;
-                case OV7725_ID:
-					/*ov7725_init*/
-                    break;
-                default:
-                    // Sensor is not supported.
-                    return -3;
-            }
-        }
-    }
-
-
-    if (init_ret != 0 ) {
-        // Sensor init failed.
-        return -4;
+    else if(0 == sensro_gc_detect(&sensor)){//find gc0328 sensor
+        printf("[MAIXPY]: find gc3028\n");
     }
 	
     // Clear fb_enabled flag
@@ -259,7 +293,6 @@ int sensor_init_dvp()
     // JPEG_FB()->enabled = 0;
 
     /* All good! */
-	printf("[MAIXPY]: exit sensor_init\n");
     return 0;
 }
 int sensor_init_irq()
