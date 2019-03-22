@@ -131,7 +131,7 @@ STATIC mp_obj_t Maix_audio_init(size_t n_args, const mp_obj_t *args, mp_map_t *k
 MP_DEFINE_CONST_FUN_OBJ_KW(Maix_audio_init_obj,0 ,Maix_audio_init);
 
 //----------------bo byte ------------------------
-STATIC mp_obj_t Maix_audio_to_byte(Maix_audio_obj_t* self) {
+STATIC mp_obj_t Maix_audio_to_bytes(Maix_audio_obj_t* self) {
     audio_t* audio = &self->audio; 
     if(audio->buf == NULL || audio->points == 0)
         mp_raise_msg(&mp_type_AttributeError,"empty Audio");
@@ -144,7 +144,7 @@ STATIC mp_obj_t Maix_audio_to_byte(Maix_audio_obj_t* self) {
     return audio_array;
 }
 
-MP_DEFINE_CONST_FUN_OBJ_1(Maix_audio_to_byte_obj, Maix_audio_to_byte);
+MP_DEFINE_CONST_FUN_OBJ_1(Maix_audio_to_bytes_obj, Maix_audio_to_bytes);
 
 //----------------play_process ------------------------
 STATIC mp_obj_t Maix_audio_play_process(mp_obj_t self_in,mp_obj_t I2S_dev) {
@@ -293,7 +293,7 @@ MP_DEFINE_CONST_FUN_OBJ_1(Maix_audio_deinit_obj, Maix_audio_deinit);
 STATIC const mp_rom_map_elem_t Maix_audio_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&Maix_audio_init_obj) },
     { MP_ROM_QSTR(MP_QSTR___deinit__), MP_ROM_PTR(&Maix_audio_deinit_obj) },
-    { MP_ROM_QSTR(MP_QSTR_tobyte), MP_ROM_PTR(&Maix_audio_to_byte_obj) },  
+    { MP_ROM_QSTR(MP_QSTR_to_bytes), MP_ROM_PTR(&Maix_audio_to_bytes_obj) },  
     { MP_ROM_QSTR(MP_QSTR_play_process), MP_ROM_PTR(&Maix_audio_play_process_obj) }, 
     { MP_ROM_QSTR(MP_QSTR_play), MP_ROM_PTR(&Maix_audio_play_obj) }, 
     { MP_ROM_QSTR(MP_QSTR_record_process), MP_ROM_PTR(&Maix_audio_record_process_obj) }, 
