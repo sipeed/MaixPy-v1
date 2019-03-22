@@ -1,4 +1,4 @@
-class board_info:
+class Board_Info:
     def __init__(self):
         self.pin_num = 48
         self.JTAG_TCK = 0
@@ -102,3 +102,5 @@ class board_info:
         else:
             print("Unknow error")
             return False
+global board_info
+board_info=Board_Info()

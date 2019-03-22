@@ -1,11 +1,11 @@
 from board import board_info
 from Maix import FPIOA
-class fpioa_manager:
+class Fpioa_Manager:
     def __init__(self):
         self.board_dict={}
         self.fpioa_dict={}
         self.fpioa = FPIOA()
-        self.board_info = board_info()
+        self.board_info = board_info
     def register(self,pin = None,function = None):
         if pin == None or function == None:
             print("Please enter Pin and function")
@@ -57,4 +57,5 @@ class fpioa_manager:
             return self.fpioa_dict[function],function
 
 global fm
-fm=fpioa_manager()
+fm=Fpioa_Manager()
+
