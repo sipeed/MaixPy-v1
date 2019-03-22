@@ -93,11 +93,6 @@ void PS2X_confg_io(uint8_t cs, uint8_t clk, uint8_t mosi, uint8_t miso)
     mosi_num = mosi ; 
     miso_num  = miso;
 
-    // fpioa_set_function(18, FUNC_GPIOHS0 + cs_num);   //ss
-    // fpioa_set_function(19, FUNC_GPIOHS0 + clk_num); //clk
-    // fpioa_set_function(21, FUNC_GPIOHS0 + mosi_num); //mosi--DO/CMD
-    // fpioa_set_function(20, FUNC_GPIOHS0 + miso_num); //miso--DI/DAT
-
     //cs
     gpiohs_set_drive_mode(cs_num, GPIO_DM_OUTPUT);
     gpiohs_set_pin(cs_num, 0);

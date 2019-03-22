@@ -14,8 +14,8 @@
 #include "timer.h"
 #include "plic.h"
 
-#define SK9822_DAT_GPIONUM 14
-#define SK9822_CLK_GPIONUM 15
+#define SK9822_DAT_GPIONUM 27
+#define SK9822_CLK_GPIONUM 28
 
 void sipeed_init_mic_array_led(void);
 // void sipeed_calc_voice_strength(uint8_t voice_data[]);

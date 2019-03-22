@@ -182,7 +182,7 @@ static const mp_map_elem_t globals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_nes) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_init),   (mp_obj_t)&py_nes_init_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_run),   (mp_obj_t)&py_nes_run_obj },
-	{ MP_OBJ_NEW_QSTR(MP_QSTR_JOTSTICK),   MP_ROM_INT(1) },
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_JOYSTICK),   MP_ROM_INT(1) },
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_KEYBOARD),   MP_ROM_INT(0) },
 #endif
 

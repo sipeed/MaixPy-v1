@@ -11,7 +11,7 @@
   * @brief  Card Specific Data: CSD Register   
   */ 
 
-#define SD_CS_PIN 7
+#define SD_CS_PIN 29
 #define SD_SPI_DEVICE SPI_DEVICE_1
 #define SD_DMA_CH DMAC_CHANNEL0
 #define SD_SS SPI_CHIP_SELECT_1

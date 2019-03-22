@@ -68,7 +68,7 @@ STATIC mp_obj_t Maix_mic_array_init(size_t n_args, const mp_obj_t *pos_args, mp_
     fpioa_set_function(20, FUNC_I2S0_IN_D3);
     fpioa_set_function(19, FUNC_I2S0_WS);
     fpioa_set_function(18, FUNC_I2S0_SCLK);
-
+//TODO: optimize Soft SPI
     fpioa_set_function(24, FUNC_GPIOHS0 + SK9822_DAT_GPIONUM);
     fpioa_set_function(25, FUNC_GPIOHS0 + SK9822_CLK_GPIONUM);
 

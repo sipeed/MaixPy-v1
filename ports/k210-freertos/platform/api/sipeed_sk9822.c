@@ -4,22 +4,22 @@
 
 #define SK9822_DAT_SET()                 \
     {                                    \
-        gpiohs->output_val.bits.b14 = 1; \
+        gpiohs->output_val.bits.b27 = 1; \
     }
 
 #define SK9822_DAT_CLR()                 \
     {                                    \
-        gpiohs->output_val.bits.b14 = 0; \
+        gpiohs->output_val.bits.b27 = 0; \
     }
 
 #define SK9822_CLK_SET()                 \
     {                                    \
-        gpiohs->output_val.bits.b15 = 1; \
+        gpiohs->output_val.bits.b28 = 1; \
     }
 
 #define SK9822_CLK_CLR()                 \
     {                                    \
-        gpiohs->output_val.bits.b15 = 0; \
+        gpiohs->output_val.bits.b28 = 0; \
     }
 
 static void sk9822_init(void)
