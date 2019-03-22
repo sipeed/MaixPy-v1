@@ -13,5 +13,5 @@ $(SRC_CXX_OBJ):%.o:%.cpp
 	@$(CXX)  -o $(OUTPUT_DIR)/$@ -c $< $(INCLUDE) $(CXXFLAGS) -lstdc++
 $(SRC_C_OBJ):%.o:%.c
 	@mkdir -p $(OUTPUT_DIR)
-	@echo "#####"$<
+	@echo -e ${GREEN}"CC "$< ${NC}
 	@$(CC)  -o $(OUTPUT_DIR)/$@ -c $< $(INCLUDE) $(CFLAGS) -lstdc++

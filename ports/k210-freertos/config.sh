@@ -1,5 +1,17 @@
 #!/bin/bash
 
+if [[ ! -f modules_conf.mk ]]; then
+    cp modules_conf_default.mk modules_conf.mk
+fi
+
+CFG_MODE_DEFAULT=`wc -l modules_conf_default.mk |awk '{print $1}'`
+CFG_MODE=`wc -l modules_conf.mk |awk '{print $1}'`
+
+if [[ ${CFG_MODE_DEFAULT} != ${CFG_MODE} ]]; then
+    cp modules_conf.mk modules_conf_bak.mk
+    cp modules_conf_default.mk modules_conf.mk
+fi
+
 config_file=config.conf
 if [ ! -f $config_file ]; then
     echo "Please config toolchain path first in config.conf"

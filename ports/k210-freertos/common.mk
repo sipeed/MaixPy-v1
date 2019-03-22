@@ -4,9 +4,11 @@
 #
 ###############################################################################
 # basic & header & platform options
+SHELL := /bin/bash
 CUR_DIR := $(shell pwd)
 sinclude $(INCLUDE_MK)	
 sinclude $(PLATFORM_MK)
+ECHO:=echo -e
 SUBDIRS := $(shell find . -maxdepth 1 -type d)
 SUBDIRS := $(basename $(patsubst ./%,%,$(SUBDIRS)))
 FILE_MAKEFILE := $(foreach n,$(SUBDIRS) , $(wildcard $(n)/Makefile))
@@ -19,16 +21,20 @@ YELLOW='\e[1;33m'
 BLUE='\e[1;34m' 
 NC='\e[0m'
 define echo_info
-	@echo -e "${BLUE}${LIB_NAME} "$1"${NC}";
+	@${ECHO} ""
+	@${ECHO} ${BLUE}${LIB_NAME}$1${NC};
 endef
 define echo_note
-	@echo -e "${BLUE}"$1"${NC}";
+	@${ECHO} ""
+	@${ECHO} ${BLUE}$1${NC};
 endef
 define echo_warn
-	@echo -e "${BLUE}"$1"${NC}";
+	@${ECHO} ""
+	@${ECHO} ${BLUE}$1 ${NC};
 endef
 define echo_err
-	@echo -e "${BLUE}"$1"${NC}";
+	@${ECHO} ""
+	@${ECHO} ${BLUE}$1 ${NC};
 endef
 
 ###############################################################################
