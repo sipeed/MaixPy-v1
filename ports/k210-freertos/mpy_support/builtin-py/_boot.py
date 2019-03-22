@@ -4,11 +4,10 @@ import os
 import sys
 import machine
 from board import board_info
-from fpioa_manager import *
+from fpioa_manager import fm
 from pye_mp import pye
-from Maix import GPIO
+from Maix import FPIOA, GPIO
 
-board_info=board_info()
 sys.path.append('.')
 
 # chdir to "/sd" or "/flash"
@@ -22,7 +21,6 @@ sys.path.append('/flash')
 
 # detect boot.py
 boot_py = '''
-from board import board_info
 from fpioa_manager import *
 import os, Maix, lcd, image
 from Maix import FPIOA, GPIO
