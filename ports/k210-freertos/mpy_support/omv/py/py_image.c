@@ -5455,6 +5455,7 @@ static mp_obj_t py_image_resize(mp_obj_t img_obj, mp_obj_t *w_obj, mp_obj_t *h_o
 	int w = mp_obj_get_int(w_obj);
 	int h = mp_obj_get_int(h_obj);
 	int w0 = img->w;
+	int h0 = img->h;
 	switch (img->bpp)
 	{
 	case IMAGE_BPP_GRAYSCALE:
@@ -5463,19 +5464,160 @@ static mp_obj_t py_image_resize(mp_obj_t img_obj, mp_obj_t *w_obj, mp_obj_t *h_o
 		uint8_t* in = img->pixels;
 		float sx=(float)(img->w)/w;
 		float sy=(float)(img->h)/h;
-		int x,y, x0,y0;
+		int x,y, x0,y0,x1,y1;
+		float xf,yf;
 		mp_obj_t image = py_image(w, h, img->bpp, out);
-		//TODO: optimize linear
+		if(w >= w0 || h >= h0)
+		{
+			for(y=0;y<h;y++)
+			{
+				yf = y*sy;
+				y0 = (int)yf;
+				y1 = y0+1;
+				for(x=0;x<w;x++)
+				{
+					xf = x*sx;
+					x0 = (int)xf;
+					x1 = x0+1;
+					out[y*w+x] = (uint8_t)(in[y0*w0+x0]*(x1-xf)*(y1-yf)+\
+								in[y0*w0+x1]*(xf-x0)*(y1-yf)+\
+								in[y1*w0+x0]*(x1-xf)*(yf-y0)+\
+								in[y1*w0+x1]*(xf-x0)*(yf-y0));
+				}
+			}
+		}
+		else
+		{
+			for(y=0;y<h;y++)
+			{
+				y0 = y*sy;
+				y1 = (y+1)*sy;
+				for(x=0;x<w;x++)
+				{
+					x0 = x*sy;
+					x1 = (x+1)*sy;
+					int sum,xx,yy;
+					sum=0;
+					for(yy=y0; yy<=y1; yy++)
+					{
+						for(xx=x0; xx<=x1; xx++)
+						{
+							sum+=in[yy*w0+xx];
+						}
+					}
+					out[y*w+x]=sum/((y1-y0+1)*(x1-x0+1)); 	//avg to get better picture
+				}
+			}
+		}
+		return image;
+		break;
+	}
+	case IMAGE_BPP_RGB565: 
+	{
+		if(w0 <= w || h0 <= h)
+		{
+			printf("only support 565 zoom out now\r\n");
+			return mp_const_none;
+		}
+		uint16_t* out = xalloc(w*h);
+		uint16_t* in = img->pixels;
+		float sx=(float)(w0)/w;
+		float sy=(float)(h0)/h;
+		int x,y, x0,y0,x1,y1;
+		float xf,yf;
+		mp_obj_t image = py_image(w, h, img->bpp, out); //TODO: here have bug
 		for(y=0;y<h;y++)
 		{
 			y0 = y*sy;
 			for(x=0;x<w;x++)
 			{
-				x0 = x*sy;
+				x0 = x*sx;
 				out[y*w+x] = in[y0*w0+x0];
 			}
 		}
 		return image;
+		break;
+	}
+	default:
+		printf("only support grayscale, 565 zoom out now\r\n");
+		return mp_const_none;
+		break;
+	}
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(py_image_resize_obj, py_image_resize);
+
+static mp_obj_t py_image_pix_to_ai(mp_obj_t img_obj)
+{
+	image_t* img = (image_t *) py_image_cobj(img_obj);
+	uint16_t w = img->w;
+	uint16_t h = img->h;
+	switch (img->bpp)
+	{
+	case IMAGE_BPP_GRAYSCALE:
+	{
+		uint8_t* out = xalloc(w*h);	//TODO: check 128bit align
+		uint8_t* in = img->pixels;
+		img->pix_ai = out;	//TODO: check old one
+		memcpy(out, in, w*h);
+		return mp_const_none;		//
+		break;
+	}
+	case IMAGE_BPP_RGB565: 
+	{
+		uint8_t* out = xalloc(w*h*3); //TODO: check 128bit align
+		uint8_t* r = out;
+		uint8_t* g = out+w*h;
+		uint8_t* b = out+w*h*2;
+		uint16_t* in = img->pixels;
+		img->pix_ai = out;	//TODO: check old one
+		uint32_t index;
+		for(index=0; index < w*h; index++)
+		{
+			r[index] = COLOR_RGB565_TO_R8(in[index]);
+			g[index] = COLOR_RGB565_TO_G8(in[index]);
+			b[index] = COLOR_RGB565_TO_B8(in[index]);
+		}
+		return mp_const_none;
+	}
+	default:
+		printf("only support grayscale now\r\n");
+		return mp_const_none;
+		break;
+	}
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_image_pix_to_ai_obj, py_image_pix_to_ai);
+
+
+
+static mp_obj_t py_image_ai_to_pix(mp_obj_t img_obj)
+{
+	image_t* img = (image_t *) py_image_cobj(img_obj);
+	uint16_t w = img->w;
+	uint16_t h = img->h;
+	
+	if(img->pix_ai == NULL) return mp_const_none;
+	switch (img->bpp)
+	{
+	case IMAGE_BPP_GRAYSCALE:
+	{
+		memcpy(img->pixels, img->pix_ai, w*h);
+		return img;
+		break;
+	}
+	case IMAGE_BPP_RGB565: 
+	{
+		uint8_t* out = img->pix_ai; //TODO: check 128bit align
+		uint8_t* r = out;
+		uint8_t* g = out+w*h;
+		uint8_t* b = out+w*h*2;
+		uint16_t* in = img->pixels;
+		img->pix_ai = out;	//TODO: check old one
+		uint32_t index;
+		for(index=0; index < w*h; index++)
+		{
+			img->pixels[index] = COLOR_R8_G8_B8_TO_RGB565(r[index],g[index],b[index]);
+		}
+		return img;
 		break;
 	}
 	default:
@@ -5484,7 +5626,60 @@ static mp_obj_t py_image_resize(mp_obj_t img_obj, mp_obj_t *w_obj, mp_obj_t *h_o
 		break;
 	}
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_3(py_image_resize_obj, py_image_resize);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_image_ai_to_pix_obj, py_image_ai_to_pix);
+
+
+static mp_obj_t py_image_strech_char(mp_obj_t img_obj, mp_obj_t de_dark_obj)
+{
+	image_t* img = (image_t *) py_image_cobj(img_obj);
+	int de_dark = mp_obj_get_int(de_dark_obj);
+	uint16_t w = img->w;
+	uint16_t h = img->h;
+	
+	switch (img->bpp)
+	{
+	case IMAGE_BPP_GRAYSCALE:
+	{
+		uint32_t index;
+		uint16_t x,y,graymax;
+		int sx2,sx,dx,ex,stdx,r2;
+		int gate,dat;
+		uint8_t* in = img->pixels;
+		sx=0; sx2=0; graymax=0;
+		for(index=0;index<w*h;index++)
+		{
+			if(in[index]>graymax)graymax=in[index];
+			sx+=in[index];
+			sx2+=((int)in[index]*(int)in[index]);
+		}
+		//strech
+		ex=sx/w/h;
+		dx=sx2/w/h-(sx*sx/w/w/h/h);
+		stdx=(int)sqrt(dx);
+		gate=ex;//+stdx/8;
+		//printf("ex=%d,dx=%d,stdx=%d,gate=%d,graymax=%d\r\n",ex,dx,stdx,gate,graymax);
+		for(index=0; index < w*h; index++)
+		{
+			x=index%w;
+			y=index/w;
+			dat=in[index];
+			dat=(dat-gate)*255/(graymax-gate);
+			dat=dat<0?0:(dat>255?255:dat);
+			r2=(x-w/2)*(x-w/2)+(y-h/2)*(y-h/2);
+			if(de_dark) dat=(int)(dat/(1.0+32.0*r2*r2/w/w/h/h)); 
+			in[index]=dat;
+		}
+		return mp_const_none;
+		break;
+	}
+	default:
+		printf("only support grayscale now\r\n");
+		return mp_const_none;
+		break;
+	}
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(py_image_strech_char_obj, py_image_strech_char);
+
 
 static float min(uint8_t* data, uint16_t x, uint16_t y)
 {
@@ -5752,7 +5947,11 @@ static const mp_rom_map_elem_t locals_dict_table[] = {
 	{MP_ROM_QSTR(MP_QSTR_dump_roi),    MP_ROM_PTR(&py_image_dump_roi_obj)},
 	{MP_ROM_QSTR(MP_QSTR_conv3),    MP_ROM_PTR(&py_image_conv3_obj)},
 	{MP_ROM_QSTR(MP_QSTR_resize),    MP_ROM_PTR(&py_image_resize_obj)},
+	{MP_ROM_QSTR(MP_QSTR_ai_to_pix),    MP_ROM_PTR(&py_image_ai_to_pix_obj)},
+	{MP_ROM_QSTR(MP_QSTR_pix_to_ai),    MP_ROM_PTR(&py_image_pix_to_ai_obj)},
+	{MP_ROM_QSTR(MP_QSTR_strech_char),    MP_ROM_PTR(&py_image_strech_char_obj)},
 	{MP_ROM_QSTR(MP_QSTR_stretch),    MP_ROM_PTR(&py_image_stretch_obj)},
+	
 };
 
 STATIC MP_DEFINE_CONST_DICT(locals_dict, locals_dict_table);

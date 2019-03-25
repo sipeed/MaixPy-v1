@@ -21,6 +21,8 @@ CFLAGS = \
 	-fstrict-volatile-bitfields \
 	-fno-zero-initialized-in-bss \
 	-Os \
+	-mabi=lp64f \
+        -march=rv64imafc \
 	-ffloat-store \
 	-ggdb \
 	-std=gnu11 \
