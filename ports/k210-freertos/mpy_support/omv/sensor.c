@@ -602,6 +602,8 @@ int sensor_set_windowing(int x, int y, int w, int h)
     MAIN_FB()->y = y;
     MAIN_FB()->w = MAIN_FB()->u = w;
     MAIN_FB()->h = MAIN_FB()->v = h;
+	dvp_set_image_size(w, h);	//set QVGA default
+	
     return 0;
 }
 

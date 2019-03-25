@@ -1,4 +1,5 @@
 #include "sipeed_yolo2.h"
+#include "sipeed_kpu.h"
 #include <stdlib.h>
 #include <math.h>
 
@@ -22,45 +23,47 @@ typedef struct
 } __attribute__((aligned(8))) sortable_box_t;
 
 
-uint32_t kpu_model_get_size(uint8_t *buffer)
-{
-    kpu_model_header_t *header = (kpu_model_header_t *)buffer;
-
-    if (header->version != 1)
-        return -1;
-
-    uint32_t layers_length = header->layers_length;
-
-    return (header->layers_argument_start + (sizeof(kpu_layer_argument_t) * layers_length));
-}
-
-int region_layer_init(region_layer_t *rl, kpu_task_t *task)
+int region_layer_init(region_layer_t *rl, kpu_model_context_t *task)
 {
     int flag = 0;
-    kpu_layer_argument_t *last_layer = &task->layers[task->layers_length - 1];
-    kpu_layer_argument_t *first_layer = &task->layers[0];
+	uint16_t wi,hi,chi;
+	uint16_t wo,ho,cho;
+	size_t size;
+	
+	if(kpu_model_get_input_shape(task, &wi, &hi, &chi))
+	{
+		printf("[MAIXPY]rl: first layer not conv layer!\r\n");
+		return -1;
+	}
+	if(kpu_model_get_output_shape(task, &wo, &ho, &cho))
+	{
+		printf("[MAIXPY]rl: can't fetch last layer!\r\n");
+		return -1;
+	}
 
     rl->coords = 4;
-    rl->image_width = 320;
-    rl->image_height = 240;
+    rl->image_width = wi;
+    rl->image_height = hi;
 
-    rl->classes = (last_layer->image_channel_num.data.o_ch_num + 1) / 5 - 5;
-    rl->net_width = first_layer->image_size.data.i_row_wid + 1;
-    rl->net_height = first_layer->image_size.data.i_col_high + 1;
-    rl->layer_width = last_layer->image_size.data.o_row_wid + 1;
-    rl->layer_height = last_layer->image_size.data.o_col_high + 1;
+    rl->classes = cho / 5 - 5;
+    rl->net_width = wi;
+    rl->net_height = hi;
+    rl->layer_width = wo;
+    rl->layer_height = ho;
     rl->boxes_number = (rl->layer_width * rl->layer_height * rl->anchor_number);
     rl->output_number = (rl->boxes_number * (rl->classes + rl->coords + 1));
-    rl->input = task->dst;
-    rl->scale = task->output_scale;
-    rl->bias = task->output_bias;
+    
+	kpu_get_output(task, 0, &(rl->output), &size);	//module output -> rl output
+	//printf("size=%ld\r\n",size);
+    //rl->scale = output_scale;
+    //rl->bias = output_bias;
 
-    rl->output = malloc(rl->output_number * sizeof(float));
+    /*rl->output = malloc(rl->output_number * sizeof(float));
     if (rl->output == NULL)
     {
         flag = -1;
         goto malloc_error;
-    }
+    }*/
     rl->boxes = malloc(rl->boxes_number * sizeof(box_t));
     if (rl->boxes == NULL)
     {
@@ -79,7 +82,7 @@ int region_layer_init(region_layer_t *rl, kpu_task_t *task)
         flag = -4;
         goto malloc_error;
     }
-    rl->activate = malloc(256 * sizeof(float));
+    /*rl->activate = malloc(256 * sizeof(float));
     if (rl->activate == NULL)
     {
         flag = -5;
@@ -95,37 +98,37 @@ int region_layer_init(region_layer_t *rl, kpu_task_t *task)
     {
         rl->activate[i] = 1.0 / (1.0 + expf(-(i * rl->scale + rl->bias)));
         rl->softmax[i] = expf(rl->scale * (i - 255));
-    }
+    }*/
     for (uint32_t i = 0; i < rl->boxes_number; i++)
         rl->probs[i] = &(rl->probs_buf[i * (rl->classes + 1)]);
     return 0;
 malloc_error:
-    free(rl->output);
+    //free(rl->output);
     free(rl->boxes);
     free(rl->probs_buf);
     free(rl->probs);
-    free(rl->activate);
-    free(rl->softmax);
+    //free(rl->activate);
+    //free(rl->softmax);
     return flag;
 }
 
 void region_layer_deinit(region_layer_t *rl)
 {
-    free(rl->output);
+    //free(rl->output);
     free(rl->boxes);
     free(rl->probs_buf);
     free(rl->probs);
-    free(rl->activate);
-    free(rl->softmax);
+    //free(rl->activate);
+    //free(rl->softmax);
 }
 
 static void activate_array(region_layer_t *rl, int index, int n)
 {
     float *output = &rl->output[index];
-    uint8_t *input = &rl->input[index];
+    //uint8_t *input = &rl->input[index];
 
     for (int i = 0; i < n; ++i)
-        output[i] = rl->activate[input[i]];
+        output[i] = 1.0 / (1.0 + expf(-output[i]));//rl->activate[input[i]];
 }
 
 static int entry_index(region_layer_t *rl, int location, int entry)
@@ -137,39 +140,39 @@ static int entry_index(region_layer_t *rl, int location, int entry)
     return n * wh * (rl->coords + rl->classes + 1) + entry * wh + loc;
 }
 
-static void softmax(region_layer_t *rl, uint8_t *input, int n, int stride, float *output)
+static void softmax(float *data, int n, int stride)
 {
     int i;
     int diff;
     float e;
     float sum = 0;
-    uint8_t largest_i = input[0];
+    float largest_i = data[0];
 
     for (i = 0; i < n; ++i)
     {
-        if (input[i * stride] > largest_i)
-            largest_i = input[i * stride];
+        if (data[i * stride] > largest_i)
+            largest_i = data[i * stride];
     }
-
     for (i = 0; i < n; ++i)
     {
-        diff = input[i * stride] - largest_i;
-        e = rl->softmax[diff + 255];
-        sum += e;
-        output[i * stride] = e;
+        float value = expf(data[i * stride] - largest_i);
+        sum += value;
+        data[i * stride] = value;
     }
     for (i = 0; i < n; ++i)
-        output[i * stride] /= sum;
+	{
+        data[i * stride] /= sum;
+	}
 }
 
-static void softmax_cpu(region_layer_t *rl, uint8_t *input, int n, int batch, int batch_offset, int groups, int stride, float *output)
+static void softmax_cpu(float *data, int n, int batch, int batch_offset, int groups, int stride)
 {
     int g, b;
 
     for (b = 0; b < batch; ++b)
     {
         for (g = 0; g < groups; ++g)
-            softmax(rl, input + b * batch_offset + g, n, stride, output + b * batch_offset + g);
+            softmax(data + b * batch_offset + g, n, stride);
     }
 }
 
@@ -177,8 +180,8 @@ static void forward_region_layer(region_layer_t *rl)
 {
     int index;
 
-    for (index = 0; index < rl->output_number; index++)
-        rl->output[index] = rl->input[index] * rl->scale + rl->bias;
+    //for (index = 0; index < rl->output_number; index++)
+    //    rl->output[index] = rl->input[index] * rl->scale + rl->bias;
 
     for (int n = 0; n < rl->anchor_number; ++n)
     {
@@ -189,9 +192,10 @@ static void forward_region_layer(region_layer_t *rl)
     }
 
     index = entry_index(rl, 0, rl->coords + 1);
-    softmax_cpu(rl, rl->input + index, rl->classes, rl->anchor_number,
-                rl->output_number / rl->anchor_number, rl->layer_width * rl->layer_height,
-                rl->layer_width * rl->layer_height, rl->output + index);
+	softmax_cpu(rl->output + index, rl->classes, rl->anchor_number,\
+		rl->output_number / rl->anchor_number, rl->layer_width * rl->layer_height,\
+		rl->layer_width * rl->layer_height);
+	
 }
 
 static void correct_region_boxes(region_layer_t *rl, box_t *boxes)
@@ -398,7 +402,7 @@ static void region_layer_output(region_layer_t *rl, obj_info_t *obj_info)
     {
         int class = max_index(rl->probs[i], rl->classes);
         float prob = rl->probs[i][class];
-
+		//printf("%.3f, ", prob);
         if (prob > threshold)
         {
             box_t *b = boxes + i;
@@ -416,7 +420,7 @@ static void region_layer_output(region_layer_t *rl, obj_info_t *obj_info)
 
 void region_layer_run(region_layer_t *rl, obj_info_t *obj_info)
 {
-    forward_region_layer(rl);
+	forward_region_layer(rl);
     get_region_boxes(rl, rl->output, rl->probs, rl->boxes);
     do_nms_sort(rl, rl->boxes, rl->probs);
     region_layer_output(rl, obj_info);

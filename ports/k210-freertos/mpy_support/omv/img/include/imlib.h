@@ -403,7 +403,7 @@ typedef enum image_bpp
     IMAGE_BPP_GRAYSCALE,    // BPP = 1
     IMAGE_BPP_RGB565,       // BPP = 2
     IMAGE_BPP_BAYER,        // BPP = 3
-    IMAGE_BPP_JPEG          // BPP > 3
+    IMAGE_BPP_JPEG,         // BPP = 4
 }
 image_bpp_t;
 
