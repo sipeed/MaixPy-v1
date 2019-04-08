@@ -136,10 +136,10 @@ int sensro_ov_detect(sensor_t* sensor)
     int init_ret = 0;
     /* Reset the sensor */
     DCMI_RESET_HIGH();
-    mp_hal_ticks_ms(10);
+    mp_hal_delay_ms(10);
 
     DCMI_RESET_LOW();
-    mp_hal_ticks_ms(10);
+    mp_hal_delay_ms(10);
 
     /* Probe the ov sensor */
     sensor->slv_addr = cambus_scan();
@@ -256,10 +256,10 @@ int sensor_init_dvp()
 
     /* Do a power cycle */
     DCMI_PWDN_HIGH();
-    mp_hal_ticks_ms(10);
+    mp_hal_delay_ms(10);
 
     DCMI_PWDN_LOW();
-    mp_hal_ticks_ms(10);
+    mp_hal_delay_ms(10);
 
     // Initialize the camera bus, 8bit reg
     cambus_init(8);
@@ -352,10 +352,10 @@ int binocular_sensor_init_dvp()
 
     /* Do a power cycle */
     DCMI_PWDN_HIGH();
-    mp_hal_ticks_ms(10);
+    mp_hal_delay_ms(10);
 
     DCMI_PWDN_LOW();
-    mp_hal_ticks_ms(10);
+    mp_hal_delay_ms(10);
 
     // Initialize the camera bus, 8bit reg
     cambus_init(8);
@@ -384,22 +384,22 @@ int binocular_sensor_scan()
     int init_ret = 0;
     //reset both sensor
     DCMI_PWDN_HIGH();
-    mp_hal_ticks_ms(10);
+    mp_hal_delay_ms(10);
     DCMI_RESET_LOW();
-    mp_hal_ticks_ms(10);
+    mp_hal_delay_ms(10);
     DCMI_RESET_HIGH();
-    mp_hal_ticks_ms(10);
+    mp_hal_delay_ms(10);
 
     DCMI_PWDN_LOW();
-    mp_hal_ticks_ms(10);
+    mp_hal_delay_ms(10);
     DCMI_RESET_LOW();
-    mp_hal_ticks_ms(10);
+    mp_hal_delay_ms(10);
     DCMI_RESET_HIGH();
-    mp_hal_ticks_ms(10);
+    mp_hal_delay_ms(10);
 
     /* Probe the first sensor */
     DCMI_PWDN_HIGH();
-    mp_hal_ticks_ms(10);   
+    mp_hal_delay_ms(10);   
     sensor.slv_addr = cambus_scan();
     if (sensor.slv_addr == 0) {
         printf("[MAIXPY]: Can not find sensor first\n");
@@ -419,7 +419,7 @@ int binocular_sensor_scan()
             
     /* find  the second sensor */
     DCMI_PWDN_LOW();
-    mp_hal_ticks_ms(10);
+    mp_hal_delay_ms(10);
     if(sensor.slv_addr != cambus_scan())
     {
         printf("[MAIXPY]: sensors don't match\n");
@@ -493,11 +493,11 @@ int binocular_sensor_reset()
 
     //select first sensor ,  Call sensor-specific reset function
     DCMI_PWDN_HIGH();
-    mp_hal_ticks_ms(10);
+    mp_hal_delay_ms(10);
     DCMI_RESET_LOW();
-    mp_hal_ticks_ms(10);
+    mp_hal_delay_ms(10);
     DCMI_RESET_HIGH();
-    mp_hal_ticks_ms(10); 
+    mp_hal_delay_ms(10); 
 
     if (sensor.reset(&sensor) != 0) {	//rst reg, set default cfg.
         printf("[MAIXPY]: First sensor reset failed\n");
@@ -506,11 +506,11 @@ int binocular_sensor_reset()
 
     //select second sensor ,  Call sensor-specific reset function
     DCMI_PWDN_LOW();
-    mp_hal_ticks_ms(10);
+    mp_hal_delay_ms(10);
     DCMI_RESET_LOW();
-    mp_hal_ticks_ms(10);
+    mp_hal_delay_ms(10);
     DCMI_RESET_HIGH();
-    mp_hal_ticks_ms(10);
+    mp_hal_delay_ms(10);
 
     if (sensor.reset(&sensor) != 0) {	//rst reg, set default cfg.
         printf("[MAIXPY]: Second sensor reset failed\n");
