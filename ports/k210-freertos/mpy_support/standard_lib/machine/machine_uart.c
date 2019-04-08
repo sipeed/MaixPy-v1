@@ -67,7 +67,8 @@
 
 machine_uart_obj_t* g_repl_uart_obj = NULL;
 
-STATIC const char *_parity_name[] = {"None", "1", "0"};
+STATIC const char *_parity_name[] = {"None", "odd", "even"};
+STATIC const char *_stop_name[] = {"1", "1.5", "2"};
 
 
 //QueueHandle_t UART_QUEUE[UART_DEVICE_MAX] = {};
@@ -337,7 +338,7 @@ STATIC void machine_uart_print(const mp_print_t *print, mp_obj_t self_in, mp_pri
     //uart_get_baudrate(self->uart_num, &baudrate);
     mp_printf(print, "[MAIXPY]UART%d:( baudrate=%u, bits=%u, parity=%s, stop=%u)",
         self->uart_num,self->baudrate, self->bitwidth, _parity_name[self->parity],
-        self->stop);
+        _stop_name[self->stop]);
 }
 
 STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
