@@ -65,6 +65,7 @@
 #endif
 
 
+machine_uart_obj_t* g_repl_uart_obj = NULL;
 
 STATIC const char *_parity_name[] = {"None", "1", "0"};
 
@@ -344,8 +345,8 @@ STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, co
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_baudrate, MP_ARG_INT, {.u_int = 115200} },
         { MP_QSTR_bits, MP_ARG_INT, {.u_int = UART_BITWIDTH_8BIT} },
-        { MP_QSTR_parity, MP_ARG_INT, {.u_int = UART_PARITY_NONE} },
-        { MP_QSTR_stop, MP_ARG_INT, {.u_int = UART_STOP_1} },
+        { MP_QSTR_parity, MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        { MP_QSTR_stop, MP_ARG_OBJ, {.u_obj = mp_const_none} },
         { MP_QSTR_timeout, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 1000} },
         { MP_QSTR_timeout_char, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 10} },
         { MP_QSTR_read_buf_len, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = MAIX_UART_BUF} },
@@ -367,31 +368,36 @@ STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, co
     }
 
     // set parity
-    if (UART_PARITY_NONE <= args[ARG_parity].u_int && args[ARG_parity].u_int <= UART_PARITY_EVEN) {
-		self->parity = args[ARG_parity].u_int;
-    }
-	else{
-		mp_raise_ValueError("[MAIXPY]UART:invalid parity");
+	if(args[ARG_parity].u_obj == mp_const_none)
+	{
+		self->parity = UART_PARITY_NONE;
+	}
+	else
+	{
+		self->parity = mp_obj_get_int(args[ARG_parity].u_obj);
+		if (UART_PARITY_NONE > self->parity || self->parity > UART_PARITY_EVEN)
+			mp_raise_ValueError("[MAIXPY]UART:invalid parity");
 	}
 
     // set stop bits  
-    if( UART_STOP_1 <= args[ARG_stop].u_int && args[ARG_stop].u_int <= UART_STOP_2)
-    {
-	    switch (args[ARG_stop].u_int) {
-	        case UART_STOP_1:
-	            self->stop = UART_STOP_1;
-	            break;
-	        case UART_STOP_1_5:
-	            self->stop = UART_STOP_1_5;
-	            break;
-	        case UART_STOP_2:
-	            self->stop = UART_STOP_2;
-	            break;
-	        default:
-	            mp_raise_ValueError("[MAIXPY]UART:invalid stop bits");
-	            break;
-	    }
-    }
+	mp_float_t stop_bits;
+	if( args[ARG_stop].u_obj == mp_const_none)
+		stop_bits = 1;
+	else
+	{
+		stop_bits = mp_obj_get_float(args[ARG_stop].u_obj);
+		if(stop_bits == 0)
+			stop_bits = 1;
+	}
+	if(stop_bits!=1 && stop_bits!=1.5 && stop_bits!=2)
+		mp_raise_ValueError("[MAIXPY]UART:invalid stop bits");
+	if(stop_bits == 1)
+		self->stop = UART_STOP_1;
+	else if(stop_bits == 1.5)
+		self->stop = UART_STOP_1_5;
+	else if(stop_bits == 2)
+		self->stop = UART_STOP_2;
+
 	// set timeout 
 	if(args[ARG_timeout].u_int >= 0)
 		self->timeout = args[ARG_timeout].u_int;
@@ -412,8 +418,8 @@ STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, co
 	self->read_buf_head = 0;
     self->read_buf_tail = 0;
 	if(MICROPY_UARTHS_DEVICE == self->uart_num){
-		self->bitwidth = 8;
-		self->parity = 0;
+		if(self->bitwidth != 8 || self->parity != 0)
+			mp_raise_ValueError("[MAIXPY]UART:invalid param");
 		uarths_init();
 		uarths_config(self->baudrate,self->stop);
 		uarths_set_interrupt_cnt(UARTHS_RECEIVE,0);
@@ -449,7 +455,10 @@ STATIC mp_obj_t machine_uart_make_new(const mp_obj_type_t *type, size_t n_args, 
 	self->data_len = 0;
     mp_map_t kw_args;
     mp_map_init_fixed_table(&kw_args, n_kw, args + n_args);
+	printk("init\r\n");
     machine_uart_init_helper(self, n_args - 1, args + 1, &kw_args);
+	if( uart_num == MICROPY_UARTHS_DEVICE)
+		g_repl_uart_obj = self;
     return MP_OBJ_FROM_PTR(self);
 }
 
@@ -464,6 +473,14 @@ STATIC mp_obj_t machine_uart_init(size_t n_args, const mp_obj_t *args, mp_map_t 
     return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(machine_uart_init_obj, 0, machine_uart_init);
+
+
+STATIC mp_obj_t machine_uart_repl_uart(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
+	if(g_repl_uart_obj)
+    	return g_repl_uart_obj;
+    return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_KW(machine_uart_repl_uart_obj, 0, machine_uart_repl_uart);
 
 
 STATIC mp_obj_t machine_uart_deinit(mp_obj_t self_in) {
@@ -494,6 +511,11 @@ STATIC const mp_rom_map_elem_t machine_uart_locals_dict_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_UART2), MP_ROM_INT(UART_DEVICE_2) },
 	{ MP_ROM_QSTR(MP_QSTR_UART3), MP_ROM_INT(UART_DEVICE_3) },
 	{ MP_ROM_QSTR(MP_QSTR_UARTHS), MP_ROM_INT(MICROPY_UARTHS_DEVICE) },
+
+	{ MP_ROM_QSTR(MP_QSTR_PARITY_ODD), MP_ROM_INT(UART_PARITY_ODD) },
+	{ MP_ROM_QSTR(MP_QSTR_PARITY_EVEN), MP_ROM_INT(UART_PARITY_EVEN) },
+
+	{ MP_ROM_QSTR(MP_QSTR_repl_uart), MP_ROM_PTR(&machine_uart_repl_uart_obj) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(machine_uart_locals_dict, machine_uart_locals_dict_table);
