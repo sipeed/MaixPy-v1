@@ -46,11 +46,7 @@ if test_gpio.value() == 0:
 '''
 
 flash_ls = os.listdir()
-test_pin=16
-fpioa = FPIOA()
-fpioa.set_function(test_pin,FPIOA.GPIO7)
-test_gpio=GPIO(GPIO.GPIO7,GPIO.IN)
-if (not "boot.py" in flash_ls) or (test_gpio.value() == 0):
+if (not "boot.py" in flash_ls) :
     f = open("boot.py", "wb")
     f.write(boot_py)
     f.close()
