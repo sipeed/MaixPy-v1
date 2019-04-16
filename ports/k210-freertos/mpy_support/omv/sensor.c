@@ -105,30 +105,37 @@ extern uint8_t* g_dvp_buf;
 void sensor_init_fb()
 {
     // Init FB mutex
-    //TODO:
-    // mutex_init(&JPEG_FB()->lock);
+    mutex_init(&JPEG_FB()->lock);
 
     // Save fb_enabled flag state
-    // int fb_enabled = JPEG_FB()->enabled;
+    int fb_enabled = JPEG_FB()->enabled;
 
     // Clear framebuffers
-	MAIN_FB()->x=0;MAIN_FB()->y=0;
-	MAIN_FB()->w=0;MAIN_FB()->h=0;
-	MAIN_FB()->u=0;MAIN_FB()->v=0;
+	MAIN_FB()->x=0;
+    MAIN_FB()->y=0;
+	MAIN_FB()->w=0;
+    MAIN_FB()->h=0;
+	MAIN_FB()->u=0;
+    MAIN_FB()->v=0;
 	MAIN_FB()->bpp=0;
 	MAIN_FB()->pixels = &g_dvp_buf;
 	MAIN_FB()->pix_ai = &g_ai_buf_in;
-	// JPEG_FB()->w=0;JPEG_FB()->h=0;
-	// JPEG_FB()->size=0;JPEG_FB()->enabled=0;
-	// JPEG_FB()->quality=0;
-	// JPEG_FB()->pixels = &g_jpg_buf;
+	JPEG_FB()->w=0;
+    JPEG_FB()->h=0;
+	JPEG_FB()->size=0;
 	//printf("pixels=0x%x, pix_ai=0x%x, jpg=0x%x\n", MAIN_FB()->pixels, MAIN_FB()->pix_ai, JPEG_FB()->pixels);
     // Set default quality
-    // JPEG_FB()->quality = 35;
+    JPEG_FB()->quality = 35;
 
     // Set fb_enabled
-    // JPEG_FB()->enabled = fb_enabled;
+    JPEG_FB()->enabled = fb_enabled;
 }
+
+void sensor_init0()
+{
+    sensor_init_fb();
+}
+
 
 //-------------------------------Monocular--------------------------------------
 int sensro_ov_detect(sensor_t* sensor)
@@ -265,7 +272,6 @@ int sensor_init_dvp()
     cambus_init(8);
 	 // Initialize dvp interface
 	dvp_set_xclk_rate(24000000);
-	 dvp->cmos_cfg |= DVP_CMOS_CLK_DIV(3) | DVP_CMOS_CLK_ENABLE;
 	dvp_enable_burst();
 	dvp_disable_auto();
 	dvp_set_output_enable(0, 1);	//enable to AI
@@ -288,10 +294,6 @@ int sensor_init_dvp()
         printf("[MAIXPY]: find gc3028\n");
     }
 	
-    // Clear fb_enabled flag
-    // This is executed only once to initialize the FB enabled flag.
-    // JPEG_FB()->enabled = 0;
-
     /* All good! */
     return 0;
 }
@@ -466,9 +468,6 @@ int binocular_sensor_scan()
         // Sensor init failed.
         return -4;
     }
-    // Clear fb_enabled flag
-    // This is executed only once to initialize the FB enabled flag.
-    // JPEG_FB()->enabled = 0;
 
     /* All good! */
 	printf("[MAIXPY]: exit sensor_init\n");
@@ -920,6 +919,7 @@ void sensor_flush(void)
 {	//flush old frame, let dvp capture new image
 	//use it when you don't snap for a while.
 	g_dvp_finish_flag = 0;
+    fb_update_jpeg_buffer();
 	return ;
 }
 
@@ -930,7 +930,7 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
     // Compress the framebuffer for the IDE preview, only if it's not the first frame,
     // the framebuffer is enabled and the image sensor does not support JPEG encoding.
     // Note: This doesn't run unless the IDE is connected and the framebuffer is enabled.
-    //fb_update_jpeg_buffer();
+    fb_update_jpeg_buffer();
 
     // Make sure the raw frame fits into the FB. If it doesn't it will be cropped if
     // the format is set to GS, otherwise the pixel format will be swicthed to BAYER.

@@ -17,15 +17,18 @@
 
 #define OMV_INIT_BPP 2
 
+// IDE config
+#define IDE_DBG_MAX_PACKET  64
+#define IDE_DBG_CMD_START_FLAG 0x30
+
 #ifndef OMV_MINIMUM
 
-// #define OMV_JPEG_BUF_SIZE 23 * 1024 // IDE JPEG buffer (header + data).
+#define OMV_JPEG_BUF_SIZE 23 * 1024 // IDE JPEG buffer (header + data).
 #define OMV_FB_ALLOC_SIZE 700 * 1024 // minimum fb alloc size
 #define FB_MAX_ALLOC_TIMES    100
 
 #else  //OMV_MINIMUM
 
-// #define OMV_JPEG_BUF_SIZE 15 * 1024 // IDE JPEG buffer (header + data).
 #define OMV_FB_ALLOC_SIZE 300 * 1024 // minimum fb alloc size
 #define FB_MAX_ALLOC_TIMES    50
 
@@ -41,7 +44,6 @@
 // Architecture info
 #define OMV_ARCH_STR            "K210" // 33 chars max
 #define OMV_BOARD_TYPE          "Maix"
-#define OMV_UNIQUE_ID_ADDR      0x1FF1E800
 
 // Flash sectors for the bootloader.
 // Flash FS sector, main FW sector, max sector.

@@ -74,6 +74,7 @@
 #include "sensor.h"
 #include "omv.h"
 #include "sipeed_conv.h"
+#include "ide_dbg.h"
 
 #define UART_BUF_LENGTH_MAX 269
 
@@ -240,6 +241,22 @@ MP_NOINLINE STATIC bool init_flash_spiffs()
 	return true;
 }
 
+#if MICROPY_ENABLE_COMPILER
+void pyexec_str(vstr_t* str) {
+    nlr_buf_t nlr;
+    if (nlr_push(&nlr) == 0) {
+        mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, str->buf, str->len, 0);
+        qstr source_name = lex->source_name;
+        mp_parse_tree_t parse_tree = mp_parse(lex, MP_PARSE_FILE_INPUT);
+        mp_obj_t module_fun = mp_compile(&parse_tree, source_name, MP_EMIT_OPT_NONE, true);
+        mp_call_function_0(module_fun);
+        nlr_pop();
+    } else {
+        // uncaught exception
+        mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
+    }
+}
+#endif
 
 void mp_task(
 	#if MICROPY_PY_THREAD 
@@ -285,10 +302,14 @@ soft_reset:
 #if MICROPY_HW_UART_REPL
 		{
 			mp_obj_t args[3] = {
-				MP_OBJ_NEW_SMALL_INT(MICROPY_UARTHS_DEVICE),
+				MP_OBJ_NEW_SMALL_INT(UART_DEVICE_1),
 				MP_OBJ_NEW_SMALL_INT(115200),
 				MP_OBJ_NEW_SMALL_INT(8),
 			};
+			fpioa_set_function(10, FUNC_UARTHS_RX);
+		    fpioa_set_function(9,  FUNC_UARTHS_TX);
+			fpioa_set_function(4, FUNC_UART1_RX);
+    		fpioa_set_function(5, FUNC_UART1_TX);
 			MP_STATE_PORT(Maix_stdio_uart) = machine_uart_type.make_new((mp_obj_t)&machine_uart_type, MP_ARRAY_SIZE(args), 0, args);
 			uart_attach_to_repl(MP_STATE_PORT(Maix_stdio_uart), true);
 		}
@@ -299,17 +320,44 @@ soft_reset:
 		mp_hal_set_interrupt_char(CHAR_CTRL_C);
 		pyexec_frozen_module("_boot.py");
 
-		for (;;) {
-			if (pyexec_mode_kind == PYEXEC_MODE_RAW_REPL) {
-				if (pyexec_raw_repl() != 0) {
-					break;
+		do{
+			ide_dbg_init();
+			while(!ide_dbg_script_ready())
+			{
+				nlr_buf_t nlr;
+				if (nlr_push(&nlr) == 0)
+				{
+					if (pyexec_mode_kind == PYEXEC_MODE_RAW_REPL)
+					{
+						if (pyexec_raw_repl() != 0)
+						{
+							break;
+						}
+					}
+					else
+					{
+						if (pyexec_friendly_repl() != 0)
+						{
+							break;
+						}
+					}
 				}
-			} else {
-				if (pyexec_friendly_repl() != 0) {
-					break;
+				nlr_pop();
+			}
+			if(ide_dbg_script_ready())
+			{
+				nlr_buf_t nlr;
+            	if (nlr_push(&nlr) == 0)
+				{
+					pyexec_str(ide_dbg_get_script());
+					nlr_pop();
+				}
+				else
+				{
+					mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
 				}
 			}
-		}
+		}while(MP_STATE_PORT(Maix_stdio_uart)->ide_debug_mode);
 
 #if MICROPY_PY_THREAD
 		mp_thread_deinit();

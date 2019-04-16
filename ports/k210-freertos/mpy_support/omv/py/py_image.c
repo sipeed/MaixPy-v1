@@ -6252,7 +6252,7 @@ mp_obj_t py_image_load_image(uint n_args, const mp_obj_t *args, mp_map_t *kw_arg
     const char *path = NULL;
     
     bool copy_to_fb = py_helper_keyword_int(n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_copy_to_fb), false);
-    // if (copy_to_fb) fb_update_jpeg_buffer();
+    if (copy_to_fb) fb_update_jpeg_buffer();
 
     // image_t image = {0};
 
@@ -6280,13 +6280,12 @@ mp_obj_t py_image_load_image(uint n_args, const mp_obj_t *args, mp_map_t *kw_arg
     image_t image = {0};
     memset(&image, 0, sizeof(image_t));
     
-    if( copy_to_fb)
-    {
-        image.data = MAIN_FB()->pixels;
-    }
-
     if(n_args >= 1)
     {
+        if(copy_to_fb)
+        {
+            image.data = MAIN_FB()->pixels;
+        }
         if( MP_OBJ_IS_STR(args[0]) )
         {
             imlib_load_image(&image, mp_obj_str_get_str(args[0]), NULL);
@@ -6298,20 +6297,18 @@ mp_obj_t py_image_load_image(uint n_args, const mp_obj_t *args, mp_map_t *kw_arg
     }
     else
     {
+        image.w = OMV_INIT_W;
+        image.h = OMV_INIT_H;
+        image.bpp = IMAGE_BPP_RGB565;
         if(copy_to_fb)
         {
-            image.w = OMV_INIT_W;
-            image.h = OMV_INIT_H;
-            image.bpp = IMAGE_BPP_RGB565;
             MAIN_FB()->w = image.w;
             MAIN_FB()->h = image.h;
             MAIN_FB()->bpp = image.bpp;
+            image.data = MAIN_FB()->pixels;
         }
         else
         {
-            image.w = OMV_INIT_W;
-            image.h = OMV_INIT_H;
-            image.bpp = IMAGE_BPP_RGB565;
             image.data = xalloc(image.w*image.h*2);
         }
     }

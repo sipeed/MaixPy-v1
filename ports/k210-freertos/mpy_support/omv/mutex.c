@@ -13,9 +13,11 @@
 // This is a standard implementation of mutexs on ARM processors following the ARM guide.
 // http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dai0321a/BIHEJCHB.html
 
+//TODO: optimize mutex
+
 void mutex_init(mutex_t *mutex)
 {
-	mutex->lock = xSemaphoreCreateMutexStatic(&mutex->buffer);
+	mutex->lock = 0;
 	mutex->tid = 0;
 }
 
@@ -23,7 +25,8 @@ void mutex_lock(mutex_t *mutex, uint32_t tid)
 {
     volatile int locked = 0;
 	// Wait for mutex to be unlocked
-	while(pdPASS != xSemaphoreTake(mutex->lock, portMAX_DELAY ));
+	while(mutex->lock != 0);
+	mutex->lock = 1;
 	mutex->tid = tid;
 
 }
@@ -38,9 +41,10 @@ int mutex_try_lock(mutex_t *mutex, uint32_t tid)
     // release the Kraken err.. the mutex, else attempt to lock it.
     if (mutex->tid == tid) {
         mutex_unlock(mutex, tid);
-    } 
-	else if (pdPASS == xSemaphoreTake(mutex->lock,portMAX_DELAY)) 
+    } //TODO: complete mutex
+	else if (mutex->lock == 0) 
 	{
+		mutex->lock = 1;
         mutex->tid = tid;
 		return 1;
 	}
@@ -50,7 +54,10 @@ int mutex_try_lock(mutex_t *mutex, uint32_t tid)
 
 void mutex_unlock(mutex_t *mutex, uint32_t tid)
 {
-	xSemaphoreGive(mutex->lock);
-	mutex->tid = 0;
+	if(mutex->tid = tid)
+	{
+		mutex->lock = 0;
+		mutex->tid = 0;
+	}
 }
 

@@ -164,6 +164,8 @@ void sensor_flush(void);
 
 int binocular_sensor_reset();
 
+void sensor_init0();
+
 // Reset the sensor to its default state.
 int sensor_reset();
 

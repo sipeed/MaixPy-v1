@@ -15,16 +15,18 @@ uint8_t g_ai_buf_in[OMV_INIT_W * OMV_INIT_H * 3] __attribute__((aligned(128)));
 // uint8_t g_ai_buf_out[OMV_INIT_W * OMV_INIT_H * 3] __attribute__((aligned(128)));
 uint8_t g_dvp_buf[OMV_INIT_W * OMV_INIT_H * 2] __attribute__((aligned(64)));
 // uint8_t g_lcd_buf[OMV_INIT_W * OMV_INIT_H * 2] __attribute__((aligned(64)));
-// uint8_t g_jpg_buf[OMV_JPEG_BUF_SIZE] __attribute__((aligned(64)));
-
 mutex_t lock_tmp;
 static framebuffer_t _fb_framebuffer0={0,0,0,0,0,0,0,g_dvp_buf,g_ai_buf_in};
 // static framebuffer_t _fb_framebuffer1={0,0,0,0,0,0,0,NULL,g_ai_buf_out};
-// static jpegbuffer_t _jpeg_fb_framebuffer={0,0,0,0,0,{},g_jpg_buf};
-
-
 framebuffer_t *fb_framebuffer = &_fb_framebuffer0;
-// jpegbuffer_t* jpeg_fb_framebuffer = &_jpeg_fb_framebuffer;
+
+#ifndef OMV_MINIMUM
+uint8_t g_jpg_buf[OMV_JPEG_BUF_SIZE] __attribute__((aligned(64)));
+static jpegbuffer_t _jpeg_fb_framebuffer={0,0,0,0,0,{},g_jpg_buf};
+jpegbuffer_t* jpeg_fb_framebuffer = &_jpeg_fb_framebuffer;
+#endif
+
+
 
 
 
@@ -48,21 +50,25 @@ uint32_t fb_buffer_size()
         }
     }
 }
-
 void fb_update_jpeg_buffer()
 {
-/*
     static int overflow_count = 0;
 
     if ((MAIN_FB()->bpp > 3) && JPEG_FB()->enabled) {
         // Lock FB
         if (mutex_try_lock(&JPEG_FB()->lock, MUTEX_TID_OMV)) {
-            if((OMV_JPEG_BUF_SIZE-64) < MAIN_FB()->bpp) {
+            if((OMV_JPEG_BUF_SIZE-IDE_DBG_MAX_PACKET) < MAIN_FB()->bpp) {
                 // image won't fit. so don't copy.
-                JPEG_FB()->w = 0; JPEG_FB()->h = 0; JPEG_FB()->size = 0;
+                JPEG_FB()->w = 0;
+                JPEG_FB()->h = 0;
+                JPEG_FB()->size = 0;
             } else {
-                memcpy(JPEG_FB()->pixels, MAIN_FB()->pixels, MAIN_FB()->bpp);
-                JPEG_FB()->w = MAIN_FB()->w; JPEG_FB()->h = MAIN_FB()->h; JPEG_FB()->size = MAIN_FB()->bpp;
+                memcpy(JPEG_FB()->pixels,
+                MAIN_FB()->pixels,
+                MAIN_FB()->bpp);
+                JPEG_FB()->w = MAIN_FB()->w;
+                JPEG_FB()->h = MAIN_FB()->h;
+                JPEG_FB()->size = MAIN_FB()->bpp;
             }
 
             // Unlock the framebuffer mutex
@@ -85,23 +91,26 @@ void fb_update_jpeg_buffer()
                     overflow_count = 60;
                     JPEG_FB()->quality = IM_MAX(1, (JPEG_FB()->quality/2));
                 }
-                JPEG_FB()->w = 0; JPEG_FB()->h = 0; JPEG_FB()->size = 0;
+                JPEG_FB()->w = 0;
+                JPEG_FB()->h = 0;
+                JPEG_FB()->size = 0;
             } else {
                 if (overflow_count) {
                     overflow_count--;
                 }
                 // No buffer overflow, increase quality up to max quality based on frame size
-                if (overflow_count == 0 && JPEG_FB()->quality
-                       < ((fb_buffer_size() > JPEG_QUALITY_THRESH) ? JPEG_QUALITY_LOW:JPEG_QUALITY_HIGH)) {
-                    JPEG_FB()->quality++;
-                }
+                // if (overflow_count == 0 && JPEG_FB()->quality
+                //        < ((fb_buffer_size() > JPEG_QUALITY_THRESH) ? JPEG_QUALITY_LOW:JPEG_QUALITY_HIGH)) {
+                //     JPEG_FB()->quality++;
+                // }
                 // Set FB from JPEG image
-                JPEG_FB()->w = dst.w; JPEG_FB()->h = dst.h; JPEG_FB()->size = dst.bpp;
+                JPEG_FB()->w = dst.w;
+                JPEG_FB()->h = dst.h;
+                JPEG_FB()->size = dst.bpp;
             }
 
             // Unlock the framebuffer mutex
             mutex_unlock(&JPEG_FB()->lock, MUTEX_TID_OMV);
         }
     }
-*/
 }

@@ -10,8 +10,7 @@
 #define __FRAMEBUFFER_H__
 #include <stdint.h>
 #include "mutex.h"
-
-
+#include "imlib_config.h"
 
 typedef struct framebuffer {
     int x,y;
@@ -31,12 +30,14 @@ typedef struct jpegbuffer {
     uint8_t* pixels;
 } __attribute__((aligned(8))) jpegbuffer_t;
 
-// extern jpegbuffer_t *jpeg_fb_framebuffer;
 extern framebuffer_t *fb_framebuffer;
-
 // Use these macros to get a pointer to main or JPEG framebuffer.
 #define MAIN_FB()           (fb_framebuffer)
-// #define JPEG_FB()           (jpeg_fb_framebuffer)
+
+#ifndef OMV_MINIMUM
+extern jpegbuffer_t *jpeg_fb_framebuffer;
+#define JPEG_FB()           (jpeg_fb_framebuffer)
+#endif
 
 // Use this macro to get a pointer to the free SRAM area located after the framebuffer.
 #define MAIN_FB_PIXELS()    (MAIN_FB()->pixels + fb_buffer_size())

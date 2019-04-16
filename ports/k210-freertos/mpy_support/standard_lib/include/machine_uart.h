@@ -15,6 +15,7 @@ typedef struct _machine_uart_obj_t {
 	bool active : 1;
 	bool attached_to_repl: 1;
 	bool rx_int_flag: 1;
+    volatile bool ide_debug_mode: 1;   // IDE debug mode or normal REPL mode
 	uint16_t read_buf_len;             
     uint16_t read_buf_head;    
     uint16_t read_buf_tail;
