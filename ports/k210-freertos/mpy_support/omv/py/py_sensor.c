@@ -26,6 +26,7 @@ static mp_obj_t py_binocular_sensor_reset() {
 
 static mp_obj_t py_sensor_reset() {
     PY_ASSERT_FALSE_MSG(sensor_reset() != 0, "Reset Failed");
+    sensor_run(1);
     return mp_const_none;
 }
 
