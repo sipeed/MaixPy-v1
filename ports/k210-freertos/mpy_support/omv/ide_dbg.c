@@ -101,22 +101,24 @@ ack_start:
         }
 
         case USBDBG_FRAME_SIZE:
-            // Return 0 if FB is locked or not ready.
-            ((uint32_t*)ide_dbg_cmd_buf)[0] = 0;
-            // Try to lock FB. If header size == 0 frame is not ready
-            if (mutex_try_lock(&(JPEG_FB()->lock), MUTEX_TID_IDE))
             {
-                // If header size == 0 frame is not ready
-                if (JPEG_FB()->size == 0)
+                // Return 0 if FB is locked or not ready.
+                ((uint32_t*)ide_dbg_cmd_buf)[0] = 0;
+                // Try to lock FB. If header size == 0 frame is not ready
+                if (mutex_try_lock(&(JPEG_FB()->lock), MUTEX_TID_IDE))
                 {
-                    // unlock FB
-                    mutex_unlock(&(JPEG_FB()->lock), MUTEX_TID_IDE);
-                } else
-                {
-                    // Return header w, h and size/bpp
-                    ((uint32_t*)ide_dbg_cmd_buf)[0] = JPEG_FB()->w;
-                    ((uint32_t*)ide_dbg_cmd_buf)[1] = JPEG_FB()->h;
-                    ((uint32_t*)ide_dbg_cmd_buf)[2] = JPEG_FB()->size;
+                    // If header size == 0 frame is not ready
+                    if (JPEG_FB()->size == 0)
+                    {
+                        // unlock FB
+                        mutex_unlock(&(JPEG_FB()->lock), MUTEX_TID_IDE);
+                    } else
+                    {
+                        // Return header w, h and size/bpp
+                        ((uint32_t*)ide_dbg_cmd_buf)[0] = JPEG_FB()->w;
+                        ((uint32_t*)ide_dbg_cmd_buf)[1] = JPEG_FB()->h;
+                        ((uint32_t*)ide_dbg_cmd_buf)[2] = JPEG_FB()->size;
+                    }
                 }
             }
             cmd = USBDBG_NONE;

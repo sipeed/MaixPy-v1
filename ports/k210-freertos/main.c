@@ -302,14 +302,12 @@ soft_reset:
 #if MICROPY_HW_UART_REPL
 		{
 			mp_obj_t args[3] = {
-				MP_OBJ_NEW_SMALL_INT(UART_DEVICE_1),
+				MP_OBJ_NEW_SMALL_INT(MICROPY_UARTHS_DEVICE),
 				MP_OBJ_NEW_SMALL_INT(115200),
 				MP_OBJ_NEW_SMALL_INT(8),
 			};
-			fpioa_set_function(10, FUNC_UARTHS_RX);
-		    fpioa_set_function(9,  FUNC_UARTHS_TX);
-			fpioa_set_function(4, FUNC_UART1_RX);
-    		fpioa_set_function(5, FUNC_UART1_TX);
+			fpioa_set_function(4, FUNC_UARTHS_RX);
+		    fpioa_set_function(5,  FUNC_UARTHS_TX);
 			MP_STATE_PORT(Maix_stdio_uart) = machine_uart_type.make_new((mp_obj_t)&machine_uart_type, MP_ARRAY_SIZE(args), 0, args);
 			uart_attach_to_repl(MP_STATE_PORT(Maix_stdio_uart), true);
 		}

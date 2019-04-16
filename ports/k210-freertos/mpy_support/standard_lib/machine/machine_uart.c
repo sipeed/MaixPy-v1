@@ -205,14 +205,14 @@ int uart_rx_irq(void *ctx)
 
 void ENABLE_RX_INT(machine_uart_obj_t *self)
 {
-	uart_irq_register(self->uart_num, UART_RECEIVE, uart_rx_irq, self, 2);
+	uart_irq_register(self->uart_num, UART_RECEIVE, uart_rx_irq, self, 1);
 	self->rx_int_flag = 1;
 }
 
 void ENABLE_HSRX_INT(machine_uart_obj_t *self)
 {
 	self->rx_int_flag = 1;
-	uarths_set_irq(UARTHS_RECEIVE,uart_rx_irq,self,2);
+	uarths_set_irq(UARTHS_RECEIVE,uart_rx_irq,self, 1);
 }
 
 
@@ -462,22 +462,17 @@ STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, co
 		msleep(1);
 	    uart_config(self->uart_num, (size_t)self->baudrate, (size_t)self->bitwidth, self->stop,  self->parity);
 		uart_set_receive_trigger(self->uart_num, UART_RECEIVE_FIFO_1);
-		printk("---1\r\n");
 		ENABLE_RX_INT(self);
-		printk("---2\r\n");
 	}
 	if(args[ARG_ide].u_bool)
 	{
 		self->ide_debug_mode = true;
 		ide_dbg_init();
-		printk("debug mode:%d\r\n", self->ide_debug_mode);
 	}
 	else
 	{
 		self->ide_debug_mode = false;
-		printk("debug mode:%d\r\n", self->ide_debug_mode);
 	}
-	printk("---3\r\n");
 }
 
 STATIC mp_obj_t machine_uart_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
