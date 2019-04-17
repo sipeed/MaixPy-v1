@@ -262,7 +262,7 @@ bool get_host_byname(esp8285_obj* nic,uint8_t* host,uint32_t len,uint8_t* out_ip
 	int index = 0;
 	if(false == sATCIPDOMAIN(nic,host))
 	{
-		printf("[MaixPy] %s | get_host_byname failed\n",__func__);
+		mp_printf(&mp_plat_print, "[MaixPy] %s | get_host_byname failed\n",__func__);
 		return false;
 	}
 	uint8_t IP_buf[16]={0};
@@ -287,7 +287,7 @@ bool get_ipconfig(esp8285_obj* nic, ipconfig_obj* ipconfig)
 	cur = strstr(nic->buffer, "ip");
 	if(cur == NULL)
 	{
-		printf("[MaixPy] %s | esp8285_ipconfig could'n get ip\n",__func__);
+		mp_printf(&mp_plat_print, "[MaixPy] %s | esp8285_ipconfig could'n get ip\n",__func__);
 		return false;
 	}
 	char ip_buf[16] = {0};
@@ -296,7 +296,7 @@ bool get_ipconfig(esp8285_obj* nic, ipconfig_obj* ipconfig)
 	cur = strstr(nic->buffer, "gateway");
 	if(cur == NULL)
 	{
-		printf("[MaixPy] %s | esp8285_ipconfig could'n get gateway\n",__func__);
+		mp_printf(&mp_plat_print, "[MaixPy] %s | esp8285_ipconfig could'n get gateway\n",__func__);
 		return false;
 	}
 	char gateway_buf[16] = {0};
@@ -305,7 +305,7 @@ bool get_ipconfig(esp8285_obj* nic, ipconfig_obj* ipconfig)
 	cur = strstr(nic->buffer, "netmask");
 	if(cur == NULL)
 	{
-		printf("[MaixPy] %s | esp8285_ipconfig could'n get netmask\n",__func__);
+		mp_printf(&mp_plat_print, "[MaixPy] %s | esp8285_ipconfig could'n get netmask\n",__func__);
 		return false;
 	}
 	char netmask_buf[16] = {0};

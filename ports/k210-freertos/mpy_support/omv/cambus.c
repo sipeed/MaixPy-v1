@@ -11,6 +11,7 @@
 #include "cambus.h"
 #include "dvp.h"
 #include "gc0328.h"
+#include "py/mpprint.h"
 #define I2C_FREQUENCY   (100000)
 #define I2C_TIMEOUT     (1000)
 
@@ -49,7 +50,7 @@ int cambus_scan_gc0328(void)
     uint8_t id = dvp_sccb_receive_data(GC0328_ADDR, 0xf0);
     if (id != 0x9d)
     {
-        printf("error gc0328 detect, ret id is 0x%x\r\n", id);
+        mp_printf(&mp_plat_print, "error gc0328 detect, ret id is 0x%x\r\n", id);
         return 0;
     }
     return id;

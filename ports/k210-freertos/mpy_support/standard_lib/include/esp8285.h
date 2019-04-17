@@ -399,6 +399,8 @@ bool sATCIPDOMAIN(esp8285_obj* nic,uint8_t* domain_name);
 bool qATCWJAP_CUR(esp8285_obj* nic);
 bool sATCIPSTA_CUR(esp8285_obj* nic,uint8_t* ip,uint8_t* gateway,uint8_t* netmask);
 bool qATCIPSTA_CUR(esp8285_obj* nic);
+bool eINIT(esp8285_obj* nic);
+bool get_ipconfig(esp8285_obj* nic, ipconfig_obj* ipconfig);
 
 /*
  * +IPD,len:data

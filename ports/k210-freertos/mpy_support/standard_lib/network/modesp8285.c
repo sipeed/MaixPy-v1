@@ -294,7 +294,7 @@ STATIC int cc3k_socket_ioctl(mod_network_socket_obj_t *socket, mp_uint_t request
 STATIC mp_uint_t esp8285_socket_close(mod_network_socket_obj_t *socket) {
 	if(&mod_network_nic_type_esp8285 != mp_obj_get_type(MP_OBJ_TO_PTR(socket->nic)))
 	{
-		printf("[MaixPy] %s | esp8285_socket_connect can not get nic\n",__func__);
+		mp_printf(&mp_plat_print, "[MaixPy] %s | esp8285_socket_connect can not get nic\n",__func__);
 		return -1;
 	}
 	nic_obj_t* self = MP_OBJ_TO_PTR(socket->nic);
@@ -305,7 +305,7 @@ STATIC mp_uint_t esp8285_socket_close(mod_network_socket_obj_t *socket) {
 STATIC mp_uint_t esp8285_socket_recv(mod_network_socket_obj_t *socket, byte *buf, mp_uint_t len, int *_errno) {
 	if(&mod_network_nic_type_esp8285 != mp_obj_get_type(MP_OBJ_TO_PTR(socket->nic)))
 	{
-		printf("[MaixPy] %s | esp8285_socket_connect can not get nic\n",__func__);
+		mp_printf(&mp_plat_print, "[MaixPy] %s | esp8285_socket_connect can not get nic\n",__func__);
 		*_errno = MP_EPIPE;
 		return -1;
 	}
@@ -321,14 +321,14 @@ STATIC mp_uint_t esp8285_socket_send(mod_network_socket_obj_t *socket, const byt
 
 	if(&mod_network_nic_type_esp8285 != mp_obj_get_type(MP_OBJ_TO_PTR(socket->nic)))
 	{
-		printf("[MaixPy] %s | esp8285_socket_connect can not get nic\n",__func__);
+		mp_printf(&mp_plat_print, "[MaixPy] %s | esp8285_socket_connect can not get nic\n",__func__);
 		*_errno = MP_EPIPE;
 		return -1;
 	}
 	nic_obj_t* self = MP_OBJ_TO_PTR(socket->nic);
 	if(0 == esp_send(&self->esp8285,buf,len, (uint32_t)(socket->timeout*1000) ) )
 	{
-		printf("[MaixPy] %s | send data failed\n",__func__);
+		mp_printf(&mp_plat_print, "[MaixPy] %s | send data failed\n",__func__);
 		*_errno = MP_EIO;
 		return -1;
 	}
@@ -346,7 +346,7 @@ STATIC int esp8285_socket_socket(mod_network_socket_obj_t *socket, int *_errno) 
 STATIC int esp8285_socket_connect(mod_network_socket_obj_t *socket, byte *ip, mp_uint_t port, int *_errno) {
 	if(&mod_network_nic_type_esp8285 != mp_obj_get_type(MP_OBJ_TO_PTR(socket->nic)))
 	{
-		printf("[MaixPy] %s | esp8285_socket_connect can not get nic\n",__func__);
+		mp_printf(&mp_plat_print, "[MaixPy] %s | esp8285_socket_connect can not get nic\n",__func__);
 		*_errno = -1;
 		return -1;
 	}
@@ -435,7 +435,7 @@ STATIC mp_obj_t esp8285_nic_connect(size_t n_args, const mp_obj_t *pos_args, mp_
 	//get nic
 	if(&mod_network_nic_type_esp8285 == mp_obj_get_type(pos_args[0]))
 	{
-		printf("[MaixPy] %s | get nic\n",__func__);
+		mp_printf(&mp_plat_print, "[MaixPy] %s | get nic\n",__func__);
 		self = pos_args[0];
 	}
     // get ssid

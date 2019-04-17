@@ -77,7 +77,6 @@ wav_err_t wav_init(wav_decode_t *wav_obj,void* head, uint32_t file_size, uint32_
 	index += 4;
 	if (LG_READ_WORD(index) != 0x10)//sub chunk1 size maybe can pass 
 	{
-		printk("[MAIXPY]: chun1 size = %d\r\n",LG_READ_WORD(index));
 		return UNVALID_FMT_SIZE;
 	}
 
@@ -136,7 +135,7 @@ mp_obj_t wav_play_process(audio_t* audio,uint32_t file_size)
 
 	if(NULL == audio->play_obj)
 	{
-		printf("[MAIXPY]: Can not create decode object\n");
+		mp_printf(&mp_plat_print, "[MAIXPY]: Can not create decode object\n");
 		m_del(mp_obj_list_t,ret_list,1);
 		m_del(wav_decode_t,audio->play_obj,1);
 		vfs_internal_close(audio->fp,&close_code);
@@ -144,7 +143,7 @@ mp_obj_t wav_play_process(audio_t* audio,uint32_t file_size)
 	uint32_t read_num = vfs_internal_read(audio->fp,audio->buf,500,&err_code);//read head
 	if(err_code != 0)
 	{
-		printf("[MAIXPY]: read head error close file\n");
+		mp_printf(&mp_plat_print, "[MAIXPY]: read head error close file\n");
 		m_del(mp_obj_list_t,ret_list,1);
 		m_del(wav_decode_t,audio->play_obj,1);
 		vfs_internal_close(audio->fp,&close_code);
@@ -154,21 +153,21 @@ mp_obj_t wav_play_process(audio_t* audio,uint32_t file_size)
 	//debug
 	if(status != OK)
 	{
-		printf("[MAIXPY]: wav error code : %d\n",status);
+		mp_printf(&mp_plat_print, "[MAIXPY]: wav error code : %d\n",status);
 		m_del(mp_obj_list_t,ret_list,1);
 		m_del(wav_decode_t,audio->play_obj,1);
 		vfs_internal_close(audio->fp,&close_code);
 		mp_raise_msg(&mp_type_OSError,"wav init error");
 	}
 	wav_decode_t* wav_fmt = audio->play_obj;
-	printf("[MAIXPY]: result = %d\n", status);
-	printf("[MAIXPY]: numchannels = %d\n", wav_fmt->numchannels);
-	printf("[MAIXPY]: samplerate = %d\n", wav_fmt->samplerate);
-	printf("[MAIXPY]: byterate = %d\n", wav_fmt->byterate);
-	printf("[MAIXPY]: blockalign = %d\n", wav_fmt->blockalign);
-	printf("[MAIXPY]: bitspersample = %d\n", wav_fmt->bitspersample);
-	printf("[MAIXPY]: datasize = %d\n", wav_fmt->datasize);
-	// printf("[MAIXPY]: head_len = %d\n", head_len);
+	mp_printf(&mp_plat_print, "[MAIXPY]: result = %d\n", status);
+	mp_printf(&mp_plat_print, "[MAIXPY]: numchannels = %d\n", wav_fmt->numchannels);
+	mp_printf(&mp_plat_print, "[MAIXPY]: samplerate = %d\n", wav_fmt->samplerate);
+	mp_printf(&mp_plat_print, "[MAIXPY]: byterate = %d\n", wav_fmt->byterate);
+	mp_printf(&mp_plat_print, "[MAIXPY]: blockalign = %d\n", wav_fmt->blockalign);
+	mp_printf(&mp_plat_print, "[MAIXPY]: bitspersample = %d\n", wav_fmt->bitspersample);
+	mp_printf(&mp_plat_print, "[MAIXPY]: datasize = %d\n", wav_fmt->datasize);
+	// mp_printf(&mp_plat_print, "[MAIXPY]: head_len = %d\n", head_len);
 	mp_obj_list_append(ret_list, mp_obj_new_int(wav_fmt->numchannels));
 	mp_obj_list_append(ret_list, mp_obj_new_int(wav_fmt->samplerate));
 	mp_obj_list_append(ret_list, mp_obj_new_int(wav_fmt->byterate));
@@ -178,7 +177,7 @@ mp_obj_t wav_play_process(audio_t* audio,uint32_t file_size)
 	vfs_internal_seek(audio->fp,head_len,VFS_SEEK_SET,err_code);
 	if(err_code != 0)
 	{
-		printf("[MAIXPY]: seek error  close file\n");
+		mp_printf(&mp_plat_print, "[MAIXPY]: seek error  close file\n");
 		m_del(mp_obj_list_t,ret_list,1);
 		m_del(wav_decode_t,audio->play_obj,1);
 		vfs_internal_close(audio->fp,&close_code);
@@ -208,7 +207,7 @@ mp_obj_t wav_play(audio_t* audio)
 	uint32_t err_code = 0;
 	if(play_obj->audio_buf[play_obj->read_order].empty)//empty ,altread to read
 	{
-		// printf("[MAIXPY]: read_order = %d\n",play_obj->read_order);
+		// mp_printf(&mp_plat_print, "[MAIXPY]: read_order = %d\n",play_obj->read_order);
 		read_num = vfs_internal_read(audio->fp, 
 									 play_obj->audio_buf[play_obj->read_order].buf, 
 									 audio->points * sizeof(uint32_t), 
@@ -233,7 +232,7 @@ mp_obj_t wav_play(audio_t* audio)
 	}
 	if(!wav_play_obj->audio_buf[wav_play_obj->play_order].empty)//not empty ,already to play
 	{
-		// printf("[MAIXPY]: play_order = %d\n",wav_play_obj->play_order);
+		// mp_printf(&mp_plat_print, "[MAIXPY]: play_order = %d\n",wav_play_obj->play_order);
 		i2s_play(i2s_dev->i2s_num,
 					WAV_PLAY_DMA_CHANNEL,
 					wav_play_obj->audio_buf[wav_play_obj->play_order].buf,
@@ -261,7 +260,7 @@ mp_obj_t wav_record_process(audio_t* audio,uint32_t channels)//channels = Number
 	audio->record_obj = m_new(wav_encode_t,1);//new format obj
 	if(NULL == audio->record_obj)
 	{
-		printf("[MAIXPY]: Can not create encode object\n");
+		mp_printf(&mp_plat_print, "[MAIXPY]: Can not create encode object\n");
 		m_del(wav_encode_t,audio->record_obj,1);
 		vfs_internal_close(audio->fp,&close_code);
 	}
@@ -284,7 +283,7 @@ mp_obj_t wav_record_process(audio_t* audio,uint32_t channels)//channels = Number
 	vfs_internal_seek(audio->fp,44,VFS_SEEK_SET,&err_code);//head length 44
 	if(err_code != 0)
 	{
-		printf("[MAIXPY]: seek error  close file\n");
+		mp_printf(&mp_plat_print, "[MAIXPY]: seek error  close file\n");
 		m_del(wav_encode_t,audio->record_obj,1);
 		vfs_internal_close(audio->fp,&close_code);
 		mp_raise_OSError(err_code);
@@ -313,7 +312,7 @@ mp_obj_t wav_record(audio_t* audio,dmac_channel_number_t DMA_channel)
 	uint32_t err_code = 0;
 	if(!record_obj->audio_buf[record_obj->write_order].empty)//empty ,altread to read
 	{
-		// printf("[MAIXPY]: read_order = %d\n",play_obj->read_order);
+		// mp_printf(&mp_plat_print, "[MAIXPY]: read_order = %d\n",play_obj->read_order);
 	}
 
 	if(record_obj->audio_buf[record_obj->record_order].empty)//not empty ,already to play
@@ -327,7 +326,7 @@ int wav_process_data(audio_t* audio)//GO righit channel record, right chnanel pl
 	uint32_t err_code = 0;
 
 	// for(int i = 0; i < audio->points; i++){
-	// 	printf("data[%d] : LSB = %x | MSB = %x\n",i, audio->buf[i] & 0xffff, (audio->buf[i] >> 16) & 0xffff);
+	// 	mp_printf(&mp_plat_print, "data[%d] : LSB = %x | MSB = %x\n",i, audio->buf[i] & 0xffff, (audio->buf[i] >> 16) & 0xffff);
 	// }
 	if(1 == wav_encode->format.numchannels){//mono audio record | Go mic right 
 
@@ -371,7 +370,7 @@ void wav_finish(audio_t* audio)
 		vfs_internal_write(audio->fp, &wav_encode->file, 12, &err_code);//write file chunk
 		if(err_code != 0)
 		{
-			printf("[MAIXPY]: write file chunk error  close file\n");
+			mp_printf(&mp_plat_print, "[MAIXPY]: write file chunk error  close file\n");
 			m_del(wav_encode_t,audio->record_obj,1);
 			vfs_internal_close(audio->fp,&close_code);
 			mp_raise_OSError(err_code);
@@ -380,15 +379,15 @@ void wav_finish(audio_t* audio)
 		wav_fmt->numchannels = 2;//always is 2,because i2s_play only play 2-channels audoi
 		wav_fmt->blockalign = wav_fmt->numchannels * (wav_fmt->bitspersample/8);// channel * (bit_per_second / 8)
 		wav_fmt->byterate = wav_fmt->samplerate * wav_fmt->blockalign; // samplerate * blockalign
-		printf("[MAIXPY]: numchannels = %d\n", wav_fmt->numchannels);
-		printf("[MAIXPY]: samplerate = %d\n", wav_fmt->samplerate);
-		printf("[MAIXPY]: byterate = %d\n", wav_fmt->byterate);
-		printf("[MAIXPY]: blockalign = %d\n", wav_fmt->blockalign);
-		printf("[MAIXPY]: bitspersample = %d\n", wav_fmt->bitspersample);
+		mp_printf(&mp_plat_print, "[MAIXPY]: numchannels = %d\n", wav_fmt->numchannels);
+		mp_printf(&mp_plat_print, "[MAIXPY]: samplerate = %d\n", wav_fmt->samplerate);
+		mp_printf(&mp_plat_print, "[MAIXPY]: byterate = %d\n", wav_fmt->byterate);
+		mp_printf(&mp_plat_print, "[MAIXPY]: blockalign = %d\n", wav_fmt->blockalign);
+		mp_printf(&mp_plat_print, "[MAIXPY]: bitspersample = %d\n", wav_fmt->bitspersample);
 		vfs_internal_write(audio->fp, &wav_encode->format, 24, &err_code);//write fromate chunk
 		if(err_code != 0)
 		{
-			printf("[MAIXPY]: write formate chunk error close file\n");
+			mp_printf(&mp_plat_print, "[MAIXPY]: write formate chunk error close file\n");
 			m_del(wav_encode_t,audio->record_obj,1);
 			vfs_internal_close(audio->fp,&close_code);
 			mp_raise_OSError(err_code);
@@ -396,7 +395,7 @@ void wav_finish(audio_t* audio)
 		vfs_internal_write(audio->fp, &wav_encode->data, 8 ,&err_code);//write data chunk
 		if(err_code != 0)
 		{
-			printf("[MAIXPY]: write data chunk error  close file\n");
+			mp_printf(&mp_plat_print, "[MAIXPY]: write data chunk error  close file\n");
 			m_del(wav_encode_t,audio->record_obj,1);
 			vfs_internal_close(audio->fp,&close_code);
 			mp_raise_OSError(err_code);

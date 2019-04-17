@@ -571,9 +571,7 @@ STATIC mp_obj_t machine_i2c_scan(mp_obj_t self_in) {
     // 7-bit addresses 0b0000xxx and 0b1111xxx are reserved
     for (int addr = 0x08; addr < 0x78; ++addr) {
         // int ret = i2c_p->writeto(self, addr, NULL, 0, true);
-        // printf("find %x\n",addr);
         int ret = maix_i2c_recv_data(self->i2c, addr, NULL, 0, &temp, 1);
-        // printf("ret:%x\n",ret);
         if (ret == 0) {
             mp_obj_list_append(list, MP_OBJ_NEW_SMALL_INT(addr));
         }

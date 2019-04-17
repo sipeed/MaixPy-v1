@@ -3,6 +3,7 @@
 #include "sysctl.h"
 #include "gpiohs.h"
 #include "fpioa.h"
+#include "py/mpprint.h"
 
 static uint8_t cs_num, clk_num, mosi_num, miso_num;
 
@@ -188,7 +189,7 @@ uint8_t PS2X_read_gamepad(uint8_t motor1, uint8_t motor2)
     buttons = (uint16_t)(PS2data[4] << 8) + PS2data[3]; //store as one value for multiple functions
 
     last_read = sysctl_get_time_us();
-    // printf("%ld\r\n",sysctl_get_time_us()-tm0);
+    // mp_printf(&mp_plat_print, "%ld\r\n",sysctl_get_time_us()-tm0);
     return ((PS2data[1] & 0xf0) == 0x70); // 1 = OK = analog mode - 0 = NOK
 }
 
@@ -208,8 +209,8 @@ uint8_t PS2X_config_gamepad(uint8_t pressures, uint8_t rumble)
     //If still anything but 41, 73 or 79, then it's not talking
     if (PS2data[1] != 0x41 && PS2data[1] != 0x73 && PS2data[1] != 0x79)
     {
-        printf("Controller mode not matched or no controller found\r\n");
-        printf("Expected 0x41, 0x73 or 0x79, but got 0x%x\r\n", PS2data[1]);
+        mp_printf(&mp_plat_print, "Controller mode not matched or no controller found\r\n");
+        mp_printf(&mp_plat_print, "Expected 0x41, 0x73 or 0x79, but got 0x%x\r\n", PS2data[1]);
         return 1; //return error code 1
     }
 
@@ -266,8 +267,8 @@ uint8_t PS2X_config_gamepad(uint8_t pressures, uint8_t rumble)
 
         if (y == 10)
         {
-            printf("Controller not accepting commands\r\n");
-            printf("mode stil set at 0x%x\r\n", PS2data[1]);
+            mp_printf(&mp_plat_print, "Controller not accepting commands\r\n");
+            mp_printf(&mp_plat_print, "mode stil set at 0x%x\r\n", PS2data[1]);
             return 2; //exit function with error
         }
         read_delay += 1; //add 1ms to read_delay
@@ -290,12 +291,12 @@ static void PS2X_sendCommandString(uint8_t *data, uint8_t len)
     PS2X_CS_SET();      //high disable joystick
     msleep(read_delay); //wait a few
 
-    printf("OUT:IN Configure");
+    mp_printf(&mp_plat_print, "OUT:IN Configure");
     for (int i = 0; i < len; i++)
     {
-        printf(" 0x%x: 0x%x\r\n", data[i], temp[i]);
+        mp_printf(&mp_plat_print, " 0x%x: 0x%x\r\n", data[i], temp[i]);
     }
-    printf("\r\n");
+    mp_printf(&mp_plat_print, "\r\n");
 #else
     PS2X_CS_CLR(); // low enable joystick
     for (int y = 0; y < len; y++)

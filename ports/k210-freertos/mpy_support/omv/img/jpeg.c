@@ -24,8 +24,6 @@
 
 #define TIME_JPEG   (0)
 
-#define printf 
-
 #if OMV_HARDWARE_JPEG
 
 #define MCU_W                       (8)
@@ -151,7 +149,7 @@ void HAL_JPEG_DataReadyCallback (JPEG_HandleTypeDef *hjpeg, uint8_t *pDataOut, u
 
 void HAL_JPEG_ErrorCallback(JPEG_HandleTypeDef *hjpeg)
 {
-    printf("JPEG decode/encode error\n");
+    mp_printf(&mp_plat_print, "JPEG decode/encode error\n");
 }
 
 bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc)
@@ -214,7 +212,7 @@ bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc)
     dst->bpp = jpeg_enc.out_size;
 
 #if (TIME_JPEG==1)
-    printf("time: %lums\n", HAL_GetTick() - start);
+    mp_printf(&mp_plat_print, "time: %lums\n", HAL_GetTick() - start);
 #endif
 
     HAL_JPEG_DeInit(&JPEG_Handle);
@@ -1296,7 +1294,7 @@ bool jpeg_compress(image_t *src, image_t *dst, int quality, bool realloc)
     dst->bpp = jpeg_buf.idx;
     dst->data = jpeg_buf.buf;
     #if (TIME_JPEG==1)
-    printf("time: %lums\n", HAL_GetTick() - start);
+    mp_printf(&mp_plat_print, "time: %lums\n", HAL_GetTick() - start);
     #endif
 
 jpeg_overflow:

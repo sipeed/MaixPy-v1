@@ -114,20 +114,20 @@ int avi_init(uint8_t* buf, uint32_t size, avi_t* avi)
 #ifdef VIDEO_DEBUG
 void avi_debug_info(avi_t* avi)
 {
-    printf("avi->SecPerFrame:%d\r\n",avi->usec_per_frame);
-	printf("avi->TotalFrame:%d\r\n",avi->total_frame);
-	printf("avi->Width:%d\r\n",avi->width);
-	printf("avi->Height:%d\r\n",avi->height);
-	printf("avi->AudioType:%d\r\n",avi->audio_format);
-	printf("avi->SampleRate:%d\r\n",avi->audio_sample_rate);
-	printf("avi->Channels:%d\r\n",avi->audio_channels);
-	printf("avi->AudioBufSize:%d\r\n",avi->audio_buf_size);
-	printf("avi->VideoFLAG:%s\r\n",avi->video_flag); 
-	printf("avi->AudioFLAG:%s\r\n",avi->audio_flag); 
+    mp_printf(&mp_plat_print, "avi->SecPerFrame:%d\r\n",avi->usec_per_frame);
+	mp_printf(&mp_plat_print, "avi->TotalFrame:%d\r\n",avi->total_frame);
+	mp_printf(&mp_plat_print, "avi->Width:%d\r\n",avi->width);
+	mp_printf(&mp_plat_print, "avi->Height:%d\r\n",avi->height);
+	mp_printf(&mp_plat_print, "avi->AudioType:%d\r\n",avi->audio_format);
+	mp_printf(&mp_plat_print, "avi->SampleRate:%d\r\n",avi->audio_sample_rate);
+	mp_printf(&mp_plat_print, "avi->Channels:%d\r\n",avi->audio_channels);
+	mp_printf(&mp_plat_print, "avi->AudioBufSize:%d\r\n",avi->audio_buf_size);
+	mp_printf(&mp_plat_print, "avi->VideoFLAG:%s\r\n",avi->video_flag); 
+	mp_printf(&mp_plat_print, "avi->AudioFLAG:%s\r\n",avi->audio_flag); 
 
-    printf("\nfps:%.2f\n", 1000.0/(avi->usec_per_frame/1000.0));
-    printf("audio channels:%d\n", avi->audio_channels);
-    printf("audio sample rate:%d\n", avi->audio_sample_rate*10);
+    mp_printf(&mp_plat_print, "\nfps:%.2f\n", 1000.0/(avi->usec_per_frame/1000.0));
+    mp_printf(&mp_plat_print, "audio channels:%d\n", avi->audio_channels);
+    mp_printf(&mp_plat_print, "audio sample rate:%d\n", avi->audio_sample_rate*10);
 }
 #endif
 

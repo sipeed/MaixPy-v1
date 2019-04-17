@@ -377,7 +377,7 @@ array_t *imlib_selective_search(image_t *src, float t, int min_size, float a1, f
         }
 
         if (best_i == -1) {
-            printf("failed to build tree\n");
+            mp_printf(&mp_plat_print, "failed to build tree\n");
             break;
         }
 

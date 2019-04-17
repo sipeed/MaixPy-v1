@@ -111,7 +111,7 @@ mp_obj_t py_cpufreq_set_frequency(uint n_args, const mp_obj_t *args, mp_map_t *k
             continue;
 		res = sys_spiffs_write(FREQ_STORE_ADDR + i*4,4,(uint8_t* )(&store_freq[i]));
 	}
-    printf("\r\n");
+    mp_printf(&mp_plat_print, "\r\n");
     sysctl->soft_reset.soft_reset = 1;//reboot
     // if(result == 0)
     //     nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "Can not set frequency!"));

@@ -44,7 +44,6 @@ wav_err_t wav_init(wav_decode_t *wav_obj,void* head, uint32_t file_size, uint32_
 	index += 4;
 	if (LG_READ_WORD(index) != 0x10)//sub chunk1 size maybe can pass 
 	{
-		printk("[MAIXPY]: chun1 size = %d\r\n",LG_READ_WORD(index));
 		return UNVALID_FMT_SIZE;
 	}
 
@@ -140,7 +139,7 @@ wav_err_t wav_init(wav_decode_t *wav_obj,void* head, uint32_t file_size, uint32_
 // 	if (wav_obj->buff0_len > wav_obj->buff0_read_len)
 // 	{
 // 		wav_obj->buff_end = 1;
-// 		printf("%s buf_end=1\r\n", __func__);
+// 		mp_printf(&mp_plat_print, "%s buf_end=1\r\n", __func__);
 // 	}
 
 // 	wav_obj->buff_current = wav_obj->buff0;

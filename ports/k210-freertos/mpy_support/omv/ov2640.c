@@ -579,7 +579,7 @@ static const uint8_t saturation_regs[NUM_SATURATION_LEVELS + 1][5] = {
 
 static int reset(sensor_t *sensor)
 {
-	printf("[MaixPy] %s | sensor->slv_addr = %x\n",__func__,sensor->slv_addr);
+	mp_printf(&mp_plat_print, "[MaixPy] %s | sensor->slv_addr = %x\n",__func__,sensor->slv_addr);
     int i=0;
     const uint8_t (*regs)[2];
 

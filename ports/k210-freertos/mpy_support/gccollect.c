@@ -76,6 +76,6 @@ void gc_collect(void) {
 #endif
     // end the GC
     gc_collect_end();
-	//printf("#gc use: %d us\r\n",(read_cycle() - cycle)/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU) / 1000000UL));
+	//mp_printf(&mp_plat_print, "#gc use: %d us\r\n",(read_cycle() - cycle)/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU) / 1000000UL));
 }
 

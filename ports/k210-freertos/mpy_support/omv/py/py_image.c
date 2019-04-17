@@ -483,7 +483,6 @@ static mp_obj_t py_image_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value
             }
         }
     }
-    printf("--------subsrc-------\n");
     return MP_OBJ_NULL; // op not supported
 }
 
@@ -5408,12 +5407,12 @@ static mp_obj_t py_image_dump_roi(uint n_args, const mp_obj_t *args, mp_map_t *k
 	{
 		for(x=x0;x<x0+w;x++) //TODO:pixel format
 		{
-			printf("0x%02x 0x%02x; ",ptr[2*width*y+2*x], ptr[2*width*y+2*x+1]);
-			if((x-x0)%8==7) printf("\n");
+			mp_printf(&mp_plat_print, "0x%02x 0x%02x; ",ptr[2*width*y+2*x], ptr[2*width*y+2*x+1]);
+			if((x-x0)%8==7) mp_printf(&mp_plat_print, "\n");
 		}
-		printf("\n");
+		mp_printf(&mp_plat_print, "\n");
 	}
-	printf("\n");
+	mp_printf(&mp_plat_print, "\n");
 	return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_dump_roi_obj, 2, py_image_dump_roi);
@@ -5441,7 +5440,7 @@ static mp_obj_t py_image_conv3(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
 		}
 	} else 
 	{
-		printf("please input 9 kern parm!\n");
+		mp_printf(&mp_plat_print, "please input 9 kern parm!\n");
 		return mp_const_none;
 	}
 	imlib_conv3(arg_img, krn);
@@ -5516,7 +5515,7 @@ static mp_obj_t py_image_resize(mp_obj_t img_obj, mp_obj_t *w_obj, mp_obj_t *h_o
 	{
 		if(w0 <= w || h0 <= h)
 		{
-			printf("only support 565 zoom out now\r\n");
+			mp_printf(&mp_plat_print, "only support 565 zoom out now\r\n");
 			return mp_const_none;
 		}
 		uint16_t* out = xalloc(w*h);
@@ -5539,7 +5538,7 @@ static mp_obj_t py_image_resize(mp_obj_t img_obj, mp_obj_t *w_obj, mp_obj_t *h_o
 		break;
 	}
 	default:
-		printf("only support grayscale, 565 zoom out now\r\n");
+		mp_printf(&mp_plat_print, "only support grayscale, 565 zoom out now\r\n");
 		return mp_const_none;
 		break;
 	}
@@ -5580,7 +5579,7 @@ static mp_obj_t py_image_pix_to_ai(mp_obj_t img_obj)
 		return mp_const_none;
 	}
 	default:
-		printf("only support grayscale now\r\n");
+		mp_printf(&mp_plat_print, "only support grayscale now\r\n");
 		return mp_const_none;
 		break;
 	}
@@ -5621,7 +5620,7 @@ static mp_obj_t py_image_ai_to_pix(mp_obj_t img_obj)
 		break;
 	}
 	default:
-		printf("only support grayscale now\r\n");
+		mp_printf(&mp_plat_print, "only support grayscale now\r\n");
 		return mp_const_none;
 		break;
 	}
@@ -5657,7 +5656,7 @@ static mp_obj_t py_image_strech_char(mp_obj_t img_obj, mp_obj_t de_dark_obj)
 		dx=sx2/w/h-(sx*sx/w/w/h/h);
 		stdx=(int)sqrt(dx);
 		gate=ex;//+stdx/8;
-		//printf("ex=%d,dx=%d,stdx=%d,gate=%d,graymax=%d\r\n",ex,dx,stdx,gate,graymax);
+		//mp_printf(&mp_plat_print, "ex=%d,dx=%d,stdx=%d,gate=%d,graymax=%d\r\n",ex,dx,stdx,gate,graymax);
 		for(index=0; index < w*h; index++)
 		{
 			x=index%w;
@@ -5673,7 +5672,7 @@ static mp_obj_t py_image_strech_char(mp_obj_t img_obj, mp_obj_t de_dark_obj)
 		break;
 	}
 	default:
-		printf("only support grayscale now\r\n");
+		mp_printf(&mp_plat_print, "only support grayscale now\r\n");
 		return mp_const_none;
 		break;
 	}
@@ -5685,7 +5684,7 @@ static float min(uint8_t* data, uint16_t x, uint16_t y)
 {
 	int i,j;
 	float m=data[x+1];
-	//printf("#m=%d ",m);
+	//mp_printf(&mp_plat_print, "#m=%d ",m);
 	for(j=1;j<y-1;j++)
 	{
 		for(i=1;i<x-1;i++)
@@ -5693,7 +5692,7 @@ static float min(uint8_t* data, uint16_t x, uint16_t y)
 			if(data[j*x+i]<m){m = data[j*x+i];}
 		}
 	}
-	//printf("\r\nmin m=%d ",m);
+	//mp_printf(&mp_plat_print, "\r\nmin m=%d ",m);
 	return m;
 }
 
@@ -5701,7 +5700,7 @@ static float max(uint8_t* data, uint16_t x, uint16_t y)
 {
 	int i,j;
 	float m=data[x+1];
-	//printf("#m=%d ",m);
+	//mp_printf(&mp_plat_print, "#m=%d ",m);
 	for(j=1;j<y-1;j++)
 	{
 		for(i=1;i<x-1;i++)
@@ -5709,7 +5708,7 @@ static float max(uint8_t* data, uint16_t x, uint16_t y)
 			if(data[j*x+i]>m){m = data[j*x+i];}
 		}
 	}
-	//printf("\r\nmax m=%d ",m);
+	//mp_printf(&mp_plat_print, "\r\nmax m=%d ",m);
 	return m;
 }
 
@@ -5732,7 +5731,7 @@ static mp_obj_t py_image_stretch(mp_obj_t img_obj, mp_obj_t *min_obj, mp_obj_t *
 		uint8_t* data = img->pixels;
 		if(max0==min0) return mp_const_none;	//can't stretch
 		scale = (to_max-to_min)/(max0-min0);
-		//printf("min0:%d,max0:%d,s:%f\r\n",min0,max0,scale);
+		//mp_printf(&mp_plat_print, "min0:%d,max0:%d,s:%f\r\n",min0,max0,scale);
 		if(scale > MAX_SCALE) scale = MAX_SCALE;
 		//TODO: optimize linear
 		for(y=0;y<h;y++)
@@ -5746,7 +5745,7 @@ static mp_obj_t py_image_stretch(mp_obj_t img_obj, mp_obj_t *min_obj, mp_obj_t *
 		break;
 	}
 	default:
-		printf("only support grayscale now\r\n");
+		mp_printf(&mp_plat_print, "only support grayscale now\r\n");
 		return mp_const_none;
 		break;
 	}
@@ -6543,9 +6542,9 @@ int py_image_descriptor_from_roi(image_t *img, const char *path, rectangle_t *ro
     FIL fp;
     FRESULT res = FR_OK;
 
-    printf("Save Descriptor: ROI(%d %d %d %d)\n", roi->x, roi->y, roi->w, roi->h);
+    mp_printf(&mp_plat_print, "Save Descriptor: ROI(%d %d %d %d)\n", roi->x, roi->y, roi->w, roi->h);
     array_t *kpts = orb_find_keypoints(img, false, 20, 1.5f, 100, CORNER_AGAST, roi);
-    printf("Save Descriptor: KPTS(%d)\n", array_length(kpts));
+    mp_printf(&mp_plat_print, "Save Descriptor: KPTS(%d)\n", array_length(kpts));
 
     if (array_length(kpts)) {
         if ((res = file_write_open(&fp, path)) == FR_OK) {

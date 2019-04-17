@@ -29,7 +29,6 @@
 
 #if MAIXPY_NES_EMULATOR_SUPPORT
 
-// #define printf(...)
 extern uint8_t g_dvp_buf[];
 
 #define LCD_W 320
@@ -109,21 +108,21 @@ mp_obj_t py_nes_init(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 		err = PS2X_config_gamepad(0, 0);
 		if (err == 0)
 		{
-			printf("Found Controller, configured successful \r\n");
+			mp_printf(&mp_plat_print, "Found Controller, configured successful \r\n");
 		}
 		else if (err == 1)
 		{
-			printf("No controller found, check wiring. \r\n");
+			mp_printf(&mp_plat_print, "No controller found, check wiring. \r\n");
 			return mp_const_false;
 		}
 		else if (err == 2)
 		{
-			printf("Controller found but not accepting commands. \r\n");
+			mp_printf(&mp_plat_print, "Controller found but not accepting commands. \r\n");
 			return mp_const_false;
 		}
 		else if (err == 3)
 		{
-			printf("Controller refusing to enter Pressures mode, may not support it. \r\n");
+			mp_printf(&mp_plat_print, "Controller refusing to enter Pressures mode, may not support it. \r\n");
 			return mp_const_false;
 		}
 		else
@@ -136,18 +135,18 @@ mp_obj_t py_nes_init(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 		switch (type)
 		{
 		case 0:
-			printf("Unknown Controller type found \r\n");
+			mp_printf(&mp_plat_print, "Unknown Controller type found \r\n");
 			break;
 		case 1:
-			printf("DualShock Controller found \r\n");
+			mp_printf(&mp_plat_print, "DualShock Controller found \r\n");
 			break;
 		case 2:
-			printf("GuitarHero Controller found \r\n");
+			mp_printf(&mp_plat_print, "GuitarHero Controller found \r\n");
 			mp_raise_OSError(MP_EFAULT);
 			return mp_const_false;
 			break;
 		case 3:
-			printf("Wireless Sony DualShock Controller found \r\n");
+			mp_printf(&mp_plat_print, "Wireless Sony DualShock Controller found \r\n");
 			break;
 		}
 	}
@@ -162,7 +161,7 @@ mp_obj_t py_nes_init(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 static mp_obj_t py_nes_run(mp_obj_t path_obj)
 {
     const char *path = mp_obj_str_get_str(path_obj);
-    printf("path: %s\n", path);
+    mp_printf(&mp_plat_print, "path: %s\n", path);
 	if(InfoNES_Load(path) == 0)
 	{
 		InfoNES_Main();

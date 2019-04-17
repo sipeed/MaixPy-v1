@@ -53,14 +53,14 @@
 
 #define Maix_DEBUG 0
 #if Maix_DEBUG==1
-#define debug_print(x,arg...) printf("[MaixPy]"x,##arg)
+#define debug_print(x,arg...) mp_printf(&mp_plat_print, "[MaixPy]"x,##arg)
 #else 
 #define debug_print(x,arg...) 
 #endif
 
 #define Maix_KDEBUG 0
 #if Maix_KDEBUG==1
-#define debug_printk(x,arg...) printk("[MaixPy]"x,##arg)
+#define debug_printk(x,arg...) mp_printf(&mp_plat_print, "[MaixPy]"x,##arg)
 #else 
 #define debug_printk(x,arg...) 
 #endif

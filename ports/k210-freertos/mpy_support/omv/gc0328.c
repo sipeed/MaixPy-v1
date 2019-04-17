@@ -1093,7 +1093,7 @@ int gc0328_reset(void)
 
     for (index = 0; sensor_default_regs[index][0]; index++)
     {
-        // printf("0x12,0x%02x,0x%02x,\r\n", sensor_default_regs[index][0], sensor_default_regs[index][1]);//debug
+        // mp_printf(&mp_plat_print, "0x12,0x%02x,0x%02x,\r\n", sensor_default_regs[index][0], sensor_default_regs[index][1]);//debug
         dvp_sccb_send_data(GC0328_ADDR, sensor_default_regs[index][0], sensor_default_regs[index][1]);
         // mp_hal_delay_ms(1);
     }

@@ -2,6 +2,7 @@
 #include "sipeed_kpu.h"
 #include <stdlib.h>
 #include <math.h>
+#include "py/mpprint.h"
 
 // #include "lcd.h"
 
@@ -32,12 +33,12 @@ int region_layer_init(region_layer_t *rl, kpu_model_context_t *task)
 	
 	if(kpu_model_get_input_shape(task, &wi, &hi, &chi))
 	{
-		printf("[MAIXPY]rl: first layer not conv layer!\r\n");
+		mp_printf(&mp_plat_print, "[MAIXPY]rl: first layer not conv layer!\r\n");
 		return -1;
 	}
 	if(kpu_model_get_output_shape(task, &wo, &ho, &cho))
 	{
-		printf("[MAIXPY]rl: can't fetch last layer!\r\n");
+		mp_printf(&mp_plat_print, "[MAIXPY]rl: can't fetch last layer!\r\n");
 		return -1;
 	}
 
@@ -54,7 +55,7 @@ int region_layer_init(region_layer_t *rl, kpu_model_context_t *task)
     rl->output_number = (rl->boxes_number * (rl->classes + rl->coords + 1));
     
 	kpu_get_output(task, 0, &(rl->output), &size);	//module output -> rl output
-	//printf("size=%ld\r\n",size);
+	//mp_printf(&mp_plat_print, "size=%ld\r\n",size);
     //rl->scale = output_scale;
     //rl->bias = output_bias;
 
@@ -402,7 +403,7 @@ static void region_layer_output(region_layer_t *rl, obj_info_t *obj_info)
     {
         int class = max_index(rl->probs[i], rl->classes);
         float prob = rl->probs[i][class];
-		//printf("%.3f, ", prob);
+		//mp_printf(&mp_plat_print, "%.3f, ", prob);
         if (prob > threshold)
         {
             box_t *b = boxes + i;

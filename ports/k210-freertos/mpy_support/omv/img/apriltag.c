@@ -43,7 +43,7 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of The University of Michigan.
 */
 #include "stdio.h"
-//#define printf(format, ...)
+
 #define fprintf(format, ...)
 #define free(ptr) ({ umm_free(ptr); })
 #define malloc(size) ({ void *_r = umm_malloc(size); if(!_r) umm_alloc_fail(); _r; })
@@ -1151,7 +1151,7 @@ void svd22(const double A[4], double U[4], double S[2], double V[4])
     doubles_print_mat(U, 2, 2, "%20.10g");
     doubles_print_mat(SM, 2, 2, "%20.10g");
     doubles_print_mat(V, 2, 2, "%20.10g");
-    printf("A:\n");
+    mp_printf(&mp_plat_print, "A:\n");
     doubles_print_mat(A, 2, 2, "%20.10g");
 
     double SVt[4];
@@ -1159,14 +1159,14 @@ void svd22(const double A[4], double U[4], double S[2], double V[4])
     double USVt[4];
     doubles_mat_AB(U, 2, 2, SVt, 2, 2, USVt, 2, 2);
 
-    printf("USVt\n");
+    mp_printf(&mp_plat_print, "USVt\n");
     doubles_print_mat(USVt, 2, 2, "%20.10g");
 
     double diff[4];
     for (int i = 0; i < 4; i++)
         diff[i] = A[i] - USVt[i];
 
-    printf("diff\n");
+    mp_printf(&mp_plat_print, "diff\n");
     doubles_print_mat(diff, 2, 2, "%20.10g");
 
     */
@@ -1782,14 +1782,14 @@ void matd_print(const matd_t *m, const char *fmt)
     assert(fmt != NULL);
 
     if (matd_is_scalar(m)) {
-        printf(fmt, MATD_EL(m, 0, 0));
-        printf("\n");
+        mp_printf(&mp_plat_print, fmt, MATD_EL(m, 0, 0));
+        mp_printf(&mp_plat_print, "\n");
     } else {
         for (int i = 0; i < m->nrows; i++) {
             for (int j = 0; j < m->ncols; j++) {
-                printf(fmt, MATD_EL(m, i, j));
+                mp_printf(&mp_plat_print, fmt, MATD_EL(m, i, j));
             }
-            printf("\n");
+            mp_printf(&mp_plat_print, "\n");
         }
     }
 }
@@ -1800,14 +1800,14 @@ void matd_print_transpose(const matd_t *m, const char *fmt)
     assert(fmt != NULL);
 
     if (matd_is_scalar(m)) {
-        printf(fmt, MATD_EL(m, 0, 0));
-        printf("\n");
+        mp_printf(&mp_plat_print, fmt, MATD_EL(m, 0, 0));
+        mp_printf(&mp_plat_print, "\n");
     } else {
         for (int j = 0; j < m->ncols; j++) {
             for (int i = 0; i < m->nrows; i++) {
-                printf(fmt, MATD_EL(m, i, j));
+                mp_printf(&mp_plat_print, fmt, MATD_EL(m, i, j));
             }
-            printf("\n");
+            mp_printf(&mp_plat_print, "\n");
         }
     }
 }
@@ -2873,7 +2873,7 @@ static matd_svd_t matd_svd_tall(matd_t *A, int flags)
             assert(0);
         }
 
-//        printf(">>> %5d %3d, %3d %15g\n", maxi, maxj, iter, maxv);
+//        mp_printf(&mp_plat_print, ">>> %5d %3d, %3d %15g\n", maxi, maxj, iter, maxv);
 
         // Now, solve the 2x2 SVD problem for the matrix
         // [ A0 A1 ]
@@ -2956,7 +2956,7 @@ static matd_svd_t matd_svd_tall(matd_t *A, int flags)
     }
 
     if (!(flags & MATD_SVD_NO_WARNINGS) && iter == maxiters) {
-        printf("WARNING: maximum iters (maximum = %d, matrix %d x %d, max=%.15f)\n",
+        mp_printf(&mp_plat_print, "WARNING: maximum iters (maximum = %d, matrix %d x %d, max=%.15f)\n",
                iter, A->nrows, A->ncols, maxv);
 
 //        matd_print(A, "%15f");
@@ -3073,11 +3073,11 @@ matd_svd_t matd_svd_flags(matd_t *A, int flags)
   matd_destroy(check);
 
   if (maxerr > 1e-7) {
-  printf("bad maxerr: %15f\n", maxerr);
+  mp_printf(&mp_plat_print, "bad maxerr: %15f\n", maxerr);
   }
 
   if (maxerr > 1e-5) {
-  printf("bad maxerr: %15f\n", maxerr);
+  mp_printf(&mp_plat_print, "bad maxerr: %15f\n", maxerr);
   matd_print(A, "%15f");
   assert(0);
   }
@@ -3301,7 +3301,7 @@ int main(int argc, char *argv[])
             srand(iter);
 
             if (iter % 1000 == 0)
-                printf("%d\n", iter);
+                mp_printf(&mp_plat_print, "%d\n", iter);
 
             int m = 1 + (random()%(maxdim-1));
             int n = 1 + (random()%(maxdim-1));
@@ -3312,7 +3312,7 @@ int main(int argc, char *argv[])
             A->nrows = m;
             A->ncols = n;
 
-//            printf("%d %d ", m, n);
+//            mp_printf(&mp_plat_print, "%d %d ", m, n);
             matd_svd_t svd = matd_svd(A);
             matd_destroy(svd.U);
             matd_destroy(svd.S);
@@ -3347,7 +3347,7 @@ int main(int argc, char *argv[])
 
     for (int iter = 0; 1; iter++) {
         if (iter % 100000 == 0)
-            printf("%d\n", iter);
+            mp_printf(&mp_plat_print, "%d\n", iter);
 
         MATD_EL(A,0,0) = randf();
         MATD_EL(A,0,1) = randf();
@@ -3365,11 +3365,11 @@ int main(int argc, char *argv[])
         assert(s.S[0] >= 0);
         assert(s.S[1] >= 0);
         if (s.S[0] == 0) {
-//            printf("*"); fflush(NULL);
-//            printf("%15f %15f %15f %15f\n", MATD_EL(A,0,0), MATD_EL(A,0,1), MATD_EL(A,1,0), MATD_EL(A,1,1));
+//            mp_printf(&mp_plat_print, "*"); fflush(NULL);
+//            mp_printf(&mp_plat_print, "%15f %15f %15f %15f\n", MATD_EL(A,0,0), MATD_EL(A,0,1), MATD_EL(A,1,0), MATD_EL(A,1,1));
         }
         if (s.S[1] == 0) {
-//            printf("#"); fflush(NULL);
+//            mp_printf(&mp_plat_print, "#"); fflush(NULL);
         }
 
         matd_t *USV = matd_op("M*M*M'", U, S, V);
@@ -3379,13 +3379,13 @@ int main(int argc, char *argv[])
             maxerr = fmax(maxerr, fabs(USV->data[i] - A->data[i]));
 
         if (0) {
-            printf("------------------------------------\n");
-            printf("A:\n");
+            mp_printf(&mp_plat_print, "------------------------------------\n");
+            mp_printf(&mp_plat_print, "A:\n");
             matd_print(A, "%15f");
-            printf("\nUSV':\n");
+            mp_printf(&mp_plat_print, "\nUSV':\n");
             matd_print(USV, "%15f");
-            printf("maxerr: %.15f\n", maxerr);
-            printf("\n\n");
+            mp_printf(&mp_plat_print, "maxerr: %.15f\n", maxerr);
+            mp_printf(&mp_plat_print, "\n\n");
         }
 
         matd_destroy(USV);
@@ -4659,7 +4659,7 @@ int g2d_polygon_contains_point(const zarray_t *poly, double q[2])
     int v = (quad_acc >= 2) || (quad_acc <= -2);
 
     if (0 && v != g2d_polygon_contains_point_ref(poly, q)) {
-        printf("FAILURE %d %d\n", v, quad_acc);
+        mp_printf(&mp_plat_print, "FAILURE %d %d\n", v, quad_acc);
         exit(-1);
     }
 
@@ -4927,11 +4927,11 @@ static int double_sort_up(const void *_a, const void *_b)
       }
 
     if (inout)
-       printf("y");
+       mp_printf(&mp_plat_print, "y");
     else
-       printf(" ");
+       mp_printf(&mp_plat_print, " ");
   }
-  printf("\n");
+  mp_printf(&mp_plat_print, "\n");
 */
 
 // returns the number of x intercepts
@@ -5079,20 +5079,20 @@ int main(int argc, char *argv[])
                 }
 
                 if (inout)
-                    printf("y");
+                    mp_printf(&mp_plat_print, "y");
                 else
-                    printf(" ");
+                    mp_printf(&mp_plat_print, " ");
             }
-            printf("\n");
+            mp_printf(&mp_plat_print, "\n");
 
             for (double x = -3; x < 6; x += res) {
                 double q[2] = {x, y};
                 if (g2d_polygon_contains_point(poly, q))
-                    printf("X");
+                    mp_printf(&mp_plat_print, "X");
                 else
-                    printf(" ");
+                    mp_printf(&mp_plat_print, " ");
             }
-            printf("\n");
+            mp_printf(&mp_plat_print, "\n");
         }
     }
 
@@ -5109,22 +5109,22 @@ double p[][2] =  { { 0, 0},
 */
 
      double q[2] = { 10, 10 };
-     printf("0==%d\n", g2d_polygon_contains_point(polya, q));
+     mp_printf(&mp_plat_print, "0==%d\n", g2d_polygon_contains_point(polya, q));
 
      q[0] = 1; q[1] = 1;
-     printf("1==%d\n", g2d_polygon_contains_point(polya, q));
+     mp_printf(&mp_plat_print, "1==%d\n", g2d_polygon_contains_point(polya, q));
 
      q[0] = 3; q[1] = .5;
-     printf("1==%d\n", g2d_polygon_contains_point(polya, q));
+     mp_printf(&mp_plat_print, "1==%d\n", g2d_polygon_contains_point(polya, q));
 
      q[0] = 1.2; q[1] = 2.1;
-     printf("0==%d\n", g2d_polygon_contains_point(polya, q));
+     mp_printf(&mp_plat_print, "0==%d\n", g2d_polygon_contains_point(polya, q));
 
-     printf("0==%d\n", g2d_polygon_contains_polygon(polya, polyb));
+     mp_printf(&mp_plat_print, "0==%d\n", g2d_polygon_contains_polygon(polya, polyb));
 
-     printf("0==%d\n", g2d_polygon_contains_polygon(polya, polyc));
+     mp_printf(&mp_plat_print, "0==%d\n", g2d_polygon_contains_polygon(polya, polyc));
 
-     printf("0==%d\n", g2d_polygon_contains_polygon(polya, polyd));
+     mp_printf(&mp_plat_print, "0==%d\n", g2d_polygon_contains_polygon(polya, polyd));
 
      ////////////////////////////////////////////////////////
      // Test convex hull
@@ -5135,7 +5135,7 @@ double p[][2] =  { { 0, 0},
              double *h;
              zarray_get_volatile(hull, k, &h);
 
-             printf("%15f, %15f\n", h[0], h[1]);
+             mp_printf(&mp_plat_print, "%15f, %15f\n", h[0], h[1]);
          }
      }
 
@@ -9739,7 +9739,7 @@ int quad_segment_maxima(apriltag_detector_t *td, zarray_t *cluster, struct line_
     if (ksz < 2)
         return 0;
 
-//    printf("sz %5d, ksz %3d\n", sz, ksz);
+//    mp_printf(&mp_plat_print, "sz %5d, ksz %3d\n", sz, ksz);
 
     double *errs = fb_alloc(sz * sizeof(double));
 
@@ -10131,7 +10131,7 @@ int fit_quad(apriltag_detector_t *td, image_u8_t *im, zarray_t *cluster, struct 
             goto finish;
     }
 
-//    printf("%d %d %d %d\n", indices[0], indices[1], indices[2], indices[3]);
+//    mp_printf(&mp_plat_print, "%d %d %d %d\n", indices[0], indices[1], indices[2], indices[3]);
 
     if (0) {
         // no refitting here; just use those points as the vertices.
@@ -10747,7 +10747,7 @@ zarray_t *apriltag_quad_thresh(apriltag_detector_t *td, image_u8_t *im, bool ove
         }
     }
 
-    //        printf("  %d %d %d %d\n", indices[0], indices[1], indices[2], indices[3]);
+    //        mp_printf(&mp_plat_print, "  %d %d %d %d\n", indices[0], indices[1], indices[2], indices[3]);
 
     for (int i = 0; i < sz; i++) {
         zarray_t *cluster;
@@ -11168,7 +11168,7 @@ double quad_goodness(apriltag_family_t *family, image_u8_t *im, struct quad *qua
 
     // score = average margin between white and black pixels near border.
     double margin = 1.0 * W1 / Wn - 1.0 * B1 / Bn;
-//    printf("margin %f: W1 %f, B1 %f\n", margin, W1, B1);
+//    mp_printf(&mp_plat_print, "margin %f: W1 %f, B1 %f\n", margin, W1, B1);
 
     return margin;
 }
@@ -11560,7 +11560,7 @@ static void refine_edges(apriltag_detector_t *td, image_u8_t *im_orig, struct qu
             quad->p[i][1] = lines[i][1] + L0*A10;
         } else {
             // this is a bad sign. We'll just keep the corner we had.
-//            printf("bad det: %15f %15f %15f %15f %15f\n", A00, A11, A10, A01, det);
+//            mp_printf(&mp_plat_print, "bad det: %15f %15f %15f %15f %15f\n", A00, A11, A10, A01, det);
         }
     }
 }
@@ -11592,7 +11592,7 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
 {
     if (zarray_size(td->tag_families) == 0) {
         zarray_t *s = zarray_create(sizeof(apriltag_detection_t*));
-        printf("apriltag.c: No tag families enabled.");
+        mp_printf(&mp_plat_print, "apriltag.c: No tag families enabled.");
         return s;
     }
 
@@ -11759,7 +11759,7 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
                     if (pref == 0) {
                         // at this point, we should only be undecided if the tag detections
                         // are *exactly* the same. How would that happen?
-                        printf("uh oh, no preference for overlappingdetection\n");
+                        mp_printf(&mp_plat_print, "uh oh, no preference for overlappingdetection\n");
                     }
 
                     if (pref < 0) {
@@ -12097,7 +12097,7 @@ void imlib_find_rects(list_t *out, image_t *ptr, rectangle_t *roi, uint32_t thre
                     if (pref == 0) {
                         // at this point, we should only be undecided if the tag detections
                         // are *exactly* the same. How would that happen?
-                        printf("uh oh, no preference for overlappingdetection\n");
+                        mp_printf(&mp_plat_print, "uh oh, no preference for overlappingdetection\n");
                     }
 
                     if (pref < 0) {

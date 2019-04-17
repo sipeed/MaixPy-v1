@@ -46,7 +46,7 @@
 
 #if MAIXPY_NES_EMULATOR_SUPPORT
 
-#define _D //printf("%d\n",__LINE__)
+#define _D //mp_printf(&mp_plat_print, "%d\n",__LINE__)
 
 
 /*-------------------------------------------------------------------*/

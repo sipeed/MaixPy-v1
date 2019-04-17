@@ -48,7 +48,6 @@ STATIC const mp_ptr_t PTR_OBJ(ptr_global) = {\
 
 STATIC void lcd_fill(int32_t x1, int32_t y1, int32_t x2, int32_t y2, lv_color_t color)
 {
-	// printf("fill %d %d %d %d %x\n", x1, x2, y1, y2, color.full);
 	lcd_fill_rectangle(x1, y1, x2, y2, color.full);
 }
 
@@ -57,7 +56,6 @@ STATIC void lcd_flush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const lv_c
 {
 	int32_t w = x2-x1+1;
 	int32_t h = y2-y1+1;
-	// printf("flush %d %d %d %d %d %d \n", x1, x2, y1, y2, w, h);
 	int32_t x,y;
 	int32_t i=0;
 	uint16_t* data = malloc( w*h*2 );
@@ -75,7 +73,6 @@ STATIC void lcd_flush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const lv_c
 	}
 	lcd_draw_picture(x1, y1, w, h, (uint32_t*)data);
 	free(data);
-	// printf("flush end\n");
 	lv_flush_ready();
 }
 

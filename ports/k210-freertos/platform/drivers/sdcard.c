@@ -8,9 +8,11 @@
 #include "gpiohs.h"
 #include "sleep.h"
 #include "syslog.h"
+#include "py/mpprint.h"
+
 #define MAIX_SDCARD_DEBUG 0
 #if MAIX_SDCARD_DEBUG==1
-#define debug_print(x,arg...) printk(x,##arg)
+#define debug_print(x,arg...) mp_printf(&mp_plat_print, x,##arg)
 #else 
 #define debug_print(x,arg...) 
 #endif
@@ -372,12 +374,12 @@ static uint8_t sd_get_cardinfo(SD_CardInfo *cardinfo)
 {
 	if (sd_get_csdregister(&(cardinfo->SD_csd)))
 	{
-		printk("[MaixPy] %s | sd_get_csdregister failed\r\n",__func__);
+		mp_printf(&mp_plat_print, "[MaixPy] %s | sd_get_csdregister failed\r\n",__func__);
 		return 0xFF;
 	}
 	if (sd_get_cidregister(&(cardinfo->SD_cid)))
 	{
-		printk("[MaixPy] %s | sd_get_cidregister failed\r\n",__func__);
+		mp_printf(&mp_plat_print, "[MaixPy] %s | sd_get_cidregister failed\r\n",__func__);
 		return 0xFF;
 	}
 	if(2 == sd_version)
@@ -430,7 +432,7 @@ uint8_t sd_init(void)
     sd_end_cmd();
     if (result != 0x01)
     {
-    	printk("[MaixPy] %s | SD_CMD0 is %X\r\n",__func__,result);
+    	mp_printf(&mp_plat_print, "[MaixPy] %s | SD_CMD0 is %X\r\n",__func__,result);
         return 0xFF;
     }
 
@@ -441,7 +443,7 @@ uint8_t sd_init(void)
 	sd_end_cmd();
 	if (result != 0x01)
 	{
-		printk("[MaixPy] %s | SD_CMD8 is %X\r\n",__func__,result);
+		mp_printf(&mp_plat_print, "[MaixPy] %s | SD_CMD8 is %X\r\n",__func__,result);
 		return 0xFF;
     }
 	index = 0xFF;
@@ -459,7 +461,7 @@ uint8_t sd_init(void)
 	}
 	if (index == 0)
 	{
-        printk("SD_CMD55 is %X\r\n", result);
+        mp_printf(&mp_plat_print, "SD_CMD55 is %X\r\n", result);
 		return 0xFF;
     }
 	index = 255;
@@ -481,7 +483,7 @@ uint8_t sd_init(void)
 	}
 	if(index == 0)
 	{
-		printk("[MaixPy] %s | SD_CMD58 is %X\r\n",__func__,result);
+		mp_printf(&mp_plat_print, "[MaixPy] %s | SD_CMD58 is %X\r\n",__func__,result);
 		return 0xFF;
 	}
 	if ((frame[0] & 0x40) == 0)

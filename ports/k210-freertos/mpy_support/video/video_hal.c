@@ -69,13 +69,11 @@ static int on_irq_dma3(void *ctx)
 {
     avi_t* avi = (avi_t*)ctx;
 
-    // printk("play %d ok\r\n",avi->index_buf_play);
     avi->audio_buf[avi->index_buf_play].empty = true;
     if(++avi->index_buf_play > 3)
         avi->index_buf_play = 0;
     if( !avi->audio_buf[avi->index_buf_play].empty )
     {
-        // printk("irq play %d\r\n",avi->index_buf_play);
         video_hal_audio_play(avi->audio_buf[avi->index_buf_play].buf, avi->audio_buf[avi->index_buf_play].len, (uint8_t)avi->audio_channels);
     }
     return 0;

@@ -38,7 +38,7 @@ bool is_exit_to_menu = true;
 BYTE* g_rom_file_content = NULL;
 int g_samples_per_sync = 0;
 
-#define _D //printf("%d\n",__LINE__)
+#define _D //mp_printf(&mp_plat_print, "%d\n",__LINE__)
 
 
 WORD NesPalette[64]={
@@ -237,25 +237,25 @@ void InfoNES_PadState( NES_DWORD *pdwPad1, NES_DWORD *pdwPad2, NES_DWORD *pdwSys
             /**********************/
             case 'r':
                 nes_cycle_us++;
-                printf("cycle_us:%d\r\n",nes_cycle_us);
+                mp_printf(&mp_plat_print, "cycle_us:%d\r\n",nes_cycle_us);
                 break;
             case 'f':
                 nes_cycle_us--;
                 if(nes_cycle_us<0)nes_cycle_us=0;
-                printf("cycle_us:%d\r\n",nes_cycle_us);
+                mp_printf(&mp_plat_print, "cycle_us:%d\r\n",nes_cycle_us);
                 break;
             case '=':
                 nes_volume++;
                 if(nes_volume>8)nes_volume=8;
-                printf("volume:%d\r\n",nes_volume);
+                mp_printf(&mp_plat_print, "volume:%d\r\n",nes_volume);
                 break;
             case '-':
                 nes_volume--;
                 if(nes_volume<0)nes_volume=0;
-                printf("volume:%d\r\n",nes_volume);
+                mp_printf(&mp_plat_print, "volume:%d\r\n",nes_volume);
                 break;
             case 0x1b:   //ESC
-                printf("exit\r\n");
+                mp_printf(&mp_plat_print, "exit\r\n");
                 dwKeySystem |= PAD_SYS_QUIT;
                 is_exit_to_menu = true;
                 break;
@@ -297,25 +297,25 @@ void InfoNES_PadState( NES_DWORD *pdwPad1, NES_DWORD *pdwPad2, NES_DWORD *pdwSys
         
         if(l1){
             nes_cycle_us++;
-            printf("cycle_us:%d\r\n",nes_cycle_us);
+            mp_printf(&mp_plat_print, "cycle_us:%d\r\n",nes_cycle_us);
         }
 
         if(l2){
             nes_cycle_us--;
             if(nes_cycle_us<0)nes_cycle_us=0;
-            printf("cycle_us:%d\r\n",nes_cycle_us);
+            mp_printf(&mp_plat_print, "cycle_us:%d\r\n",nes_cycle_us);
         }
 
         if(r1){
             nes_volume++;
             if(nes_volume>8)nes_volume=8;
-            printf("volume:%d\r\n",nes_volume);
+            mp_printf(&mp_plat_print, "volume:%d\r\n",nes_volume);
         }
         
         if(r2){
             nes_volume--;
             if(nes_volume<0)nes_volume=0;
-            printf("volume:%d\r\n",nes_volume);
+            mp_printf(&mp_plat_print, "volume:%d\r\n",nes_volume);
         }
     }
     *pdwPad1   = dwKeyPad1;
@@ -386,12 +386,12 @@ int InfoNES_SoundOpen( int samples_per_sync, int sample_rate )
                           RESOLUTION_16_BIT, SCLK_CYCLES_32,
                           /*TRIGGER_LEVEL_1*/ TRIGGER_LEVEL_4,
                           RIGHT_JUSTIFYING_MODE);
-    printf("samples_per_sync=%d, sample_rate=%d\r\n", samples_per_sync, sample_rate);
+    mp_printf(&mp_plat_print, "samples_per_sync=%d, sample_rate=%d\r\n", samples_per_sync, sample_rate);
     if(nes_stick==0)
-        printf("key: WASD, JK, -=, \\, Enter, ESC\r\n");
+        mp_printf(&mp_plat_print, "key: WASD, JK, -=, \\, Enter, ESC\r\n");
     if(samples_per_sync > MAX_SAMPLES_PER_SYNC)
     {
-        printf("samples per sync too big, max:%d\n",MAX_SAMPLES_PER_SYNC);
+        mp_printf(&mp_plat_print, "samples per sync too big, max:%d\n",MAX_SAMPLES_PER_SYNC);
         return 0;
     }
     g_samples_per_sync = samples_per_sync;

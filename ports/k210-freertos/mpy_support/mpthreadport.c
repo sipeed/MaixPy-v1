@@ -143,7 +143,7 @@ void mp_thread_start(void) {
 // TODO: wether need to store thread entry function into a global variable (in this way,we can access it)
 // STATIC void *(*ext_thread_entry)(void*) = NULL;
 // STATIC void freertos_entry(void *arg) {
-//     printf("entry freertos_entry\n");
+//     mp_printf(&mp_plat_print, "entry freertos_entry\n");
 //     if (ext_thread_entry) {
 //         ext_thread_entry(arg);
 //     }
@@ -184,7 +184,7 @@ void mp_thread_create_ex(void *(*entry)(void*), void *arg, size_t *stack_size, i
 						   arg, //function arg
 						   priority, //task priority,please don't change this parameter,because it will impack function running
 						   &thread_id);//task handle
-    //printf("[MAIXPY]: thread_id %p created \n",thread_id);
+    //mp_printf(&mp_plat_print, "[MAIXPY]: thread_id %p created \n",thread_id);
     if (thread_id == NULL) {
         // m_del_obj(thread_t,th);
         free(th);

@@ -3,7 +3,7 @@
 #include "imlib.h"
 #include "sipeed_conv.h"
 
-#define _P(...) printf(__VA_ARGS__)
+#define _P(...) mp_printf(&mp_plat_print, __VA_ARGS__)
 
 //  卷积	池化	批归一化	激活	输出偏置
 static float conv_data[9*3*3] ={
@@ -43,7 +43,7 @@ void imlib_conv3(image_t *img, float *krn)
 	kpu_task_t task;
 	if(img->pix_ai == NULL || img->pixels == NULL) 
 	{
-		printf("pix_ai or pixels is NULL!\n");
+		mp_printf(&mp_plat_print, "pix_ai or pixels is NULL!\n");
 		return;
 	}
 	r=img->pix_ai;
@@ -71,7 +71,7 @@ void imlib_conv3(image_t *img, float *krn)
 	while(!_ai_done_flag);
     _ai_done_flag=0;
 	//t1=read_cycle();
-	//printf("conv: %ld-%ld=%ld, %ld us!\r\n",t1,t0,(t1-t0),((t1-t0)*1000000/400000000)); 
+	//mp_printf(&mp_plat_print, "conv: %ld-%ld=%ld, %ld us!\r\n",t1,t0,(t1-t0),((t1-t0)*1000000/400000000)); 
 	//convert R8G8B8 to lcd's RGB565 
 	//t0=read_cycle();
 	for(i = 0; i < (img->w)*(img->h); i++)
@@ -81,7 +81,7 @@ void imlib_conv3(image_t *img, float *krn)
 		pix[i] = (((uint16_t)(r[i]>>3))<<3)+(((uint16_t)g[i])>>5)+(((uint16_t)b[i]>>3)<<8)+(((uint16_t)(g[i]&0x1C)<<11));	//2.6ms
 	}
 	//t1=read_cycle();
-	//printf("RGB565: %ld-%ld=%ld, %ld us!\r\n",t1,t0,(t1-t0),((t1-t0)*1000000/400000000)); 
+	//mp_printf(&mp_plat_print, "RGB565: %ld-%ld=%ld, %ld us!\r\n",t1,t0,(t1-t0),((t1-t0)*1000000/400000000)); 
 	return;
 }
 

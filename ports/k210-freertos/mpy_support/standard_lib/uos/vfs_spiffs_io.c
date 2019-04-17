@@ -25,11 +25,11 @@ s32_t sys_spiffs_read(uint32_t addr, uint32_t size, uint8_t *buf)
     uint32_t phy_addr=addr;
     w25qxx_status_t res = w25qxx_read_data_dma(phy_addr, buf, size,W25QXX_QUAD_FAST);
 	#if open_fs_debug
-    printf("flash read addr:%x size:%d buf_head:%x %x\n",phy_addr,size,buf[0],buf[1]);
+    mp_printf(&mp_plat_print, "flash read addr:%x size:%d buf_head:%x %x\n",phy_addr,size,buf[0],buf[1]);
 	#endif
     if (res != W25QXX_OK) {
 		#if open_fs_debug
-        printf("spifalsh read err\n");
+        mp_printf(&mp_plat_print, "spifalsh read err\n");
 		#endif
         return res;
     }
@@ -41,11 +41,11 @@ s32_t sys_spiffs_write(uint32_t addr, uint32_t size, uint8_t *buf)
     
     w25qxx_status_t res = w25qxx_write_data_dma(phy_addr, buf, size);
 	#if open_fs_debug
-    printf("flash write addr:%x size:%d buf_head:%x,%x\n",phy_addr,size,buf[0],buf[1]);
+    mp_printf(&mp_plat_print, "flash write addr:%x size:%d buf_head:%x,%x\n",phy_addr,size,buf[0],buf[1]);
 	#endif
     if (res != W25QXX_OK) {
 		#if open_fs_debug
-        printf("spifalsh write err\n");
+        mp_printf(&mp_plat_print, "spifalsh write err\n");
 		#endif
         return res;
     }
@@ -55,12 +55,12 @@ s32_t sys_spiffs_erase(uint32_t addr, uint32_t size)
 {
     int phy_addr=addr;
 	#if open_fs_debug
-    printf("flash erase addr:%x size:%f\n",phy_addr,size/1024.00);
+    mp_printf(&mp_plat_print, "flash erase addr:%x size:%f\n",phy_addr,size/1024.00);
 	#endif
     w25qxx_status_t res = w25qxx_sector_erase_dma(phy_addr);
     if (res != W25QXX_OK) {
 		#if open_fs_debug
-        printf("spifalsh erase err\n");
+        mp_printf(&mp_plat_print, "spifalsh erase err\n");
 		#endif
         return res;
     }
@@ -147,7 +147,7 @@ int mp_module_spiffs_mount(spiffs* fs,spiffs_config* cfg)
 					       spiffs_cache_buf,
 						   (SPIFFS_CFG_LOG_PAGE_SZ(fs)+32)*4,
 						   0);
-	printf("[MAIXPY]:Spiffs Mount %s \n", res?"failed":"successful");
+	mp_printf(&mp_plat_print, "[MAIXPY]:Spiffs Mount %s \n", res?"failed":"successful");
 	return res;
 }
 
@@ -155,10 +155,10 @@ int mp_module_spiffs_format(spiffs* fs)
 {
 	
 	SPIFFS_unmount(fs);
-	printf("[MAIXPY]:Spiffs Unmount.\n");
-	printf("[MAIXPY]:Spiffs Formating...\n");
+	mp_printf(&mp_plat_print, "[MAIXPY]:Spiffs Unmount.\n");
+	mp_printf(&mp_plat_print, "[MAIXPY]:Spiffs Formating...\n");
 	s32_t format_res=SPIFFS_format(fs);
-	printf("[MAIXPY]:Spiffs Format %s \n",format_res?"failed":"successful");
+	mp_printf(&mp_plat_print, "[MAIXPY]:Spiffs Format %s \n",format_res?"failed":"successful");
 	return format_res;
 }
 

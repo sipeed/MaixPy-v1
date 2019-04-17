@@ -164,7 +164,7 @@ STATIC bool init_sdcard_fs(void) {
     }
 	
     if (first_part) {
-        printf("PYB: can't mount SD card\n");
+        printk("PYB: can't mount SD card\n");
         return false;
     } else {
         return true;
@@ -200,10 +200,10 @@ MP_NOINLINE STATIC bool init_flash_spiffs()
 	if(FORMAT_FS_FORCE || res != SPIFFS_OK || res==SPIFFS_ERR_NOT_A_FS)
 	{
 		SPIFFS_unmount(&vfs_spiffs->fs);
-		printf("[MAIXPY]:Spiffs Unmount.\n");
-		printf("[MAIXPY]:Spiffs Formating...\n");
+		printk("[MAIXPY]:Spiffs Unmount.\n");
+		printk("[MAIXPY]:Spiffs Formating...\n");
 		s32_t format_res=SPIFFS_format(&vfs_spiffs->fs);
-		printf("[MAIXPY]:Spiffs Format %s \n",format_res?"failed":"successful");
+		printk("[MAIXPY]:Spiffs Format %s \n",format_res?"failed":"successful");
 		if(0 != format_res)
 		{
 			return false;
@@ -216,7 +216,7 @@ MP_NOINLINE STATIC bool init_flash_spiffs()
 			spiffs_cache_buf,
 			sizeof(spiffs_cache_buf),
 			0);
-		printf("[MAIXPY]:Spiffs Mount %s \n", res?"failed":"successful");
+		printk("[MAIXPY]:Spiffs Mount %s \n", res?"failed":"successful");
 		if(!res)
 		{
 
@@ -225,7 +225,7 @@ MP_NOINLINE STATIC bool init_flash_spiffs()
 	
 	mp_vfs_mount_t *vfs = m_new_obj(mp_vfs_mount_t);
     if (vfs == NULL) {
-        printf("[MaixPy]:can't mount flash\n");
+        printk("[MaixPy]:can't mount flash\n");
 		return false;
     }
     vfs->str = "/flash";
@@ -276,13 +276,29 @@ soft_reset:
 		//mp_stack_set_limit(MP_TASK_STACK_SIZE - 1024);//Not open MICROPY_STACK_CHECK
 #if MICROPY_ENABLE_GC
 		gc_init(heap, heap + sizeof(heap));
-		printk("heap0=%x\r\n",heap);
+		printk("heap0=%p\r\n",heap);
 #endif
 		mp_init();
 		mp_obj_list_init(mp_sys_path, 0);
 		mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR_));
 		mp_obj_list_init(mp_sys_argv, 0);//append agrv here
     	readline_init0();
+#if MICROPY_HW_UART_REPL
+		{
+			mp_obj_t args[3] = {
+				MP_OBJ_NEW_SMALL_INT(MICROPY_UARTHS_DEVICE),
+				MP_OBJ_NEW_SMALL_INT(115200),
+				MP_OBJ_NEW_SMALL_INT(8),
+			};
+			fpioa_set_function(4, FUNC_UARTHS_RX);
+		    fpioa_set_function(5,  FUNC_UARTHS_TX);
+			MP_STATE_PORT(Maix_stdio_uart) = machine_uart_type.make_new((mp_obj_t)&machine_uart_type, MP_ARRAY_SIZE(args), 0, args);
+			uart_attach_to_repl(MP_STATE_PORT(Maix_stdio_uart), true);
+		}
+#else
+		MP_STATE_PORT(Maix_stdio_uart) = NULL;
+#endif
+
 		// module init
 		omv_init();
 		// initialise peripherals
@@ -299,21 +315,6 @@ soft_reset:
     	}
 		if (mounted_sdcard) {
 		}
-#if MICROPY_HW_UART_REPL
-		{
-			mp_obj_t args[3] = {
-				MP_OBJ_NEW_SMALL_INT(MICROPY_UARTHS_DEVICE),
-				MP_OBJ_NEW_SMALL_INT(115200),
-				MP_OBJ_NEW_SMALL_INT(8),
-			};
-			fpioa_set_function(4, FUNC_UARTHS_RX);
-		    fpioa_set_function(5,  FUNC_UARTHS_TX);
-			MP_STATE_PORT(Maix_stdio_uart) = machine_uart_type.make_new((mp_obj_t)&machine_uart_type, MP_ARRAY_SIZE(args), 0, args);
-			uart_attach_to_repl(MP_STATE_PORT(Maix_stdio_uart), true);
-		}
-#else
-		MP_STATE_PORT(Maix_stdio_uart) = NULL;
-#endif
 		// run boot-up scripts
 		mp_hal_set_interrupt_char(CHAR_CTRL_C);
 		pyexec_frozen_module("_boot.py");
@@ -392,10 +393,9 @@ int main()
 	w25qxx_init_dma(3, 0);
 	w25qxx_enable_quad_mode_dma();
 	w25qxx_read_id_dma(&manuf_id, &device_id);
-	uint32_t res = 0;
 	for(int i = 0; i < FREQ_READ_NUM; i++)
 	{
-		res = sys_spiffs_read(FREQ_STORE_ADDR + i * 4 ,4,(uint8_t* )(&store_freq[i]));
+		sys_spiffs_read(FREQ_STORE_ADDR + i * 4 ,4,(uint8_t* )(&store_freq[i]));
 		store_freq[i] = store_freq[i] > max_freq[i] ? max_freq[i] : store_freq[i];
 		store_freq[i] = store_freq[i] < 26000000 ? max_freq[i] : store_freq[i];
 	}

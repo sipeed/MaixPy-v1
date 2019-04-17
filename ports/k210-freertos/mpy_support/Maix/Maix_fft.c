@@ -81,7 +81,7 @@ STATIC mp_obj_t Maix_fft_run(size_t n_args, const mp_obj_t *pos_args, mp_map_t *
     // how to get the length of i2s buffer?
     if(byte_len < points * 4)
     {
-        printf("[MAIXPY]FFT:Zero padding\n");
+        mp_printf(&mp_plat_print, "[MAIXPY]FFT:Zero padding\n");
         memset(byte_addr+byte_len, 0, points * 4 - byte_len );//Zero padding
     }
 

@@ -1,5 +1,5 @@
 #include "sipeed_conv.h"
-#define _P(...) //printf(__VA_ARGS__)
+#define _P(...) //mp_printf(&mp_plat_print, __VA_ARGS__)
 //激活函数折点表，设置为y=x，即直接输出卷积结果
 //y=(uint8_t)((((uint64_t)(x - x_start) * y_mul) >> shift) + bias);
  

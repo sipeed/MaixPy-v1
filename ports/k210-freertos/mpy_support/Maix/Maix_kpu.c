@@ -37,8 +37,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#define   do{printf("%s --> %d\r\n",__func__,__LINE__);}while(0);
-
 typedef struct py_kpu_net_obj
 {
     mp_obj_base_t base;
@@ -57,28 +55,28 @@ static int check_img_format(image_t* arg_img, uint16_t w, uint16_t h, uint16_t c
 {
 	if (arg_img->pix_ai == NULL)
 	{
-		printf("[MAIXPY]kpu: pix_ai is NULL!\r\n");
+		mp_printf(&mp_plat_print, "[MAIXPY]kpu: pix_ai is NULL!\r\n");
 		return -1;
 	}
 	if(arg_img->w != w || arg_img->h != h)
 	{
-		printf("[MAIXPY]kpu: img w=%d,h=%d, but model w=%d,h=%d\r\n",\
+		mp_printf(&mp_plat_print, "[MAIXPY]kpu: img w=%d,h=%d, but model w=%d,h=%d\r\n",\
 				arg_img->w, arg_img->h, w, h);
 		return -1;
 	}
 	if(arg_img->bpp == IMAGE_BPP_GRAYSCALE && ch != 1)
 	{
-		printf("[MAIXPY]kpu: grayscale img, but model channel=%d\r\n", ch);
+		mp_printf(&mp_plat_print, "[MAIXPY]kpu: grayscale img, but model channel=%d\r\n", ch);
 		return -1;
 	}
 	if(arg_img->bpp == IMAGE_BPP_RGB565 && ch != 3)
 	{
-		printf("[MAIXPY]kpu: RGB img, but model channel=%d\r\n", ch);
+		mp_printf(&mp_plat_print, "[MAIXPY]kpu: RGB img, but model channel=%d\r\n", ch);
 		return -1;
 	}
 	if(arg_img->bpp != IMAGE_BPP_GRAYSCALE && arg_img->bpp != IMAGE_BPP_RGB565)
 	{
-		printf("[MAIXPY]kpu: img bpp not support yet!\r\n");
+		mp_printf(&mp_plat_print, "[MAIXPY]kpu: img bpp not support yet!\r\n");
 		return -1;
 	}
 	//here is right image format
@@ -331,7 +329,7 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
             err = -2;//read error
             goto error;
         }
-		printf("model_size=%d\r\n",model_size);
+		mp_printf(&mp_plat_print, "model_size=%d\r\n",model_size);
 		
         model_data = (uint8_t *)malloc(model_size * sizeof(uint8_t));
         if(model_data == NULL)
@@ -796,7 +794,6 @@ static void ai_done(void *ctx)
     g_ai_done_flag = 1;
 }
 
-//#define _D printf("%d\r\n",__LINE__);
 STATIC mp_obj_t py_kpu_class_run_yolo2(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
     if(mp_obj_get_type(pos_args[0]) == &py_kpu_net_obj_type)
@@ -835,7 +832,7 @@ STATIC mp_obj_t py_kpu_class_run_yolo2(uint n_args, const mp_obj_t *pos_args, mp
         g_ai_done_flag = 0;
 		if (kpu_run_kmodel(kpu_task, arg_img->pix_ai, K210_DMA_CH_KPU, ai_done, NULL) != 0)
         {
-            printf("Cannot run kmodel.\n");
+            mp_printf(&mp_plat_print, "Cannot run kmodel.\n");
             exit(-1);
         }
         while (!g_ai_done_flag)
@@ -949,23 +946,23 @@ STATIC mp_obj_t py_kpu_deinit(uint n_args, const mp_obj_t *pos_args, mp_map_t *k
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_deinit_obj, 1, py_kpu_deinit);
 ///////////////////////////////////////////////////////////////////////////////
 /*forward
-	单纯的网络前向运�?
-	输入参数�?
+	单纯的网络前向运�?
+	输入参数�?
 		net结构体的obj（必须）
 		是否使用softmax（可选）
-		stride（可选，默认1�?
-		计算到第几层（可选）：默认为计算完，可选计算到第n�?
-			计算到第n层，即修改第n层的send_data_out�?，使能dma输出，方法为�?
+		stride（可选，默认1�?
+		计算到第几层（可选）：默认为计算完，可选计算到第n�?
+			计算到第n层，即修改第n层的send_data_out�?，使能dma输出，方法为�?
 			修改原自动生成的kpu_task_init，设置layers_length为n
 		
-	输出�?
+	输出�?
 		特征图obj
 			即n个通道的m*n的图片，0~255灰度，可以使用color map映射为伪彩色
-			m*n即为最后一个layer的输出尺�?
+			m*n即为最后一个layer的输出尺�?
 			last_layer->image_size.data.o_row_wid，    o_col_high
 			新建一个类型，直接存储特征图数组，
 			对外提供转化某通道特征图到Image对象的方法，
-			并且提供deinit方向释放特征图空间�?
+			并且提供deinit方向释放特征图空间�?
 */
 
 
@@ -1052,7 +1049,7 @@ static mp_obj_t py_fmap_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value)
 			}
 			break;			
 			default: {
-				printf("typecode don't support read!\r\n");
+				mp_printf(&mp_plat_print, "typecode don't support read!\r\n");
 				return MP_OBJ_NULL;
 			}
 			break;
@@ -1118,7 +1115,7 @@ static mp_obj_t py_fmap_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value)
 			}
 			break;
 			default: {
-				printf("typecode don't support write!\r\n");
+				mp_printf(&mp_plat_print, "typecode don't support write!\r\n");
 				return MP_OBJ_NULL;
 			}
 			break;
@@ -1191,17 +1188,17 @@ STATIC mp_obj_t py_kpu_set_layers(mp_obj_t kpu_net_obj, mp_obj_t len_obj)
 	{	//set layer count
 		if(layers_length <= max_length)
 		{
-			//printf("set layers_length to %d\r\n", layers_length);
+			//mp_printf(&mp_plat_print, "set layers_length to %d\r\n", layers_length);
 			kpu_model_set_output(kpu_task, 0, layers_length);
 		}
 		else
 		{
-			printf("err: set layers_length to %d, but max %d\r\n", layers_length, kpu_task->layers_length);
+			mp_printf(&mp_plat_print, "err: set layers_length to %d, but max %d\r\n", layers_length, kpu_task->layers_length);
 			return mp_const_false;
 		}
 	} else	//calculate all layers
 	{
-		//printf("set layers_length to %d\r\n", max_length);
+		//mp_printf(&mp_plat_print, "set layers_length to %d\r\n", max_length);
 		kpu_model_set_output(kpu_task, 0, max_length);
 	}
 	return mp_const_true;
@@ -1241,7 +1238,7 @@ STATIC mp_obj_t py_kpu_forward(uint n_args, const mp_obj_t *pos_args, mp_map_t *
 		g_ai_done_flag = 0;
         if (kpu_run_kmodel(kpu_task, arg_img->pix_ai, K210_DMA_CH_KPU, ai_done, NULL) != 0)
         {
-            printf("Cannot run kmodel.\n");
+            mp_printf(&mp_plat_print, "Cannot run kmodel.\n");
             exit(-1);
         }
 		while (!g_ai_done_flag);
@@ -1437,7 +1434,7 @@ STATIC mp_obj_t py_kpu_netinfo(mp_obj_t py_kpu_net_obj)
 		data.index = index;
 		data.type = kpu_model_get_layer_type(kpu_task, index);
 		layer = kpu_model_get_conv_layer(kpu_task, index);
-		//printf("layer %d @ 0x%lx\r\n", index, (unsigned long int)layer);
+		//mp_printf(&mp_plat_print, "layer %d @ 0x%lx\r\n", index, (unsigned long int)layer);
 		if(layer != 0)	//conv layer
 		{
 			data.wi = layer->image_size.data.i_row_wid+1;

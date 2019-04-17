@@ -49,7 +49,7 @@ const mp_obj_type_t machine_timer_type;
 
 #define K210_DEBUG 0
 #if K210_DEBUG==1
-#define debug_print(x,arg...) printf("[MAIXPY]"x,##arg)
+#define debug_print(x,arg...) mp_printf(&mp_plat_print, "[MAIXPY]"x,##arg)
 #else 
 #define debug_print(x,arg...) 
 #endif
@@ -400,7 +400,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(machine_timer_start_obj, machine_timer_start);
 // 		self->freq = MP_OBJ_SMALL_INT_VALUE(freq);
 // 	else
 // 	{
-// 		printf("[MAIXPY]TIMER:type error\n");
+// 		mp_printf(&mp_plat_print, "[MAIXPY]TIMER:type error\n");
 // 		return mp_const_none;
 // 	}
 // 	timer_disable(self->timer, self->channel);

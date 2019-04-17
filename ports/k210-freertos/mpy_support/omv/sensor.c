@@ -123,7 +123,7 @@ void sensor_init_fb()
 	JPEG_FB()->w=0;
     JPEG_FB()->h=0;
 	JPEG_FB()->size=0;
-	//printf("pixels=0x%x, pix_ai=0x%x, jpg=0x%x\n", MAIN_FB()->pixels, MAIN_FB()->pix_ai, JPEG_FB()->pixels);
+
     // Set default quality
     JPEG_FB()->quality = 35;
 
@@ -240,7 +240,7 @@ int sensro_gc_detect(sensor_t* sensor)
     }
     else
     {
-        printf("[MAIXPY]: gc0328 id = %x\n",id); 
+        mp_printf(&mp_plat_print, "[MAIXPY]: gc0328 id = %x\n",id); 
         sensor->slv_addr = GC0328_ADDR;
         sensor->chip_id = id;
         gc0328_init(sensor);
@@ -288,10 +288,10 @@ int sensor_init_dvp()
     sensor.reset_pol = ACTIVE_HIGH;
 
     if(0 == sensro_ov_detect(&sensor)){//find ov sensor
-        printf("[MAIXPY]:find ov sensor\n");
+        mp_printf(&mp_plat_print, "[MAIXPY]:find ov sensor\n");
     }
     else if(0 == sensro_gc_detect(&sensor)){//find gc0328 sensor
-        printf("[MAIXPY]: find gc3028\n");
+        mp_printf(&mp_plat_print, "[MAIXPY]: find gc3028\n");
     }
 	
     /* All good! */
@@ -325,7 +325,7 @@ int sensor_reset()
     sensor.gainceiling = 0;
     if(sensor.reset == NULL)
     {
-        printf("[MAIXPY]: sensor reset function is null\n");
+        mp_printf(&mp_plat_print, "[MAIXPY]: sensor reset function is null\n");
         return -1;
     }
     // Call sensor-specific reset function
@@ -335,7 +335,7 @@ int sensor_reset()
     // Disable dvp  IRQ before all cfg done 
     sensor_init_irq();
 
-	printf("[MAIXPY]: exit sensor_reset\n");
+	mp_printf(&mp_plat_print, "[MAIXPY]: exit sensor_reset\n");
     return 0;
 }
 
@@ -404,7 +404,7 @@ int binocular_sensor_scan()
     mp_hal_delay_ms(10);   
     sensor.slv_addr = cambus_scan();
     if (sensor.slv_addr == 0) {
-        printf("[MAIXPY]: Can not find sensor first\n");
+        mp_printf(&mp_plat_print, "[MAIXPY]: Can not find sensor first\n");
         /* Sensor has been held in reset,
            so the reset line is active low */
         sensor.reset_pol = ACTIVE_LOW;
@@ -414,7 +414,7 @@ int binocular_sensor_scan()
         /* Probe again to set the slave addr */
         sensor.slv_addr = cambus_scan();
         if (sensor.slv_addr == 0) {
-            printf("[MAIXPY]: Don't detect sensor\n");
+            mp_printf(&mp_plat_print, "[MAIXPY]: Don't detect sensor\n");
             return -1;
         }
     }
@@ -424,7 +424,7 @@ int binocular_sensor_scan()
     mp_hal_delay_ms(10);
     if(sensor.slv_addr != cambus_scan())
     {
-        printf("[MAIXPY]: sensors don't match\n");
+        mp_printf(&mp_plat_print, "[MAIXPY]: sensors don't match\n");
         return -2;
     }
     // Clear sensor chip ID.
@@ -451,7 +451,7 @@ int binocular_sensor_scan()
 					/*ov9650_init*/
                     break;
                 case OV2640_ID:
-                    printf("[MAIXPY]: ov2640_init\n");
+                    mp_printf(&mp_plat_print, "[MAIXPY]: ov2640_init\n");
                     init_ret = ov2640_init(&sensor);
                     break;
                 case OV7725_ID:
@@ -470,7 +470,7 @@ int binocular_sensor_scan()
     }
 
     /* All good! */
-	printf("[MAIXPY]: exit sensor_init\n");
+	mp_printf(&mp_plat_print, "[MAIXPY]: exit sensor_init\n");
     return 0;
 }
 
@@ -480,7 +480,7 @@ int binocular_sensor_reset()
 	binocular_sensor_init_dvp();//init pins and dvp interface
     if(0 != binocular_sensor_scan())//scan I2C, do ov2640 init
     {
-        printf("[MAIXPY]: scan sensor error\n");
+        mp_printf(&mp_plat_print, "[MAIXPY]: scan sensor error\n");
         return -1;
     }
     // Reset the sesnor state
@@ -499,7 +499,7 @@ int binocular_sensor_reset()
     mp_hal_delay_ms(10); 
 
     if (sensor.reset(&sensor) != 0) {	//rst reg, set default cfg.
-        printf("[MAIXPY]: First sensor reset failed\n");
+        mp_printf(&mp_plat_print, "[MAIXPY]: First sensor reset failed\n");
         return -1;
     }
 
@@ -512,14 +512,14 @@ int binocular_sensor_reset()
     mp_hal_delay_ms(10);
 
     if (sensor.reset(&sensor) != 0) {	//rst reg, set default cfg.
-        printf("[MAIXPY]: Second sensor reset failed\n");
+        mp_printf(&mp_plat_print, "[MAIXPY]: Second sensor reset failed\n");
         return -1;
     }
 
     // Disable dvp  IRQ before all cfg done 
     sensor_init_irq();
 
-	printf("[MAIXPY]: exit sensor_reset\n");
+	mp_printf(&mp_plat_print, "[MAIXPY]: exit sensor_reset\n");
     return 0;
 }
 
@@ -858,7 +858,7 @@ static void sensor_check_buffsize()
     }
 
     if ((MAIN_FB()->w * MAIN_FB()->h * bpp) > (OMV_INIT_W * OMV_INIT_H * OMV_INIT_BPP)) {
-		printf("%s: Image size too big to fit into buf!\n", __func__);
+		mp_printf(&mp_plat_print, "%s: Image size too big to fit into buf!\n", __func__);
         if (sensor.pixformat == PIXFORMAT_GRAYSCALE) {
             // Crop higher GS resolutions to QVGA
             sensor_set_windowing(190, 120, 320, 240);
@@ -975,7 +975,7 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
 		//
 		if(MAIN_FB()->bpp > 3)
 		{
-			printf("[MaixPy] %s | bpp error\n",__func__);
+			mp_printf(&mp_plat_print, "[MaixPy] %s | bpp error\n",__func__);
 			return -1;
 		}
 		
@@ -1001,7 +1001,7 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
 		//exchang_pixel((image->pixels), (MAIN_FB()->w)*(MAIN_FB()->h)); //cost 3ms@400M
 		reverse_u32pixel((image->pixels), (MAIN_FB()->w)*(MAIN_FB()->h)/2);
 		//t1=read_cycle();
-		//printf("%ld-%ld=%ld, %ld us!\r\n",t1,t0,(t1-t0),((t1-t0)*1000000/400000000)); 
+		//mp_printf(&mp_plat_print, "%ld-%ld=%ld, %ld us!\r\n",t1,t0,(t1-t0),((t1-t0)*1000000/400000000)); 
 		if (streaming_cb) {
 			// In streaming mode, either switch frame buffers in double buffer mode,
 			// or call the streaming callback with the main FB in single buffer mode.

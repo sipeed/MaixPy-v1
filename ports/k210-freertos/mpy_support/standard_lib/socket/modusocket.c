@@ -279,7 +279,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_settimeout_obj, socket_settimeout);
 // method socket.setblocking(flag)
 STATIC mp_obj_t socket_setblocking(mp_obj_t self_in, mp_obj_t blocking) {
 	mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
-	printf("[MaixPy] %s | uart socket Do nothing\n",__func__);
+	mp_printf(&mp_plat_print, "[MaixPy] %s | uart socket Do nothing\n",__func__);
 	return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_setblocking_obj, socket_setblocking);
@@ -417,7 +417,7 @@ int parse_ipv4_addr(mp_obj_t addr_in, uint8_t *out_ip, netutils_endian_t endian)
         } else if (i > 0 && s < s_top && *s == '.') {
             s++;
         } else {
-			printf("[MaixPy] %s | It is not string IP form\n",__func__);
+			mp_printf(&mp_plat_print, "[MaixPy] %s | It is not string IP form\n",__func__);
 			return 0;
         }
     }

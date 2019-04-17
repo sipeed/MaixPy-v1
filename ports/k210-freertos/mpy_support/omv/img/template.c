@@ -204,7 +204,7 @@ float imlib_template_match_ds(image_t *f, image_t *t, rectangle_t *r)
 
     imlib_integral_image_free(&sum);
 
-    //printf("max xc: %f\n", (double) max_xc);
+    //mp_printf(&mp_plat_print, "max xc: %f\n", (double) max_xc);
     return max_xc;
 }
 

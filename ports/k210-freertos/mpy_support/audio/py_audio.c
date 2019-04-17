@@ -83,7 +83,6 @@ STATIC mp_obj_t Maix_audio_init_helper(Maix_audio_obj_t *self, size_t n_args, co
         }
     }else if(args[ARG_path].u_obj != mp_const_none)
     {
-        printf("[MAIXPY] : audiof file init\n");
         int err = 0;
         char* path_str = mp_obj_str_get_str(args[ARG_path].u_obj);
         mp_obj_t fp = vfs_internal_open(path_str,"+b",&err);
@@ -159,7 +158,7 @@ STATIC mp_obj_t Maix_audio_play_process(mp_obj_t self_in,mp_obj_t I2S_dev) {
     uint32_t file_size = vfs_internal_size(audio->fp);
     if(0 == file_size)
     {
-        printf("[MAIXPY]: file length is 0\n");
+        mp_printf(&mp_plat_print, "[MAIXPY]: file length is 0\n");
         return mp_const_false;
     }
     switch(audio->format)
@@ -219,14 +218,14 @@ STATIC mp_obj_t Maix_audio_record_process(size_t n_args, const mp_obj_t *pos_arg
     uint32_t file_size = vfs_internal_size(audio->fp);
     if(0 != file_size)
     {
-        printf("[MAIXPY]: file length isn't empty\n");
+        mp_printf(&mp_plat_print, "[MAIXPY]: file length isn't empty\n");
         return mp_const_false;
     }
     switch(audio->format)
     {
         case AUDIO_WAV_FMT:
             if(args[ARG_channels].u_int > 2){//get channel num
-                printf("[MAIXPY]: The number of channels must be less than or equal to 2\n");
+                mp_printf(&mp_plat_print, "[MAIXPY]: The number of channels must be less than or equal to 2\n");
                 return mp_const_false;
             }
             return wav_record_process(audio,args[ARG_channels].u_int);

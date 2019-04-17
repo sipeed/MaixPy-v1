@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include "py/mpprint.h"
 
 char* layer_type_name0[]={
 	"KL_INVALID",
@@ -103,16 +104,16 @@ int kpu_model_flash_get_size(uint32_t model_addr)
 	w25qxx_status_t status = w25qxx_read_data_dma(model_addr, &model_header, sizeof(kpu_kmodel_header_t), W25QXX_QUAD_FAST);
 	if(status != W25QXX_OK)
 	{
-		printf("err: read head err!");
+		mp_printf(&mp_plat_print, "err: read head err!");
 		err = -2;//read error
 		goto error;
 	}
 
-	printf("v=%d, flag=%d, arch=%d, layer len=%d, mem=%d, out cnt=%d\r\n", \
+	mp_printf(&mp_plat_print, "v=%d, flag=%d, arch=%d, layer len=%d, mem=%d, out cnt=%d\r\n", \
 		model_header.version, model_header.flags, model_header.arch, model_header.layers_length, model_header.main_mem_usage, model_header.output_count);
     if (model_header.version != 3)	//we only support V3 now
 	{
-		printf("err: we only support V3 now, get V%d\r\n", model_header.version);
+		mp_printf(&mp_plat_print, "err: we only support V3 now, get V%d\r\n", model_header.version);
 		err = -3;//read error
         goto error;
 	}
@@ -145,11 +146,11 @@ int kpu_model_flash_get_size(uint32_t model_addr)
 		current_layer += sizeof(kpu_model_layer_header_t);
 	}
 						
-	//printf("kmodel size: %d bytes\r\n", current_layer - model_addr + sum_size);			
+	//mp_printf(&mp_plat_print, "kmodel size: %d bytes\r\n", current_layer - model_addr + sum_size);			
     return current_layer - model_addr + sum_size;
 	
 error:
-    printf("[MAIXPY]kpu: kpu_model_get_size  error %d", err);
+    mp_printf(&mp_plat_print, "[MAIXPY]kpu: kpu_model_get_size  error %d", err);
     return -1;
 }
 
@@ -178,7 +179,7 @@ kpu_model_layer_type_t kpu_model_get_layer_type(kpu_model_context_t *ctx, uint32
 	uint8_t* model_data = ctx->model_buffer;
 	if(index >= ctx->layers_length)
 	{
-		printf("err: index > layers_length!\r\n");
+		mp_printf(&mp_plat_print, "err: index > layers_length!\r\n");
 		return -1;
 	}
 	kpu_model_layer_header_t* layer_header=ctx->layer_headers + index;
@@ -196,7 +197,7 @@ int kpu_model_get_layer_size(kpu_model_context_t *ctx, uint32_t index)
 	uint8_t* model_data = ctx->model_buffer;
 	if(index >= ctx->layers_length)
 	{
-		printf("err: index > layers_length!\r\n");
+		mp_printf(&mp_plat_print, "err: index > layers_length!\r\n");
 		return -1;
 	}
 	kpu_model_layer_header_t* layer_header=ctx->layer_headers + index;
@@ -212,7 +213,7 @@ int kpu_model_print_layer_info(kpu_model_context_t *ctx)
 	kpu_model_layer_header_t* layer_header=ctx->layer_headers;// + index;
 	for(i=0;i<ctx->layers_length;i++)
 	{
-		printf("layer[%d]: %s, %d bytes\r\n", i, kpu_model_getname_from_type(layer_header->type), layer_header->body_size);
+		mp_printf(&mp_plat_print, "layer[%d]: %s, %d bytes\r\n", i, kpu_model_getname_from_type(layer_header->type), layer_header->body_size);
 		layer_header++;
 	}
 	return;
@@ -224,7 +225,7 @@ uint8_t* kpu_model_get_layer_body(kpu_model_context_t *ctx, uint32_t index)
 	int i;
 	if(index >= ctx->layers_length)
 	{
-		printf("err: index > layers_length!\r\n");
+		mp_printf(&mp_plat_print, "err: index > layers_length!\r\n");
 		return -1;
 	}
 	kpu_model_layer_header_t* layer_header=ctx->layer_headers;// + sizeof(kpu_model_layer_header_t) * index;
@@ -254,7 +255,7 @@ kpu_layer_argument_t* kpu_model_get_conv_layer(kpu_model_context_t *ctx, uint32_
 	kpu_model_layer_type_t type = kpu_model_get_layer_type(ctx, index);
 	if(type != KL_K210_CONV)
 	{
-		//printf("err: layer isn't conv layer! type = %d\r\n", type);
+		//mp_printf(&mp_plat_print, "err: layer isn't conv layer! type = %d\r\n", type);
 		return 0;
 	}
 	uint8_t* layer_body = kpu_model_get_layer_body(ctx, index);
@@ -324,7 +325,7 @@ int kpu_model_set_output(kpu_model_context_t *ctx, uint32_t index, uint32_t laye
 {
 	if (index >= ctx->output_count)
 	{
-		printf("output index too big!\r\n");
+		mp_printf(&mp_plat_print, "output index too big!\r\n");
         return -1;
 	}
 	ctx->layers_length = layers_length;
@@ -433,12 +434,12 @@ int kpu_model_set_output(kpu_model_context_t *ctx, uint32_t index, uint32_t laye
 		{
 			kpu_model_conv_layer_argument_t* body = (kpu_model_conv_layer_argument_t*)layer_body;
 			volatile kpu_layer_argument_t layer = *(const volatile kpu_layer_argument_t *)(ctx->model_buffer + body->layer_offset);
-			//printf("flags=%d, len=%d\r\n", body->flags , layers_length-1);
+			//mp_printf(&mp_plat_print, "flags=%d, len=%d\r\n", body->flags , layers_length-1);
 			if(!(body->flags))
 			{
 				body->flags |= KLF_MAIN_MEM_OUT;	//enable output
 				flag_index = layers_length-1;
-				//printf("set flag 0x%lx, flags=%d\r\n", (long unsigned int)body, body->flags);
+				//mp_printf(&mp_plat_print, "set flag 0x%lx, flags=%d\r\n", (long unsigned int)body, body->flags);
 			}
 			
 			output->address = body->main_mem_out_address;
@@ -446,7 +447,7 @@ int kpu_model_set_output(kpu_model_context_t *ctx, uint32_t index, uint32_t laye
 			break;
 		}
 		case KL_K210_ADD_PADDING:
-			printf("KL_K210_ADD_PADDING not support output to mainbuf!\r\n");
+			mp_printf(&mp_plat_print, "KL_K210_ADD_PADDING not support output to mainbuf!\r\n");
 			return -1;
 			break;
 		case KL_K210_REMOVE_PADDING:
@@ -457,11 +458,11 @@ int kpu_model_set_output(kpu_model_context_t *ctx, uint32_t index, uint32_t laye
 			break;
 		}
 		case KL_K210_UPLOAD:
-			printf("KL_K210_UPLOAD not support output to mainbuf!\r\n");
+			mp_printf(&mp_plat_print, "KL_K210_UPLOAD not support output to mainbuf!\r\n");
 			return -1;
 			break;
 		default:
-			printf("Unknow layer type: %d!\r\n", layer_type);
+			mp_printf(&mp_plat_print, "Unknow layer type: %d!\r\n", layer_type);
 			return -1;
     }
 	return 0;
