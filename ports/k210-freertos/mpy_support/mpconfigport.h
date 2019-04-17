@@ -253,7 +253,6 @@ extern const struct _mp_obj_module_t socket_module;
 extern const struct _mp_obj_module_t image_module;
 extern const struct _mp_obj_module_t sensor_module;
 extern const struct _mp_obj_module_t lcd_module;
-extern const struct _mp_obj_module_t time_module;
 extern const struct _mp_obj_module_t cpufreq_module;
 extern const struct _mp_obj_module_t kpu_module;
 extern const struct _mp_obj_module_t audio_module;
@@ -332,7 +331,6 @@ extern const struct _mp_obj_module_t mp_module_touchscreen;
     { MP_OBJ_NEW_QSTR(MP_QSTR_image), (mp_obj_t)&image_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_sensor), (mp_obj_t)&sensor_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_lcd), (mp_obj_t)&lcd_module }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_clock), (mp_obj_t)&time_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_cpufreq), (mp_obj_t)&cpufreq_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_KPU), (mp_obj_t)&kpu_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_audio), (mp_obj_t)&audio_module }, \
