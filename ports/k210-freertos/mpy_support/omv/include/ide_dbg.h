@@ -56,8 +56,6 @@ void ide_dbg_init();
 ide_dbg_status_t
      ide_dbg_dispatch_cmd(machine_uart_obj_t* uart, uint8_t* data);
 ide_dbg_status_t ide_dbg_ack_data(machine_uart_obj_t* uart);
-uint32_t ide_dbg_tx_buf_len();
-uint8_t  ide_dbg_tx_buf(uint32_t len);
 bool     ide_dbg_script_ready();
 vstr_t*  ide_dbg_get_script();
 

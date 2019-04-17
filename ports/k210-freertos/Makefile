@@ -22,6 +22,7 @@ CFLAGS += -DFFCONF_H=\"lib/oofatfs/ffconf.h\"
 sinclude $(COMMON_C_MK)
 
 ALL_LIBS := $(wildcard $(BIN_DIR)/*.a)
+$(info ${ALL_LIBS}...................)
 # BIN_LDFLAGS += $(SRC_C_OUTPUT_OBJ) $(SRC_CXX_OUTPUT_OBJ)
 
 all: include_mk compile out print_size	

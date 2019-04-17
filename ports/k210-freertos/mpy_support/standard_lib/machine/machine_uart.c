@@ -50,6 +50,7 @@
 #include "plic.h"
 #include "machine_uart.h"
 #include "ide_dbg.h"
+#include "buffer.h"
 
 #define Maix_DEBUG 0
 #if Maix_DEBUG==1
@@ -70,7 +71,7 @@ machine_uart_obj_t* g_repl_uart_obj = NULL;
 
 STATIC const char *_parity_name[] = {"None", "odd", "even"};
 STATIC const char *_stop_name[] = {"1", "1.5", "2"};
-
+Buffer_t g_uart_send_buf_ide;
 
 //QueueHandle_t UART_QUEUE[UART_DEVICE_MAX] = {};
 
@@ -319,7 +320,7 @@ STATIC size_t uart_tx_data(machine_uart_obj_t *self, const void *src_data, size_
 		}
 		else
 		{
-			
+			Buffer_Puts(&g_uart_send_buf_ide, src, size);
 		}
 	}
 	else
@@ -468,6 +469,8 @@ STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, co
 	{
 		self->ide_debug_mode = true;
 		ide_dbg_init();
+		// init ringbuffer, use read buffer, for we do not use it to read data in IDE mode
+		Buffer_Init(&g_uart_send_buf_ide, self->read_buf, self->read_buf_len);
 	}
 	else
 	{

@@ -38,6 +38,7 @@ INCLUDE := -I $(CUR_DIR) \
 			-I $(CUR_DIR)/$(OUTPUT_DIR) \
 			-I $(CUR_DIR)/audio/include/ \
 			-I $(CUR_DIR)/audio/wav/include/ \
+			-I $(CUR_DIR)/../../platform/utils/include/ \
 
 
 

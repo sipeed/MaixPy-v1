@@ -22,6 +22,7 @@
 #include "uarths.h"
 #include "uart.h"
 #include "fpioa.h"
+#include "buffer.h"
 
 
 static volatile int xfer_bytes;   // bytes sent
@@ -39,7 +40,7 @@ static volatile uint8_t ide_dbg_cmd_len_count = 0;
 static size_t           temp_size;
 static volatile bool    is_busy_sending = false; // sending data
 static volatile bool    is_sending_jpeg = false; // sending jpeg (frame buf) data
-
+extern Buffer_t g_uart_send_buf_ide;
 
 void ide_debug_init0()
 {
@@ -84,15 +85,14 @@ ack_start:
 
         case USBDBG_TX_BUF_LEN:
         {
-            *((uint32_t*)ide_dbg_cmd_buf) = ide_dbg_tx_buf_len();
+            *((uint32_t*)ide_dbg_cmd_buf) = Buffer_Size(&g_uart_send_buf_ide);
             cmd = USBDBG_NONE;
             break;
         }
 
         case USBDBG_TX_BUF:
         {
-            uint8_t *tx_buf = ide_dbg_tx_buf(length);
-            memcpy(ide_dbg_cmd_buf, tx_buf, length);
+            Buffer_Gets(&g_uart_send_buf_ide, ide_dbg_cmd_buf, length);
             if (xfer_bytes+ length == xfer_length)
             {
                 cmd = USBDBG_NONE;
@@ -418,20 +418,6 @@ ide_dbg_status_t ide_dbg_dispatch_cmd(machine_uart_obj_t* uart, uint8_t* data)
         }
     }
 }
-
-
-uint32_t ide_dbg_tx_buf_len()
-{
-    //TODO:
-    return 0;
-}
-
-uint8_t ide_dbg_tx_buf(uint32_t len)
-{
-    //TODO:
-    return NULL;
-}
-
 
 bool ide_dbg_script_ready()
 {
