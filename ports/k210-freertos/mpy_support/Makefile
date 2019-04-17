@@ -57,7 +57,7 @@ MPY_EXT_SRC_C := \
 		lib/utils/sys_stdio_mphal.c \
 		lib/oofatfs/ff.c \
 		lib/oofatfs/option/ccsbcs.c
-AllDirs += $(shell ls -R | grep '^\./.*:$$' | grep -v "lvgl" |grep -v "nes" | grep -v "video" |grep -v "./build" | awk '{gsub(":","");print}') .
+AllDirs += $(shell ls -R | grep '^\./.*:$$' | grep -v "lvgl" |grep -v "nes" | grep -v "video" | grep -v "touchscreen" |grep -v "./build" | awk '{gsub(":","");print}') .
 
 ###### LVGL #######
 ifeq (${CFG_MAIXPY_LVGL_SUPPORT},y)
