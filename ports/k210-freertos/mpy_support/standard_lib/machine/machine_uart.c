@@ -114,6 +114,13 @@ static size_t read_ret;
 static uint8_t read_tmp;
 static uint16_t next_head;
 static machine_uart_obj_t* ctx_self = NULL;
+
+mp_obj_t uart_any(machine_uart_obj_t *self)
+{
+	return mp_obj_new_int(uart_rx_any(self));
+}
+MP_DEFINE_CONST_FUN_OBJ_1(machine_uart_any_obj, uart_any);
+
 int uart_rx_irq(void *ctx)
 {
     ctx_self= (machine_uart_obj_t*)ctx;
@@ -252,6 +259,18 @@ int uart_rx_char(machine_uart_obj_t *self)
     }
 	return -1;
 }
+
+mp_obj_t uart_readchar(machine_uart_obj_t *self) 
+{
+	int data = uart_rx_char(self);
+
+	if(data != -1)
+	{
+		return mp_obj_new_bytes(&data,1);
+	}
+	return MP_OBJ_NULL;
+}
+MP_DEFINE_CONST_FUN_OBJ_1(machine_uart_rx_char_obj, uart_rx_char);
 
 int uart_rx_data(machine_uart_obj_t *self,uint8_t* buf_in,uint32_t size) 
 {
@@ -552,7 +571,9 @@ MP_DEFINE_CONST_FUN_OBJ_1(machine_set_uart_repl_uart_obj, machine_set_uart_repl_
 STATIC const mp_rom_map_elem_t machine_uart_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&machine_uart_init_obj) },
     { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&machine_uart_deinit_obj) },
-    
+
+	{ MP_ROM_QSTR(MP_QSTR_readchar), MP_ROM_PTR(&machine_uart_rx_char_obj)},
+	{ MP_ROM_QSTR(MP_QSTR_any), MP_ROM_PTR(&machine_uart_any_obj)},
     { MP_ROM_QSTR(MP_QSTR_readline), MP_ROM_PTR(&mp_stream_unbuffered_readline_obj)},
     { MP_ROM_QSTR(MP_QSTR_readinto), MP_ROM_PTR(&mp_stream_readinto_obj) },
     { MP_ROM_QSTR(MP_QSTR_write), MP_ROM_PTR(&mp_stream_write_obj) },
