@@ -328,7 +328,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(spiffs_vfs_chdir_obj, spiffs_vfs_chdir);
 
 /// Get the current directory.
 STATIC mp_obj_t spiffs_vfs_getcwd(mp_obj_t vfs_in) {
-    return mp_obj_new_str("/flash", 6);
+    return mp_obj_new_str("", 0);
 /*
     mp_obj_fat_vfs_t *self = MP_OBJ_TO_PTR(vfs_in);
     char buf[MICROPY_ALLOC_PATH_MAX + 1];
