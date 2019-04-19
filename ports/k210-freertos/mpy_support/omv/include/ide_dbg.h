@@ -9,8 +9,11 @@
 #ifndef __IDE_DBG_H__
 #define __IDE_DBG_H__
 
+
 #include "stdint.h"
 #include "stdbool.h"
+
+#ifndef OMV_MINIMUM
 
 #include "machine_uart.h"
 #include "lcd.h"
@@ -51,12 +54,21 @@ typedef enum{
     IDE_DBG_DISPATCH_STATUS_BUSY,
 } ide_dbg_status_t;
 
-void ide_debug_init0();
-void ide_dbg_init();
+void     ide_debug_init0();
+void     ide_dbg_init();
 ide_dbg_status_t
-     ide_dbg_dispatch_cmd(machine_uart_obj_t* uart, uint8_t* data);
+         ide_dbg_dispatch_cmd(machine_uart_obj_t* uart, uint8_t* data);
 ide_dbg_status_t ide_dbg_ack_data(machine_uart_obj_t* uart);
 bool     ide_dbg_script_ready();
 vstr_t*  ide_dbg_get_script();
+
+#else // OMV_MINIMUM
+
+void      ide_debug_init0();
+void      ide_dbg_init();
+bool      ide_dbg_script_ready();
+vstr_t*   ide_dbg_get_script();
+
+#endif
 
 #endif /* __USBDBG_H__ */

@@ -24,6 +24,7 @@
 #include "fpioa.h"
 #include "buffer.h"
 
+#ifndef OMV_MINIMUM
 
 static volatile int xfer_bytes;   // bytes sent
 static volatile int xfer_length;  // bytes need to send
@@ -429,4 +430,27 @@ vstr_t* ide_dbg_get_script()
     return &script_buf;
 }
 
+#else //OMV_MINIMUM
+
+void ide_debug_init0()
+{
+
+}
+
+void ide_dbg_init()
+{
+
+}
+
+bool     ide_dbg_script_ready()
+{
+    return false;
+}
+vstr_t*  ide_dbg_get_script()
+{
+    return NULL;
+}
+
+
+#endif
 

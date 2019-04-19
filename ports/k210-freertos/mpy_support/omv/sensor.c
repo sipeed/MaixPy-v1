@@ -104,11 +104,17 @@ extern uint8_t* g_dvp_buf;
 
 void sensor_init_fb()
 {
+#ifndef OMV_MINIMUM
     // Init FB mutex
     mutex_init(&JPEG_FB()->lock);
 
     // Save fb_enabled flag state
-    int fb_enabled = JPEG_FB()->enabled;
+	JPEG_FB()->w=0;
+    JPEG_FB()->h=0;
+	JPEG_FB()->size=0;
+    // Set default quality
+    JPEG_FB()->quality = 35;
+#endif
 
     // Clear framebuffers
 	MAIN_FB()->x=0;
@@ -120,15 +126,6 @@ void sensor_init_fb()
 	MAIN_FB()->bpp=0;
 	MAIN_FB()->pixels = &g_dvp_buf;
 	MAIN_FB()->pix_ai = &g_ai_buf_in;
-	JPEG_FB()->w=0;
-    JPEG_FB()->h=0;
-	JPEG_FB()->size=0;
-
-    // Set default quality
-    JPEG_FB()->quality = 35;
-
-    // Set fb_enabled
-    JPEG_FB()->enabled = fb_enabled;
 }
 
 void sensor_init0()

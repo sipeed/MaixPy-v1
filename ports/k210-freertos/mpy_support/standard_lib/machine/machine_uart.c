@@ -51,6 +51,7 @@
 #include "machine_uart.h"
 #include "ide_dbg.h"
 #include "buffer.h"
+#include "imlib_config.h"
 
 #define Maix_DEBUG 0
 #if Maix_DEBUG==1
@@ -129,6 +130,7 @@ int uart_rx_irq(void *ctx)
 	if (ctx_self->read_buf_len != 0) {
 		if(ctx_self->attached_to_repl)
 		{
+#ifndef OMV_MINIMUM
 			if(ctx_self->ide_debug_mode)
 			{
 				do{
@@ -142,6 +144,7 @@ int uart_rx_irq(void *ctx)
 				}while(read_ret);
 			}
 			else
+#endif // OMV_MINIMUM
 			{
 				do{
 					next_head = (ctx_self->read_buf_head + 1) % ctx_self->read_buf_len;

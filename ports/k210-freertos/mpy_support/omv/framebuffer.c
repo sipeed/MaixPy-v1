@@ -52,6 +52,7 @@ uint32_t fb_buffer_size()
 }
 void fb_update_jpeg_buffer()
 {
+#ifndef OMV_MINIMUM    
     static int overflow_count = 0;
 
     if ((MAIN_FB()->bpp > 3) && JPEG_FB()->enabled) {
@@ -113,4 +114,5 @@ void fb_update_jpeg_buffer()
             mutex_unlock(&JPEG_FB()->lock, MUTEX_TID_OMV);
         }
     }
+#endif
 }
