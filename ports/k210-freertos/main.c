@@ -283,6 +283,9 @@ soft_reset:
 		mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR_));
 		mp_obj_list_init(mp_sys_argv, 0);//append agrv here
     	readline_init0();
+		// module init
+		omv_init(); //init before uart
+
 #if MICROPY_HW_UART_REPL
 		{
 			mp_obj_t args[3] = {
@@ -299,8 +302,6 @@ soft_reset:
 		MP_STATE_PORT(Maix_stdio_uart) = NULL;
 #endif
 
-		// module init
-		omv_init();
 		// initialise peripherals
 		bool mounted_sdcard = false;
 		bool mounted_flash= false;
@@ -321,7 +322,7 @@ soft_reset:
 
 		do{
 			ide_dbg_init();
-			while(!ide_dbg_script_ready())
+			while( (!ide_dbg_script_ready()) && (!ide_dbg_need_save_file()))
 			{
 				nlr_buf_t nlr;
 				if (nlr_push(&nlr) == 0)
@@ -342,6 +343,10 @@ soft_reset:
 					}
 				}
 				nlr_pop();
+			}
+			if(ide_dbg_need_save_file())
+			{
+				ide_save_file();
 			}
 			if(ide_dbg_script_ready())
 			{

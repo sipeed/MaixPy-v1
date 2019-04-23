@@ -34,7 +34,8 @@ enum usbdbg_cmd {
     USBDBG_ARCH_STR         =0x83,
     USBDBG_SCRIPT_EXEC      =0x05,
     USBDBG_SCRIPT_STOP      =0x06,
-    USBDBG_SCRIPT_SAVE      =0x07,
+    USBDBG_FILE_SAVE        =0x07,
+    USBDBG_FILE_SAVE_STATUS =0x88,
     USBDBG_SCRIPT_RUNNING   =0x87,
     USBDBG_TEMPLATE_SAVE    =0x08,
     USBDBG_DESCRIPTOR_SAVE  =0x09,
@@ -61,6 +62,8 @@ ide_dbg_status_t
 ide_dbg_status_t ide_dbg_ack_data(machine_uart_obj_t* uart);
 bool     ide_dbg_script_ready();
 vstr_t*  ide_dbg_get_script();
+bool      ide_dbg_need_save_file();
+void      ide_save_file(); 
 
 #else // OMV_MINIMUM
 
@@ -68,7 +71,8 @@ void      ide_debug_init0();
 void      ide_dbg_init();
 bool      ide_dbg_script_ready();
 vstr_t*   ide_dbg_get_script();
-
+bool      ide_dbg_need_save_file();
+void      ide_save_file();      
 #endif
 
 #endif /* __USBDBG_H__ */

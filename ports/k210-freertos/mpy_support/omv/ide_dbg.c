@@ -23,6 +23,7 @@
 #include "uart.h"
 #include "fpioa.h"
 #include "buffer.h"
+#include "vfs_internal.h"
 
 #ifndef OMV_MINIMUM
 
@@ -42,6 +43,10 @@ static size_t           temp_size;
 static volatile bool    is_busy_sending = false; // sending data
 static volatile bool    is_sending_jpeg = false; // sending jpeg (frame buf) data
 extern Buffer_t g_uart_send_buf_ide;
+static volatile uint32_t ide_file_save_status = 0; //0: ok, 1: busy recieve data, 2:eror memory, 3:open file err, 4: write file error, 5: busy saving, others: unkown error
+static volatile bool ide_dbg_save_file_ready = false;
+static uint32_t ide_file_length = 0;
+static uint8_t* p_data_temp = NULL;
 
 void ide_debug_init0()
 {
@@ -160,6 +165,12 @@ ack_start:
             cmd = USBDBG_NONE;
             break;
         }
+        case USBDBG_FILE_SAVE_STATUS:
+        {
+            *((uint32_t*)ide_dbg_cmd_buf) = ide_file_save_status;
+            cmd = USBDBG_NONE;
+            break;
+        }
         default: /* error */
             break;
     }
@@ -191,7 +202,7 @@ ide_dbg_status_t ide_dbg_receive_data(machine_uart_obj_t* uart, uint8_t* data)
             // than the total length (xfer_length) and the script will Not be executed.
             if (!script_running && !gc_is_locked()) {
                 vstr_add_strn(&script_buf, data, 1);
-                if (xfer_bytes == xfer_length) {
+                if (xfer_bytes+1 == xfer_length) {
                     // Set script ready flag
                     script_ready = true;
 
@@ -200,7 +211,6 @@ ide_dbg_status_t ide_dbg_receive_data(machine_uart_obj_t* uart, uint8_t* data)
 
                     // Disable IDE IRQ (re-enabled by pyexec or main).
                     // usbdbg_set_irq_enabled(false);
-
                     // Clear interrupt traceback
                     mp_obj_exception_clear_traceback(mp_const_ide_interrupt);
                     // Interrupt running REPL
@@ -217,6 +227,23 @@ ide_dbg_status_t ide_dbg_receive_data(machine_uart_obj_t* uart, uint8_t* data)
             }
             break;
 
+        case USBDBG_FILE_SAVE:
+        {
+            p_data_temp[xfer_bytes] = *data;
+            if (xfer_bytes+1 == xfer_length) {
+                //save to FS
+                ide_dbg_save_file_ready = true;
+                ide_file_save_status = 5;
+                mp_obj_exception_clear_traceback(mp_const_ide_interrupt);
+                MP_STATE_VM(mp_pending_exception) = mp_const_ide_interrupt;//MP_OBJ_FROM_PTR(&MP_STATE_VM(mp_kbd_exception));
+                #if MICROPY_ENABLE_SCHEDULER
+                if (MP_STATE_VM(sched_state) == MP_SCHED_IDLE) {
+                    MP_STATE_VM(sched_state) = MP_SCHED_PENDING;
+                }
+                #endif
+            }
+            break;
+        }
         case USBDBG_TEMPLATE_SAVE: {
             //TODO: save image support
             // image_t image ={
@@ -274,8 +301,8 @@ ide_dbg_status_t ide_dbg_dispatch_cmd(machine_uart_obj_t* uart, uint8_t* data)
         length = xfer_length - xfer_bytes;
         if(length)//receive data from IDE
         {
-            ++xfer_bytes;
             ide_dbg_receive_data(uart, data);
+            ++xfer_bytes;
             return IDE_DBG_STATUS_OK;
         }
         if(*data == IDE_DBG_CMD_START_FLAG)
@@ -338,11 +365,31 @@ ide_dbg_status_t ide_dbg_dispatch_cmd(machine_uart_obj_t* uart, uint8_t* data)
                 cmd = USBDBG_NONE;
                 break;
 
-            case USBDBG_SCRIPT_SAVE:
-                /* save running script */
-                // TODO
+            case USBDBG_FILE_SAVE:
+                xfer_bytes = 0;
+                xfer_length = length;
+                ide_file_save_status = 0;
+                if(length)
+                {
+                    ide_file_save_status = 1;
+                    ide_file_length = length;
+                    if( p_data_temp )
+                    {
+                        free(p_data_temp);
+                    }
+                    p_data_temp = malloc( (length%4)? (length+4-(length%4)): length );
+                    if(!p_data_temp)
+                    {
+                        xfer_length = 0;
+                        ide_file_length = 0;
+                        ide_file_save_status = 2;
+                    }
+                }
                 break;
-
+            case USBDBG_FILE_SAVE_STATUS:
+                xfer_bytes = 0;
+                xfer_length = length;
+                break;
             case USBDBG_SCRIPT_RUNNING:
                 xfer_bytes = 0;
                 xfer_length =length;
@@ -430,7 +477,51 @@ vstr_t* ide_dbg_get_script()
     return &script_buf;
 }
 
-#else //OMV_MINIMUM
+bool      ide_dbg_need_save_file()
+{
+    bool ret = ide_dbg_save_file_ready;
+    if(ide_file_save_status != 1 && ide_file_save_status!=5) // not busy receive data
+    {
+        if(p_data_temp)
+        {
+            free(p_data_temp);
+            p_data_temp = NULL;
+        }
+    }
+    return ret;
+}
+
+void      ide_save_file()
+{
+    //TODO: add sha256 parity
+    int err;
+    uint8_t* data;
+    char* file_name = p_data_temp;
+    int tmp = strlen(file_name)+1;
+    tmp = tmp + 4-((tmp%4)?(tmp%4):4);
+    data = p_data_temp + tmp;
+    uint32_t file_len = ide_file_length - strlen(file_name) - 1;
+    mp_obj_t file = vfs_internal_open((const char*)file_name, "wb", &err);
+    
+    if( file==NULL || err!=0)
+    {
+        ide_file_save_status = 3;
+    }
+    else
+    {
+        mp_uint_t ret = vfs_internal_write(file, (void*)data, file_len, &err);
+        if(err!=0 || ret != file_len)
+            ide_file_save_status = 4;
+        else
+            ide_file_save_status = 0;
+        vfs_internal_close(file, &err);
+    }
+    free(p_data_temp);
+    p_data_temp = NULL;
+    ide_dbg_save_file_ready = false;
+}
+
+#else // OMV_MINIMUM /////////////////////////////////////
 
 void ide_debug_init0()
 {
@@ -449,6 +540,16 @@ bool     ide_dbg_script_ready()
 vstr_t*  ide_dbg_get_script()
 {
     return NULL;
+}
+
+bool      ide_dbg_need_save_file()
+{
+    return false;
+}
+
+void      ide_save_file()
+{
+
 }
 
 

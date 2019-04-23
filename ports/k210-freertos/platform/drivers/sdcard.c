@@ -567,6 +567,7 @@ uint8_t sd_read_sector(uint8_t *data_buff, uint32_t sector, uint32_t count)
  */
 uint8_t sd_write_sector(uint8_t *data_buff, uint32_t sector, uint32_t count)
 {
+	configASSERT(((uint32_t)data_buff)%4==0);
 	uint8_t frame[2] = {0xFF};
 	if (count == 1) {
 		frame[1] = SD_START_DATA_SINGLE_BLOCK_WRITE;
