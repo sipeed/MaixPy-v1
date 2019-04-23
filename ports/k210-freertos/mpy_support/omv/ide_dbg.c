@@ -24,6 +24,8 @@
 #include "fpioa.h"
 #include "buffer.h"
 #include "vfs_internal.h"
+#include "sha256.h"
+#include "string.h"
 
 #ifndef OMV_MINIMUM
 
@@ -43,8 +45,8 @@ static size_t           temp_size;
 static volatile bool    is_busy_sending = false; // sending data
 static volatile bool    is_sending_jpeg = false; // sending jpeg (frame buf) data
 extern Buffer_t g_uart_send_buf_ide;
-static volatile uint32_t ide_file_save_status = 0; //0: ok, 1: busy recieve data, 2:eror memory, 3:open file err, 4: write file error, 5: busy saving, others: unkown error
-static volatile bool ide_dbg_save_file_ready = false;
+static volatile uint32_t ide_file_save_status = 0; //0: ok, 1: busy recieve data, 2:eror memory, 3:open file err, 
+                                                   //4: write file error, 5: busy saving, 6:parity check fail, others: unkown error
 static uint32_t ide_file_length = 0;
 static uint8_t* p_data_temp = NULL;
 
@@ -232,7 +234,6 @@ ide_dbg_status_t ide_dbg_receive_data(machine_uart_obj_t* uart, uint8_t* data)
             p_data_temp[xfer_bytes] = *data;
             if (xfer_bytes+1 == xfer_length) {
                 //save to FS
-                ide_dbg_save_file_ready = true;
                 ide_file_save_status = 5;
                 mp_obj_exception_clear_traceback(mp_const_ide_interrupt);
                 MP_STATE_VM(mp_pending_exception) = mp_const_ide_interrupt;//MP_OBJ_FROM_PTR(&MP_STATE_VM(mp_kbd_exception));
@@ -479,8 +480,8 @@ vstr_t* ide_dbg_get_script()
 
 bool      ide_dbg_need_save_file()
 {
-    bool ret = ide_dbg_save_file_ready;
-    if(ide_file_save_status != 1 && ide_file_save_status!=5) // not busy receive data
+    bool ret = (ide_file_save_status==5);
+    if(ide_file_save_status != 1 && !ret ) // not busy receive data
     {
         if(p_data_temp)
         {
@@ -491,34 +492,69 @@ bool      ide_dbg_need_save_file()
     return ret;
 }
 
+int check_sha256(uint8_t* hash, uint8_t* data, size_t data_len)
+{
+    bool hash_ok = false;
+    uint8_t* res = (uint8_t*)malloc(32);
+    if(!res)
+        return -1;
+    sha256_hard_calculate(data, data_len, res);
+    if( memcmp(hash, res, 32) == 0)
+        hash_ok = true;
+    free(res);
+    if(hash_ok)
+        return 0;
+    return -2;
+}
+
+
+
+
 void      ide_save_file()
 {
-    //TODO: add sha256 parity
     int err;
     uint8_t* data;
-    char* file_name = p_data_temp;
-    int tmp = strlen(file_name)+1;
-    tmp = tmp + 4-((tmp%4)?(tmp%4):4);
-    data = p_data_temp + tmp;
-    uint32_t file_len = ide_file_length - strlen(file_name) - 1;
-    mp_obj_t file = vfs_internal_open((const char*)file_name, "wb", &err);
-    
-    if( file==NULL || err!=0)
+    if(!p_data_temp)
     {
-        ide_file_save_status = 3;
+        ide_file_save_status = 100;//should not happen
+        return ;
     }
-    else
+
+    err = check_sha256(p_data_temp, p_data_temp+32, ide_file_length-32);
+    if(err == -1)// no memory
     {
-        mp_uint_t ret = vfs_internal_write(file, (void*)data, file_len, &err);
-        if(err!=0 || ret != file_len)
-            ide_file_save_status = 4;
+        ide_file_save_status = 2;
+    }
+    else if( err == -2) // parity error
+    {
+        ide_file_save_status = 6;
+    }
+    else// parity right
+    {
+
+        uint8_t* file_name = p_data_temp+32;
+        int tmp = strlen(file_name)+1;
+        tmp = tmp + 4-((tmp%4)?(tmp%4):4);
+        data = file_name + tmp;
+        uint32_t file_len = ide_file_length - 32 - tmp;
+        mp_obj_t file = vfs_internal_open((const char*)file_name, "wb", &err);
+        
+        if( file==NULL || err!=0)
+        {
+            ide_file_save_status = 3;
+        }
         else
-            ide_file_save_status = 0;
-        vfs_internal_close(file, &err);
+        {
+            mp_uint_t ret = vfs_internal_write(file, (void*)data, file_len, &err);
+            if(err!=0 || ret != file_len)
+                ide_file_save_status = 4;
+            else
+                ide_file_save_status = 0;
+            vfs_internal_close(file, &err);
+        }
     }
     free(p_data_temp);
     p_data_temp = NULL;
-    ide_dbg_save_file_ready = false;
 }
 
 #else // OMV_MINIMUM /////////////////////////////////////
