@@ -47,7 +47,7 @@ mp_obj_t vfs_internal_spiffs_open(spiffs_user_mount_t* vfs, const char* path, co
                 mode |= SPIFFS_O_RDONLY;
                 break;
             case 'w':
-                mode |= SPIFFS_O_RDWR | SPIFFS_O_CREAT;
+                mode |= SPIFFS_O_RDWR | SPIFFS_O_CREAT | SPIFFS_O_TRUNC;
                 break;
             case 'x':
                 mode |= SPIFFS_O_RDWR | SPIFFS_O_CREAT | SPIFFS_O_TRUNC;

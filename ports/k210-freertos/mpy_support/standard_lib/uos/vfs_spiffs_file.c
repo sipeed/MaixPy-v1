@@ -209,7 +209,7 @@ STATIC mp_obj_t file_open(spiffs_user_mount_t *vfs, const mp_obj_type_t *type, m
                 mode |= SPIFFS_O_RDONLY;
                 break;
             case 'w':
-                mode |= SPIFFS_O_RDWR | SPIFFS_O_CREAT;
+                mode |= SPIFFS_O_RDWR | SPIFFS_O_CREAT | SPIFFS_O_TRUNC;
                 break;
             case 'x':
                 mode |= SPIFFS_O_RDWR | SPIFFS_O_CREAT | SPIFFS_O_TRUNC;
