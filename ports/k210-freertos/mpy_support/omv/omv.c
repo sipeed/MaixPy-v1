@@ -10,8 +10,9 @@ bool omv_init_once()
 
 bool omv_init()
 {
+    bool ret = true;
     fb_alloc_init0();
     sensor_init0();
-    ide_debug_init0();
-    return true;
+    ret = ide_debug_init0();
+    return ret;
 }

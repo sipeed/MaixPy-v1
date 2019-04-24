@@ -26,6 +26,7 @@
 #include "vfs_internal.h"
 #include "sha256.h"
 #include "string.h"
+#include "objstr.h"
 
 #ifndef OMV_MINIMUM
 
@@ -36,7 +37,10 @@ static enum usbdbg_cmd cmd;
 static volatile bool script_ready;
 static volatile bool script_running;
 static vstr_t script_buf;
-static mp_obj_t mp_const_ide_interrupt = MP_OBJ_NULL;
+static mp_obj_exception_t ide_exception; //IDE interrupt
+static mp_obj_str_t   ide_exception_str;
+static mp_obj_tuple_t* ide_exception_str_tuple = NULL;
+static mp_obj_t mp_const_ide_interrupt = (mp_obj_t)(&ide_exception);
 
 static uint8_t ide_dbg_cmd_buf[IDE_DBG_MAX_PACKET] = {IDE_DBG_CMD_START_FLAG};
 
@@ -50,10 +54,25 @@ static volatile uint32_t ide_file_save_status = 0; //0: ok, 1: busy recieve data
 static uint32_t ide_file_length = 0;
 static uint8_t* p_data_temp = NULL;
 
-void ide_debug_init0()
-{
-    mp_const_ide_interrupt = mp_obj_new_exception_msg(&mp_type_Exception, "IDE interrupt");
+bool ide_debug_init0()
+{    
+    ide_exception_str.data = (const byte*)"IDE interrupt";
+    ide_exception_str.len  = 13;
+    ide_exception_str.base.type = &mp_type_str;
+    ide_exception_str.hash = qstr_compute_hash(ide_exception_str.data, ide_exception_str.len);
+    ide_exception_str_tuple = (mp_obj_tuple_t*)malloc(sizeof(mp_obj_tuple_t)+sizeof(mp_obj_t)*1);
+    if(ide_exception_str_tuple==NULL)
+        return false;
+    ide_exception_str_tuple->base.type = &mp_type_tuple;
+    ide_exception_str_tuple->len = 1;
+    ide_exception_str_tuple->items[0] = MP_OBJ_FROM_PTR(&ide_exception_str);
+    ide_exception.base.type = &mp_type_Exception;
+    ide_exception.traceback_alloc = 0;
+    ide_exception.traceback_len = 0;
+    ide_exception.traceback_data = NULL;
+    ide_exception.args = ide_exception_str_tuple;
     vstr_init(&script_buf, 32);
+    return true;
 }
 
 void ide_dbg_init()
@@ -65,6 +84,7 @@ void ide_dbg_init()
     script_running=false;
     vstr_clear(&script_buf);
     vstr_init(&script_buf, 32);
+    // mp_const_ide_interrupt = mp_obj_new_exception_msg(&mp_type_Exception, "IDE interrupt");
 }
 
 ide_dbg_status_t ide_dbg_ack_data(machine_uart_obj_t* uart)
@@ -355,7 +375,6 @@ ide_dbg_status_t ide_dbg_dispatch_cmd(machine_uart_obj_t* uart, uint8_t* data)
                     // interrupt running code by raising an exception
                     mp_obj_exception_clear_traceback(mp_const_ide_interrupt);
                     // pendsv_nlr_jump_hard(mp_const_ide_interrupt);
-                    //TODO:
                     MP_STATE_VM(mp_pending_exception) = mp_const_ide_interrupt; //MP_OBJ_FROM_PTR(&MP_STATE_VM(mp_kbd_exception));
                     #if MICROPY_ENABLE_SCHEDULER
                     if (MP_STATE_VM(sched_state) == MP_SCHED_IDLE) {

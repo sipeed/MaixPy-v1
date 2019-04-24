@@ -55,7 +55,7 @@ typedef enum{
     IDE_DBG_DISPATCH_STATUS_BUSY,
 } ide_dbg_status_t;
 
-void     ide_debug_init0();
+bool     ide_debug_init0();
 void     ide_dbg_init();
 ide_dbg_status_t
          ide_dbg_dispatch_cmd(machine_uart_obj_t* uart, uint8_t* data);

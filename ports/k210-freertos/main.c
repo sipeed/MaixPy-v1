@@ -284,7 +284,10 @@ soft_reset:
 		mp_obj_list_init(mp_sys_argv, 0);//append agrv here
     	readline_init0();
 		// module init
-		omv_init(); //init before uart
+		if(!omv_init()) //init before uart
+		{
+			printk("omv init fail\r\n");
+		}
 
 #if MICROPY_HW_UART_REPL
 		{
@@ -457,6 +460,7 @@ void do_str(const char *src, mp_parse_input_kind_t input_kind) {
 }
 
 void nlr_jump_fail(void *val) {
+	printk("nlr_jump_fail\r\n");
     while (1);
 }
 
