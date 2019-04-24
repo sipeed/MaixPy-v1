@@ -64,7 +64,7 @@ void fb_alloc_mark()
 void fb_alloc_free_till_mark()
 {
     uint8_t i;
-    
+
     for(i=0; i<FB_MAX_ALLOC_TIMES; ++i)
     {
         if( m_fb_alloc_addr[i].valid && m_fb_alloc_addr[i].mark==m_mark_max_now)
@@ -85,7 +85,8 @@ void *fb_alloc(uint64_t size)
     if (!size) {
         return NULL;
     }
-    size=((size+sizeof(uint64_t)-1)/sizeof(uint64_t))*sizeof(uint64_t);// Round Up
+    // size=((size+sizeof(uint64_t)-1)/sizeof(uint64_t))*sizeof(uint64_t);// Round Up
+    size=((size+32-1)/32)*32;//TODO:
     void* p = malloc(size);
     if(!p)
         fb_alloc_fail();
@@ -157,7 +158,7 @@ void *fb_alloc0_all(uint64_t *size)
 void fb_free()
 {
     uint8_t i;
-
+    
     for(i=0; i<FB_MAX_ALLOC_TIMES; ++i)
     {
         if( m_fb_alloc_addr[i].valid && m_fb_alloc_addr[i].count==m_count_max_now)
