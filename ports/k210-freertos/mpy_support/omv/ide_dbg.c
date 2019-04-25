@@ -27,6 +27,7 @@
 #include "sha256.h"
 #include "string.h"
 #include "objstr.h"
+#include "sipeed_sys.h"
 
 #ifndef OMV_MINIMUM
 
@@ -449,7 +450,7 @@ ide_dbg_status_t ide_dbg_dispatch_cmd(machine_uart_obj_t* uart, uint8_t* data)
             }
 
             case USBDBG_SYS_RESET:
-                //TODO:
+                sipeed_sys_reset();
                 break;
 
             case USBDBG_FB_ENABLE: 
