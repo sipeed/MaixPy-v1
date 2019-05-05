@@ -5463,25 +5463,27 @@ static mp_obj_t py_image_resize(mp_obj_t img_obj, mp_obj_t *w_obj, mp_obj_t *h_o
 		uint8_t* in = img->pixels;
 		float sx=(float)(img->w)/w;
 		float sy=(float)(img->h)/h;
-		int x,y, x0,y0,x1,y1;
+		int x,y, x0,y0,x1,y1,val_x1,val_y1;
 		float xf,yf;
 		mp_obj_t image = py_image(w, h, img->bpp, out);
 		if(w >= w0 || h >= h0)
 		{
 			for(y=0;y<h;y++)
 			{
-				yf = y*sy;
+				yf = (y+0.5)*sy-0.5;
 				y0 = (int)yf;
-				y1 = y0+1;
+				y1 = y0 + 1;
+				val_y1 = y0<h0-1 ? y1 : y0;
 				for(x=0;x<w;x++)
 				{
-					xf = x*sx;
+					xf = (x+0.5)*sx-0.5;
 					x0 = (int)xf;
-					x1 = x0+1;
+					x1 = x0 + 1;
+					val_x1 = x0<w0-1 ? x1 : x0;
 					out[y*w+x] = (uint8_t)(in[y0*w0+x0]*(x1-xf)*(y1-yf)+\
-								in[y0*w0+x1]*(xf-x0)*(y1-yf)+\
-								in[y1*w0+x0]*(x1-xf)*(yf-y0)+\
-								in[y1*w0+x1]*(xf-x0)*(yf-y0));
+								in[y0*w0+val_x1]*(xf-x0)*(y1-yf)+\
+								in[val_y1*w0+x0]*(x1-xf)*(yf-y0)+\
+								in[val_y1*w0+val_x1]*(xf-x0)*(yf-y0));
 				}
 			}
 		}
@@ -5753,6 +5755,62 @@ static mp_obj_t py_image_stretch(mp_obj_t img_obj, mp_obj_t *min_obj, mp_obj_t *
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_3(py_image_stretch_obj, py_image_stretch);
 
+
+static mp_obj_t py_image_cut(uint n_args, const mp_obj_t *args)
+{
+	image_t* img = (image_t *) py_image_cobj(args[0]);
+
+	int x0  =  mp_obj_get_int(args[1]);
+	int y0  =  mp_obj_get_int(args[2]);	
+	int w_cut  =  mp_obj_get_int(args[3]);
+	int h_cut  =  mp_obj_get_int(args[4]);
+	int w=img->w;
+	int h=img->h;
+	int y1 = y0+h_cut > h ? h : y0+h_cut;
+	int x1 = x0+w_cut > w ? w : x0+w_cut;
+	int x,y;
+//printf("%d,%d,%d,%d\r\n",x0,y0,w_cut,h_cut);	
+	
+	switch(img->bpp)
+	{
+	case IMAGE_BPP_GRAYSCALE:
+	{
+		uint8_t* out = xalloc(w_cut*h_cut);
+		uint8_t* in = img->pixels;
+		mp_obj_t image = py_image(w_cut, h_cut, img->bpp, out); //TODO: here have bug
+		for(y=y0;y<y1;y++)
+		{
+			for(x=x0;x<x1;x++)
+			{
+				out[y*w+x] = in[(y-y0)*w_cut+x-x0];
+			}
+		}
+		return image;	
+		break;
+	}
+	case IMAGE_BPP_RGB565:
+	{
+		uint16_t* out = xalloc(w_cut*h_cut*2);
+		uint16_t* in = img->pixels;
+		mp_obj_t image = py_image(w_cut, h_cut, img->bpp, out); //TODO: here have bug
+		for(y=y0;y<y1;y++)
+		{
+			for(x=x0;x<x1;x++)
+			{
+				out[y*w+x] = in[(y-y0)*w_cut+x-x0];
+			}
+		}
+		return image;	
+		break;
+	}
+	default:
+		printf("pixel format not support!\r\n");
+		return mp_const_none;
+	}
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_image_cut_obj, 4, 5, py_image_cut);
+
 static const mp_rom_map_elem_t locals_dict_table[] = {
     /* Basic Methods */
     {MP_ROM_QSTR(MP_QSTR___del__),             MP_ROM_PTR(&py_image_del_obj)},
@@ -5950,7 +6008,7 @@ static const mp_rom_map_elem_t locals_dict_table[] = {
 	{MP_ROM_QSTR(MP_QSTR_pix_to_ai),    MP_ROM_PTR(&py_image_pix_to_ai_obj)},
 	{MP_ROM_QSTR(MP_QSTR_strech_char),    MP_ROM_PTR(&py_image_strech_char_obj)},
 	{MP_ROM_QSTR(MP_QSTR_stretch),    MP_ROM_PTR(&py_image_stretch_obj)},
-	
+	{MP_ROM_QSTR(MP_QSTR_cut),    MP_ROM_PTR(&py_image_cut_obj)},
 };
 
 STATIC MP_DEFINE_CONST_DICT(locals_dict, locals_dict_table);
@@ -6249,8 +6307,9 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_image_grayscale_to_rgb_obj, py_image_graysca
 mp_obj_t py_image_load_image(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     const char *path = NULL;
-    
+    point_t xy;
     bool copy_to_fb = py_helper_keyword_int(n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_copy_to_fb), false);
+	py_helper_keyword_xy(NULL, n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_size), &xy);
     if (copy_to_fb) fb_update_jpeg_buffer();
 
     // image_t image = {0};
@@ -6279,7 +6338,7 @@ mp_obj_t py_image_load_image(uint n_args, const mp_obj_t *args, mp_map_t *kw_arg
     image_t image = {0};
     memset(&image, 0, sizeof(image_t));
     
-    if(n_args >= 1)
+    if((xy.x >0 && n_args >= 2) || ((xy.x <= 0 && n_args >= 1)))
     {
         if(copy_to_fb)
         {
@@ -6298,6 +6357,11 @@ mp_obj_t py_image_load_image(uint n_args, const mp_obj_t *args, mp_map_t *kw_arg
     {
         image.w = OMV_INIT_W;
         image.h = OMV_INIT_H;
+		if(xy.x >0 && xy.y >0)
+		{
+			image.w = xy.x;
+			image.h = xy.y;
+		}
         image.bpp = IMAGE_BPP_RGB565;
         if(copy_to_fb)
         {

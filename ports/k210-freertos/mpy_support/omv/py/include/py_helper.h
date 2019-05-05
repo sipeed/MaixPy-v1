@@ -18,6 +18,8 @@ image_t *py_helper_keyword_to_image_mutable_mask(uint n_args, const mp_obj_t *ar
                                                  mp_map_t *kw_args);
 void py_helper_keyword_rectangle(image_t *img, uint n_args, const mp_obj_t *args, uint arg_index,
                                  mp_map_t *kw_args, mp_obj_t kw, rectangle_t *r);
+void py_helper_keyword_xy(image_t *img, uint n_args, const mp_obj_t *args, uint arg_index,
+                                 mp_map_t *kw_args, mp_obj_t kw, point_t *oft);
 void py_helper_keyword_rectangle_roi(image_t *img, uint n_args, const mp_obj_t *args, uint arg_index,
                                      mp_map_t *kw_args, rectangle_t *r);
 int py_helper_keyword_int(uint n_args, const mp_obj_t *args, uint arg_index,

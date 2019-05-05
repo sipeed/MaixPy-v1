@@ -49,6 +49,7 @@
 #include "plic.h"
 #include "printf.h"
 #include "syslog.h"
+#include "atomic.h"
 /*****peripheral****/
 #include "fpioa.h"
 #include "gpio.h"
@@ -380,6 +381,30 @@ soft_reset:
 }
 
 
+typedef int (*dual_func_t)(int);
+corelock_t  lock; 
+volatile dual_func_t dual_func=0;
+void* arg_list[16];
+
+int core1_function(void *ctx)
+{
+    uint64_t core = current_coreid();
+    //printk("Core %ld Hello world\r\n", core);
+
+    while(1)
+	{
+		if(dual_func)
+		{//corelock_lock(&lock);
+			(*dual_func)(1);
+			dual_func=0;
+			//corelock_unlock(&lock);
+		}
+		
+		//usleep(1);
+	}
+}
+
+
 #define CPU 0
 #define KPU 1
 #define I2S 2
@@ -429,6 +454,10 @@ int main()
 	printk("[MAIXPY]Flash:0x%02x:0x%02x\r\n", manuf_id, device_id);
     /* Init SPI IO map and function settings */
     sysctl_set_spi0_dvp_data(1);
+	/* open core 1 */
+	printk("open second core...\r\n");
+    register_core1(core1_function, 0);
+    
 #if MICROPY_PY_THREAD 
 	xTaskCreateAtProcessor(0, // processor
 						 mp_task, // function entry

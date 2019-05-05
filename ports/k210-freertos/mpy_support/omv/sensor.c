@@ -602,7 +602,7 @@ int sensor_set_framesize(framesize_t framesize)
     // Set MAIN FB width and height.
     MAIN_FB()->w = resolution[framesize][0];
     MAIN_FB()->h = resolution[framesize][1];
-
+	dvp_set_ai_addr(MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h), (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h * 2));
     // Set MAIN FB backup width and height.
     MAIN_FB()->u = resolution[framesize][0];
     MAIN_FB()->v = resolution[framesize][1];
@@ -632,7 +632,7 @@ int sensor_set_windowing(int x, int y, int w, int h)
     MAIN_FB()->w = MAIN_FB()->u = w;
     MAIN_FB()->h = MAIN_FB()->v = h;
 	dvp_set_image_size(w, h);	//set QVGA default
-	
+	dvp_set_ai_addr(MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h), (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h * 2));
     return 0;
 }
 
