@@ -5518,7 +5518,7 @@ static mp_obj_t py_image_resize(mp_obj_t img_obj, mp_obj_t *w_obj, mp_obj_t *h_o
 			mp_printf(&mp_plat_print, "only support 565 zoom out now\r\n");
 			return mp_const_none;
 		}
-		uint16_t* out = xalloc(w*h);
+		uint16_t* out = xalloc(w*h*2);
 		uint16_t* in = img->pixels;
 		float sx=(float)(w0)/w;
 		float sy=(float)(h0)/h;
