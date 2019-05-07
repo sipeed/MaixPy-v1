@@ -67,7 +67,7 @@ void      ide_save_file();
 
 #else // OMV_MINIMUM
 
-void      ide_debug_init0();
+bool      ide_debug_init0();
 void      ide_dbg_init();
 bool      ide_dbg_script_ready();
 vstr_t*   ide_dbg_get_script();

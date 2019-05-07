@@ -55,6 +55,61 @@ static volatile uint32_t ide_file_save_status = 0; //0: ok, 1: busy recieve data
 static uint32_t ide_file_length = 0;
 static uint8_t* p_data_temp = NULL;
 
+static void vstr_init_00(vstr_t *vstr, size_t alloc) {
+    if (alloc < 1) {
+        alloc = 1;
+    }
+    if(vstr->buf)
+        free(vstr->buf);
+    vstr->alloc = 0;
+    vstr->len = 0;
+    vstr->buf = malloc(alloc);
+    if(vstr->buf)
+        vstr->alloc = alloc;
+    vstr->fixed_buf = false;
+}
+
+static void vstr_init_11(vstr_t *vstr, size_t alloc) {
+    if (alloc < 1) {
+        alloc = 1;
+    }
+    if(vstr->alloc<= alloc)
+        return;
+    if(vstr->buf)
+        free(vstr->buf);
+    vstr->alloc = 0;
+    vstr->len = 0;
+    vstr->buf = malloc(alloc);
+    if(vstr->buf)
+        vstr->alloc = alloc;
+    vstr->fixed_buf = false;
+}
+
+STATIC void vstr_ensure_extra_00(vstr_t *vstr, size_t size) {
+    if (vstr->len + size > vstr->alloc) {
+        if (vstr->fixed_buf) {
+            // We can't reallocate, and the caller is expecting the space to
+            // be there, so the only safe option is to raise an exception.
+            mp_raise_msg(&mp_type_RuntimeError, NULL);
+        }
+        size_t new_alloc = ((vstr->len + size)+7)/8*8 + 64;
+        char *new_buf = realloc(vstr->buf, new_alloc);
+        if(!new_buf)
+        {
+            mp_raise_msg(&mp_type_MemoryError, "reduce code size please!");
+        }
+        vstr->alloc = new_alloc;
+        vstr->buf = new_buf;
+    }
+}
+
+void vstr_add_strn_00(vstr_t *vstr, const char *str, size_t len) {
+    vstr_ensure_extra_00(vstr, len);
+    memmove(vstr->buf + vstr->len, str, len);
+    vstr->len += len;
+}
+
+
 bool ide_debug_init0()
 {    
     ide_exception_str.data = (const byte*)"IDE interrupt";
@@ -72,7 +127,9 @@ bool ide_debug_init0()
     ide_exception.traceback_len = 0;
     ide_exception.traceback_data = NULL;
     ide_exception.args = ide_exception_str_tuple;
-    vstr_init(&script_buf, 32);
+    memset(&script_buf, 0, sizeof(vstr_t));
+    // vstr_init(&script_buf, 32);
+    vstr_init_00(&script_buf, 1024*5);
     return true;
 }
 
@@ -83,8 +140,9 @@ void ide_dbg_init()
     is_busy_sending = false;
     script_ready=false;
     script_running=false;
-    vstr_clear(&script_buf);
-    vstr_init(&script_buf, 32);
+    // vstr_clear(&script_buf);
+    // vstr_init(&script_buf, 32);
+    vstr_init_11(&script_buf, 1024*5);
     // mp_const_ide_interrupt = mp_obj_new_exception_msg(&mp_type_Exception, "IDE interrupt");
 }
 
@@ -224,7 +282,7 @@ ide_dbg_status_t ide_dbg_receive_data(machine_uart_obj_t* uart, uint8_t* data)
             // at least once before the script is fully uploaded xfer_bytes will be less
             // than the total length (xfer_length) and the script will Not be executed.
             if (!script_running && !gc_is_locked()) {
-                vstr_add_strn(&script_buf, data, 1);
+                vstr_add_strn_00(&script_buf, data, 1);
                 if (xfer_bytes+1 == xfer_length) {
                     // Set script ready flag
                     script_ready = true;
@@ -579,7 +637,7 @@ void      ide_save_file()
 
 #else // OMV_MINIMUM /////////////////////////////////////
 
-void ide_debug_init0()
+bool ide_debug_init0()
 {
 
 }
