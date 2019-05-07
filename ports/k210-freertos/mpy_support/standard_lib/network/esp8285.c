@@ -971,6 +971,54 @@ bool eINIT(esp8285_obj* nic)
 	init_flag = init_flag && leaveAP(nic);
 	return init_flag;
 }
+
+bool eATCWLAP(esp8285_obj* nic)
+{
+    int errcode = 0, i = 0;
+    const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+    const char cmd[] = {"AT+CWLAP"};
+    char *p = NULL;
+    mp_obj_t list = mp_obj_new_list(0, NULL);
+
+    rx_empty(nic);
+    uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
+
+    if (recvString_1(nic, "\r\n\r\nOK", 10000) == NULL)
+    {
+        return false;
+    }
+    
+    return true;
+}
+
+bool eATCWSAP(esp8285_obj* nic, char* ssid, char* key, int chl, int ecn)
+{
+    int errcode;
+    int iter = 0;
+    const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+    char ap_cmd[128] = {0};
+
+    if (sATCWMODE(nic, 3) == false)
+    {
+        return false;
+    }
+
+    rx_empty(nic);
+    memset(nic->buffer,0,ESP8285_BUF_SIZE);
+
+    sprintf(ap_cmd, "AT+CWSAP=\"%s\",\"%s\",%d,%d", ssid, key, chl, ecn);
+    uart_stream->write(nic->uart_obj,ap_cmd, strlen(ap_cmd), &errcode);
+    uart_stream->write(nic->uart_obj, "\r\n", strlen("\r\n"), &errcode);
+
+    if (recvString_1(nic, "\r\nOK", 3000) == NULL)
+    {
+        return false;
+    }
+
+    return true;
+}
+
 //bool setOprToSoftAP(void)
 //{
 //    uint8_t mode;

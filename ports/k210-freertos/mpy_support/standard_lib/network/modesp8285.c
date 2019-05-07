@@ -501,11 +501,95 @@ STATIC mp_obj_t esp8285_nic_ifconfig(mp_obj_t self_in) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(esp8285_nic_ifconfig_obj, esp8285_nic_ifconfig);
 
+STATIC mp_obj_t esp8285_scan_wifi(mp_obj_t self_in)
+{
+    nic_obj_t* self = self_in;
+    mp_obj_t list = mp_obj_new_list(0, NULL);
+
+    if (eATCWLAP(&self->esp8285) == true)
+    {
+        int i = 0;
+        char *p = strtok(self->esp8285.buffer, "\r\n\"");
+
+        while (p != NULL)
+        {
+            if ((i % 5) == 1)
+            {
+                mp_obj_list_append(list, mp_obj_new_str(p, strlen(p)));
+            }
+            i++;
+            p = strtok(NULL, "\r\n\"");
+        }
+    }
+    else
+    {
+        mp_raise_msg(&mp_type_OSError, "wifi scan fail");
+    }
+
+    return list;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(esp8285_scan_wifi_obj, esp8285_scan_wifi);
+
+/* nic.enable_ap(ssid=None, key=None, chl=5, ecn=nic.WPA2_PSK) */
+STATIC mp_obj_t esp8285_enable_ap(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
+{
+    enum
+    {
+        ARG_WIFI_SSID,
+        ARG_WIFI_KEY,
+        ARG_WIFI_CH,
+        ARG_WIFI_ECN,
+    };
+    static const mp_arg_t allowed_args[] = {
+        { MP_QSTR_ssid, MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        { MP_QSTR_key, MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        { MP_QSTR_chl, MP_ARG_OBJ, {.u_obj = MP_ROM_INT(5)} },
+        { MP_QSTR_ecn, MP_ARG_OBJ, {.u_obj = MP_ROM_INT(3)} },
+    };
+    nic_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    mp_obj_t ssid = args[ARG_WIFI_SSID].u_obj;
+    mp_obj_t key = args[ARG_WIFI_KEY].u_obj;
+    mp_obj_t chl = args[ARG_WIFI_CH].u_obj;
+    mp_obj_t ecn = args[ARG_WIFI_ECN].u_obj;
+
+    if (eATCWSAP(&self->esp8285, mp_obj_str_get_str(ssid), mp_obj_str_get_str(key), 
+                                 mp_obj_get_int(chl), mp_obj_get_int(ecn)) == false)
+    {
+        mp_raise_msg(&mp_type_OSError, "wifi enable fail");
+    }
+
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(esp8285_enable_ap_obj, 1, esp8285_enable_ap);
+
+STATIC mp_obj_t esp8285_disable_ap(mp_obj_t self_in)
+{
+    nic_obj_t* self = self_in;
+
+    if (sATCWMODE(&self->esp8285, 1) == false)
+    {
+        mp_raise_msg(&mp_type_OSError, "wifi disable fail");
+    }
+
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(esp8285_disable_ap_obj, esp8285_disable_ap);
+
 STATIC const mp_rom_map_elem_t esp8285_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_connect), MP_ROM_PTR(&esp8285_nic_connect_obj) },
     { MP_ROM_QSTR(MP_QSTR_disconnect), MP_ROM_PTR(&esp8285_nic_disconnect_obj) },  
     { MP_ROM_QSTR(MP_QSTR_isconnected), MP_ROM_PTR(&esp8285_nic_isconnected_obj) },
     { MP_ROM_QSTR(MP_QSTR_ifconfig), MP_ROM_PTR(&esp8285_nic_ifconfig_obj) },
+    { MP_ROM_QSTR(MP_QSTR_scan), MP_ROM_PTR(&esp8285_scan_wifi_obj) },
+    { MP_ROM_QSTR(MP_QSTR_enable_ap), MP_ROM_PTR(&esp8285_enable_ap_obj) },
+    { MP_ROM_QSTR(MP_QSTR_disable_ap), MP_ROM_PTR(&esp8285_disable_ap_obj) },
+    { MP_ROM_QSTR(MP_QSTR_OPEN), MP_ROM_INT(0) },
+    { MP_ROM_QSTR(MP_QSTR_WPA_PSK), MP_ROM_INT(2) },
+    { MP_ROM_QSTR(MP_QSTR_WPA2_PSK), MP_ROM_INT(3) },
+    { MP_ROM_QSTR(MP_QSTR_WPA_WPA2_PSK), MP_ROM_INT(4) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(esp8285_locals_dict, esp8285_locals_dict_table);
