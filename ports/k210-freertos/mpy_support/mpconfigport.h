@@ -105,7 +105,7 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_MODULE_FROZEN_MPY           (1)
 #define MICROPY_LONGINT_IMPL                (MICROPY_LONGINT_IMPL_MPZ)
 
-#define MICROPY_FLOAT_IMPL                  (MICROPY_FLOAT_IMPL_DOUBLE)
+#define MICROPY_FLOAT_IMPL                  (MICROPY_FLOAT_IMPL_FLOAT)
 #define MICROPY_PY_BUILTINS_HELP            (1)
 #define MICROPY_PY_BUILTINS_HELP_TEXT       kendryte_k210_help_text
 #define MICROPY_PY_BUILTINS_HELP_MODULES    (1)

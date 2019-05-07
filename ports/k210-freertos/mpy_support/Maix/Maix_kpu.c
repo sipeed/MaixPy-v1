@@ -294,9 +294,7 @@ int model_deinit(kpu_task_t *task)
 
 STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
-    // int err = 0;
-    char *err = NULL;
-
+    int err = 0;
     py_kpu_net_obj_t  *o = m_new_obj(py_kpu_net_obj_t);
 
     uint8_t *model_data = NULL;
@@ -306,8 +304,7 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
 	kpu_task = (uint8_t *)malloc(sizeof(kpu_model_context_t));
 	if(kpu_task == NULL)
 	{
-		// err = -1;//malloc error
-        err = "malloc error 0";
+		err = -1;//malloc error
 		goto error;
 	}
 	
@@ -329,8 +326,7 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
 
         if(model_size < 0)
         {
-            // err = -2;//read error
-            err = "read model size error 1";
+            err = -2;//read error
             goto error;
         }
 		mp_printf(&mp_plat_print, "model_size=%d\r\n",model_size);
@@ -338,23 +334,20 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
         model_data = (uint8_t *)malloc(model_size * sizeof(uint8_t));
         if(model_data == NULL)
         {
-            // err = -1;//malloc error
-            err = "malloc error 1";
+            err = -1;//malloc error
             goto error;
         }
 		
         status = w25qxx_read_data_dma(model_addr, model_data, model_size, W25QXX_QUAD_FAST);
         if(status != W25QXX_OK)
         {
-            // err = -2;//read error
-            err = "read model data error 1";
+            err = -2;//read error
             goto error;
         }
         int ret = kpu_load_kmodel(kpu_task, model_data);
         if(ret != 0)
         {
-            // err = -3; //load error
-            err = "load model data error 1";
+            err = -3; //load error
             goto error;
         }
     }
@@ -371,7 +364,6 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
             if( err != 0 )
             {
                 model_deinit(kpu_task);
-                err = "model init error 2";
                 goto error;
             }
 
@@ -390,8 +382,7 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
 
             if(model_size <= 0)
             {
-                // err = -2;//read error
-                err = "read model size error 2";
+                err = -2;//read error
                 vfs_internal_close(file, &ferr);
                 goto error;
             }
@@ -399,8 +390,7 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
             model_data = (uint8_t *)malloc(model_size * sizeof(uint8_t));
             if(model_data == NULL)
             {
-                // err = -1;//malloc error
-                err = "malloc error 2";
+                err = -1;//malloc error
                 goto error;
             }
 
@@ -419,8 +409,7 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
             int ret = kpu_load_kmodel(kpu_task, model_data);
             if(ret != 0)
             {
-                // err = -3; //load error
-                err = "load model data error 2";
+                err = -3; //load error
                 goto error;
             }
 
@@ -461,7 +450,7 @@ error:
     m_del(py_kpu_net_obj_t, o,sizeof(py_kpu_net_obj_t));
 
     char msg[50];
-    sprintf(msg,"[MAIXPY]:kpu load error: %s", err);
+    sprintf(msg,"[MAIXPY]kpu: load error %d", err);
     mp_raise_ValueError(msg);
     return mp_const_false;
 }
@@ -1505,6 +1494,76 @@ STATIC mp_obj_t py_kpu_netinfo(mp_obj_t py_kpu_net_obj)
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_netinfo_obj, py_kpu_netinfo);
 
+#define BATCH_SIZE 1024
+STATIC mp_obj_t py_kpu_check(mp_obj_t py_kpu_net_obj, mp_obj_t py_kpu_model_obj)
+{
+	py_kpu_net_obj_t *kpu_net = MP_OBJ_TO_PTR(py_kpu_net_obj);
+	uint32_t model_addr = mp_obj_get_int(py_kpu_model_obj);
+	int ferr;
+	mp_obj_t file;
+	uint32_t oft=0;
+	char* data;
+	uint32_t model_size;
+	char* model_data = MP_OBJ_TO_PTR(kpu_net->model_data);
+	w25qxx_status_t status;
+	
+	model_size = kpu_model_flash_get_size(model_addr);
+	if(model_size <= 0)
+	{
+		printf("model size error!\r\n");
+		vfs_internal_close(file, &ferr);
+		return mp_const_none;
+	}
+
+	data = (uint8_t *)malloc(BATCH_SIZE);
+	if(data == NULL)
+	{
+		printf("malloc error!\r\n");
+		return mp_const_none;
+	}
+
+	while(oft<model_size)
+	{
+		status = w25qxx_read_data_dma(model_addr+oft, data, BATCH_SIZE, W25QXX_QUAD_FAST);
+        if(status != W25QXX_OK)
+        {
+            printf("read error!\r\n");
+            return mp_const_none;
+        }
+		if(memcmp(data,model_data+oft,BATCH_SIZE)) //不一致
+		{
+			printf("diff @ 0x%x\r\n", oft);
+		}
+		oft+=BATCH_SIZE;
+	}
+	free(data);
+	return mp_const_none;
+
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(py_kpu_check_obj, py_kpu_check);
+
+STATIC mp_obj_t py_kpu_memtest(void)
+{
+	int mem0,mem1,mem;
+	char* ptr;
+	mem0=0;
+	mem1=0x800000;
+	while(mem1-mem0>0x400){	
+		for(mem=(mem0+mem1)/2; mem<mem1; mem*=2){
+			ptr=gc_alloc(mem, false);
+			if(ptr){
+				mem0=mem; gc_free(ptr);
+			} else {
+				mem1=mem; break;
+			}
+		}
+	}
+	printf("###free gc heap memory : %d KB\r\n", mem0/1024); 
+	printf("###free sys heap memory: %ld KB\r\n",  get_free_heap_size()/1024);
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_kpu_memtest_obj, py_kpu_memtest);
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1519,6 +1578,8 @@ static const mp_map_elem_t globals_dict_table[] = {
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_fmap),                      	(mp_obj_t)&py_kpu_fmap_obj },
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_fmap_free),                   (mp_obj_t)&py_kpu_fmap_free_obj },
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_netinfo),                   	(mp_obj_t)&py_kpu_netinfo_obj },
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_check),                   	(mp_obj_t)&py_kpu_check_obj },
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_memtest),                   	(mp_obj_t)&py_kpu_memtest_obj },
     { NULL, NULL },
 };
 

@@ -189,7 +189,7 @@ static mp_obj_t py_lcd_display(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
 	int l_pad = 0, r_pad = 0;
 	int t_pad = 0, b_pad = 0;
     py_helper_keyword_rectangle_roi(arg_img, n_args, args, 1, kw_args, &rect);
-	py_helper_keyword_oft(arg_img, n_args, args, 2, kw_args, &oft);
+	py_helper_keyword_xy(arg_img, n_args, args, 2, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_oft), &oft);
     
     // Fit X. bigger or smaller, cut or pad to center
 	if(oft.x < 0 || oft.y < 0)
@@ -281,7 +281,7 @@ static mp_obj_t py_lcd_clear(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw
 }
 
 //x0,y0,string,font color,bg color
-static char str_buf[LCD_W/8*16*8];
+static uint16_t str_buf[LCD_W/8*16*8];  //1 pixel = 2byte
 static char str_cut[LCD_W/8+1];
 STATIC mp_obj_t py_lcd_draw_string(uint n_args, const mp_obj_t *args)
 {

@@ -62,10 +62,10 @@ image_t *py_helper_keyword_to_image_mutable_mask(uint n_args, const mp_obj_t *ar
     return py_helper_keyword_to_image_mutable(n_args, args, arg_index, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_mask), NULL);
 }
 
-void py_helper_keyword_oft(image_t *img, uint n_args, const mp_obj_t *args, uint arg_index,
-                                 mp_map_t *kw_args, point_t *oft)
+void py_helper_keyword_xy(image_t *img, uint n_args, const mp_obj_t *args, uint arg_index,
+                                 mp_map_t *kw_args, mp_obj_t kw, point_t *oft)
 {
-	mp_obj_t kw= MP_OBJ_NEW_QSTR(MP_QSTR_oft);
+	//mp_obj_t kw= MP_OBJ_NEW_QSTR(MP_QSTR_oft);
     mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, kw, MP_MAP_LOOKUP);
 	
     if (kw_arg) {

@@ -15,6 +15,9 @@ CFLAGS = \
 	-D__riscv64 \
 	-mcmodel=medany \
 	-march=rv64imafdc \
+        -fsingle-precision-constant \
+        -fno-math-errno -ffast-math \
+	-ffloat-store \
 	-fno-common \
 	-ffunction-sections \
 	-fdata-sections \
@@ -23,7 +26,6 @@ CFLAGS = \
 	-Os \
 	-mabi=lp64f \
 	-march=rv64imafc \
-	-ffloat-store \
 	-ggdb \
 	-std=gnu11 \
 	-Wall \
