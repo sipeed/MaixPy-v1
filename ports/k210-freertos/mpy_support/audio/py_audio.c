@@ -85,17 +85,15 @@ STATIC mp_obj_t Maix_audio_init_helper(Maix_audio_obj_t *self, size_t n_args, co
     {
         int err = 0;
         char* path_str = mp_obj_str_get_str(args[ARG_path].u_obj);
-        mp_obj_t fp = vfs_internal_open(path_str,"+b",&err);
-        if(err != 0)
-        {
-            fp = vfs_internal_open(path_str,"+ab",&err);
-        }
+        mp_obj_t fp = vfs_internal_open(path_str,"rb",&err);
         if( err != 0)
             mp_raise_OSError(err);
         audio_obj->fp = fp;
         audio_obj->type = FILE_AUDIO;
         //We can find the format of audio by path_str,but now just support wav
-        if(NULL != strstr(path_str,".wav"))
+        int16_t index_format = strlen(path_str)-4;
+        index_format = (index_format>0)?index_format:0;
+        if(NULL != strstr(path_str+index_format,".wav"))
             audio_obj->format = AUDIO_WAV_FMT;
         //else if(NULL != strstr(path_str,"mp3"))
         //    audio_obj->format = AUDIO_MP3_FMT;
@@ -113,6 +111,7 @@ STATIC mp_obj_t Maix_audio_make_new(const mp_obj_type_t *type, size_t n_args, si
     memset(self,0,sizeof(Maix_audio_obj_t));
     self->base.type = &Maix_audio_type;
     self->audio.type = EXT_AUDIO;
+    self->audio.volume = 40;  // volume default 40%
 
     // init instance
     mp_map_t kw_args;
@@ -174,6 +173,21 @@ STATIC mp_obj_t Maix_audio_play_process(mp_obj_t self_in,mp_obj_t I2S_dev) {
 
 MP_DEFINE_CONST_FUN_OBJ_2(Maix_audio_play_process_obj, Maix_audio_play_process);
 
+
+STATIC mp_obj_t Maix_audio_volume(size_t n_args, const mp_obj_t *args)
+{
+    Maix_audio_obj_t* self = MP_OBJ_TO_PTR(args[0]);
+    if(n_args == 1)
+        return mp_obj_new_float(self->audio.volume);
+    float v = mp_obj_get_float(args[1]);
+    if(v<0 || v>100)
+        mp_raise_ValueError("value:[0,100]");
+    self->audio.volume = v;
+    return mp_obj_new_float(self->audio.volume);
+}
+
+MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(Maix_audio_volume_obj, 1, 2, Maix_audio_volume);
+
 //----------------play ------------------------
 
 STATIC mp_obj_t Maix_audio_play(mp_obj_t self_in) {
@@ -193,7 +207,7 @@ STATIC mp_obj_t Maix_audio_play(mp_obj_t self_in) {
 MP_DEFINE_CONST_FUN_OBJ_1(Maix_audio_play_obj,Maix_audio_play);
 
 //----------------record_process ------------------------
-STATIC mp_obj_t Maix_audio_record_process(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
+STATIC mp_obj_t Maix_audio_record_process(size_t n_args, const mp_obj_t * pos_args, mp_map_t *kw_args)
 {
     Maix_audio_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);//get py_audio
     //parse parameter
@@ -294,6 +308,7 @@ STATIC const mp_rom_map_elem_t Maix_audio_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR___deinit__), MP_ROM_PTR(&Maix_audio_deinit_obj) },
     { MP_ROM_QSTR(MP_QSTR_to_bytes), MP_ROM_PTR(&Maix_audio_to_bytes_obj) },  
     { MP_ROM_QSTR(MP_QSTR_play_process), MP_ROM_PTR(&Maix_audio_play_process_obj) }, 
+    { MP_ROM_QSTR(MP_QSTR_volume), MP_ROM_PTR(&Maix_audio_volume_obj) }, 
     { MP_ROM_QSTR(MP_QSTR_play), MP_ROM_PTR(&Maix_audio_play_obj) }, 
     { MP_ROM_QSTR(MP_QSTR_record_process), MP_ROM_PTR(&Maix_audio_record_process_obj) }, 
     { MP_ROM_QSTR(MP_QSTR_record), MP_ROM_PTR(&Maix_audio_record_obj) },

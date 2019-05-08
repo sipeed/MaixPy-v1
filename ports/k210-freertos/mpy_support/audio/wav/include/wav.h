@@ -76,7 +76,7 @@ typedef enum _wav_err_t
 	UNVALID_DATA_ID,			   //13
 }wav_err_t;
 
-wav_err_t wav_init(wav_decode_t *wav_obj,void* head, uint32_t file_size, uint32_t* head_len);
+wav_err_t wav_init(wav_decode_t *wav_obj,void* head, uint32_t head_size, uint32_t file_size, uint32_t* head_len);
 
 //---------------------------------encode-----------------------------
 

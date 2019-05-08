@@ -53,7 +53,7 @@ static int on_irq_audio_receive(void *ctx)
     return 0;
 }
 
-wav_err_t wav_init(wav_decode_t *wav_obj,void* head, uint32_t file_size, uint32_t* head_len)
+wav_err_t wav_init(wav_decode_t *wav_obj,void* head, uint32_t head_size, uint32_t file_size, uint32_t* head_len)
 {
 	uint8_t* wav_head_buff = (uint8_t*)head;
 	uint32_t index;
@@ -63,7 +63,7 @@ wav_err_t wav_init(wav_decode_t *wav_obj,void* head, uint32_t file_size, uint32_
 
 	index += 4;
 
-	if ((LG_READ_WORD(index) + 8) != file_size)//Chunk Size modify
+	if ((LG_READ_WORD(index) + 8) != file_size && LG_READ_WORD(index) != file_size)//Chunk Size modify
 		return UNVALID_RIFF_SIZE;
 
 	index += 4;
@@ -107,7 +107,7 @@ wav_err_t wav_init(wav_decode_t *wav_obj,void* head, uint32_t file_size, uint32_
 		index += 4;
 		index += LG_READ_WORD(index);
 		index += 4;
-		if (index >= 500)
+		if (index >= head_size)
 			return UNVALID_LIST_SIZE;
 	}
 
@@ -131,6 +131,7 @@ mp_obj_t wav_play_process(audio_t* audio,uint32_t file_size)
 	mp_obj_list_t* ret_list = (mp_obj_list_t*)m_new(mp_obj_list_t,sizeof(mp_obj_list_t));//m_new
 
     mp_obj_list_init(ret_list, 0);
+	wav_finish(audio);//free memory
 	audio->play_obj = m_new(wav_decode_t,1);//new format obj
 
 	if(NULL == audio->play_obj)
@@ -140,7 +141,8 @@ mp_obj_t wav_play_process(audio_t* audio,uint32_t file_size)
 		m_del(wav_decode_t,audio->play_obj,1);
 		vfs_internal_close(audio->fp,&close_code);
 	}
-	uint32_t read_num = vfs_internal_read(audio->fp,audio->buf,500,&err_code);//read head
+	uint32_t head_max_len = audio->points*(sizeof(uint32_t));
+	uint32_t read_num = vfs_internal_read(audio->fp,audio->buf, head_max_len,&err_code);//read head
 	if(err_code != 0)
 	{
 		mp_printf(&mp_plat_print, "[MAIXPY]: read head error close file\n");
@@ -149,7 +151,7 @@ mp_obj_t wav_play_process(audio_t* audio,uint32_t file_size)
 		vfs_internal_close(audio->fp,&close_code);
 		mp_raise_OSError(err_code);
 	}
-	wav_err_t status = wav_init(audio->play_obj,audio->buf,file_size,&head_len);//wav init
+	wav_err_t status = wav_init(audio->play_obj,audio->buf, head_max_len, file_size,&head_len);//wav init
 	//debug
 	if(status != OK)
 	{
@@ -189,6 +191,11 @@ mp_obj_t wav_play_process(audio_t* audio,uint32_t file_size)
 	for(int i = 0; i < MAX_PLAY_BUF_NUM; i++)//init wav buf
 	{
 		wav_play_obj->audio_buf[i].buf = malloc(WAV_BUF_SIZE);
+		if(!wav_play_obj->audio_buf[i].buf)
+		{
+			wav_finish(audio);
+			mp_raise_OSError(MP_ENOMEM);
+		}
 		wav_play_obj->audio_buf[i].len = WAV_BUF_SIZE;
 		wav_play_obj->audio_buf[i].empty = true;
 	}
@@ -212,18 +219,21 @@ mp_obj_t wav_play(audio_t* audio)
 									 play_obj->audio_buf[play_obj->read_order].buf, 
 									 audio->points * sizeof(uint32_t), 
 									 &err_code);//read data
+		if(err_code != 0)
+			mp_raise_msg(&mp_type_OSError, "read file error");
+		if(read_num==0)
+			return mp_obj_new_int(0);
 		play_obj->audio_buf[play_obj->read_order].len = read_num;
 		play_obj->audio_buf[play_obj->read_order].empty = false;
 		int* audio_buf = play_obj->audio_buf[play_obj->read_order].buf;
 		short MSB_audio = 0;
 		short LSB_audio = 0;
-		uint32_t vol_coe = 2;
 		for(int i = 0; i < read_num / sizeof(uint32_t); i++)//Currently only supports two-channel wav files
 		{
 			LSB_audio = audio_buf[i];
-			LSB_audio = LSB_audio / vol_coe;//The volume can be adjusted by adjusting vol_coe, TODO: package the interface for adjusting the volume
+			LSB_audio = (short)(LSB_audio * audio->volume / 100);
 			MSB_audio = audio_buf[i] >> 16;
-			MSB_audio = MSB_audio / vol_coe;
+			MSB_audio = (short)(MSB_audio * audio->volume / 100);
 			audio_buf[i] = ( MSB_audio << 16 ) | LSB_audio;
 		}
 		play_obj->read_order++;
@@ -241,7 +251,7 @@ mp_obj_t wav_play(audio_t* audio)
 					wav_play_obj->bitspersample,
 					wav_play_obj->numchannels);//play readed data
 	}
-	return mp_const_true;
+	return mp_obj_new_int(1);
 }
 
 mp_obj_t wav_record_process(audio_t* audio,uint32_t channels)//channels = Number of channels
@@ -256,6 +266,7 @@ mp_obj_t wav_record_process(audio_t* audio,uint32_t channels)//channels = Number
             break;
         }
     }
+	wav_finish(audio);//free memory
 	//create encode object
 	audio->record_obj = m_new(wav_encode_t,1);//new format obj
 	if(NULL == audio->record_obj)
@@ -294,6 +305,11 @@ mp_obj_t wav_record_process(audio_t* audio,uint32_t channels)//channels = Number
 	for(int i = 0; i < MAX_RECORD_BUF_NUM; i++)//init wav buf
 	{
 		wav_record_obj->audio_buf[i].buf = malloc(WAV_BUF_SIZE);
+		if(!wav_record_obj->audio_buf[i].buf)
+		{
+			wav_finish(audio);
+			mp_raise_OSError(MP_ENOMEM);
+		}
 		wav_record_obj->audio_buf[i].len = WAV_BUF_SIZE;
 		wav_record_obj->audio_buf[i].empty = true;
 	}
@@ -347,6 +363,19 @@ int wav_process_data(audio_t* audio)//GO righit channel record, right chnanel pl
 
 	return 0;
 }
+
+void wav_record_buf_free(wav_encode_t* wav_encode)
+{
+	for(int i = 0; i < MAX_RECORD_BUF_NUM; i++)//init wav buf
+	{
+		if(wav_encode->audio_buf[i].buf)
+		{
+			free(wav_encode->audio_buf[i].buf);
+			wav_encode->audio_buf[i].buf = NULL;
+		}
+	}
+}
+
 void wav_finish(audio_t* audio)
 {
 	uint32_t err_code = 0;
@@ -356,10 +385,17 @@ void wav_finish(audio_t* audio)
 		wav_decode_t* wav_play_obj = audio->play_obj;
 		for(int i = 0; i < MAX_PLAY_BUF_NUM; i++)//init wav buf
 		{
-			free(wav_play_obj->audio_buf[i].buf);
+			if(wav_play_obj->audio_buf[i].buf)
+			{
+				free(wav_play_obj->audio_buf[i].buf);
+				wav_play_obj->audio_buf[i].buf = NULL;
+			}
 		}
 		m_del(wav_decode_t,audio->play_obj,1);
 		audio->play_obj = NULL;
+		if(audio->fp != MP_OBJ_NULL)
+			vfs_internal_close(audio->fp,&close_code);
+		audio->fp = MP_OBJ_NULL;
 	}
 	if(audio->record_obj != NULL)
 	{
@@ -371,6 +407,7 @@ void wav_finish(audio_t* audio)
 		if(err_code != 0)
 		{
 			mp_printf(&mp_plat_print, "[MAIXPY]: write file chunk error  close file\n");
+			wav_record_buf_free(wav_encode);
 			m_del(wav_encode_t,audio->record_obj,1);
 			vfs_internal_close(audio->fp,&close_code);
 			mp_raise_OSError(err_code);
@@ -388,6 +425,7 @@ void wav_finish(audio_t* audio)
 		if(err_code != 0)
 		{
 			mp_printf(&mp_plat_print, "[MAIXPY]: write formate chunk error close file\n");
+			wav_record_buf_free(wav_encode);
 			m_del(wav_encode_t,audio->record_obj,1);
 			vfs_internal_close(audio->fp,&close_code);
 			mp_raise_OSError(err_code);
@@ -396,12 +434,15 @@ void wav_finish(audio_t* audio)
 		if(err_code != 0)
 		{
 			mp_printf(&mp_plat_print, "[MAIXPY]: write data chunk error  close file\n");
+			wav_record_buf_free(wav_encode);
 			m_del(wav_encode_t,audio->record_obj,1);
 			vfs_internal_close(audio->fp,&close_code);
 			mp_raise_OSError(err_code);
 		}
+		wav_record_buf_free(wav_encode);
 		m_del(wav_encode_t,audio->record_obj,1);
 		audio->record_obj = NULL;
+		vfs_internal_close(audio->fp,&close_code);
 	}
-	vfs_internal_close(audio->fp,&close_code);
 }
+

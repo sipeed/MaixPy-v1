@@ -40,6 +40,7 @@ typedef struct _audio_t{//This may be chaos, it need to sort it out
     audio_fmt_t format;
     i2s_work_mode_t align_mode;
     //-----------play------------
+    float volume;
     void* play_obj;
     //-----------record------------
     void* record_obj;
