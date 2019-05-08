@@ -29,7 +29,7 @@ STATIC const mp_map_elem_t maix_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_FPIOA), MP_ROM_PTR(&Maix_fpioa_type) },
     { MP_ROM_QSTR(MP_QSTR_GPIO),  MP_ROM_PTR(&Maix_gpio_type) },
     { MP_ROM_QSTR(MP_QSTR_I2S),  MP_ROM_PTR(&Maix_i2s_type) },
-    { MP_ROM_QSTR(MP_QSTR_AUDIO),  MP_ROM_PTR(&Maix_audio_type) },
+    { MP_ROM_QSTR(MP_QSTR_Audio),  MP_ROM_PTR(&Maix_audio_type) },
     { MP_ROM_QSTR(MP_QSTR_FFT),  MP_ROM_PTR(&Maix_fft_type) },
     { MP_ROM_QSTR(MP_QSTR_MIC_ARRAY),  MP_ROM_PTR(&Maix_mic_array_type) },
 };

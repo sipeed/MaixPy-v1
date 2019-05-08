@@ -320,7 +320,7 @@ STATIC MP_DEFINE_CONST_DICT(Maix_audio_dict, Maix_audio_locals_dict_table);
 const mp_obj_type_t Maix_audio_type = {
     { &mp_type_type },
     .print = Maix_audio_print,
-    .name = MP_QSTR_AUDIO,
+    .name = MP_QSTR_Audio,
     .make_new = Maix_audio_make_new,
     .locals_dict = (mp_obj_dict_t*)&Maix_audio_dict,
 };
