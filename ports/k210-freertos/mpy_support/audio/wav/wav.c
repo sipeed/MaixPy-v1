@@ -214,27 +214,53 @@ mp_obj_t wav_play(audio_t* audio)
 	uint32_t err_code = 0;
 	if(play_obj->audio_buf[play_obj->read_order].empty)//empty ,altread to read
 	{
+		short MSB_audio = 0;
+		short LSB_audio = 0;
+		
+		play_obj->audio_buf[play_obj->read_order].empty = false;
+
 		// mp_printf(&mp_plat_print, "[MAIXPY]: read_order = %d\n",play_obj->read_order);
-		read_num = vfs_internal_read(audio->fp, 
-									 play_obj->audio_buf[play_obj->read_order].buf, 
-									 audio->points * sizeof(uint32_t), 
-									 &err_code);//read data
+		if(play_obj->numchannels == 1)//TODO: optimize mono
+		{
+			read_num = vfs_internal_read(audio->fp, 
+										play_obj->audio_buf[play_obj->read_order].buf+audio->points * sizeof(uint32_t)/2, 
+										audio->points * sizeof(uint32_t)/2, 
+										&err_code);//read data
+		}
+		else
+		{
+			read_num = vfs_internal_read(audio->fp, 
+										play_obj->audio_buf[play_obj->read_order].buf, 
+										audio->points * sizeof(uint32_t), 
+										&err_code);//read data
+		}
 		if(err_code != 0)
 			mp_raise_msg(&mp_type_OSError, "read file error");
 		if(read_num==0)
 			return mp_obj_new_int(0);
-		play_obj->audio_buf[play_obj->read_order].len = read_num;
-		play_obj->audio_buf[play_obj->read_order].empty = false;
-		int* audio_buf = play_obj->audio_buf[play_obj->read_order].buf;
-		short MSB_audio = 0;
-		short LSB_audio = 0;
-		for(int i = 0; i < read_num / sizeof(uint32_t); i++)//Currently only supports two-channel wav files
+		if(play_obj->numchannels == 1)//TODO: optimize mono
 		{
-			LSB_audio = audio_buf[i];
-			LSB_audio = (short)(LSB_audio * audio->volume / 100);
-			MSB_audio = audio_buf[i] >> 16;
-			MSB_audio = (short)(MSB_audio * audio->volume / 100);
-			audio_buf[i] = ( MSB_audio << 16 ) | LSB_audio;
+			int16_t* src = play_obj->audio_buf[play_obj->read_order].buf + audio->points * sizeof(uint32_t)/2;
+			int32_t* dst = play_obj->audio_buf[play_obj->read_order].buf;
+			for(int i=0; i<read_num/sizeof(int16_t); ++i)
+			{
+				src[i] = (int16_t)(src[i] * audio->volume / 100);
+				dst[i] = (src[i]<<16) | src[i];
+			}
+			play_obj->audio_buf[play_obj->read_order].len = read_num*2;
+		}
+		else
+		{
+			int32_t* audio_buf = play_obj->audio_buf[play_obj->read_order].buf;
+			for(int i = 0; i < read_num / sizeof(uint32_t); i++)//Currently only supports two-channel wav files
+			{
+				LSB_audio = audio_buf[i];
+				LSB_audio = (short)(LSB_audio * audio->volume / 100);
+				MSB_audio = audio_buf[i] >> 16;
+				MSB_audio = (short)(MSB_audio * audio->volume / 100);
+				audio_buf[i] = ( MSB_audio << 16 ) | LSB_audio;
+			}
+			play_obj->audio_buf[play_obj->read_order].len = read_num;
 		}
 		play_obj->read_order++;
 		if(play_obj->read_order > MAX_PLAY_BUF_NUM - 1)
@@ -249,7 +275,8 @@ mp_obj_t wav_play(audio_t* audio)
 					wav_play_obj->audio_buf[wav_play_obj->play_order].len,
 					wav_play_obj->audio_buf[wav_play_obj->play_order].len / sizeof(uint32_t),
 					wav_play_obj->bitspersample,
-					wav_play_obj->numchannels);//play readed data
+					2);
+					// wav_play_obj->numchannels);//play readed data//TODO: fix mono
 	}
 	return mp_obj_new_int(1);
 }
