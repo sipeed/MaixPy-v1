@@ -401,6 +401,8 @@ bool sATCIPSTA_CUR(esp8285_obj* nic,uint8_t* ip,uint8_t* gateway,uint8_t* netmas
 bool qATCIPSTA_CUR(esp8285_obj* nic);
 bool eINIT(esp8285_obj* nic);
 bool get_ipconfig(esp8285_obj* nic, ipconfig_obj* ipconfig);
+bool eATCWLAP(esp8285_obj* nic);
+bool eATCWSAP(esp8285_obj* nic, char* ssid, char* key, int chl, int ecn);
 
 /*
  * +IPD,len:data
