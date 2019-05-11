@@ -37,6 +37,9 @@
 static int width = 0;
 static int height = 0;
 static enum { LCD_NONE, LCD_SHIELD } type = LCD_NONE;
+static uint8_t rotation = 0;
+static bool invert = false;
+static uint16_t screen_dir = DIR_YX_RLDU;
 // static bool backlight_init = false;
 
 // Send out 8-bit data using the SPI object.
@@ -280,6 +283,110 @@ static mp_obj_t py_lcd_clear(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw
     return mp_const_none;
 }
 
+STATIC bool check_rotation(mp_int_t r)
+{
+	if(r>3 || r<0)
+		return false;
+	return true;
+}
+
+STATIC bool check_invert(mp_int_t i)
+{
+	return (i==0) || (i==1);
+}
+
+STATIC uint16_t getValueByRotation(uint8_t rotation)
+{
+    uint16_t v = DIR_YX_RLDU;
+    switch(rotation) {
+        case 0:
+            v = DIR_YX_RLDU;
+            break;
+        case 1:
+            v = DIR_XY_RLUD;
+            break;
+        case 2:
+            v = DIR_YX_LRUD;
+            break;
+        case 3:
+            v = DIR_XY_LRDU;
+            break;
+    }
+    return v;
+}
+
+STATIC void lcd_set_invert_helper()
+{
+	switch(rotation) {
+		case 0:
+			screen_dir = DIR_YX_RLUD;
+			break;
+		case 1:
+			screen_dir = DIR_XY_LRUD;
+			break;
+		case 2:
+			screen_dir = DIR_YX_LRDU;
+			break;
+		case 3:
+			screen_dir = DIR_XY_RLDU;
+			break;
+	}
+	lcd_set_direction((lcd_dir_t)screen_dir);
+}
+
+STATIC mp_obj_t py_lcd_rotation(uint n_args, const mp_obj_t *args)
+{
+	if(n_args == 0)	
+		goto end;
+	mp_int_t r = mp_obj_get_int(args[0]);
+	if(r != rotation)
+	{
+		if(!check_rotation(r))
+			mp_raise_ValueError("value:[0,3]");
+		rotation = r;
+		switch(rotation) {
+			case 0:
+			case 2:
+				width  = LCD_W;
+				height = LCD_H;
+				break;
+			case 1:
+			case 3:
+				width  = LCD_H;
+				height = LCD_W;
+				break;
+		}
+		if(invert)
+			lcd_set_invert_helper();
+		else
+		{
+			screen_dir = getValueByRotation(rotation);
+			lcd_set_direction((lcd_dir_t)screen_dir);
+		}
+	}
+end:
+	return mp_obj_new_int(rotation);
+}
+
+STATIC mp_obj_t py_lcd_invert(uint n_args, const mp_obj_t *args)
+{
+	if(n_args == 0)
+		goto end;
+	mp_int_t i = mp_obj_get_int(args[0]);
+	if(i != invert)
+	{
+		if(!check_invert(i))
+			mp_raise_ValueError("True or False");
+		invert = i?true:false;
+		if( invert )
+		{
+			lcd_set_invert_helper();
+		}
+	}
+end:
+	return mp_obj_new_int(invert);
+}
+
 //x0,y0,string,font color,bg color
 static uint16_t str_buf[LCD_W/8*16*8];  //1 pixel = 2byte
 static char str_cut[LCD_W/8+1];
@@ -328,6 +435,8 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_lcd_get_backlight_obj, py_lcd_get_backlight)
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_lcd_display_obj, 1, py_lcd_display);
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_lcd_clear_obj, 0, py_lcd_clear);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_lcd_direction_obj, py_lcd_direction);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_rotation_obj, 0, 1, py_lcd_rotation);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_invert_obj, 0, 1, py_lcd_invert);
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_draw_string_obj, 3, 5, py_lcd_draw_string);
 static const mp_map_elem_t globals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__),        MP_OBJ_NEW_QSTR(MP_QSTR_lcd) },
@@ -342,6 +451,8 @@ static const mp_map_elem_t globals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_display),         (mp_obj_t)&py_lcd_display_obj       },
     { MP_OBJ_NEW_QSTR(MP_QSTR_clear),           (mp_obj_t)&py_lcd_clear_obj         },
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_direction),       (mp_obj_t)&py_lcd_direction_obj     },
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_rotation),        (mp_obj_t)&py_lcd_rotation_obj     },
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_invert),          (mp_obj_t)&py_lcd_invert_obj     },
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_draw_string),     (mp_obj_t)&py_lcd_draw_string_obj   },
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_XY_RLUD),  MP_OBJ_NEW_SMALL_INT(DIR_XY_RLUD)}, 
     { MP_OBJ_NEW_QSTR(MP_QSTR_YX_RLUD),  MP_OBJ_NEW_SMALL_INT(DIR_YX_RLUD)}, 
