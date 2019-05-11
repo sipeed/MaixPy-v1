@@ -452,7 +452,7 @@ static const mp_map_elem_t globals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_clear),           (mp_obj_t)&py_lcd_clear_obj         },
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_direction),       (mp_obj_t)&py_lcd_direction_obj     },
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_rotation),        (mp_obj_t)&py_lcd_rotation_obj     },
-	{ MP_OBJ_NEW_QSTR(MP_QSTR_invert),          (mp_obj_t)&py_lcd_invert_obj     },
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_mirror),          (mp_obj_t)&py_lcd_invert_obj     },
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_draw_string),     (mp_obj_t)&py_lcd_draw_string_obj   },
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_XY_RLUD),  MP_OBJ_NEW_SMALL_INT(DIR_XY_RLUD)}, 
     { MP_OBJ_NEW_QSTR(MP_QSTR_YX_RLUD),  MP_OBJ_NEW_SMALL_INT(DIR_YX_RLUD)}, 
