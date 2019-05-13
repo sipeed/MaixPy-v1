@@ -8,5 +8,4 @@
  */
 #ifndef __PY_CPUFREQ_H__
 #define __PY_CPUFREQ_H__
-void py_cpufreq_init0();
 #endif // __PY_CPUFREQ_H__

@@ -15,12 +15,35 @@
 #define ESP8285_BUF_SIZE 4096 
 #define MICROPY_UART_NIC 1
 /***********freq mod******************/
-#define FREQ_STORE_ADDR 0x600000
-#define FREQ_READ_NUM 2
-#define PLL0_MAX_OUTPUT_FREQ 832000000UL
-#define PLL1_MAX_OUTPUT_FREQ 400000000UL
-#define PLL2_MAX_OUTPUT_FREQ 45158400UL
-#define CPU_MAX_FREQ (PLL0_MAX_OUTPUT_FREQ / 2)
-#define KPU_MAX_FREQ PLL1_MAX_OUTPUT_FREQ
-#define I2S_MAX_FREQ 0
+#define FREQ_STORE_FILE_NAME "freq.conf"
+#define FREQ_PLL0_MAX        1200000000UL
+#define FREQ_PLL0_DEFAULT    832000000UL
+#define FREQ_PLL0_MIN        52000000UL
+#define FREQ_PLL1_MAX        400000000UL
+#define FREQ_PLL1_DEFAULT    400000000UL
+#define FREQ_PLL2_MAX        45158400UL
+#define FREQ_PLL2_DEFAULT    45158400UL
+
+
+#define FREQ_CPU_MAX     (FREQ_PLL0_MAX/2)
+#define FREQ_CPU_DEFAULT (FREQ_PLL0_DEFAULT/2)
+#define FREQ_CPU_MIN     (FREQ_PLL0_MIN/2)
+#define FREQ_KPU_MAX     FREQ_PLL1_MAX
+#define FREQ_KPU_DEFAULT FREQ_PLL1_MAX
+// #define I2S_MAX_FREQ 0
+
+// change REPL baud rate to 9600 when freq < REPL_BAUDRATE_9600_FREQ_THRESHOLD
+#define REPL_BAUDRATE_9600_FREQ_THRESHOLD  60000000UL
+
+
+/////////////////////////////////////////////////////////////////////////
+typedef struct{
+	uint32_t freq_cpu;
+    uint32_t freq_kpu;
+} config_data_t;
+
+void load_config_from_spiffs(config_data_t* config);
+bool save_config_to_spiffs(config_data_t* config);
+
+
 #endif//__MPCONFIGBOARD_MAIX_H

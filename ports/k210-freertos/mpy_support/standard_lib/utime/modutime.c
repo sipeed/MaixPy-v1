@@ -205,7 +205,7 @@ STATIC MP_DEFINE_CONST_DICT(locals_dict, locals_dict_table);
 
 static const mp_obj_type_t py_clock_type = {
     { &mp_type_type },
-    .name  = MP_QSTR_Clock,
+    .name  = MP_QSTR_clock,
     .print = py_clock_print,
     .locals_dict = (mp_obj_t)&locals_dict,
 };

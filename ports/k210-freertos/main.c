@@ -175,8 +175,16 @@ STATIC bool init_sdcard_fs(void) {
 }
 
 
+bool flash_init(uint8_t* manuf_id, uint8_t* device_id)
+{
+	w25qxx_init_dma(3, 0);
+	w25qxx_enable_quad_mode_dma();
+	w25qxx_read_id_dma(manuf_id, device_id);
+	return true;
+}
 
-MP_NOINLINE STATIC bool init_flash_spiffs()
+
+MP_NOINLINE STATIC spiffs_user_mount_t* init_flash_spiffs()
 {
 
 	spiffs_user_mount_t* vfs_spiffs = &spiffs_user_mount_handle;
@@ -225,7 +233,11 @@ MP_NOINLINE STATIC bool init_flash_spiffs()
 
 		}
 	}
-	
+	return vfs_spiffs;
+}
+
+STATIC bool mpy_mount_spiffs(spiffs_user_mount_t* spiffs)
+{
 	mp_vfs_mount_t *vfs = m_new_obj(mp_vfs_mount_t);
     if (vfs == NULL) {
         printk("[MaixPy]:can't mount flash\n");
@@ -233,7 +245,7 @@ MP_NOINLINE STATIC bool init_flash_spiffs()
     }
     vfs->str = "/flash";
     vfs->len = 6;
-    vfs->obj = MP_OBJ_FROM_PTR(vfs_spiffs);
+    vfs->obj = MP_OBJ_FROM_PTR(spiffs);
     vfs->next = NULL;
 	for (mp_vfs_mount_t **m = &MP_STATE_VM(vfs_mount_table);; m = &(*m)->next) {
 		if (*m == NULL) {
@@ -242,6 +254,50 @@ MP_NOINLINE STATIC bool init_flash_spiffs()
 		}
 	}
 	return true;
+}
+
+bool save_config_to_spiffs(config_data_t* config)
+{
+	s32_t ret;
+	spiffs_file fd = SPIFFS_open(&spiffs_user_mount_handle.fs, FREQ_STORE_FILE_NAME, SPIFFS_O_WRONLY|SPIFFS_O_CREAT, 0 );
+	if(fd<=0)
+		return false;
+	ret = SPIFFS_write(&spiffs_user_mount_handle.fs, fd, config, sizeof(config_data_t));
+	if(ret<=0)
+	{
+		SPIFFS_close(&spiffs_user_mount_handle.fs, fd);
+		return false;
+	}
+	SPIFFS_close(&spiffs_user_mount_handle.fs, fd);
+	return true;
+}
+
+void load_config_from_spiffs(config_data_t* config)
+{
+	s32_t ret;
+	spiffs_file fd = SPIFFS_open(&spiffs_user_mount_handle.fs, FREQ_STORE_FILE_NAME, SPIFFS_O_RDONLY, 0 );
+	if(fd<=0)
+	{
+		config->freq_cpu = FREQ_CPU_DEFAULT;
+		config->freq_kpu = FREQ_KPU_DEFAULT;
+		if(!save_config_to_spiffs(config))
+			printk("save config fail\r\n");
+		return;
+	}
+	else
+	{
+		ret = SPIFFS_read(&spiffs_user_mount_handle.fs, fd, config, sizeof(config_data_t));
+		if(ret<=0)
+		{
+			printk("read config fail\r\n");
+		}
+		else
+		{
+			config->freq_cpu = config->freq_cpu>FREQ_CPU_MAX ? FREQ_CPU_MAX : config->freq_cpu;
+			config->freq_cpu = config->freq_cpu<FREQ_CPU_MIN ? FREQ_CPU_MIN : config->freq_cpu;
+		}
+	}
+	SPIFFS_close(&spiffs_user_mount_handle.fs, fd);
 }
 
 #if MICROPY_ENABLE_COMPILER
@@ -298,9 +354,17 @@ soft_reset:
 				#else
 				MP_OBJ_NEW_SMALL_INT(MICROPY_UARTHS_DEVICE),
 				#endif
-				MP_OBJ_NEW_SMALL_INT(115200),
-				MP_OBJ_NEW_SMALL_INT(8),
 			};
+			args[2] = MP_OBJ_NEW_SMALL_INT(8);
+			uint32_t freq = sysctl_clock_get_freq(SYSCTL_CLOCK_CPU);
+			if(freq<REPL_BAUDRATE_9600_FREQ_THRESHOLD)
+			{
+				args[1] = MP_OBJ_NEW_SMALL_INT(9600);
+			}
+			else
+			{
+				args[1] = MP_OBJ_NEW_SMALL_INT(115200);
+			}
 			#ifdef MAIXPY_DEBUG_UARTHS_REPL_UART3
 			fpioa_set_function(9, FUNC_UARTHS_RX);
 		    fpioa_set_function(10,  FUNC_UARTHS_TX);
@@ -320,7 +384,7 @@ soft_reset:
 		// initialise peripherals
 		bool mounted_sdcard = false;
 		bool mounted_flash= false;
-		mounted_flash = init_flash_spiffs();//init spiffs of flash
+		mounted_flash = mpy_mount_spiffs(&spiffs_user_mount_handle);//init spiffs of flash
 		sd_init();
 		if (sdcard_is_present()) {
 			spiffs_stat  fno;
@@ -416,36 +480,22 @@ int core1_function(void *ctx)
 }
 
 
-#define CPU 0
-#define KPU 1
-#define I2S 2
 int main()
 {	
 	uint8_t manuf_id, device_id;
-	sysctl_pll_set_freq(SYSCTL_PLL0, PLL0_MAX_OUTPUT_FREQ);
-	sysctl_pll_set_freq(SYSCTL_PLL1, PLL1_MAX_OUTPUT_FREQ);
-	sysctl_pll_set_freq(SYSCTL_PLL2, PLL2_MAX_OUTPUT_FREQ);
+	config_data_t config;
+	sysctl_pll_set_freq(SYSCTL_PLL0, FREQ_PLL0_DEFAULT);
+	sysctl_pll_set_freq(SYSCTL_PLL1, FREQ_PLL1_DEFAULT);
+	sysctl_pll_set_freq(SYSCTL_PLL2, FREQ_PLL2_DEFAULT);
 	uarths_init();
-	uint32_t store_freq[3] = {0};
-	uint32_t max_freq[3] = {0};
-	store_freq[0] = CPU_MAX_FREQ;//0 -> PLL0
-	store_freq[1] = KPU_MAX_FREQ;//1 -> PLL1
-	store_freq[2] = I2S_MAX_FREQ;//2 -> PLL2
-	max_freq[0] = CPU_MAX_FREQ;//0 -> PLL0
-	max_freq[1] = KPU_MAX_FREQ;//1 -> PLL1
-	max_freq[2] = I2S_MAX_FREQ;//2 -> PLL2
-	w25qxx_init_dma(3, 0);
-	w25qxx_enable_quad_mode_dma();
-	w25qxx_read_id_dma(&manuf_id, &device_id);
-	for(int i = 0; i < FREQ_READ_NUM; i++)
-	{
-		sys_spiffs_read(FREQ_STORE_ADDR + i * 4 ,4,(uint8_t* )(&store_freq[i]));
-		store_freq[i] = store_freq[i] > max_freq[i] ? max_freq[i] : store_freq[i];
-		store_freq[i] = store_freq[i] < 26000000 ? max_freq[i] : store_freq[i];
-	}
-	sysctl_cpu_set_freq(store_freq[CPU]);
+	flash_init(&manuf_id, &device_id);
+	init_flash_spiffs();
+	load_config_from_spiffs(&config);
+	sysctl_cpu_set_freq(config.freq_cpu);
+	dmac_init();
+	plic_init();
 	uarths_init();
-	sysctl_clock_set_threshold(SYSCTL_THRESHOLD_AI, (PLL1_MAX_OUTPUT_FREQ / store_freq[KPU]) / 2);
+	sysctl_clock_set_threshold(SYSCTL_THRESHOLD_AI, (FREQ_PLL1_MAX / config.freq_kpu) / 2);
 	printk("\r\n");
 	printk("[MAIXPY]Pll0:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL0));
 	printk("[MAIXPY]Pll1:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL1));
@@ -455,14 +505,10 @@ int main()
 	sysctl_clock_enable(SYSCTL_CLOCK_AI);
 	sysctl_set_power_mode(SYSCTL_POWER_BANK6,SYSCTL_POWER_V18);
 	sysctl_set_power_mode(SYSCTL_POWER_BANK7,SYSCTL_POWER_V18);
-	dmac_init();
-	plic_init();
     sysctl_enable_irq();
 	rtc_init();
 	rtc_timer_set(2019,1, 1,0, 0, 0);
-	w25qxx_init_dma(3, 0);
-	w25qxx_enable_quad_mode_dma();
-	w25qxx_read_id_dma(&manuf_id, &device_id);
+	flash_init(&manuf_id, &device_id);
 	printk("[MAIXPY]Flash:0x%02x:0x%02x\r\n", manuf_id, device_id);
     /* Init SPI IO map and function settings */
     sysctl_set_spi0_dvp_data(1);
