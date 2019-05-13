@@ -40,6 +40,7 @@
 #include "py/formatfloat.h"
 #include "py/runtime.h"
 #include "lib/utils/interrupt_char.h"
+#include "sleep.h"
 
 #include "mpconfigboard.h"
 #include "modmachine.h"
@@ -81,16 +82,14 @@ Buffer_t g_uart_send_buf_ide;
 
 void DISABLE_RX_INT(machine_uart_obj_t *self)
 {
-	uint8_t data;
 	self->rx_int_flag = 0;
 	uart_irq_unregister(self->uart_num, UART_RECEIVE);
 }
 void DISABLE_HSRX_INT(machine_uart_obj_t *self)
 {
 	self->rx_int_flag = 0;
-	uint8_t data;
 	plic_irq_disable(IRQN_UARTHS_INTERRUPT);
-    plic_irq_unregister(IRQN_UARTHS_INTERRUPT);
+	plic_irq_unregister(IRQN_UARTHS_INTERRUPT);
 
 }
 mp_uint_t uart_rx_any(machine_uart_obj_t *self) 
@@ -111,11 +110,6 @@ mp_uint_t uart_rx_any(machine_uart_obj_t *self)
 	}
 }
 
-static size_t read_ret;
-static uint8_t read_tmp;
-static uint16_t next_head;
-static machine_uart_obj_t* ctx_self = NULL;
-
 mp_obj_t uart_any(machine_uart_obj_t *self)
 {
 	return mp_obj_new_int(uart_rx_any(self));
@@ -124,20 +118,23 @@ MP_DEFINE_CONST_FUN_OBJ_1(machine_uart_any_obj, uart_any);
 
 int uart_rx_irq(void *ctx)
 {
-    ctx_self= (machine_uart_obj_t*)ctx;
-    if (ctx_self == NULL)
-        return 0;
+	uint8_t read_tmp;
+	machine_uart_obj_t* ctx_self= (machine_uart_obj_t*)ctx;
+	if (ctx_self == NULL) {
+		return 0;
+	}
 	if (ctx_self->read_buf_len != 0) {
 		if(ctx_self->attached_to_repl)
 		{
 #ifndef OMV_MINIMUM
 			if(ctx_self->ide_debug_mode)
 			{
+				size_t read_ret = 0; 
 				do{
 					if(MICROPY_UARTHS_DEVICE == ctx_self->uart_num)
 						read_ret = uarths_receive_data(&read_tmp,1);
 					else if(UART_DEVICE_MAX > ctx_self->uart_num)
-						read_ret = uart_receive_data(ctx_self->uart_num,&read_tmp , 1);
+						read_ret = uart_receive_data(ctx_self->uart_num,(char*)&read_tmp , 1);
 					if(read_ret == 0)
 						break;
 					ide_dbg_dispatch_cmd(ctx_self, &read_tmp);
@@ -146,14 +143,15 @@ int uart_rx_irq(void *ctx)
 			else
 #endif // OMV_MINIMUM
 			{
+				size_t read_ret = 0;
 				do{
-					next_head = (ctx_self->read_buf_head + 1) % ctx_self->read_buf_len;
+					uint16_t next_head = (ctx_self->read_buf_head + 1) % ctx_self->read_buf_len;
 					// only read data if room in buf
 					if (next_head != ctx_self->read_buf_tail) {
 						if(MICROPY_UARTHS_DEVICE == ctx_self->uart_num)
 							read_ret = uarths_receive_data(&read_tmp,1);
 						else if(UART_DEVICE_MAX > ctx_self->uart_num)
-							read_ret = uart_receive_data(ctx_self->uart_num,&read_tmp , 1);
+							read_ret = uart_receive_data(ctx_self->uart_num,(char*)&read_tmp , 1);
 						if(read_ret == 0)
 							break;
 						ctx_self->read_buf[ctx_self->read_buf_head] = read_tmp;
@@ -175,7 +173,7 @@ int uart_rx_irq(void *ctx)
 							if(MICROPY_UARTHS_DEVICE == ctx_self->uart_num)
 								read_ret = uarths_receive_data(&read_tmp,1);
 							else if(UART_DEVICE_MAX > ctx_self->uart_num)
-								read_ret = uart_receive_data(ctx_self->uart_num,&read_tmp , 1);
+								read_ret = uart_receive_data(ctx_self->uart_num,(char*)&read_tmp , 1);
 						}while(read_ret);
 					}
 				}while(read_ret);
@@ -183,14 +181,15 @@ int uart_rx_irq(void *ctx)
 		}
 		else
 		{
+			size_t read_ret = 0;
 			do{
-				next_head = (ctx_self->read_buf_head + 1) % ctx_self->read_buf_len;
+				uint16_t next_head = (ctx_self->read_buf_head + 1) % ctx_self->read_buf_len;
 				while (next_head != ctx_self->read_buf_tail)
 				{
 					if(MICROPY_UARTHS_DEVICE == ctx_self->uart_num)
 						read_ret = uarths_receive_data(&ctx_self->read_buf[ctx_self->read_buf_head],1);
 					else if(UART_DEVICE_MAX > ctx_self->uart_num)
-						read_ret = uart_receive_data(ctx_self->uart_num,&ctx_self->read_buf[ctx_self->read_buf_head],1);
+						read_ret = uart_receive_data(ctx_self->uart_num,(char*)&ctx_self->read_buf[ctx_self->read_buf_head],1);
 					if(read_ret == 0)
 						break;
 					ctx_self->read_buf_head = next_head;
@@ -203,7 +202,7 @@ int uart_rx_irq(void *ctx)
 						if(MICROPY_UARTHS_DEVICE == ctx_self->uart_num)
 							read_ret = uarths_receive_data(&read_tmp,1);
 						else if(UART_DEVICE_MAX > ctx_self->uart_num)
-							read_ret = uart_receive_data(ctx_self->uart_num,&read_tmp,1);
+							read_ret = uart_receive_data(ctx_self->uart_num,(char*)&read_tmp,1);
 					}while(read_ret);
 				}
 			}while(read_ret);
@@ -269,7 +268,7 @@ mp_obj_t uart_readchar(machine_uart_obj_t *self)
 
 	if(data != -1)
 	{
-		return mp_obj_new_bytes(&data,1);
+		return mp_obj_new_bytes((byte*)&data,1);
 	}
 	return MP_OBJ_NULL;
 }
@@ -306,7 +305,7 @@ STATIC size_t uart_tx_data(machine_uart_obj_t *self, const void *src_data, size_
         return 0;
     }
 
-    uint32_t timeout;
+    //uint32_t timeout;
 	//K210 does not have cts function API at present
 	//TODO:
 	/*
@@ -316,7 +315,7 @@ STATIC size_t uart_tx_data(machine_uart_obj_t *self, const void *src_data, size_
         timeout = self->timeout;
     } 
     */
-    timeout = 2 * self->timeout_char;
+    //timeout = 2 * self->timeout_char;
     const uint8_t *src = (uint8_t*)src_data;
     size_t num_tx = 0;
 	size_t cal = 0;	
@@ -336,7 +335,7 @@ STATIC size_t uart_tx_data(machine_uart_obj_t *self, const void *src_data, size_
 				if(MICROPY_UARTHS_DEVICE == self->uart_num)
 					cal = uarths_send_data(&data,1);
 				else if(UART_DEVICE_MAX > self->uart_num)
-					cal= uart_send_data(self->uart_num, &data,1);		
+					cal= uart_send_data(self->uart_num, (char*)&data,1);	
 				num_tx = num_tx + cal;
 			}
 		}
@@ -351,7 +350,7 @@ STATIC size_t uart_tx_data(machine_uart_obj_t *self, const void *src_data, size_
 			if(MICROPY_UARTHS_DEVICE == self->uart_num)
 				cal = uarths_send_data(src,size);
 			else if(UART_DEVICE_MAX > self->uart_num)
-				cal= uart_send_data(self->uart_num, src,size);	
+				cal= uart_send_data(self->uart_num, (char*)src,size);
 			src = src + cal;
  	        num_tx = num_tx + cal;
 	    }
@@ -605,7 +604,6 @@ STATIC mp_uint_t machine_uart_read(mp_obj_t self_in, void *buf_in, mp_uint_t siz
     if (size == 0) {
         return 0;
     }
-	uint16_t next_head = 0;
     // read the data
 	int data_num = 0;
 	if(uart_rx_wait(self, self->timeout_char))

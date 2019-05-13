@@ -16,9 +16,14 @@
 ######################
 *.log
 
-# VIM Swap Files
+# VIM Swap / Temp Files
 ######################
 *.swp
+*~
+
+# ctags data
+######################
+tags
 
 # Build directory
 ######################
