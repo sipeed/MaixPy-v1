@@ -16,20 +16,21 @@
 #define MICROPY_UART_NIC 1
 /***********freq mod******************/
 #define FREQ_STORE_FILE_NAME "freq.conf"
-#define FREQ_PLL0_MAX        1200000000UL
+#define FREQ_PLL0_MAX        1200000000UL //1800MHz max
 #define FREQ_PLL0_DEFAULT    832000000UL
 #define FREQ_PLL0_MIN        52000000UL
-#define FREQ_PLL1_MAX        400000000UL
+#define FREQ_PLL1_MAX        1200000000UL //1800MHz max
 #define FREQ_PLL1_DEFAULT    400000000UL
-#define FREQ_PLL2_MAX        45158400UL
+#define FREQ_PLL1_MIN        26000000UL
 #define FREQ_PLL2_DEFAULT    45158400UL
 
 
-#define FREQ_CPU_MAX     (FREQ_PLL0_MAX/2)
+#define FREQ_CPU_MAX     600000000UL
 #define FREQ_CPU_DEFAULT (FREQ_PLL0_DEFAULT/2)
 #define FREQ_CPU_MIN     (FREQ_PLL0_MIN/2)
-#define FREQ_KPU_MAX     FREQ_PLL1_MAX
-#define FREQ_KPU_DEFAULT FREQ_PLL1_MAX
+#define FREQ_KPU_MAX     600000000UL
+#define FREQ_KPU_DEFAULT FREQ_PLL1_DEFAULT
+#define FREQ_KPU_MIN     FREQ_PLL1_MIN
 // #define I2S_MAX_FREQ 0
 
 // change REPL baud rate to 9600 when freq < REPL_BAUDRATE_9600_FREQ_THRESHOLD
@@ -39,7 +40,8 @@
 /////////////////////////////////////////////////////////////////////////
 typedef struct{
 	uint32_t freq_cpu;
-    uint32_t freq_kpu;
+    uint32_t freq_pll1;
+    uint8_t  kpu_div;
 } config_data_t;
 
 void load_config_from_spiffs(config_data_t* config);

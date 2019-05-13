@@ -20,7 +20,7 @@
 
 
 #define ARRAY_LENGTH(x) (sizeof(x)/sizeof(x[0]))
-static const uint32_t kpufreq_freqs[] = {100, 200, 400};
+// static const uint32_t kpufreq_freqs[] = {100, 200, 400};
 //static const uint32_t cpufreq_pllq[] = {5, 6, 7, 8, 9};
 
 // static const uint32_t cpufreq_latency[] = { // Flash latency (see table 11)
@@ -43,43 +43,54 @@ mp_obj_t py_cpufreq_get_current_frequencies()
     return mp_obj_new_tuple(2, tuple);
 }
 
-mp_obj_t py_kpufreq_get_supported_frequencies()
-{
+// mp_obj_t py_kpufreq_get_supported_frequencies()
+// {
 
-    mp_obj_t freq_list = mp_obj_new_list(0, NULL);
-    for (int i=0; i<ARRAY_LENGTH(kpufreq_freqs); i++) {
-        mp_obj_list_append(freq_list, mp_obj_new_int(kpufreq_freqs[i]));
-    }
-    return freq_list;   
-}
-#define CPU 0
-#define KPU 1
-#define FREQ_NUM 2
-mp_obj_t py_cpufreq_set_frequency(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
+//     mp_obj_t freq_list = mp_obj_new_list(0, NULL);
+//     for (int i=0; i<ARRAY_LENGTH(kpufreq_freqs); i++) {
+//         mp_obj_list_append(freq_list, mp_obj_new_int(kpufreq_freqs[i]));
+//     }
+//     return freq_list;   
+// }
+
+mp_obj_t py_kpufreq_get_cpu()
 {
-    mp_map_elem_t *cpu_arg = mp_map_lookup(kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_cpu), MP_MAP_LOOKUP);
-    mp_map_elem_t *kpu_arg = mp_map_lookup(kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_kpu), MP_MAP_LOOKUP);
+    return mp_obj_new_int(cpufreq_get_cpuclk() / (1000000));
+}
+
+mp_obj_t py_kpufreq_get_kpu()
+{
+    return mp_obj_new_int(sysctl_clock_get_freq(SYSCTL_CLOCK_AI) / (1000000));
+}
+
+mp_obj_t py_cpufreq_set_frequency(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
+{
     config_data_t config;
+    enum { 
+        ARG_cpu,
+        ARG_pll1,
+        ARG_kpu_div,
+    };
+    static const mp_arg_t allowed_args[] = {
+        { MP_QSTR_cpu, MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_pll1, MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_kpu_div, MP_ARG_INT, {.u_int = 0} },
+    };
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
     load_config_from_spiffs(&config);
 
-    if(NULL == cpu_arg && NULL == kpu_arg)
-        nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "Please enter frequency with keyword!"));
-
-    if(cpu_arg != NULL)
-        config.freq_cpu = mp_obj_get_int(cpu_arg->value)*1000000;
-    if(kpu_arg != NULL)
-        config.freq_kpu = mp_obj_get_int(kpu_arg->value)*1000000;
-
-    // Check if frequency is supported
-    int kpufreq_idx = -1;
-    for (int i=0; i<ARRAY_LENGTH(kpufreq_freqs); i++) {
-        if (config.freq_kpu == kpufreq_freqs[i]*1000000) {
-            kpufreq_idx = i;
-            break;
-        }
-    }
+    if(args[ARG_cpu].u_int != 0)
+        config.freq_cpu = args[ARG_cpu].u_int*1000000;
+    if(args[ARG_pll1].u_int != 0)
+        config.freq_pll1 = args[ARG_pll1].u_int*1000000;
+    if(args[ARG_kpu_div].u_int != 0)
+        config.kpu_div = args[ARG_kpu_div].u_int;
+    uint32_t freq_kpu = config.freq_pll1 / config.kpu_div;
     // Frequency is Not supported.
-    if ( config.freq_kpu != 0 && kpufreq_idx == -1) {
+    if ( freq_kpu > FREQ_KPU_MAX ||
+         freq_kpu < FREQ_KPU_MIN) {
         nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "Unsupported KPU frequency!"));
     }
 
@@ -90,14 +101,14 @@ mp_obj_t py_cpufreq_set_frequency(uint n_args, const mp_obj_t *args, mp_map_t *k
     }
 
     // Return if frequency hasn't changed.
-    if (( 20 > abs(config.freq_cpu - cpufreq_get_cpuclk())) && ( 20 > abs(config.freq_kpu - sysctl_clock_get_freq(SYSCTL_CLOCK_AI) ))) {
+    if (( 20 > abs(config.freq_cpu - cpufreq_get_cpuclk())) && ( 20 > abs(freq_kpu - sysctl_clock_get_freq(SYSCTL_CLOCK_AI) ))) {
         mp_printf(&mp_plat_print, "No change\r\n");
-        return mp_const_true;
+        return mp_const_none;
     }
     if(!save_config_to_spiffs(&config))
         mp_printf(&mp_plat_print, "save config fail");
     mp_printf(&mp_plat_print, "\r\nreboot now\r\n");
-    mp_hal_delay_ms(100);
+    mp_hal_delay_ms(50);
     sipeed_sys_reset();
 
     return mp_const_true;
@@ -105,14 +116,16 @@ mp_obj_t py_cpufreq_set_frequency(uint n_args, const mp_obj_t *args, mp_map_t *k
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_cpufreq_set_freq_obj,0, py_cpufreq_set_frequency);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_cpufreq_get_current_freq_obj, py_cpufreq_get_current_frequencies);
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_kpufreq_get_supported_frequencies_obj, py_kpufreq_get_supported_frequencies);
+// STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_kpufreq_get_supported_frequencies_obj, py_kpufreq_get_supported_frequencies);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_kpufreq_get_kpu_obj, py_kpufreq_get_kpu);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_kpufreq_get_cpu_obj, py_kpufreq_get_cpu);
 
 static const mp_map_elem_t locals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__),        MP_OBJ_NEW_QSTR(MP_QSTR_freq) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_set),             (mp_obj_t)&py_cpufreq_set_freq_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get),             (mp_obj_t)&py_cpufreq_get_current_freq_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_get_kpu_supported), (mp_obj_t)&py_kpufreq_get_supported_frequencies_obj },
-    { NULL, NULL },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_kpu),         (mp_obj_t)&py_kpufreq_get_kpu_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_cpu),         (mp_obj_t)&py_kpufreq_get_cpu_obj },
 };
 STATIC MP_DEFINE_CONST_DICT(locals_dict, locals_dict_table);
 

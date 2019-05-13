@@ -278,8 +278,9 @@ void load_config_from_spiffs(config_data_t* config)
 	spiffs_file fd = SPIFFS_open(&spiffs_user_mount_handle.fs, FREQ_STORE_FILE_NAME, SPIFFS_O_RDONLY, 0 );
 	if(fd<=0)
 	{
-		config->freq_cpu = FREQ_CPU_DEFAULT;
-		config->freq_kpu = FREQ_KPU_DEFAULT;
+		config->freq_cpu  =  FREQ_CPU_DEFAULT;
+		config->freq_pll1 = FREQ_PLL1_DEFAULT;
+		config->kpu_div   = 1;
 		if(!save_config_to_spiffs(config))
 			printk("save config fail\r\n");
 		return;
@@ -295,6 +296,9 @@ void load_config_from_spiffs(config_data_t* config)
 		{
 			config->freq_cpu = config->freq_cpu>FREQ_CPU_MAX ? FREQ_CPU_MAX : config->freq_cpu;
 			config->freq_cpu = config->freq_cpu<FREQ_CPU_MIN ? FREQ_CPU_MIN : config->freq_cpu;
+			config->freq_pll1 = config->freq_pll1>FREQ_PLL1_MAX ? FREQ_PLL1_MAX : config->freq_pll1;
+			config->freq_pll1 = config->freq_pll1<FREQ_PLL1_MIN ? FREQ_PLL1_MIN : config->freq_pll1;
+			if(config->kpu_div==0) config->kpu_div = 1;
 		}
 	}
 	SPIFFS_close(&spiffs_user_mount_handle.fs, fd);
@@ -492,10 +496,11 @@ int main()
 	init_flash_spiffs();
 	load_config_from_spiffs(&config);
 	sysctl_cpu_set_freq(config.freq_cpu);
+	sysctl_pll_set_freq(SYSCTL_PLL1, config.freq_pll1);
 	dmac_init();
 	plic_init();
 	uarths_init();
-	sysctl_clock_set_threshold(SYSCTL_THRESHOLD_AI, (FREQ_PLL1_MAX / config.freq_kpu) / 2);
+	sysctl_clock_set_threshold(SYSCTL_THRESHOLD_AI, config.kpu_div-1);
 	printk("\r\n");
 	printk("[MAIXPY]Pll0:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL0));
 	printk("[MAIXPY]Pll1:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL1));
