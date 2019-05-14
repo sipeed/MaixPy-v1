@@ -14,9 +14,6 @@ extern uint8_t g_ai_buf_in[OMV_INIT_W * OMV_INIT_H * 3]; // usually for sensor( 
 extern uint8_t g_dvp_buf[OMV_INIT_W * OMV_INIT_H * 2]; // usually for lcd display(RGB565 16bit)
 #define   IMAGE_BUFF()  g_dvp_buf
 
-#define LCD_W 320
-#define LCD_H 240
-
 // #define VIDEO_DEBUG
 //////////////////////////////////////////////////////
 

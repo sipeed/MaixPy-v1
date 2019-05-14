@@ -31,8 +31,6 @@
 
 extern uint8_t g_dvp_buf[];
 
-#define LCD_W 320
-#define LCD_H 240
 
 int nes_stick=0;
 int nes_volume=5;  //0~8

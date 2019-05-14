@@ -7,7 +7,7 @@
 #include "stdlib.h"
 #include <errno.h>
 #include "io.h"
-
+#include "lcd.h"
 
 extern volatile i2s_t *const i2s[3]; //TODO: remove register, replace with function
 

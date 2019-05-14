@@ -17,10 +17,18 @@
 
 #include <stdint.h>
 #include "st7789.h"
+#include "driver_config.h"
+
+// #define LCD_W_MAX 640
+// #define LCD_H_MAX 480
+
+// #define LCD_W     320
+// #define LCD_H     240
+
 
 /* clang-format off */
-#define LCD_X_MAX   (240)
-#define LCD_Y_MAX   (320)
+#define LCD_X_MAX   (LCD_H)
+#define LCD_Y_MAX   (LCD_W)
 #define LCD_MAX_PIXELS (76800) //LCD_X_MAX*LCD_Y_MAX
 
 #define BLACK       0x0000

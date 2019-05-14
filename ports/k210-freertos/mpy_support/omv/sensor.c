@@ -285,7 +285,7 @@ int sensor_init_dvp()
     sensor.reset_pol = ACTIVE_HIGH;
 
     if(0 == sensro_ov_detect(&sensor)){//find ov sensor
-        mp_printf(&mp_plat_print, "[MAIXPY]:find ov sensor\n");
+        mp_printf(&mp_plat_print, "[MAIXPY]: find ov sensor\n");
     }
     else if(0 == sensro_gc_detect(&sensor)){//find gc0328 sensor
         mp_printf(&mp_plat_print, "[MAIXPY]: find gc3028\n");
@@ -972,7 +972,7 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
 		//
 		if(MAIN_FB()->bpp > 3)
 		{
-			mp_printf(&mp_plat_print, "[MaixPy] %s | bpp error\n",__func__);
+			mp_printf(&mp_plat_print, "[MAIXPY]: %s | bpp error\n",__func__);
 			return -1;
 		}
 		

@@ -10,10 +10,11 @@
 #define __OMV_BOARDCONFIG_H__
 
 #include "imlib_config.h"
+#include "lcd.h"
 
-#define OMV_INIT_RESOLUTION 320*240
-#define OMV_INIT_W 320
-#define OMV_INIT_H 240
+#define OMV_INIT_W LCD_W_MAX
+#define OMV_INIT_H LCD_H_MAX
+#define OMV_INIT_RESOLUTION OMV_INIT_W*OMV_INIT_H
 
 #define OMV_INIT_BPP 2
 

@@ -26,9 +26,6 @@
 
 // extern uint8_t g_lcd_buf[];
 
-#define LCD_W 320
-#define LCD_H 240
-
 // extern mp_obj_t pyb_spi_send(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args);
 // extern mp_obj_t pyb_spi_make_new(mp_obj_t type_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args);
 // extern mp_obj_t pyb_spi_deinit(mp_obj_t self_in);
