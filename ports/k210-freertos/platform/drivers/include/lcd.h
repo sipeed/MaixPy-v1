@@ -29,7 +29,7 @@
 /* clang-format off */
 #define LCD_X_MAX   (LCD_H)
 #define LCD_Y_MAX   (LCD_W)
-#define LCD_MAX_PIXELS (76800) //LCD_X_MAX*LCD_Y_MAX
+#define LCD_MAX_PIXELS (LCD_X_MAX*LCD_Y_MAX) //LCD_X_MAX*LCD_Y_MAX
 
 #define BLACK       0x0000
 #define NAVY        0x000F
