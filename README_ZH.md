@@ -77,6 +77,9 @@ while True:
 
 查看 [maixpy.sipeed.com](https://maixpy.sipeed.com)
 
+## 例示代码
+
+[MaixPy_scripts](https://github.com/sipeed/MaixPy_scripts)
 
 ## 从源码构建自己的固件
 

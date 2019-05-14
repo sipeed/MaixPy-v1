@@ -77,6 +77,9 @@ Get latest commit firmware: [master firmware](http://dl.sipeed.com/MAIX/MaixPy/r
 
 Doc refer to [maixpy.sipeed.com](https://maixpy.sipeed.com)
 
+## Examples
+
+[MaixPy_scripts](https://github.com/sipeed/MaixPy_scripts)
 
 ## Build From Source
 
