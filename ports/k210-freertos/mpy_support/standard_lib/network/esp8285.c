@@ -334,7 +334,7 @@ bool esp_send(esp8285_obj* nic,const uint8_t *buffer, uint32_t len, uint32_t tim
 
     while(send_total_len < len)
     {
-        send_len = (len > ESP8285_MAX_ONCE_SEND)?ESP8285_MAX_ONCE_SEND:len;
+        send_len = ((len-send_total_len) > ESP8285_MAX_ONCE_SEND)?ESP8285_MAX_ONCE_SEND : (len-send_total_len);
         ret = sATCIPSENDSingle(nic,buffer+send_total_len, send_len, timeout);
         if(!ret)
             return false;
