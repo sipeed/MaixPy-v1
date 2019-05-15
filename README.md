@@ -10,8 +10,29 @@
 
 <br />
 
+<a href="https://travis-ci.org/sipeed/MaixPy">
+    <img src="https://travis-ci.org/sipeed/MaixPy.svg?branch=master" alt="Master branch build status" />
+</a>
+<a href="https://github.com/sipeed/MaixPy/releases">
+    <img src="https://img.shields.io/github/release/sipeed/maixpy.svg" alt="Latest release version" />
+</a>
+<a href="https://github.com/sipeed/MaixPy/blob/master/LICENSE.md">
+    <img src="https://img.shields.io/badge/license-Apache%20v2.0-orange.svg" alt="License" />
+</a>
 
-[![Build Status](https://travis-ci.org/sipeed/MaixPy.svg?branch=master)](https://travis-ci.org/sipeed/MaixPy)
+<br />
+
+<a href="https://github.com/sipeed/MaixPy/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3A%22good+first+issue%22">
+    <img src="https://img.shields.io/github/issues/sipeed/maixpy/good%20first%20issue.svg" alt="Good first issues" />
+</a>
+<a href="https://github.com/sipeed/MaixPy/issues?q=is%3Aopen+is%3Aissue+label%3Abug">
+    <img src="https://img.shields.io/github/issues/sipeed/maixpy/bug.svg" alt="Bug issues" />
+</a>
+<a href="https://github.com/sipeed/MaixPy/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement">
+    <img src="https://img.shields.io/github/issues/sipeed/maixpy/enhancement.svg" alt="Enhancement issues" />
+</a>
+
+
 
 <br />
 
