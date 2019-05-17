@@ -1036,6 +1036,33 @@ static mp_obj_t py_image_compress(uint n_args, const mp_obj_t *args, mp_map_t *k
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_compress_obj, 1, py_image_compress);
 
+static mp_obj_t py_image_to_bytes(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
+{
+    image_t *arg_img = py_image_cobj(args[0]);
+    mp_uint_t size = 0;
+    switch(arg_img->bpp) {
+        case IMAGE_BPP_BINARY: {
+            size = ((arg_img->w + UINT32_T_MASK) >> UINT32_T_SHIFT) * arg_img->h;
+            break;
+        }
+        case IMAGE_BPP_GRAYSCALE: {
+            size = (arg_img->w * arg_img->h) * sizeof(uint8_t);
+            break;
+        }
+        case IMAGE_BPP_RGB565: {
+            size = (arg_img->w * arg_img->h) * sizeof(uint16_t);
+            break;
+        }
+        default: {
+            size = arg_img->bpp;
+            }
+            break;
+    }
+    return mp_obj_new_bytearray(size, arg_img->pixels);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_to_bytes_obj, 1, py_image_to_bytes);
+
 static mp_obj_t py_image_compress_for_ide(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     image_t *arg_img = py_helper_arg_to_image_mutable_bayer(args[0]);
@@ -5834,6 +5861,7 @@ static const mp_rom_map_elem_t locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_compressed_for_ide),  MP_ROM_PTR(&py_image_compressed_for_ide_obj)},
     {MP_ROM_QSTR(MP_QSTR_copy),                MP_ROM_PTR(&py_image_copy_obj)},
     {MP_ROM_QSTR(MP_QSTR_save),                MP_ROM_PTR(&py_image_save_obj)},
+    {MP_ROM_QSTR(MP_QSTR_to_bytes),            MP_ROM_PTR(&py_image_to_bytes_obj)},
     /* Drawing Methods */
     {MP_ROM_QSTR(MP_QSTR_clear),               MP_ROM_PTR(&py_image_clear_obj)},
     {MP_ROM_QSTR(MP_QSTR_draw_line),           MP_ROM_PTR(&py_image_draw_line_obj)},
