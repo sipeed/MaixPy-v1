@@ -300,10 +300,9 @@ STATIC bool uart_tx_wait(machine_uart_obj_t *self, uint32_t timeout)
 
 STATIC size_t uart_tx_data(machine_uart_obj_t *self, const void *src_data, size_t size, int *errcode) 
 {
-    if (size == 0) {
-        *errcode = 0;
+	*errcode = 0;
+    if (size == 0)
         return 0;
-    }
 
     //uint32_t timeout;
 	//K210 does not have cts function API at present
@@ -318,7 +317,7 @@ STATIC size_t uart_tx_data(machine_uart_obj_t *self, const void *src_data, size_
     //timeout = 2 * self->timeout_char;
     const uint8_t *src = (uint8_t*)src_data;
     size_t num_tx = 0;
-	size_t cal = 0;	
+	size_t cal = 0;
 	if(self->attached_to_repl)
 	{
 		if( !self->ide_debug_mode)
@@ -329,14 +328,12 @@ STATIC size_t uart_tx_data(machine_uart_obj_t *self, const void *src_data, size_
 					*errcode = MP_ETIMEDOUT;
 					return num_tx;
 				}
-				*/	        
-				uint8_t data;
-				data = *src++;
+				*/
 				if(MICROPY_UARTHS_DEVICE == self->uart_num)
-					cal = uarths_send_data(&data,1);
+					cal = uarths_send_data(src+num_tx, size - num_tx);
 				else if(UART_DEVICE_MAX > self->uart_num)
-					cal= uart_send_data(self->uart_num, (char*)&data,1);	
-				num_tx = num_tx + cal;
+					cal= uart_send_data(self->uart_num, (char*)(src+num_tx), size - num_tx);	
+				num_tx += cal;
 			}
 		}
 		else
@@ -346,12 +343,11 @@ STATIC size_t uart_tx_data(machine_uart_obj_t *self, const void *src_data, size_
 	}
 	else
 	{
-		while (num_tx < size) {        
+		while (num_tx < size) {
 			if(MICROPY_UARTHS_DEVICE == self->uart_num)
-				cal = uarths_send_data(src,size);
+				cal = uarths_send_data(src+num_tx, size - num_tx);
 			else if(UART_DEVICE_MAX > self->uart_num)
-				cal= uart_send_data(self->uart_num, (char*)src,size);
-			src = src + cal;
+				cal= uart_send_data(self->uart_num, (char*)(src+num_tx), size - num_tx);
  	        num_tx = num_tx + cal;
 	    }
 	}
@@ -362,7 +358,6 @@ STATIC size_t uart_tx_data(machine_uart_obj_t *self, const void *src_data, size_
         return num_tx;
     }
 	*/
-    *errcode = 0;
     return num_tx;
 }
 
@@ -597,7 +592,8 @@ STATIC MP_DEFINE_CONST_DICT(machine_uart_locals_dict, machine_uart_locals_dict_t
 
 STATIC mp_uint_t machine_uart_read(mp_obj_t self_in, void *buf_in, mp_uint_t size, int *errcode) {
     machine_uart_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    char *buf = buf_in;
+    uint8_t* buf = buf_in;
+	*errcode = 0;
 	if(self->active == 0)
 		return 0;
     // make sure we want at least 1 char
@@ -615,7 +611,7 @@ STATIC mp_uint_t machine_uart_read(mp_obj_t self_in, void *buf_in, mp_uint_t siz
 		        int data = uart_rx_char(self);
 				if(-1 != data)
 				{
-		        	*buf++ = data;
+		        	*buf++ = (uint8_t)data;
 					data_num++;
 					size--;
 					debug_print("[machine_uart_read] data is valid,size = %d,data = %c\n",size,data);
@@ -629,20 +625,17 @@ STATIC mp_uint_t machine_uart_read(mp_obj_t self_in, void *buf_in, mp_uint_t siz
 		else
 		{
 			int ret_num = 0;
-			while(size > 0)
+			while(data_num<size)
 			{
-				uint8_t* buf = buf_in;
-				ret_num = uart_rx_data(self, buf, size);
+				ret_num = uart_rx_data(self, buf+data_num, size-data_num);
 				if(0 != ret_num)
 				{
-					data_num = data_num + ret_num;
-					buf = buf + ret_num;
+					data_num += ret_num;
 				}
 				else if(0 == ret_num || !uart_rx_any(self)) 
 				{
 					break;
 				}
-				size = size - ret_num;
 			}
 		}
 	}
