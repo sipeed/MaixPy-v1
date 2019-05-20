@@ -479,23 +479,23 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(esp8285_nic_isconnected_obj, esp8285_nic_isconn
 
 STATIC mp_obj_t esp8285_nic_ifconfig(mp_obj_t self_in) {
 	nic_obj_t* self = self_in;
-	ipconfig_obj* esp_ipconfig = m_new_obj_with_finaliser(ipconfig_obj);
-	esp_ipconfig->gateway = mp_const_none;
-	esp_ipconfig->ip = mp_const_none;
-	esp_ipconfig->MAC = mp_const_none;
-	esp_ipconfig->netmask = mp_const_none;
-	esp_ipconfig->ssid = mp_const_none;
-	if(false == get_ipconfig(&self->esp8285,esp_ipconfig))
+	ipconfig_obj esp_ipconfig;
+	esp_ipconfig.gateway = mp_const_none;
+	esp_ipconfig.ip = mp_const_none;
+	esp_ipconfig.MAC = mp_const_none;
+	esp_ipconfig.netmask = mp_const_none;
+	esp_ipconfig.ssid = mp_const_none;
+	if(false == get_ipconfig(&self->esp8285, &esp_ipconfig))
 	{
 		return mp_const_none;
 	}
-	mp_obj_t tuple[7] = { esp_ipconfig->ip,
-						  esp_ipconfig->netmask,
-						  esp_ipconfig->gateway,
+	mp_obj_t tuple[7] = { esp_ipconfig.ip,
+						  esp_ipconfig.netmask,
+						  esp_ipconfig.gateway,
 						  mp_obj_new_str("0",strlen("0")),
 						  mp_obj_new_str("0",strlen("0")),
-						  esp_ipconfig->MAC,
-						  esp_ipconfig->ssid
+						  esp_ipconfig.MAC,
+						  esp_ipconfig.ssid
 						};
 	return mp_obj_new_tuple(MP_ARRAY_SIZE(tuple), tuple);
 }
