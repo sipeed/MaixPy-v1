@@ -16,6 +16,9 @@
 <a href="https://travis-ci.org/sipeed/MaixPy">
     <img src="https://travis-ci.org/sipeed/MaixPy.svg?branch=master" alt="Master branch build status" />
 </a>
+<a href="http://dl.sipeed.com/MAIX/MaixPy/release/master/">
+    <img src="https://img.shields.io/badge/build-master-ff69b4.svg" alt="master build firmware" />
+</a>
 <a href="https://github.com/sipeed/MaixPy/releases">
     <img src="https://img.shields.io/github/release/sipeed/maixpy.svg" alt="Latest release version" />
 </a>
