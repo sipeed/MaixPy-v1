@@ -505,27 +505,28 @@ STATIC mp_obj_t esp8285_scan_wifi(mp_obj_t self_in)
 {
     nic_obj_t* self = self_in;
     mp_obj_t list = mp_obj_new_list(0, NULL);
+    const char* fail_str = "wifi scan fail";
+    char* buf = (char*)self->esp8285.buffer;
+    bool end;
 
-    if (eATCWLAP(&self->esp8285) == true)
+    if (!eATCWLAP_Start(&self->esp8285))
+        mp_raise_msg(&mp_type_OSError, fail_str);
+    while(1)
     {
-        int i = 0;
-        char *p = strtok(self->esp8285.buffer, "\r\n\"");
-
-        while (p != NULL)
-        {
-            if ((i % 5) == 1)
-            {
-                mp_obj_list_append(list, mp_obj_new_str(p, strlen(p)));
-            }
-            i++;
-            p = strtok(NULL, "\r\n\"");
-        }
+        if(!eATCWLAP_Get(&self->esp8285, &end) )
+            mp_raise_msg(&mp_type_OSError, fail_str);
+        char* index1 = strstr(buf, "(");
+        if(!index1)
+            mp_raise_msg(&mp_type_OSError, fail_str);
+        char* index2 = strstr(index1, ")");
+        if(!index2)
+            mp_raise_msg(&mp_type_OSError, fail_str);
+        *index2 = '\0';
+        index1 += 1;
+        mp_obj_list_append(list, mp_obj_new_str(index1, strlen(index1)));
+        if(end)
+            break;
     }
-    else
-    {
-        mp_raise_msg(&mp_type_OSError, "wifi scan fail");
-    }
-
     return list;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(esp8285_scan_wifi_obj, esp8285_scan_wifi);

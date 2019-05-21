@@ -477,10 +477,11 @@ uint8_t* recvString_1(esp8285_obj* nic,uint8_t* target1,uint32_t timeout)
 }
 
 
-uint8_t* recvString_2(esp8285_obj* nic,uint8_t* target1, uint8_t* target2, uint32_t timeout)
+uint8_t* recvString_2(esp8285_obj* nic,uint8_t* target1, uint8_t* target2, uint32_t timeout, int8_t* find_index)
 {
 	int errcode;
 	uint32_t iter = 0;
+    *find_index = -1;
 	memset(nic->buffer,0,ESP8285_BUF_SIZE);
     unsigned int start = mp_hal_ticks_ms();
 	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
@@ -489,19 +490,22 @@ uint8_t* recvString_2(esp8285_obj* nic,uint8_t* target1, uint8_t* target2, uint3
             uart_stream->read(nic->uart_obj,&nic->buffer[iter++],1,&errcode);
         }
         if (data_find(nic->buffer,iter,target1) != -1) {
-            break;
+            *find_index = 0;
+            return nic->buffer;
         } else if (data_find(nic->buffer,iter,target2) != -1) {
-            break;
+            *find_index = 1;
+            return nic->buffer;
         }
     }
-    return nic->buffer;
+    return NULL;
 }
 
-uint8_t* recvString_3(esp8285_obj* nic,uint8_t* target1, uint8_t* target2,uint8_t* target3,uint32_t timeout)
+uint8_t* recvString_3(esp8285_obj* nic,uint8_t* target1, uint8_t* target2,uint8_t* target3,uint32_t timeout, int8_t* find_index)
 {
 
 	int errcode;
 	uint32_t iter = 0;
+    *find_index = -1;
 	memset(nic->buffer,0,ESP8285_BUF_SIZE);
     unsigned long start = mp_hal_ticks_ms();
 	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
@@ -510,14 +514,17 @@ uint8_t* recvString_3(esp8285_obj* nic,uint8_t* target1, uint8_t* target2,uint8_
             uart_stream->read(nic->uart_obj,&nic->buffer[iter++],1,&errcode);
         }
         if (data_find(nic->buffer,iter,target1) != -1) {
-            break;
+            *find_index = 0;
+            return nic->buffer;
         } else if (data_find(nic->buffer,iter,target2) != -1) {
-            break;
+            *find_index = 1;
+            return nic->buffer;
         } else if (data_find(nic->buffer,iter,target3) != -1) {
-            break;
+            *find_index = 2;
+            return nic->buffer;
         }
     }
-    return nic->buffer;
+    return NULL;
 }
 
 bool recvFind(esp8285_obj* nic,uint8_t* target, uint32_t timeout)
@@ -626,15 +633,14 @@ bool sATCWMODE(esp8285_obj* nic,uint8_t mode)
 	uint8_t* cmd = "AT+CWMODE=";
 	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);	
 	uint8_t mode_str[10] = {0};
+    int8_t find;
 	itoa(mode, mode_str, 10);
     rx_empty(nic);
 	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
 	uart_stream->write(nic->uart_obj,mode_str,strlen(mode_str),&errcode);
 	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);    
-    recvString_2(nic,"OK", "no change",1000);
-    if (data_find(nic->buffer,ESP8285_BUF_SIZE,"OK") != -1 || data_find(nic->buffer,ESP8285_BUF_SIZE,"no change") != -1) {
+    if(recvString_2(nic,"OK", "no change",1000, &find) != NULL)
         return true;
-    }
     return false;
 }
 
@@ -642,6 +648,7 @@ bool sATCWJAP(esp8285_obj* nic,uint8_t* ssid, uint8_t* pwd)
 {
 	int errcode = 0;
 	uint8_t *cmd = "AT+CWJAP=\"";
+    int8_t find;
 	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);	
     rx_empty(nic);	
 	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
@@ -650,10 +657,8 @@ bool sATCWJAP(esp8285_obj* nic,uint8_t* ssid, uint8_t* pwd)
 	uart_stream->write(nic->uart_obj,pwd,strlen(pwd),&errcode);
 	uart_stream->write(nic->uart_obj,"\"",strlen("\""),&errcode);
 	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
-    recvString_2(nic,"OK", "FAIL", 10000);
-    if (data_find(nic->buffer,ESP8285_BUF_SIZE,"OK") != -1) {
+    if(recvString_2(nic,"OK", "FAIL", 10000, &find) != NULL && find==0 )
         return true;
-    }
     return false;
 }
 
@@ -661,6 +666,7 @@ bool sATCWDHCP(esp8285_obj* nic,uint8_t mode, bool enabled)
 {
 	int errcode = 0;
 	uint8_t* cmd = "AT+CWDHCP=";
+    int8_t find;
 	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);	
 	uint8_t strEn[2] = {0};
 	if (enabled) {
@@ -676,10 +682,8 @@ bool sATCWDHCP(esp8285_obj* nic,uint8_t mode, bool enabled)
 	uart_stream->write(nic->uart_obj,",",strlen(","),&errcode);
 	uart_stream->write(nic->uart_obj,mode,1,&errcode);
 	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
-    recvString_2(nic,"OK", "FAIL", 10000);
-    if (data_find(nic->buffer,ESP8285_BUF_SIZE,"OK") != -1) {
-        return true;
-    }
+    if( recvString_2(nic,"OK", "FAIL", 10000, &find) != NULL && find==0)
+        return true;    
     return false;
 }
 
@@ -713,6 +717,7 @@ bool sATCIPSTARTSingle(esp8285_obj* nic,uint8_t* type, uint8_t* addr, uint32_t p
 	mp_obj_t IP = netutils_format_ipv4_addr(addr,NETUTILS_BIG);
 	uint8_t *host = mp_obj_str_get_str(IP);
 	uint8_t port_str[10] = {0};
+    int8_t find_index;
 	itoa(port, port_str, 10);
 	rx_empty(nic);
 	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
@@ -722,10 +727,8 @@ bool sATCIPSTARTSingle(esp8285_obj* nic,uint8_t* type, uint8_t* addr, uint32_t p
 	uart_stream->write(nic->uart_obj,"\",",strlen("\","),&errcode);
 	uart_stream->write(nic->uart_obj,port_str,strlen(port_str),&errcode);
 	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
-    recvString_3(nic,"OK", "ERROR", "ALREADY CONNECT", 10000);
-    if (data_find(nic->buffer,ESP8285_BUF_SIZE,"OK") != -1 || data_find(nic->buffer,ESP8285_BUF_SIZE,"ALREADY CONNECT") != -1) {
+    if(recvString_3(nic,"OK", "ERROR", "ALREADY CONNECT", 10000, &find_index)!=NULL && (find_index==0 || find_index==2) )
         return true;
-    }
     return false;
 }
 bool sATCIPSTARTMultiple(esp8285_obj*nic,uint8_t mux_id, uint8_t* type, uint8_t* addr, uint32_t port)
@@ -733,6 +736,7 @@ bool sATCIPSTARTMultiple(esp8285_obj*nic,uint8_t mux_id, uint8_t* type, uint8_t*
     int errcode = 0;
 	uint8_t* cmd = "AT+CIPSTART=";
 	uint8_t port_str[10] = {0};
+    int8_t find_index;
 	itoa(port,port_str ,10);
 	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
 	rx_empty(nic);
@@ -745,10 +749,8 @@ bool sATCIPSTARTMultiple(esp8285_obj*nic,uint8_t mux_id, uint8_t* type, uint8_t*
 	uart_stream->write(nic->uart_obj,"\",",strlen("\","),&errcode);
 	uart_stream->write(nic->uart_obj,port_str,strlen(port_str),&errcode);
 	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
-    recvString_3(nic,"OK", "ERROR", "ALREADY CONNECT", 10000);
-    if (data_find(nic->buffer,ESP8285_BUF_SIZE,"OK") != -1 || data_find(nic->buffer,ESP8285_BUF_SIZE,"ALREADY CONNECT") != -1) {
+    if(recvString_3(nic,"OK", "ERROR", "ALREADY CONNECT", 10000, &find_index) != NULL  && (find_index==0 || find_index==2) )
         return true;
-    }
     return false;
 }
 bool sATCIPSENDSingle(esp8285_obj*nic,const uint8_t *buffer, uint32_t len, uint32_t timeout)
@@ -793,15 +795,14 @@ bool sATCIPCLOSEMulitple(esp8285_obj* nic,uint8_t mux_id)
 {
 	int errcode = 0;
 	uint8_t* cmd = "AT+CIPCLOSE=";
+    int8_t find;
 	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);	
 	rx_empty(nic);
 	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
 	uart_stream->write(nic->uart_obj,mux_id,1,&errcode);
 	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
-    recvString_2(nic,"OK", "link is not", 5000);
-    if (data_find(nic->buffer,ESP8285_BUF_SIZE,"OK") != -1 || data_find(nic->buffer,ESP8285_BUF_SIZE,"link is not") != -1) {
+    if(recvString_2(nic,"OK", "link is not", 5000, &find) != NULL)
         return true;
-    }
     return false;
 }
 bool eATCIPCLOSESingle(esp8285_obj* nic)
@@ -828,21 +829,21 @@ bool sATCIPMUX(esp8285_obj* nic,uint8_t mode)
 	int errcode = 0;
 	uint8_t* cmd = "AT+CIPMUX=";
 	uint8_t mode_str[10] = {0};
+    int8_t find;
 	itoa(mode, mode_str, 10);
 	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);	
     rx_empty(nic);
 	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
 	uart_stream->write(nic->uart_obj,mode_str,strlen(mode_str),&errcode);
 	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
-    recvString_2(nic,"OK", "Link is builded",5000);
-    if (data_find(nic->buffer,ESP8285_BUF_SIZE,"OK") != -1) {
+    if(recvString_2(nic,"OK", "Link is builded",5000, &find) != NULL && find==0)
         return true;
-    }
     return false;
 }
 bool sATCIPSERVER(esp8285_obj* nic,uint8_t mode, uint32_t port)
 {
 	int errcode = 0;
+    int8_t find;
 	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);	
     if (mode) {
 		uint8_t* cmd = "AT+CIPSERVER=1,";
@@ -852,10 +853,8 @@ bool sATCIPSERVER(esp8285_obj* nic,uint8_t mode, uint32_t port)
 		uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
 		uart_stream->write(nic->uart_obj,port_str,strlen(port_str),&errcode);
 		uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
-        recvString_2(nic,"OK", "no change",1000);
-        if (data_find(nic->buffer,ESP8285_BUF_SIZE,"OK") != -1 || data_find(nic->buffer,ESP8285_BUF_SIZE,"no change") != -1) {
+        if(recvString_2(nic,"OK", "no change",1000, &find) != NULL)
             return true;
-        }
         return false;
     } else {
         rx_empty(nic);
@@ -984,13 +983,39 @@ bool eATCWLAP(esp8285_obj* nic)
     uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
 	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);
 
-    if (recvString_1(nic, "\r\n\r\nOK", 10000) == NULL)
-    {
-        return false;
-    }
+    if (recvString_1(nic, "\r\n\r\nOK", 10000) != NULL)
+        return true;
     
+    return false;
+}
+
+bool eATCWLAP_Start(esp8285_obj* nic)
+{
+    int errcode = 0, i = 0;
+    const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
+    const char cmd[] = {"AT+CWLAP"};
+    char *p = NULL;
+    mp_obj_t list = mp_obj_new_list(0, NULL);
+
+    rx_empty(nic);
+    uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
+	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);  
     return true;
 }
+
+bool eATCWLAP_Get(esp8285_obj* nic, bool* end)
+{
+    int8_t find;
+    *end = false;
+    if (recvString_2(nic, "\r\n+CWLAP:", "\r\n\r\nOK", 10000, &find) != NULL)
+    {
+        if( find == 1)
+            *end = true;
+        return true;
+    }
+    return false;
+}
+
 
 bool eATCWSAP(esp8285_obj* nic, char* ssid, char* key, int chl, int ecn)
 {

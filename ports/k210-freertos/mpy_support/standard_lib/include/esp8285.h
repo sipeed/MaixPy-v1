@@ -403,7 +403,8 @@ bool eINIT(esp8285_obj* nic);
 bool get_ipconfig(esp8285_obj* nic, ipconfig_obj* ipconfig);
 bool eATCWLAP(esp8285_obj* nic);
 bool eATCWSAP(esp8285_obj* nic, char* ssid, char* key, int chl, int ecn);
-
+bool eATCWLAP_Start(esp8285_obj* nic);
+bool eATCWLAP_Get(esp8285_obj* nic, bool* end);
 /*
  * +IPD,len:data
  * +IPD,id,len:data
