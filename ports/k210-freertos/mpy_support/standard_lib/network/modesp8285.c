@@ -580,7 +580,7 @@ STATIC mp_obj_t esp8285_enable_ap(size_t n_args, const mp_obj_t *pos_args, mp_ma
 
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(esp8285_enable_ap_obj, 1, esp8285_enable_ap);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(esp8285_enable_ap_obj, 3, esp8285_enable_ap);
 
 STATIC mp_obj_t esp8285_disable_ap(mp_obj_t self_in)
 {
