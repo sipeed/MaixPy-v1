@@ -129,31 +129,33 @@ int uart_rx_irq(void *ctx)
 #ifndef OMV_MINIMUM
 			if(ctx_self->ide_debug_mode)
 			{
-				size_t read_ret = 0; 
+				int read_ret = 0; 
 				do{
 					if(MICROPY_UARTHS_DEVICE == ctx_self->uart_num)
-						read_ret = uarths_receive_data(&read_tmp,1);
+						read_ret = uarths_getchar();
 					else if(UART_DEVICE_MAX > ctx_self->uart_num)
-						read_ret = uart_receive_data(ctx_self->uart_num,(char*)&read_tmp , 1);
-					if(read_ret == 0)
+						read_ret = uart_channel_getc(ctx_self->uart_num);
+					if(read_ret == EOF)
 						break;
+					read_tmp = (uint8_t)read_ret;
 					ide_dbg_dispatch_cmd(ctx_self, &read_tmp);
-				}while(read_ret);
+				}while(1);
 			}
 			else
 #endif // OMV_MINIMUM
 			{
-				size_t read_ret = 0;
+				int read_ret = 0;
 				do{
 					uint16_t next_head = (ctx_self->read_buf_head + 1) % ctx_self->read_buf_len;
 					// only read data if room in buf
 					if (next_head != ctx_self->read_buf_tail) {
 						if(MICROPY_UARTHS_DEVICE == ctx_self->uart_num)
-							read_ret = uarths_receive_data(&read_tmp,1);
+							read_ret = uarths_getchar();
 						else if(UART_DEVICE_MAX > ctx_self->uart_num)
-							read_ret = uart_receive_data(ctx_self->uart_num,(char*)&read_tmp , 1);
-						if(read_ret == 0)
+							read_ret = uart_channel_getc(ctx_self->uart_num);
+						if(read_ret == EOF)
 							break;
+						read_tmp = (uint8_t)read_ret;
 						ctx_self->read_buf[ctx_self->read_buf_head] = read_tmp;
 						ctx_self->read_buf_head = next_head;
 						ctx_self->data_len++;
@@ -171,27 +173,29 @@ int uart_rx_irq(void *ctx)
 						do{
 							// No room: leave char in buf, disable interrupt,open it util rx char
 							if(MICROPY_UARTHS_DEVICE == ctx_self->uart_num)
-								read_ret = uarths_receive_data(&read_tmp,1);
+								read_ret = uarths_getchar();
 							else if(UART_DEVICE_MAX > ctx_self->uart_num)
-								read_ret = uart_receive_data(ctx_self->uart_num,(char*)&read_tmp , 1);
-						}while(read_ret);
+								read_ret = uart_channel_getc(ctx_self->uart_num);
+						}while(read_ret!=EOF);
+						break;
 					}
-				}while(read_ret);
+				}while(1);
 			}
 		}
 		else
 		{
-			size_t read_ret = 0;
+			int read_ret = 0;
 			do{
 				uint16_t next_head = (ctx_self->read_buf_head + 1) % ctx_self->read_buf_len;
 				while (next_head != ctx_self->read_buf_tail)
 				{
 					if(MICROPY_UARTHS_DEVICE == ctx_self->uart_num)
-						read_ret = uarths_receive_data(&ctx_self->read_buf[ctx_self->read_buf_head],1);
+						read_ret = uarths_getchar();
 					else if(UART_DEVICE_MAX > ctx_self->uart_num)
-						read_ret = uart_receive_data(ctx_self->uart_num,(char*)&ctx_self->read_buf[ctx_self->read_buf_head],1);
-					if(read_ret == 0)
+						read_ret = uart_channel_getc(ctx_self->uart_num);
+					if(read_ret == EOF)
 						break;
+					ctx_self->read_buf[ctx_self->read_buf_head] = (uint8_t)read_ret;
 					ctx_self->read_buf_head = next_head;
 					ctx_self->data_len++;
 					next_head = (ctx_self->read_buf_head + 1) % ctx_self->read_buf_len;
@@ -200,12 +204,13 @@ int uart_rx_irq(void *ctx)
 				{
 					do{
 						if(MICROPY_UARTHS_DEVICE == ctx_self->uart_num)
-							read_ret = uarths_receive_data(&read_tmp,1);
+							read_ret = uarths_getchar();
 						else if(UART_DEVICE_MAX > ctx_self->uart_num)
-							read_ret = uart_receive_data(ctx_self->uart_num,(char*)&read_tmp,1);
-					}while(read_ret);
+							read_ret = uart_channel_getc(ctx_self->uart_num);
+					}while(read_ret!=EOF);
+					break;
 				}
-			}while(read_ret);
+			}while(read_ret!=EOF);
 		}
 	}
 	return 0;

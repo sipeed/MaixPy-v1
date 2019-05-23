@@ -399,6 +399,7 @@ soft_reset:
     	}
 		if (mounted_sdcard) {
 		}
+		mp_printf(&mp_plat_print, "[MaixPy] init end\r\n"); // for maixpy ide
 		// run boot-up scripts
 		mp_hal_set_interrupt_char(CHAR_CTRL_C);
 		pyexec_frozen_module("_boot.py");
@@ -491,16 +492,20 @@ int main()
 	sysctl_pll_set_freq(SYSCTL_PLL0, FREQ_PLL0_DEFAULT);
 	sysctl_pll_set_freq(SYSCTL_PLL1, FREQ_PLL1_DEFAULT);
 	sysctl_pll_set_freq(SYSCTL_PLL2, FREQ_PLL2_DEFAULT);
+	fpioa_set_function(4, FUNC_UARTHS_RX);
+	fpioa_set_function(5,  FUNC_UARTHS_TX);
 	uarths_init();
+	uarths_config(115200, 1);
 	flash_init(&manuf_id, &device_id);
 	init_flash_spiffs();
 	load_config_from_spiffs(&config);
 	sysctl_cpu_set_freq(config.freq_cpu);
 	sysctl_pll_set_freq(SYSCTL_PLL1, config.freq_pll1);
+	sysctl_clock_set_threshold(SYSCTL_THRESHOLD_AI, config.kpu_div-1);
 	dmac_init();
 	plic_init();
 	uarths_init();
-	sysctl_clock_set_threshold(SYSCTL_THRESHOLD_AI, config.kpu_div-1);
+	uarths_config(115200, 1);
 	printk("\r\n");
 	printk("[MAIXPY]Pll0:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL0));
 	printk("[MAIXPY]Pll1:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_PLL1));
