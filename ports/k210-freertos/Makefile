@@ -38,7 +38,13 @@ $(OUTPUT_ELF): $(SRC_C_OUTPUT_OBJ) $(SRC_C_OUTPUT_OBJ) $(ALL_LIBS)
 out:$(OUTPUT_ELF)
 	$(OBJCOPY) --output-format=binary $(OUTPUT_ELF) $(OUTPUT_BIN)
 
-MAKE_J_NUMBER=$(shell cat /proc/cpuinfo | grep vendor_id | wc -l)
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	MAKE_J_NUMBER := $(shell cat /proc/cpuinfo | grep vendor_id | wc -l)
+endif
+ifeq ($(UNAME_S),Darwin)
+	MAKE_J_NUMBER := $(shell sysctl -n hw.ncpu)
+endif
 subcompile:
 	@mkdir -p $(BIN_DIR)
 	$(call echo_info,"Making compile ...")
