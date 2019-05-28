@@ -9,6 +9,8 @@ env:
   global:
     - JOBS=`cat /proc/cpuinfo | grep vendor_id | wc -l`
     - MAKEOPTS=-j${JOBS}
+    - rev=$(git rev-parse --short HEAD)
+    - BRANCH=$(if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then echo $TRAVIS_BRANCH; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi)
     - curr_branch=$TRAVIS_BRANCH
 branches:
   only:
@@ -27,13 +29,14 @@ jobs:
         - wget https://github.com/kendryte/kendryte-gnu-toolchain/releases/download/v8.2.0-20190409/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz
         - xz -dk kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz && tar -xf kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar -C /opt
       script:
-        - rev=$(git rev-parse --short HEAD)
+        - echo "TRAVIS_BRANCH=$TRAVIS_BRANCH, BRANCH=$BRANCH"
         - make ${MAKEOPTS} -C mpy-cross
         - cd ports/k210-freertos
         - echo -e "toolchain_path=/opt/kendryte-toolchain\nbaud=2000000\ndevice=/dev/ttyUSB0\nBoard=dan\n" > config.conf
         - chmod +x build.sh && ./build.sh
+        - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then exit 0; fi
         - time_now=$(date "+%Y_%m_%d_%H_%M_%S")
-        - firmware_name=maixpy_${curr_branch}_${time_now}_${rev}.bin
+        - firmware_name=maixpy_${curr_branch}_${time_now}_${rev}.bin && echo ${firmware_name}
         - cd output
         - mv maixpy.bin $firmware_name
         - sudo sh -c "echo StrictHostKeyChecking no >>/etc/ssh/ssh_config"
