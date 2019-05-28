@@ -28,7 +28,15 @@ elif [[ "$1x" != "x" ]]; then
 fi
 start_time=`date +%s`
 
-MAKE_J_NUMBER=`cat /proc/cpuinfo | grep vendor_id | wc -l`
+UNAME_S=`uname -s`
+if [ "$UNAME_S" == "Linux" ]
+then
+	MAKE_J_NUMBER=`cat /proc/cpuinfo | grep vendor_id | wc -l`
+fi
+if [ "$UNAME_S" == "Darwin" ]
+then
+	MAKE_J_NUMBER=`sysctl -n hw.ncpu`
+fi
 echo "=============================="
 echo "CORE number: $MAKE_J_NUMBER"
 echo "=============================="
