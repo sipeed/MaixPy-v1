@@ -41,15 +41,29 @@ typedef struct py_kpu_net_obj
 {
     mp_obj_base_t base;
     
-    mp_obj_t        model_data;
-    mp_obj_t        model_addr;
+    void*           kmodel_ctx;
     mp_obj_t        model_size;
+    mp_obj_t        model_addr;
     mp_obj_t        model_path;
-    mp_obj_t        kpu_task;
-	mp_obj_t		max_layers;
-    mp_obj_t        net_args;
-    mp_obj_t        net_deinit;
+    mp_obj_t        max_layers;
+    mp_obj_t        net_args;   // for yolo2
+    mp_obj_t        net_deinit; // for yolo2
 } __attribute__((aligned(8))) py_kpu_net_obj_t;
+
+typedef struct{
+    uint16_t index;
+    uint16_t wi;
+    uint16_t hi;
+    uint16_t wo;
+    uint16_t ho;
+    uint16_t chi;
+	uint16_t cho;
+	uint16_t dw;
+	uint16_t kernel_type;
+	uint16_t pool_type;
+	uint32_t type;
+	uint32_t para_size;
+} __attribute__((aligned(8))) py_kpu_netinfo_list_data_t;
 
 static int check_img_format(image_t* arg_img, uint16_t w, uint16_t h, uint16_t ch)
 {
@@ -110,8 +124,7 @@ static void py_kpu_net_obj_print(const mp_print_t *print, mp_obj_t self_in, mp_p
     }
     
     mp_printf(print,
-              "{\"model_data\": %d, \"model_addr\": %d, \"model_size\": %d, \"model_path\": \"%s\", \"net_args\": %s}",
-                mp_obj_new_int(MP_OBJ_TO_PTR(((py_kpu_net_obj_t *)self_in)->model_data)),
+              "{\"model_addr\": %d, \"model_size\": %d, \"model_path\": \"%s\", \"net_args\": %s}",
                 addr,
                 mp_obj_get_int(self->model_size),
                 path,
@@ -119,20 +132,25 @@ static void py_kpu_net_obj_print(const mp_print_t *print, mp_obj_t self_in, mp_p
                 );
 }
 
-mp_obj_t py_kpu_net_model_data(mp_obj_t self_in) { return mp_obj_new_int(MP_OBJ_TO_PTR(((py_kpu_net_obj_t *)self_in)->model_data)); }
+mp_obj_t py_kpu_net_del(mp_obj_t self_in)
+{
+    mp_printf(&mp_plat_print, "kpu_net __del__\r\n");
+    sipeed_kpu_model_destroy(&((py_kpu_net_obj_t *)self_in)->kmodel_ctx);
+    return mp_const_none;
+}
 mp_obj_t py_kpu_net_model_addr(mp_obj_t self_in) { return ((py_kpu_net_obj_t *)self_in)->model_addr; }
 mp_obj_t py_kpu_net_model_size(mp_obj_t self_in) { return ((py_kpu_net_obj_t *)self_in)->model_size; }
 mp_obj_t py_kpu_net_model_path(mp_obj_t self_in) { return ((py_kpu_net_obj_t *)self_in)->model_path; }
 mp_obj_t py_kpu_net_arg(mp_obj_t self_in)        { return ((py_kpu_net_obj_t *)self_in)->net_args; }
 
-static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_net_model_data_obj,     py_kpu_net_model_data);
+static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_net_del_obj,     py_kpu_net_del);
 static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_net_model_addr_obj,     py_kpu_net_model_addr);
 static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_net_model_size_obj,     py_kpu_net_model_size);
 static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_net_model_path_obj,     py_kpu_net_model_path);
 static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_net_arg_obj,            py_kpu_net_arg);
 
 static const mp_rom_map_elem_t py_kpu_net_dict_table[] = {
-    { MP_ROM_QSTR(MP_QSTR_model_data),      MP_ROM_PTR(&py_kpu_net_model_data_obj) },
+    { MP_ROM_QSTR(MP_QSTR___del__),         MP_ROM_PTR(&py_kpu_net_del_obj) },
     { MP_ROM_QSTR(MP_QSTR_model_addr),      MP_ROM_PTR(&py_kpu_net_model_addr_obj) },
     { MP_ROM_QSTR(MP_QSTR_model_size),      MP_ROM_PTR(&py_kpu_net_model_size_obj) },
     { MP_ROM_QSTR(MP_QSTR_model_path),      MP_ROM_PTR(&py_kpu_net_model_path_obj) },
@@ -295,24 +313,15 @@ int model_deinit(kpu_task_t *task)
 STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
     int err = 0;
-    py_kpu_net_obj_t  *o = m_new_obj(py_kpu_net_obj_t);
+    uint32_t model_size;
+    py_kpu_net_obj_t  *o = m_new_obj_with_finaliser(py_kpu_net_obj_t);
+    o->base.type = &py_kpu_net_obj_type;
 
-    uint8_t *model_data = NULL;
-    int model_size = 0;
-	w25qxx_status_t status;
-	kpu_model_context_t* kpu_task;
-	kpu_task = (uint8_t *)malloc(sizeof(kpu_model_context_t));
-	if(kpu_task == NULL)
-	{
-		err = -1;//malloc error
-		goto error;
-	}
-	
     if(mp_obj_get_type(pos_args[0]) == &mp_type_int)
     {	//load from flash address
         mp_int_t model_addr = mp_obj_get_int(pos_args[0]);
 
-        if(model_addr < 0)
+        if(model_addr <= 0)//TODO: address of code end
         {
             m_del(py_kpu_net_obj_t, o,sizeof(py_kpu_net_obj_t));
             mp_raise_ValueError("[MAIXPY]kpu: model_addr must > 0 ");
@@ -321,33 +330,10 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
 
         o->model_addr = mp_obj_new_int(model_addr);
         o->model_path = mp_const_none;
-		
-        model_size = kpu_model_flash_get_size(model_addr);
-
-        if(model_size < 0)
+		sipeed_kpu_err_t ret = sipeed_kpu_model_load(&o->kmodel_ctx, model_addr, NULL, &model_size);
+        if(ret != SIPEED_KPU_ERR_NONE)
         {
-            err = -2;//read error
-            goto error;
-        }
-		mp_printf(&mp_plat_print, "model_size=%d\r\n",model_size);
-		
-        model_data = (uint8_t *)malloc(model_size * sizeof(uint8_t));
-        if(model_data == NULL)
-        {
-            err = -1;//malloc error
-            goto error;
-        }
-		
-        status = w25qxx_read_data_dma(model_addr, model_data, model_size, W25QXX_QUAD_FAST);
-        if(status != W25QXX_OK)
-        {
-            err = -2;//read error
-            goto error;
-        }
-        int ret = kpu_load_kmodel(kpu_task, model_data);
-        if(ret != 0)
-        {
-            err = -3; //load error
+            err = ret; //load error
             goto error;
         }
     }
@@ -358,66 +344,32 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
         o->model_path = mp_obj_new_str(path,strlen(path));
         o->model_addr = mp_const_none;
 
-        if(NULL != strstr(path,".bin"))
-        {
-            err=model_init(kpu_task,path);
-            if( err != 0 )
-            {
-                model_deinit(kpu_task);
-                goto error;
-            }
+        // if(NULL != strstr(path,".bin"))
+        // {
+        //     err=model_init(kpu_task,path);
+        //     if( err != 0 )
+        //     {
+        //         model_deinit(kpu_task);
+        //         goto error;
+        //     }
 
-        }
-        else
+        // }
+        // else
         if(NULL != strstr(path,".kmodel"))
         {
-            int ferr;
-            mp_obj_t file;
-            uint16_t tmp;
-
-            file = vfs_internal_open(path,"rb", &ferr);
-            if(file == MP_OBJ_NULL || ferr != 0)
-                mp_raise_OSError(ferr);
-			model_size = vfs_internal_size(file);
-
-            if(model_size <= 0)
+            mp_printf(&mp_plat_print, "load model from fs\r\n");
+            int ret = sipeed_kpu_model_load(&o->kmodel_ctx, 0, path, &model_size);
+            if(ret != SIPEED_KPU_ERR_NONE)
             {
-                err = -2;//read error
-                vfs_internal_close(file, &ferr);
+                err = ret;
                 goto error;
             }
-
-            model_data = (uint8_t *)malloc(model_size * sizeof(uint8_t));
-            if(model_data == NULL)
-            {
-                err = -1;//malloc error
-                goto error;
-            }
-
-            vfs_internal_seek(file, 0, VFS_SEEK_SET, &ferr);
-            if(ferr != 0)
-                mp_raise_OSError(ferr);
-
-            vfs_internal_read(file, model_data, model_size, &ferr);
-            if( ferr != 0)
-                mp_raise_OSError(ferr);
-
-            vfs_internal_close(file, &ferr);
-            if( ferr != 0)
-                mp_raise_OSError(ferr);
-
-            int ret = kpu_load_kmodel(kpu_task, model_data);
-            if(ret != 0)
-            {
-                err = -3; //load error
-                goto error;
-            }
-
+            mp_printf(&mp_plat_print, "load model from fs end\r\n");
         }
         else
         {   
             m_del(py_kpu_net_obj_t, o,sizeof(py_kpu_net_obj_t));
-            mp_raise_ValueError("[MAIXPY]kpu: model format don't match, only supply .bin or .kmodel ");
+            mp_raise_ValueError("[MAIXPY]kpu: model format don't match, only supply .kmodel ");
             return mp_const_false;
         }
         
@@ -425,34 +377,22 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
     else
     {
         m_del(py_kpu_net_obj_t, o,sizeof(py_kpu_net_obj_t));
-        mp_raise_TypeError("[MAIXPY]kpu: only accept int and string");
+        mp_raise_TypeError("[MAIXPY]kpu: only accept int or string");
         return mp_const_false;
-    }
-
-    o->base.type = &py_kpu_net_obj_type;
+    }    
     o->net_args = mp_const_none;
     o->net_deinit = mp_const_none;
-
-    o->kpu_task = MP_OBJ_FROM_PTR(kpu_task);
-	o->max_layers = mp_obj_new_int(kpu_task->layers_length);
-    o->model_data = MP_OBJ_FROM_PTR(model_data);
     o->model_size = mp_obj_new_int(model_size);
+    o->max_layers = sipeed_kpu_model_get_layer_num(o->kmodel_ctx);
 
     return MP_OBJ_FROM_PTR(o);
 
 error:
-    if(kpu_task)
-        free(kpu_task);
-
-    if(model_data)
-        free(model_data);
-
-    m_del(py_kpu_net_obj_t, o,sizeof(py_kpu_net_obj_t));
-
+{
     char msg[50];
-    sprintf(msg,"[MAIXPY]kpu: load error %d", err);
+    sprintf(msg,"[MAIXPY]kpu: load error:%d", err);
     mp_raise_ValueError(msg);
-    return mp_const_false;
+}
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_class_load_obj, 1, py_kpu_class_load);
@@ -487,7 +427,7 @@ static void py_kpu_class_yolo2_print(const mp_print_t *print, mp_obj_t self_in, 
     {
         sprintf(msg,"%f",rl_arg->anchor[0]);
         for(uint16_t i = 1; i < num * 2; i++)
-            sprintf(msg,"%s, %f",msg, rl_arg->anchor[i]);
+            snprintf(msg, sizeof(msg), "%s, %f",msg, rl_arg->anchor[i]);
     }
 
     mp_printf(print,
@@ -545,7 +485,7 @@ static int py_kpu_class_yolo2_print_to_buf(mp_obj_t self_in, char *buf)
         {
             sprintf(msg,"%f",rl_arg->anchor[0]);
             for(uint16_t i = 1; i < num * 2; i++)
-                sprintf(msg,"%s, %f",msg, rl_arg->anchor[i]);
+                snprintf(msg, sizeof(msg), "%s, %f",msg, rl_arg->anchor[i]);
         }
 
         sprintf(buf,
@@ -650,7 +590,7 @@ STATIC mp_obj_t py_kpu_class_init_yolo2(uint n_args, const mp_obj_t *pos_args, m
             mp_obj_t *items;
             mp_obj_get_array_fixed_n(args[ARG_anchor].u_obj, args[ARG_anchor_number].u_int*2, &items);
         
-            for(uint8_t index; index < args[ARG_anchor_number].u_int * 2; index++)
+            for(uint8_t index = 0; index < args[ARG_anchor_number].u_int * 2; index++)
                 anchor[index] = mp_obj_get_float(items[index]);
         }
         else
@@ -799,16 +739,14 @@ STATIC mp_obj_t py_kpu_class_run_yolo2(uint n_args, const mp_obj_t *pos_args, mp
     if(mp_obj_get_type(pos_args[0]) == &py_kpu_net_obj_type)
     {
 		py_kpu_net_obj_t *kpu_net = MP_OBJ_TO_PTR(pos_args[0]);
-        kpu_model_context_t *kpu_task = MP_OBJ_TO_PTR(kpu_net->kpu_task);
         image_t *arg_img = py_image_cobj(pos_args[1]);
         //PY_ASSERT_TRUE_MSG(IM_IS_MUTABLE(arg_img), "Image format is not supported.");
 	    uint16_t w0,h0,ch0;
-		if(kpu_model_get_input_shape(kpu_task, &w0, &h0, &ch0))
+		if(sipeed_kpu_model_get_input_shape(kpu_net->kmodel_ctx, &w0, &h0, &ch0) != SIPEED_KPU_ERR_NONE)
 		{
 			mp_raise_ValueError("[MAIXPY]kpu: first layer not conv layer!\r\n");
 			return mp_const_none;
 		}
-		
 		if(check_img_format(arg_img, w0, h0, ch0))
 		{
 			mp_raise_ValueError("[MAIXPY]kpu: check img format err!\r\n");
@@ -822,18 +760,21 @@ STATIC mp_obj_t py_kpu_class_run_yolo2(uint n_args, const mp_obj_t *pos_args, mp
         kpu_detect_rl.anchor = rl_arg->anchor;
         kpu_detect_rl.threshold = rl_arg->threshold;
         kpu_detect_rl.nms_value = rl_arg->nms_value;
-        if(region_layer_init(&kpu_detect_rl, kpu_task))
+        if(region_layer_init(&kpu_detect_rl, kpu_net->kmodel_ctx))
 		{
 			mp_raise_ValueError("[MAIXPY]kpu: region_layer_init err!\r\n");
 			return mp_const_none;
 		}
-		
 		/*************************************************************************************/
         g_ai_done_flag = 0;
-		if (kpu_run_kmodel(kpu_task, arg_img->pix_ai, K210_DMA_CH_KPU, ai_done, NULL) != 0)
+        sipeed_kpu_err_t ret = sipeed_kpu_model_run(kpu_net->kmodel_ctx, arg_img->pix_ai, K210_DMA_CH_KPU, ai_done, NULL);
+		if (ret != 0)
         {
-            mp_printf(&mp_plat_print, "Cannot run kmodel.\n");
-            exit(-1);
+            char* char_temp = m_new(char, 20);
+            if(!char_temp)
+                mp_raise_OSError(MP_ENOMEM);
+            snprintf(char_temp, 20, "run error: %d", ret);
+            mp_raise_msg(&mp_type_OSError, char_temp);
         }
         while (!g_ai_done_flag)
             ;
@@ -841,7 +782,6 @@ STATIC mp_obj_t py_kpu_class_run_yolo2(uint n_args, const mp_obj_t *pos_args, mp
 		/****************************start region layer***************************************/
 		static obj_info_t mpy_kpu_detect_info;
         region_layer_run(&kpu_detect_rl, &mpy_kpu_detect_info);
-
         uint8_t obj_num = 0;
         obj_num = mpy_kpu_detect_info.obj_number;
 
@@ -888,7 +828,6 @@ STATIC mp_obj_t py_kpu_class_run_yolo2(uint n_args, const mp_obj_t *pos_args, mp
                 objects_list->items[i] = o;
             }
             region_layer_deinit(&kpu_detect_rl);
-
             return objects_list;
         }
         else
@@ -923,11 +862,8 @@ STATIC mp_obj_t py_kpu_deinit(uint n_args, const mp_obj_t *pos_args, mp_map_t *k
     {
         py_kpu_net_obj_t *kpu_net = MP_OBJ_TO_PTR(pos_args[0]);
 
-        if(MP_OBJ_TO_PTR(kpu_net->model_data))
-            free(MP_OBJ_TO_PTR(kpu_net->model_data));
-
-        if(MP_OBJ_TO_PTR(kpu_net->kpu_task))
-            free(MP_OBJ_TO_PTR(kpu_net->kpu_task));
+        if(kpu_net->kmodel_ctx)
+            sipeed_kpu_model_destroy(&kpu_net->kmodel_ctx);
 
         if(MP_OBJ_TO_PTR(kpu_net->net_deinit))
         {
@@ -1181,25 +1117,25 @@ STATIC mp_obj_t py_kpu_set_layers(mp_obj_t kpu_net_obj, mp_obj_t len_obj)
 {
 	py_kpu_net_obj_t *kpu_net = MP_OBJ_TO_PTR(kpu_net_obj);
 	int layers_length = mp_obj_get_int(len_obj);	//how many layers you want calculate, set <=0 to calculate all layers
-	kpu_model_context_t *kpu_task = MP_OBJ_TO_PTR(kpu_net->kpu_task); 
 	int max_length = mp_obj_get_int(kpu_net->max_layers);
+    sipeed_kpu_err_t ret;
 	
 	if(layers_length > 0)
 	{	//set layer count
 		if(layers_length <= max_length)
 		{
 			//mp_printf(&mp_plat_print, "set layers_length to %d\r\n", layers_length);
-			kpu_model_set_output(kpu_task, 0, layers_length);
+            ret = sipeed_kpu_model_set_output(kpu_net->kmodel_ctx, 0, layers_length);
 		}
 		else
 		{
-			mp_printf(&mp_plat_print, "err: set layers_length to %d, but max %d\r\n", layers_length, kpu_task->layers_length);
+			mp_printf(&mp_plat_print, "err: set layers_length to %d, but max %d\r\n", layers_length, max_length);
 			return mp_const_false;
 		}
 	} else	//calculate all layers
 	{
 		//mp_printf(&mp_plat_print, "set layers_length to %d\r\n", max_length);
-		kpu_model_set_output(kpu_task, 0, max_length);
+        sipeed_kpu_model_set_output(kpu_net->kmodel_ctx, 0, max_length);
 	}
 	return mp_const_true;
 }
@@ -1213,6 +1149,7 @@ STATIC mp_obj_t py_kpu_forward(uint n_args, const mp_obj_t *pos_args, mp_map_t *
 		{ MP_QSTR_img,              	MP_ARG_OBJ, {.u_obj = mp_const_none} },
 		{ MP_QSTR_out_index, 			MP_ARG_INT, {.u_int = 0x0} },
     };	//type
+    char char_temp[30];
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
@@ -1220,11 +1157,12 @@ STATIC mp_obj_t py_kpu_forward(uint n_args, const mp_obj_t *pos_args, mp_map_t *
     {
 		py_kpu_net_obj_t *kpu_net = MP_OBJ_TO_PTR(args[ARG_kpu_net].u_obj);
 		image_t *arg_img = py_image_cobj(args[ARG_img].u_obj);
-		kpu_model_context_t *kpu_task = MP_OBJ_TO_PTR(kpu_net->kpu_task);  
+        sipeed_kpu_err_t ret;
 		
 		int out_index = args[ARG_out_index].u_int;		//which output you want, defaultly index 0
 		uint16_t w0,h0,ch0;
-		if(kpu_model_get_input_shape(kpu_task, &w0, &h0, &ch0))
+        ret =sipeed_kpu_model_get_input_shape(kpu_net->kmodel_ctx,&w0, &h0, &ch0);
+		if(ret != SIPEED_KPU_ERR_NONE)
 		{
 			mp_raise_ValueError("[MAIXPY]kpu: first layer not conv layer!\r\n");
 			return mp_const_none;
@@ -1236,28 +1174,48 @@ STATIC mp_obj_t py_kpu_forward(uint n_args, const mp_obj_t *pos_args, mp_map_t *
 		}
 		/*************************************************************************************/
 		g_ai_done_flag = 0;
-        if (kpu_run_kmodel(kpu_task, arg_img->pix_ai, K210_DMA_CH_KPU, ai_done, NULL) != 0)
+        ret = sipeed_kpu_model_run(kpu_net->kmodel_ctx, arg_img->pix_ai, K210_DMA_CH_KPU, ai_done, NULL);
+        if (ret != SIPEED_KPU_ERR_NONE)
         {
-            mp_printf(&mp_plat_print, "Cannot run kmodel.\n");
-            exit(-1);
+            mp_raise_msg(&mp_type_OSError, "Cannot run kmodel.\n");
         }
 		while (!g_ai_done_flag);
         g_ai_done_flag = 0;
 		/*************************************************************************************/
 		uint8_t* features;
 		size_t count;
-		kpu_model_layer_type_t layer_type = kpu_model_get_layer_type(kpu_task, kpu_task->layers_length-1);
-		kpu_get_output(kpu_task, out_index, &features, &count);
-		
+		kpu_model_layer_type_t layer_type;
+        mp_printf(&mp_plat_print, "----1----\r\n");
+        ret = sipeed_kpu_model_get_layer_type(kpu_net->kmodel_ctx, kpu_net->max_layers-1, &layer_type);
+        if(ret != SIPEED_KPU_ERR_NONE)
+        {
+            snprintf(char_temp, sizeof(char_temp), "%d", ret);
+            mp_raise_msg(&mp_type_OSError, char_temp);
+        }
+        mp_printf(&mp_plat_print, "----2----\r\n");
+		ret = sipeed_kpu_get_output(kpu_net->kmodel_ctx, out_index, &features, &count);
+        if(ret != SIPEED_KPU_ERR_NONE)
+        {
+            snprintf(char_temp, sizeof(char_temp), "%d", ret);
+            mp_raise_msg(&mp_type_OSError, char_temp);
+        }
+		mp_printf(&mp_plat_print, "----000----\r\n");
         py_kpu_fmap_obj_t  *o = m_new_obj(py_kpu_fmap_obj_t);
 		o->base.type = &py_kpu_fmap_obj_type;
 		fmap_t* fmap = &(o->fmap);
 		fmap->data = features;
 		fmap->size = (uint32_t)count + 1;
-		fmap->index = kpu_task->layers_length-1;
+		fmap->index = kpu_net->max_layers-1;
 		if(layer_type == KL_K210_CONV)
 		{	//conv layer
-			kpu_layer_argument_t* layer = kpu_model_get_conv_layer(kpu_task, kpu_task->layers_length-1);
+            mp_printf(&mp_plat_print, "----3----\r\n");
+			kpu_layer_argument_t* layer = sipeed_kpu_model_get_conv_layer(kpu_net->kmodel_ctx, kpu_net->max_layers-1);
+            if(!layer)
+            {
+                snprintf(char_temp, sizeof(char_temp), "%d", SIPEED_KPU_ERR_GET_CONV_LAYER);
+                mp_raise_msg(&mp_type_OSError, char_temp);
+            }
+            mp_printf(&mp_plat_print, "----4----\r\n");
 			fmap->w = layer->image_size.data.o_row_wid+1;
 			fmap->h = layer->image_size.data.o_col_high+1;
 			fmap->ch = layer->image_channel_num.data.o_ch_num+1;
@@ -1266,7 +1224,7 @@ STATIC mp_obj_t py_kpu_forward(uint n_args, const mp_obj_t *pos_args, mp_map_t *
 		{	//other layer, get original output
 			fmap->h = 1;
 			fmap->ch = 1;
-			fmap->typecode = kpu_model_getdtype_from_type(layer_type);
+			fmap->typecode = (uint16_t)sipeed_kpu_model_getdtype_from_type(layer_type);
 			fmap->w = (uint16_t)(count/get_typecode_size(fmap->typecode));	//TODO: auto cal w,h,c
 		}
 		return MP_OBJ_FROM_PTR(o);
@@ -1304,8 +1262,8 @@ STATIC mp_obj_t py_kpu_fmap(mp_obj_t fmap_obj, mp_obj_t ch_obj)
 	}
 	if(fmap->typecode != 'B')
 	{
-        char str_ret[40];
-        sprintf(str_ret,"[MAIXPY]kpu: can't convet float fmap yet\r\n");
+        char str_ret[50];
+        snprintf(str_ret, sizeof(str_ret), "[MAIXPY]kpu: can't convet float fmap yet\r\n");
         mp_raise_ValueError(str_ret);
 		return mp_const_none;
 	}
@@ -1325,20 +1283,6 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_fmap_free_obj, py_kpu_fmap_free);
 
 
 
-typedef struct py_kpu_netinfo_list_data {
-    uint16_t index;
-	uint16_t type;
-    uint16_t wi;
-    uint16_t hi;
-    uint16_t wo;
-    uint16_t ho;
-    uint16_t chi;
-	uint16_t cho;
-	uint16_t dw;
-	uint16_t kernel_type;
-	uint16_t pool_type;
-	uint32_t para_size;
-} __attribute__((aligned(8))) py_kpu_netinfo_list_data_t;
 
 typedef struct py_kpu_class_netinfo_find_obj {
     mp_obj_base_t base;
@@ -1352,7 +1296,7 @@ static void py_kpu_class_netinfo_find_print(const mp_print_t *print, mp_obj_t se
     mp_printf(print,
     "{\"index\":%d, \"type\":%s, \"wi\":%d, \"hi\":%d, \"wo\":%d, \"ho\":%d, \"chi\":%d, \"cho\":%d, \"dw\":%d, \"kernel_type\":%d, \"pool_type\":%d, \"para_size\":%d}",
               mp_obj_get_int(self->index),
-			  kpu_model_getname_from_type(mp_obj_get_int(self->type)),
+			  sipeed_kpu_model_getname_from_type(mp_obj_get_int(self->type)),
               mp_obj_get_int(self->wi),
               mp_obj_get_int(self->hi),
               mp_obj_get_int(self->wo),
@@ -1420,22 +1364,25 @@ static const mp_obj_type_t py_kpu_class_netinfo_find_type = {
 STATIC mp_obj_t py_kpu_netinfo(mp_obj_t py_kpu_net_obj)
 {
 	py_kpu_net_obj_t *kpu_net = MP_OBJ_TO_PTR(py_kpu_net_obj);
-	kpu_model_context_t *kpu_task = MP_OBJ_TO_PTR(kpu_net->kpu_task);  
 	
-	int len = kpu_task->layers_length;
+	int len = sipeed_kpu_model_get_layer_num(kpu_net->kmodel_ctx);
+    if(len <= 0)
+        mp_raise_ValueError("get layer num error!");
 	kpu_layer_argument_t *layer; 
 	list_t out;
-	list_init(&out, sizeof(py_kpu_netinfo_list_data_t));
+    list_init(&out, sizeof(py_kpu_netinfo_list_data_t));
 
-	kpu_model_print_layer_info(kpu_task);
+	sipeed_kpu_model_print_layer_info(kpu_net->kmodel_ctx);
 	for (uint8_t index = 0; index < len; index++)
 	{
 		py_kpu_netinfo_list_data_t data;
+        sipeed_kpu_err_t ret;
 		data.index = index;
-		data.type = kpu_model_get_layer_type(kpu_task, index);
-		layer = kpu_model_get_conv_layer(kpu_task, index);
-		//mp_printf(&mp_plat_print, "layer %d @ 0x%lx\r\n", index, (unsigned long int)layer);
-		if(layer != 0)	//conv layer
+		ret = sipeed_kpu_model_get_layer_type(kpu_net->kmodel_ctx, index, (kpu_model_layer_type_t*)&data.type);
+        if(ret != SIPEED_KPU_ERR_NONE)
+            mp_raise_OSError(ret);
+		layer = sipeed_kpu_model_get_conv_layer(kpu_net->kmodel_ctx, index);
+		if(layer != NULL)	//conv layer
 		{
 			data.wi = layer->image_size.data.i_row_wid+1;
 			data.hi = layer->image_size.data.i_col_high+1;
@@ -1457,7 +1404,7 @@ STATIC mp_obj_t py_kpu_netinfo(mp_obj_t py_kpu_net_obj)
 			data.dw = 0;
 			data.kernel_type = 0;
 			data.pool_type = 0;
-			data.para_size = kpu_model_get_layer_size(kpu_task, index);
+			data.para_size = sipeed_kpu_model_get_layer_size(kpu_net->kmodel_ctx, index);
 		}
 		list_push_back(&out, &data);
 	}
@@ -1497,46 +1444,48 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_netinfo_obj, py_kpu_netinfo);
 #define BATCH_SIZE 1024
 STATIC mp_obj_t py_kpu_check(mp_obj_t py_kpu_net_obj, mp_obj_t py_kpu_model_obj)
 {
-	py_kpu_net_obj_t *kpu_net = MP_OBJ_TO_PTR(py_kpu_net_obj);
-	uint32_t model_addr = mp_obj_get_int(py_kpu_model_obj);
-	int ferr;
-	mp_obj_t file;
-	uint32_t oft=0;
-	char* data;
-	uint32_t model_size;
-	char* model_data = MP_OBJ_TO_PTR(kpu_net->model_data);
-	w25qxx_status_t status;
+	// py_kpu_net_obj_t *kpu_net = MP_OBJ_TO_PTR(py_kpu_net_obj);
+	// uint32_t model_addr = mp_obj_get_int(py_kpu_model_obj);
+	// int ferr;
+	// mp_obj_t file;
+	// uint32_t oft=0;
+	// char* data;
+	// uint32_t model_size;
+	// char* model_data = MP_OBJ_TO_PTR(kpu_net->model_data);
+	// w25qxx_status_t status;
+    // uint32_t model_version;
 	
-	model_size = kpu_model_flash_get_size(model_addr);
-	if(model_size <= 0)
-	{
-		printf("model size error!\r\n");
-		vfs_internal_close(file, &ferr);
-		return mp_const_none;
-	}
+	// model_size = kpu_model_flash_get_size(model_addr);
+    // int ret = kpu_model_flash_get_info(model_addr, &model_size, &model_version);
+	// if(ret <= 0)
+	// {
+	// 	printf("model size error!\r\n");
+	// 	vfs_internal_close(file, &ferr);
+	// 	return mp_const_none;
+	// }
 
-	data = (uint8_t *)malloc(BATCH_SIZE);
-	if(data == NULL)
-	{
-		printf("malloc error!\r\n");
-		return mp_const_none;
-	}
+	// data = (uint8_t *)malloc(BATCH_SIZE);
+	// if(data == NULL)
+	// {
+	// 	printf("malloc error!\r\n");
+	// 	return mp_const_none;
+	// }
 
-	while(oft<model_size)
-	{
-		status = w25qxx_read_data_dma(model_addr+oft, data, BATCH_SIZE, W25QXX_QUAD_FAST);
-        if(status != W25QXX_OK)
-        {
-            printf("read error!\r\n");
-            return mp_const_none;
-        }
-		if(memcmp(data,model_data+oft,BATCH_SIZE)) //不一致
-		{
-			printf("diff @ 0x%x\r\n", oft);
-		}
-		oft+=BATCH_SIZE;
-	}
-	free(data);
+	// while(oft<model_size)
+	// {
+	// 	status = w25qxx_read_data_dma(model_addr+oft, data, BATCH_SIZE, W25QXX_QUAD_FAST);
+    //     if(status != W25QXX_OK)
+    //     {
+    //         printf("read error!\r\n");
+    //         return mp_const_none;
+    //     }
+	// 	if(memcmp(data,model_data+oft,BATCH_SIZE)) //不一致
+	// 	{
+	// 		printf("diff @ 0x%x\r\n", oft);
+	// 	}
+	// 	oft+=BATCH_SIZE;
+	// }
+	// free(data);
 	return mp_const_none;
 
 }

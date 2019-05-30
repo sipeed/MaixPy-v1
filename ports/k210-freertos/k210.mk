@@ -100,6 +100,7 @@ BIN_LDFLAGS := \
 		$(BIN_DIR)/utils.a \
 		$(BIN_DIR)/libkendryte.a \
 		./platform/api/lib_mic.a\
+		./platform/api/lib_sipeed_kpu.a\
 		-lm -latomic -lc -lstdc++ \
 		-Wl,--start-group \
 		-lc \

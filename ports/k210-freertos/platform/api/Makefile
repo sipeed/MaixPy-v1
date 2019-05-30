@@ -11,7 +11,13 @@ sinclude $(COMMON_MK)
 LIB_NAME ?= api
 OUTPUT_DIR := build
 OUTPUT_BIN := $(BIN_DIR)/$(LIB_NAME).a
-INCLUDE := -I $(CUR_DIR) -I $(CUR_DIR)/include -I $(CUR_DIR)/../../../../ -I $(CUR_DIR)/../../mpy_support/
+INCLUDE := -I $(CUR_DIR) \
+           -I $(CUR_DIR)/include \
+		   -I $(CUR_DIR)/../../../../ \
+		   -I $(CUR_DIR)/../../mpy_support/ \
+		   -I $(CUR_DIR)/../../mpy_support/build \
+		   -I $(CUR_DIR)/../../mpy_support/standard_lib/include
+
 
 ##############################################################################
 # USER CONFIG MAKE METHOD
@@ -24,13 +30,25 @@ lib_mic.a:
 	wget https://fdvad021asfd8q.oss-cn-hangzhou.aliyuncs.com/Sipeed_M1/software/lib_mic.a
 	touch lib_mic.a
 
-all: lib_mic.a compile
+sipeed_kpu:
+	@if [ -f src/sipeed_kpu.c ]; then \
+		$(Q)mkdir -p ${OUTPUT_DIR}; \
+		$(Q)$(CC) ${CFLAGS} -c src/sipeed_kpu.c -o ${OUTPUT_DIR}/sipeed_kpu.o; \
+	fi;
+
+lib_sipeed_kpu: sipeed_kpu
+	@if [ -f src/sipeed_kpu.c ]; then \
+		$(Q)$(AR) rcs lib_sipeed_kpu.a ${OUTPUT_DIR}/sipeed_kpu.o; \
+		$(Q)rm -f ${OUTPUT_DIR}/sipeed_kpu.o; \
+	fi;
+
+all: lib_mic.a lib_sipeed_kpu compile
 	$(call echo_info,"CUR_DIR "$(CUR_DIR)" ...")
 
 $(OUTPUT_BIN):$(SRC_C_OBJ) 
 	$(Q)$(AR) rcs -o $@ $(SRC_C_OUTPUT_OBJ) 
 
-compile: lib_mic.a $(OUTPUT_BIN)	
+compile: lib_mic.a lib_sipeed_kpu $(OUTPUT_BIN)	
 
 include_mk:
 	echo "INCLUDE_ALL += \\" > $(INCLUDE_MK)

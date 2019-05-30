@@ -24,19 +24,19 @@ typedef struct
 } __attribute__((aligned(8))) sortable_box_t;
 
 
-int region_layer_init(region_layer_t *rl, kpu_model_context_t *task)
+int region_layer_init(region_layer_t *rl, void* ctx)
 {
     int flag = 0;
 	uint16_t wi,hi,chi;
 	uint16_t wo,ho,cho;
 	size_t size;
 	
-	if(kpu_model_get_input_shape(task, &wi, &hi, &chi))
+	if(sipeed_kpu_model_get_input_shape(ctx, &wi, &hi, &chi) != SIPEED_KPU_ERR_NONE)
 	{
 		mp_printf(&mp_plat_print, "[MAIXPY]rl: first layer not conv layer!\r\n");
 		return -1;
 	}
-	if(kpu_model_get_output_shape(task, &wo, &ho, &cho))
+	if(sipeed_kpu_model_get_output_shape(ctx, &wo, &ho, &cho) != SIPEED_KPU_ERR_NONE)
 	{
 		mp_printf(&mp_plat_print, "[MAIXPY]rl: can't fetch last layer!\r\n");
 		return -1;
@@ -54,7 +54,7 @@ int region_layer_init(region_layer_t *rl, kpu_model_context_t *task)
     rl->boxes_number = (rl->layer_width * rl->layer_height * rl->anchor_number);
     rl->output_number = (rl->boxes_number * (rl->classes + rl->coords + 1));
     
-	kpu_get_output(task, 0, &(rl->output), &size);	//module output -> rl output
+	sipeed_kpu_get_output(ctx, 0, &(rl->output), &size);	//module output -> rl output
 	//mp_printf(&mp_plat_print, "size=%ld\r\n",size);
     //rl->scale = output_scale;
     //rl->bias = output_bias;

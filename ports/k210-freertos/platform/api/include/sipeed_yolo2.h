@@ -48,7 +48,7 @@ typedef struct
 
 typedef void (*callback_draw_box)(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, uint32_t class, float prob);;
 
-int region_layer_init(region_layer_t *rl, kpu_model_context_t *task);
+int  region_layer_init(region_layer_t *rl, void* ctx);
 void region_layer_deinit(region_layer_t *rl);
 void region_layer_run(region_layer_t *rl, obj_info_t *obj_info);
 void region_layer_draw_boxes(region_layer_t *rl, callback_draw_box callback);
