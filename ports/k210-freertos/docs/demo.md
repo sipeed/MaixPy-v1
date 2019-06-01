@@ -434,7 +434,7 @@ fm.unregister(board_info.LED_R,fm.fpioa.GPIOHS31)
 
 ### Demo1:GPIO INPUT test
 
-```
+```python
 import utime
 from Maix import GPIO
 fm.register(board_info.LED_R,fm.fpioa.GPIO0)
@@ -642,7 +642,7 @@ fm.unregister(board_info.LED_R,fm.fpioa.GPIOHS31)
 
 ### Demo1:GPIO IRQ test
 
-```
+```python
 import utime
 from Maix import GPIO
 def test_irq(GPIO,pin_num):
@@ -998,8 +998,6 @@ sock.close()
 ```
 
 
-
-
 ## image
 
 
@@ -1108,8 +1106,6 @@ while True:
     lcd.display(img)
     time.sleep_ms(100)
 ```
-
-
 
 ### simple camera run
 
@@ -1436,6 +1432,8 @@ while 1:
 	utime.sleep_ms(500)
 ```
 #clock fps
+```python
+
 import sensor
 import image
 import lcd
@@ -1451,13 +1449,12 @@ while True:
 	clock.tick()
 	img = sensor.snapshot()
 	print("fps = ",clock.fps())
-
+```
 
 
 ## video
 
 ```python
-
 import video,time
 from Maix import GPIO
 
