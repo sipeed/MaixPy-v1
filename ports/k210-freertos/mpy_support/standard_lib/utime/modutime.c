@@ -122,7 +122,7 @@ STATIC mp_obj_t time_time(void) {
 	volatile int min = 0, sec = 0;
 	rtc_timer_get(&year,&mon,&mday,&hour,&min,&sec);
 	seconds = timeutils_seconds_since_1970(year,mon, mday, hour, min,sec);
-    return mp_obj_new_int(seconds);
+    return mp_obj_new_int_from_uint(seconds); 
 }
 MP_DEFINE_CONST_FUN_OBJ_0(time_time_obj, time_time);
 
