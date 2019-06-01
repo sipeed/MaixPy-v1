@@ -1132,6 +1132,7 @@ while True:
 ```
 	
 # simple camera run
+```python
 import sensor
 import image
 import lcd
@@ -1144,8 +1145,10 @@ sensor.run(1)
 while True:
 	img=sensor.snapshot()
 	lcd.display(img)	
+```
 
 # camera run with convolution accelerate, you can choose different conv kernel to see effect
+```python
 import sensor
 import image
 import lcd
@@ -1184,6 +1187,7 @@ while True:
 			tmp=img.draw_cross(b[5], b[6]) 
 			c=img.get_pixel(b[5], b[6])
 	lcd.display(img)
+```
 
 # color bar
 import sensor
@@ -1230,7 +1234,8 @@ while True:
 	img=sensor.snapshot()
 	lcd.display(img)
 
-#sensor.get_fb()
+# sensor.get_fb()
+```python
 import sensor
 import image
 import lcd
@@ -1243,7 +1248,7 @@ sensor.run(1)
 sensor.skip_frames(30)
 image_fb = sensor.get_fb()
 lcd.display(image_fb)
-	
+```
 #set_pixformat
 
 #set_framesize
@@ -1253,6 +1258,7 @@ lcd.display(image_fb)
 #sensor.height()
 	
 #set_contrast
+```python
 import sensor
 import image
 import lcd
@@ -1272,8 +1278,10 @@ while True:
 	lcd.display(img)
 	flag = ~flag
 	time.sleep(1)
+```
 
 #set_brightness
+```
 import sensor
 import image
 import lcd
@@ -1294,6 +1302,7 @@ while True:
 	lcd.display(img)
 	flag = ~flag
 	time.sleep(1)
+```
 
 #set_saturation
 import sensor
