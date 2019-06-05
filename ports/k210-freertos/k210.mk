@@ -5,6 +5,7 @@ CXX = $(CROSS_COMPILE)c++
 AR = $(CROSS_COMPILE)ar
 OBJCOPY = $(CROSS_COMPILE)objcopy
 SIZE = $(CROSS_COMPILE)size
+STRIP = $(CROSS_COMPILE)strip
 
 CFLAGS = \
 	-DCONFIG_LOG_COLORS \
@@ -26,7 +27,6 @@ CFLAGS = \
 	-Os \
 	-mabi=lp64f \
 	-march=rv64imafc \
-	-ggdb \
 	-std=gnu11 \
 	-Wall \
 	-Wno-error=unused-function \
@@ -42,7 +42,6 @@ CFLAGS = \
 	-Wno-sign-compare \
 	-Wno-error=missing-braces \
 	-Wno-old-style-declaration \
-	-g \
 	-Wno-error=format= \
 	-Wno-error=pointer-sign
 
@@ -61,7 +60,6 @@ CXXFLAGS := \
 	-fstrict-volatile-bitfields \
 	-fno-zero-initialized-in-bss \
 	-O2 \
-	-ggdb \
 	-std=gnu++17 \
 	-Wall \
 	-Wno-error=unused-function \
@@ -76,7 +74,6 @@ CXXFLAGS := \
 	-Wno-implicit-fallthrough \
 	-Wno-sign-compare \
 	-Wno-error=missing-braces \
-	-g \
 	-Wno-error=format= \
 	-Wno-error=pointer-sign
 

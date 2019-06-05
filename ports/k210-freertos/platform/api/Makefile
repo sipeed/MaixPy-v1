@@ -39,6 +39,7 @@ sipeed_kpu:
 lib_sipeed_kpu: sipeed_kpu
 	@if [ -f src/sipeed_kpu.c ]; then \
 		$(Q)$(AR) rcs lib_sipeed_kpu.a ${OUTPUT_DIR}/sipeed_kpu.o; \
+		$(Q)$(STRIP) --strip-debug --strip-unneeded --discard-all lib_sipeed_kpu.a; \
 		$(Q)rm -f ${OUTPUT_DIR}/sipeed_kpu.o; \
 	fi;
 

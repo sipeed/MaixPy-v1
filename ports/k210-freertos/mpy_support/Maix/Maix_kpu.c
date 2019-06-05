@@ -355,16 +355,14 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
 
         // }
         // else
-        if(NULL != strstr(path,".kmodel"))
+        if( (NULL != strstr(path,".kmodel")) || (NULL != strstr(path,".smodel")) )
         {
-            mp_printf(&mp_plat_print, "load model from fs\r\n");
             int ret = sipeed_kpu_model_load(&o->kmodel_ctx, 0, path, &model_size);
             if(ret != SIPEED_KPU_ERR_NONE)
             {
                 err = ret;
                 goto error;
             }
-            mp_printf(&mp_plat_print, "load model from fs end\r\n");
         }
         else
         {   
@@ -1185,21 +1183,18 @@ STATIC mp_obj_t py_kpu_forward(uint n_args, const mp_obj_t *pos_args, mp_map_t *
 		uint8_t* features;
 		size_t count;
 		kpu_model_layer_type_t layer_type;
-        mp_printf(&mp_plat_print, "----1----\r\n");
         ret = sipeed_kpu_model_get_layer_type(kpu_net->kmodel_ctx, kpu_net->max_layers-1, &layer_type);
         if(ret != SIPEED_KPU_ERR_NONE)
         {
             snprintf(char_temp, sizeof(char_temp), "%d", ret);
             mp_raise_msg(&mp_type_OSError, char_temp);
         }
-        mp_printf(&mp_plat_print, "----2----\r\n");
 		ret = sipeed_kpu_get_output(kpu_net->kmodel_ctx, out_index, &features, &count);
         if(ret != SIPEED_KPU_ERR_NONE)
         {
             snprintf(char_temp, sizeof(char_temp), "%d", ret);
             mp_raise_msg(&mp_type_OSError, char_temp);
         }
-		mp_printf(&mp_plat_print, "----000----\r\n");
         py_kpu_fmap_obj_t  *o = m_new_obj(py_kpu_fmap_obj_t);
 		o->base.type = &py_kpu_fmap_obj_type;
 		fmap_t* fmap = &(o->fmap);
@@ -1208,14 +1203,12 @@ STATIC mp_obj_t py_kpu_forward(uint n_args, const mp_obj_t *pos_args, mp_map_t *
 		fmap->index = kpu_net->max_layers-1;
 		if(layer_type == KL_K210_CONV)
 		{	//conv layer
-            mp_printf(&mp_plat_print, "----3----\r\n");
 			kpu_layer_argument_t* layer = sipeed_kpu_model_get_conv_layer(kpu_net->kmodel_ctx, kpu_net->max_layers-1);
             if(!layer)
             {
                 snprintf(char_temp, sizeof(char_temp), "%d", SIPEED_KPU_ERR_GET_CONV_LAYER);
                 mp_raise_msg(&mp_type_OSError, char_temp);
             }
-            mp_printf(&mp_plat_print, "----4----\r\n");
 			fmap->w = layer->image_size.data.o_row_wid+1;
 			fmap->h = layer->image_size.data.o_col_high+1;
 			fmap->ch = layer->image_channel_num.data.o_ch_num+1;
