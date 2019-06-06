@@ -129,7 +129,7 @@ STATIC void machine_hw_spi_transfer(mp_obj_base_t *self_in, size_t len, const ui
         mp_raise_msg(&mp_type_OSError, "[MAIXPY]SPI: transfer on deinitialized SPI");
         return;
     }
-    sipeed_spi_transfer_data_standard(self->id, cs, src, dest, len);
+    sipeed_spi_transfer_data_standard(self->id, cs, src, dest, len, len);
 }
 
 /******************************************************************************/
@@ -255,15 +255,15 @@ STATIC void machine_hw_spi_init(mp_obj_base_t *self_in, size_t n_args, const mp_
     cs[1] = check_pin(args[ARG_cs1].u_obj);
     cs[2] = check_pin(args[ARG_cs2].u_obj);
     cs[3] = check_pin(args[ARG_cs3].u_obj);
-    if( sck >=0 && (cs[0]>=0 || cs[1]>=0 || cs[2]>=0 || cs[3]>=0) ) // sck and cs set
-    {
-        valid = true;
-        is_set_fpioa = true;
-    }
-    if( sck < 0 && cs[0]<0 && cs[1]<0 && cs[2]<0 && cs[3]<0 ) // not set
-        valid = true; 
-    if(!valid)
-        mp_raise_ValueError("[MAIXPY]SPI: sck and cs(n) pin should be set or all not set");
+    // if( sck >=0 && (cs[0]>=0 || cs[1]>=0 || cs[2]>=0 || cs[3]>=0) ) // sck and cs set
+    // {
+    //     valid = true;
+    //     is_set_fpioa = true;
+    // }
+    // if( sck < 0 && cs[0]<0 && cs[1]<0 && cs[2]<0 && cs[3]<0 ) // not set
+    //     valid = true; 
+    // if(!valid)
+    //     mp_raise_ValueError("[MAIXPY]SPI: sck and cs(n) pin should be set or all not set");
     //check data pins
     if( args[ARG_mode].u_int == MACHINE_SPI_MODE_MASTER)// standard spi mode
     {
@@ -274,11 +274,11 @@ STATIC void machine_hw_spi_init(mp_obj_base_t *self_in, size_t n_args, const mp_
             if(ret >= 0)//has mosi
             {
                 d[0] = ret;
+                is_set_fpioa = true;
                 ret = check_pin(args[ARG_miso].u_obj);
                 if(ret >= 0)
                 {
                     d[1] = ret;
-                    is_set_fpioa = true;
                 }
             }
             else// no mosi, check d0 
@@ -287,11 +287,11 @@ STATIC void machine_hw_spi_init(mp_obj_base_t *self_in, size_t n_args, const mp_
                 if(ret >= 0)
                 {
                     d[0] = ret;
+                    is_set_fpioa = true;
                     ret = check_pin(args[ARG_d1].u_obj);
                     if(ret >= 0)
                     {
                         d[1] = ret;
-                        is_set_fpioa = true;
                     }
                 }
             }
@@ -414,17 +414,17 @@ STATIC mp_obj_t mp_machine_spi_read(size_t n_args, const mp_obj_t *pos_args, mp_
     mp_arg_parse_all(n_args - 2, pos_args + 2, kw_args,
         MP_ARRAY_SIZE(machine_spi_read_allowed_args), machine_spi_read_allowed_args, args);
 
-    bool cs_valid = true;
     int cs = args[ARG_cs].u_int;
-    if(cs>=0 && cs<4)
-    {
-        if(self->pin_cs[cs] < 0)
-            cs_valid =false;
-    }
-    else
-        cs_valid = false;
-    if(!cs_valid)
-        mp_raise_ValueError("[MAIXPY]SPI: cs value error");
+    // bool cs_valid = true;
+    // if(cs>=0 && cs<4)
+    // {
+    //     if(self->pin_cs[cs] < 0)
+    //         cs_valid =false;
+    // }
+    // else
+    //     cs_valid = false;
+    // if(!cs_valid)
+    //     mp_raise_ValueError("[MAIXPY]SPI: cs value error");
 
     vstr_t vstr;
     vstr_init_len(&vstr, mp_obj_get_int(pos_args[1]));
@@ -449,17 +449,17 @@ STATIC mp_obj_t mp_machine_spi_readinto(size_t n_args, const mp_obj_t *pos_args,
     mp_arg_parse_all(n_args - 2, pos_args + 2, kw_args,
         MP_ARRAY_SIZE(machine_spi_read_allowed_args), machine_spi_read_allowed_args, args);
 
-    bool cs_valid = true;
     int cs = args[ARG_cs].u_int;
-    if(cs>=0 && cs<4)
-    {
-        if(self->pin_cs[cs] < 0)
-            cs_valid =false;
-    }
-    else
-        cs_valid = false;
-    if(!cs_valid)
-        mp_raise_ValueError("[MAIXPY]SPI: cs value error");
+    // bool cs_valid = true;
+    // if(cs>=0 && cs<4)
+    // {
+    //     if(self->pin_cs[cs] < 0)
+    //         cs_valid =false;
+    // }
+    // else
+    //     cs_valid = false;
+    // if(!cs_valid)
+    //     mp_raise_ValueError("[MAIXPY]SPI: cs value error");
 
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(pos_args[1], &bufinfo, MP_BUFFER_WRITE);
@@ -482,21 +482,29 @@ STATIC mp_obj_t mp_machine_spi_write(size_t n_args, const mp_obj_t *pos_args, mp
     mp_arg_parse_all(n_args - 2, pos_args + 2, kw_args,
         MP_ARRAY_SIZE(machine_spi_write_allowed_args), machine_spi_write_allowed_args, args);
 
-    bool cs_valid = true;
     int cs = args[ARG_cs].u_int;
-    if(cs>=0 && cs<4)
-    {
-        if(self->pin_cs[cs] < 0)
-            cs_valid =false;
-    }
-    else
-        cs_valid = false;
-    if(!cs_valid)
-        mp_raise_ValueError("[MAIXPY]SPI: cs value error");
+    // bool cs_valid = true;
+    // if(cs>=0 && cs<4)
+    // {
+    //     if(self->pin_cs[cs] < 0)
+    //         cs_valid =false;
+    // }
+    // else
+    //     cs_valid = false;
+    // if(!cs_valid)
+    //     mp_raise_ValueError("[MAIXPY]SPI: cs value error");
 
     mp_buffer_info_t src;
-    mp_get_buffer_raise(pos_args[1], &src, MP_BUFFER_READ);
-    mp_machine_spi_transfer(self, src.len, (const uint8_t*)src.buf, NULL, cs);
+    if(mp_obj_get_type(pos_args[1]) == &mp_type_int)
+    {
+        uint8_t data = (uint8_t)mp_obj_get_int(pos_args[1]);
+        mp_machine_spi_transfer(self, 1, (const uint8_t*)&data, NULL, cs);
+    }
+    else
+    {
+        mp_get_buffer_raise(pos_args[1], &src, MP_BUFFER_READ);
+        mp_machine_spi_transfer(self, src.len, (const uint8_t*)src.buf, NULL, cs);
+    }
     return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(mp_machine_hw_spi_write_obj, 2, mp_machine_spi_write);
@@ -514,17 +522,17 @@ STATIC mp_obj_t mp_machine_spi_write_readinto(size_t n_args, const mp_obj_t *pos
     mp_arg_parse_all(n_args - 3, pos_args + 3, kw_args,
         MP_ARRAY_SIZE(machine_spi_write_allowed_args), machine_spi_write_allowed_args, args);
 
-    bool cs_valid = true;
     int cs = args[ARG_cs].u_int;
-    if(cs>=0 && cs<4)
-    {
-        if(self->pin_cs[cs] < 0)
-            cs_valid =false;
-    }
-    else
-        cs_valid = false;
-    if(!cs_valid)
-        mp_raise_ValueError("[MAIXPY]SPI: cs value error");
+    // bool cs_valid = true;
+    // if(cs>=0 && cs<4)
+    // {
+    //     if(self->pin_cs[cs] < 0)
+    //         cs_valid =false;
+    // }
+    // else
+    //     cs_valid = false;
+    // if(!cs_valid)
+    //     mp_raise_ValueError("[MAIXPY]SPI: cs value error");
 
     mp_buffer_info_t src;
     mp_get_buffer_raise(pos_args[1], &src, MP_BUFFER_READ);

@@ -102,6 +102,9 @@ void sipeed_spi_send_data_normal_dma(sipeed_dmac_channel_number_t channel_num,
 
 sipeed_uint32_t sipeed_spi_set_clk_rate(sipeed_spi_device_num_t spi_num, sipeed_uint32_t spi_clk);
 
+void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select_t chip_select, const uint8_t *tx_buff,uint8_t *rx_buff,  size_t tx_len, size_t rx_len);
+void sipeed_spi_deinit(spi_device_num_t spi_num);
+
 
 
 #endif /* _SIPEEED_SPI_H */

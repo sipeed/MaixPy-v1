@@ -129,13 +129,11 @@ static void sipeed_spi_set_tmod(uint8_t spi_num, uint32_t tmod)
     set_bit(&spi_handle->ctrlr0, 3 << tmod_offset, tmod << tmod_offset);
 }
 
-void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select_t chip_select, const uint8_t *tx_buff,uint8_t *rx_buff,  size_t len)
+void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select_t chip_select, const uint8_t *tx_buff,uint8_t *rx_buff,  size_t tx_len, size_t rx_len)
 {
     configASSERT(spi_num < SPI_DEVICE_MAX && spi_num != 2);
-    configASSERT(len > 0);
+    configASSERT(tx_len > 0 && rx_len>=0 && tx_len >= rx_len);
     size_t index, fifo_len;
-    size_t rx_len = len;
-    size_t tx_len = rx_len;
     sipeed_spi_set_tmod(spi_num, SPI_TMOD_TRANS_RECV);
 
     volatile spi_t *spi_handle = spi[spi_num];
@@ -159,7 +157,7 @@ void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select
     spi_handle->ctrlr1 = (uint32_t)(tx_len/frame_width - 1);
     spi_handle->ssienr = 0x01;
     spi_handle->ser = 1U << chip_select;
-    uint32_t i = 0;
+    uint32_t index_tx = 0, index_rx = 0;
     while (tx_len)
     {
         fifo_len = 32 - spi_handle->txflr;
@@ -169,24 +167,53 @@ void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select
             case SPI_TRANS_INT:
                 fifo_len = fifo_len / 4 * 4;
                 for (index = 0; index < fifo_len / 4; index++)
-                    spi_handle->dr[0] = ((uint32_t *)tx_buff)[i++];
+                    spi_handle->dr[0] = ((uint32_t *)tx_buff)[index_tx++];
                 break;
             case SPI_TRANS_SHORT:
                 fifo_len = fifo_len / 2 * 2;
                 for (index = 0; index < fifo_len / 2; index++)
-                    spi_handle->dr[0] = ((uint16_t *)tx_buff)[i++];
+                    spi_handle->dr[0] = ((uint16_t *)tx_buff)[index_tx++];
                 break;
             default:
                 for (index = 0; index < fifo_len; index++)
-                    spi_handle->dr[0] = tx_buff[i++];
+                    spi_handle->dr[0] = tx_buff[index_tx++];
                 break;
         }
         tx_len -= fifo_len;
+        while(rx_len)
+        {
+            fifo_len = spi_handle->rxflr;
+            if(fifo_len==0)
+            {
+                if(index_tx - index_rx < 32)
+                    break;
+            }
+            fifo_len = fifo_len < rx_len ? fifo_len : rx_len;
+            switch(frame_width)
+            {
+                case SPI_TRANS_INT:
+                    fifo_len = fifo_len / 4 * 4;
+                    for (index = 0; index < fifo_len / 4; index++)
+                    ((uint32_t *)rx_buff)[index_rx++] = spi_handle->dr[0];
+                    break;
+                case SPI_TRANS_SHORT:
+                    fifo_len = fifo_len / 2 * 2;
+                    for (index = 0; index < fifo_len / 2; index++)
+                    ((uint16_t *)rx_buff)[index_rx++] = (uint16_t)spi_handle->dr[0];
+                    break;
+                default:
+                    for (index = 0; index < fifo_len; index++)
+                        rx_buff[index_rx++] = (uint8_t)spi_handle->dr[0];
+                    break;
+            }
+
+            rx_len -= fifo_len;
+            
+        }
     }
 
     while ((spi_handle->sr & 0x05) != 0x04)
         ;
-    i = 0;
     while (rx_len)
     {
         fifo_len = spi_handle->rxflr;
@@ -196,16 +223,16 @@ void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select
             case SPI_TRANS_INT:
                 fifo_len = fifo_len / 4 * 4;
                 for (index = 0; index < fifo_len / 4; index++)
-                  ((uint32_t *)rx_buff)[i++] = spi_handle->dr[0];
+                  ((uint32_t *)rx_buff)[index_rx++] = spi_handle->dr[0];
                 break;
             case SPI_TRANS_SHORT:
                 fifo_len = fifo_len / 2 * 2;
                 for (index = 0; index < fifo_len / 2; index++)
-                  ((uint16_t *)rx_buff)[i++] = (uint16_t)spi_handle->dr[0];
+                  ((uint16_t *)rx_buff)[index_rx++] = (uint16_t)spi_handle->dr[0];
                  break;
             default:
                   for (index = 0; index < fifo_len; index++)
-                      rx_buff[i++] = (uint8_t)spi_handle->dr[0];
+                      rx_buff[index_rx++] = (uint8_t)spi_handle->dr[0];
                 break;
         }
 
