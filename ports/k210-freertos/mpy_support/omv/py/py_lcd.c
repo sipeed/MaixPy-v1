@@ -33,7 +33,10 @@
 // static mp_obj_t spi_port = NULL;
 static int width = 0;
 static int height = 0;
-static enum { LCD_NONE, LCD_SHIELD } type = LCD_NONE;
+static enum {
+	LCD_NONE,
+	LCD_SHIELD
+} type = LCD_NONE;
 static uint8_t rotation = 0;
 static bool invert = false;
 static uint16_t screen_dir = DIR_YX_RLDU;
@@ -98,7 +101,11 @@ static mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_
     };
     static const mp_arg_t allowed_args[] = {
 		{ MP_QSTR_type, MP_ARG_INT, {.u_int = LCD_SHIELD} },
-        { MP_QSTR_freq, MP_ARG_INT, {.u_int = 15000000} },
+#ifdef MAIXPY_M5STICK
+        { MP_QSTR_freq, MP_ARG_INT, {.u_int = 40000000} },
+#else
+		{ MP_QSTR_freq, MP_ARG_INT, {.u_int = 15000000} },
+#endif
 		{ MP_QSTR_color, MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} }
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -125,14 +132,23 @@ static mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_
 			width = LCD_W;
 			height = LCD_H;
 			type = LCD_SHIELD;
-			// backlight_init = false;
-			fpioa_set_function(37, FUNC_GPIOHS0 + RST_GPIONUM);
-			fpioa_set_function(38, FUNC_GPIOHS0 + DCX_GPIONUM);
-			fpioa_set_function(36, FUNC_SPI0_SS3);
-			fpioa_set_function(39, FUNC_SPI0_SCLK);
-			lcd_init(args[ARG_freq].u_int);
+			#ifdef MAIXPY_M5STICK
+				fpioa_set_function(21, FUNC_GPIOHS0 + RST_GPIONUM);
+				fpioa_set_function(20, FUNC_GPIOHS0 + DCX_GPIONUM);
+				fpioa_set_function(22, FUNC_SPI1_SS0+SPI_SLAVE_SELECT);
+				fpioa_set_function(19, FUNC_SPI1_SCLK);
+				fpioa_set_function(18, FUNC_SPI1_D0);
+				lcd_init(args[ARG_freq].u_int, false, 52, 40, true);
+			#else
+				// backlight_init = false;
+				fpioa_set_function(37, FUNC_GPIOHS0 + RST_GPIONUM);
+				fpioa_set_function(38, FUNC_GPIOHS0 + DCX_GPIONUM);
+				fpioa_set_function(36, FUNC_SPI0_SS0+SPI_SLAVE_SELECT);
+				fpioa_set_function(39, FUNC_SPI0_SCLK);
+				lcd_init(args[ARG_freq].u_int, true, 0, 0, false);
+			#endif	
 			lcd_clear(color);
-			return mp_const_none;
+			break;
         }
 		default:
 			mp_raise_ValueError("type error");

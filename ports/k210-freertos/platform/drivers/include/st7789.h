@@ -87,13 +87,16 @@
 #define DCX_GPIONUM             (31)
 #define RST_GPIONUM             (30)
 
-
-#define SPI_CHANNEL             0
+#ifdef MAIXPY_M5STICK
+    #define SPI_CHANNEL             1
+#else
+    #define SPI_CHANNEL             0
+#endif
 #define SPI_DMA_CH				DMAC_CHANNEL1
 #define SPI_SLAVE_SELECT        3
 /* clang-format on */
 
-void tft_hard_init(uint32_t freq);
+void tft_hard_init(uint32_t freq, bool oct);
 void tft_set_clk_freq(uint32_t freq);
 void tft_write_command(uint8_t cmd);
 void tft_write_byte(uint8_t *data_buf, uint32_t length);

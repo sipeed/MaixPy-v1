@@ -6,6 +6,7 @@
 ###############################################################################
 # common.mk, include include.mk & platform.mk
 sinclude $(COMMON_MK)
+sinclude $(MAIXPY_MODULES_CONFIG_MK)
 ###############################################################################
 # USER OPTION
 LIB_NAME ?= maixpy
@@ -13,6 +14,12 @@ OUTPUT_DIR := build
 OUTPUT_ELF := $(BIN_DIR)/$(LIB_NAME).elf
 OUTPUT_BIN := $(BIN_DIR)/$(LIB_NAME).bin
 
+
+###### M5Stick #######
+ifeq (${CFG_MAIXPY_M5STICK},y)
+CFLAGS += -DMAIXPY_M5STICK=1
+endif
+######################
 
 ###############################################################################
 # USER CONFIG MAKE METHOD

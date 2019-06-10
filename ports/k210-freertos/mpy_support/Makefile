@@ -135,6 +135,12 @@ SRC_C += $(SRC_VIDEO)
 endif
 ###### VIDEO END ####
 
+###### M5Stick #######
+ifeq (${CFG_MAIXPY_M5STICK},y)
+CFLAGS_MOD += -DMAIXPY_M5STICK=1
+endif
+######################
+
 ###### NES #######
 ifeq (${CFG_MAIXPY_NES_SUPPORT},y)
 CFLAGS_MOD += -DMAIXPY_NES_EMULATOR_SUPPORT=1

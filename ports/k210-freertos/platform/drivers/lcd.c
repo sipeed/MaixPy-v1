@@ -42,25 +42,34 @@ void lcd_interrupt_enable(void)
     lcd_ctl.mode = 1;
 }
 
-void lcd_init(uint32_t freq)
+void lcd_init(uint32_t freq, bool oct, uint16_t offset_w, uint16_t offset_h, bool invert_color)
 {
     uint8_t data = 0;
-
-    tft_hard_init(freq);
+    lcd_ctl.start_offset_w0 = offset_w;
+    lcd_ctl.start_offset_h0 = offset_h;
+    tft_hard_init(freq, oct);
     /*soft reset*/
     tft_write_command(SOFTWARE_RESET);
-    usleep(100000);
+    msleep(150);
     /*exit sleep*/
     tft_write_command(SLEEP_OFF);
-    usleep(100000);
+    msleep(500);
     /*pixel format*/
     tft_write_command(PIXEL_FORMAT_SET);
     data = 0x55;
     tft_write_byte(&data, 1);
+    msleep(10);
     lcd_set_direction(DIR_YX_RLDU);
-
+    if(invert_color)
+    {
+        tft_write_command(INVERSION_DISPALY_ON);
+        msleep(10);
+    }
+    tft_write_command(NORMAL_DISPALY_ON);
+    msleep(10);
     /*display on*/
     tft_write_command(DISPALY_ON);
+    msleep(100);
     lcd_polling_enable();
 }
 
@@ -72,11 +81,15 @@ void lcd_set_direction(lcd_dir_t dir)
     {
         lcd_ctl.width = LCD_Y_MAX - 1;
         lcd_ctl.height = LCD_X_MAX - 1;
+        lcd_ctl.start_offset_w = lcd_ctl.start_offset_h0;
+        lcd_ctl.start_offset_h = lcd_ctl.start_offset_w0;
     }
     else
     {
         lcd_ctl.width = LCD_X_MAX - 1;
         lcd_ctl.height = LCD_Y_MAX - 1;
+        lcd_ctl.start_offset_w = lcd_ctl.start_offset_w0;
+        lcd_ctl.start_offset_h = lcd_ctl.start_offset_h0;
     }
 
     tft_write_command(MEMORY_ACCESS_CTL);
@@ -99,6 +112,11 @@ uint32_t lcd_get_freq()
 void lcd_set_area(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 {
     uint8_t data[4] = {0};
+
+    x1 += lcd_ctl.start_offset_w;
+    x2 += lcd_ctl.start_offset_w;
+    y1 += lcd_ctl.start_offset_h;
+    y2 += lcd_ctl.start_offset_h;
 
     data[0] = (uint8_t)(x1 >> 8);
     data[1] = (uint8_t)(x1);

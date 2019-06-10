@@ -129,7 +129,10 @@ STATIC void machine_hw_spi_transfer(mp_obj_base_t *self_in, size_t len, const ui
         mp_raise_msg(&mp_type_OSError, "[MAIXPY]SPI: transfer on deinitialized SPI");
         return;
     }
-    sipeed_spi_transfer_data_standard(self->id, cs, src, dest, len, len);
+    if(dest==NULL)
+        sipeed_spi_transfer_data_standard(self->id, cs, src, NULL, len, 0);
+    else
+        sipeed_spi_transfer_data_standard(self->id, cs, src, dest, len, len);
 }
 
 /******************************************************************************/
@@ -503,6 +506,8 @@ STATIC mp_obj_t mp_machine_spi_write(size_t n_args, const mp_obj_t *pos_args, mp
     else
     {
         mp_get_buffer_raise(pos_args[1], &src, MP_BUFFER_READ);
+        if(src.len==0)
+            mp_raise_ValueError("len must > 0");
         mp_machine_spi_transfer(self, src.len, (const uint8_t*)src.buf, NULL, cs);
     }
     return mp_const_none;

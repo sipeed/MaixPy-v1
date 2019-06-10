@@ -73,11 +73,15 @@ typedef struct _lcd_ctl
     uint8_t dir;
     uint16_t width;
     uint16_t height;
+    uint16_t start_offset_w0;
+    uint16_t start_offset_h0;
+    uint16_t start_offset_w;
+    uint16_t start_offset_h;
 } lcd_ctl_t;
 
 void lcd_polling_enable(void);
 void lcd_interrupt_enable(void);
-void lcd_init(uint32_t freq);
+void lcd_init(uint32_t freq, bool oct, uint16_t offset_w, uint16_t offset_h, bool invert_color);
 void lcd_clear(uint16_t color);
 void lcd_set_freq(uint32_t freq);
 uint32_t lcd_get_freq();

@@ -77,6 +77,11 @@
 #include "sipeed_conv.h"
 #include "ide_dbg.h"
 
+/********* others *******/
+#ifdef MAIXPY_M5STICK
+#include "m5stick.h"
+#endif
+
 // #define MAIXPY_DEBUG_UARTHS_REPL_UART3
 
 #define UART_BUF_LENGTH_MAX 269
@@ -183,6 +188,13 @@ bool flash_init(uint8_t* manuf_id, uint8_t* device_id)
 	return true;
 }
 
+
+bool peripherals_init()
+{
+#ifdef MAIXPY_M5STICK
+	m5stick_init();
+#endif
+}
 
 MP_NOINLINE STATIC spiffs_user_mount_t* init_flash_spiffs()
 {
@@ -399,6 +411,7 @@ soft_reset:
     	}
 		if (mounted_sdcard) {
 		}
+		peripherals_init();
 		mp_printf(&mp_plat_print, "[MaixPy] init end\r\n"); // for maixpy ide
 		// run boot-up scripts
 		mp_hal_set_interrupt_char(CHAR_CTRL_C);
