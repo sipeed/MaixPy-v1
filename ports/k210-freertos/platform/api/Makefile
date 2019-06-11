@@ -30,17 +30,9 @@ lib_mic.a:
 	wget https://fdvad021asfd8q.oss-cn-hangzhou.aliyuncs.com/Sipeed_M1/software/lib_mic.a
 	touch lib_mic.a
 
-sipeed_kpu:
-	@if [ -f src/sipeed_kpu.c ]; then \
-		$(Q)mkdir -p ${OUTPUT_DIR}; \
-		$(Q)$(CC) ${CFLAGS} -c src/sipeed_kpu.c -o ${OUTPUT_DIR}/sipeed_kpu.o; \
-	fi;
-
-lib_sipeed_kpu: sipeed_kpu
-	@if [ -f src/sipeed_kpu.c ]; then \
-		$(Q)$(AR) rcs lib_sipeed_kpu.a ${OUTPUT_DIR}/sipeed_kpu.o; \
-		$(Q)$(STRIP) --strip-debug --strip-unneeded --discard-all lib_sipeed_kpu.a; \
-		$(Q)rm -f ${OUTPUT_DIR}/sipeed_kpu.o; \
+lib_sipeed_kpu: 
+	@if [ ! -f lib_sipeed_kpu.a ]; then \
+		echo "no lib_sipeed_kpu.a"; \
 	fi;
 
 all: lib_mic.a lib_sipeed_kpu compile
