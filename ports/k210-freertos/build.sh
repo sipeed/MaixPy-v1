@@ -19,7 +19,6 @@ if [[ "$1x" == "cleanx" ]]; then
 elif [[ "$1x" == "distcleanx" ]]; then
     make clean
     rm mpy_support/lextab.py mpy_support/yacctab.py
-    rm platform/sdk/kendryte-standalone-sdk -rf
     rm platform/api/lib_mic.a -f
     exit 0
 elif [[ "$1x" != "x" ]]; then

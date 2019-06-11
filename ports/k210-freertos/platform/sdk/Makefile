@@ -23,9 +23,9 @@ all: build_env compile update_mk
 
 # cd $(SDK_DIR_NAME) && patch -p1 -u < ../freeRTOS.patch && cd -;
 build_env:
-	if [ ! -d $(SDK_DIR) ] ; \
+	if [ ! -d $(SDK_DIR)/lib ] ; \
 	then \
-	     git clone -b $(SDK_GIT_BRANCH) $(SDK_GIT_ADDR);\
+	     git submodule update --init $(SDK_DIR);\
 	fi;
 
 MAKE_J_NUMBER=$(shell cat /proc/cpuinfo | grep vendor_id | wc -l)

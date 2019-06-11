@@ -21,3 +21,6 @@
 [submodule "ports/k210-freertos/mpy_support/lvgl/lv_bindings"]
 	path = ports/k210-freertos/mpy_support/lvgl/lv_bindings
 	url = https://github.com/littlevgl/lv_binding_micropython.git
+[submodule "ports/k210-freertos/platform/sdk/kendryte-standalone-sdk"]
+	path = ports/k210-freertos/platform/sdk/kendryte-standalone-sdk
+	url = https://github.com/sipeed/kendryte-standalone-sdk.git
