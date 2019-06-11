@@ -5,7 +5,7 @@ maixpy demo
 
 ### Demo 1
 
-```
+```python
 from machine import Timer
 
 def on_timer(timer,param):
@@ -18,7 +18,7 @@ tim.start()
 ```
 
 ### Demo 2
-```
+```python
 import time
 from machine import Timer
 
@@ -50,7 +50,7 @@ del tim
 
 ### Demo1 (Breathing light)
 
-```
+```python
 from machine import Timer,PWM
 import time
 
@@ -75,7 +75,7 @@ while True:
 
 ### Demo2 
 
-```
+```python
 import time
 import machine
 
@@ -101,7 +101,7 @@ ch0.disable()
 
 ### Demo1
 
-```
+```python
 from machine import I2C
 
 i2c = I2C(I2C.I2C0, freq=100000, scl=28, sda=29)
@@ -111,7 +111,7 @@ print(devices)
 
 ### Demo2
 
-```
+```python
 import time
 from machine import I2C
 
@@ -122,14 +122,13 @@ i2c.readfrom(0x24,5)
 
 ### Demo3
 
-```
+```python
 i2c = I2C(I2C.I2C0, mode=I2C.MODE_MASTER, freq=400000, addr_size=7)
 ```
 
 ### Demo4: OLED(ssd1306 128x64)
 
-```
-
+```python
 import time
 from machine import I2C
 
@@ -197,8 +196,7 @@ oled_fill(i2c, 0xff)
 
 ### Demo5: Slave mode
 
-```
-
+```python
 from machine import I2C
 import time
 
@@ -228,7 +226,7 @@ i2c = I2C(I2C.I2C0, mode=I2C.MODE_SLAVE, scl=28, sda=29, addr = 0x24, addr_size=
 
 ### Demo1:GPIO OUTPUT test
 
-```
+```python
 import utime
 from Maix import GPIO
 fm.register(board_info.LED_R,fm.fpioa.GPIO0)
@@ -436,7 +434,7 @@ fm.unregister(board_info.LED_R,fm.fpioa.GPIOHS31)
 
 ### Demo1:GPIO INPUT test
 
-```
+```python
 import utime
 from Maix import GPIO
 fm.register(board_info.LED_R,fm.fpioa.GPIO0)
@@ -644,7 +642,7 @@ fm.unregister(board_info.LED_R,fm.fpioa.GPIOHS31)
 
 ### Demo1:GPIO IRQ test
 
-```
+```python
 import utime
 from Maix import GPIO
 def test_irq(GPIO,pin_num):
@@ -913,8 +911,7 @@ fm.unregister(board_info.BOOT_KEY,fm.fpioa.GPIOHS31)
 ## SPI
 
 ### Demo1
-
-```
+```python
 from machine import SPI
 
 spi1 = SPI(SPI.SPI1, mode=SPI.MODE_MASTER, baudrate=10000000, polarity=0, phase=0, bits=8, firstbit=SPI.MSB, sck=28, mosi=29, miso=30, cs0=27)
@@ -999,8 +996,6 @@ f.close()
 sock.close()
 
 ```
-
-
 
 
 ## image
@@ -1112,8 +1107,6 @@ while True:
     time.sleep_ms(100)
 ```
 
-
-
 ### simple camera run
 
 ```python
@@ -1132,6 +1125,7 @@ while True:
 ```
 	
 # simple camera run
+```python
 import sensor
 import image
 import lcd
@@ -1144,8 +1138,10 @@ sensor.run(1)
 while True:
 	img=sensor.snapshot()
 	lcd.display(img)	
+```
 
 # camera run with convolution accelerate, you can choose different conv kernel to see effect
+```python
 import sensor
 import image
 import lcd
@@ -1163,8 +1159,9 @@ while True:
 	img=sensor.snapshot()
 	img.conv3(edge)
 	lcd.display(img)
-	
+```
 # find color blob
+```python
 import sensor
 import image
 import lcd
@@ -1184,8 +1181,10 @@ while True:
 			tmp=img.draw_cross(b[5], b[6]) 
 			c=img.get_pixel(b[5], b[6])
 	lcd.display(img)
+```
 
 # color bar
+```python
 import sensor
 import image
 import lcd
@@ -1199,8 +1198,10 @@ sensor.run(1)
 while True:
 	img=sensor.snapshot()
 	lcd.display(img)
+```
 
 # shutdown  
+```python
 import sensor
 import image
 import lcd
@@ -1214,8 +1215,10 @@ sensor.shutdown(False)
 while True:
 	img=sensor.snapshot()
 	lcd.display(img)
+```
 
 # skip_frames
+```python
 import sensor
 import image
 import lcd
@@ -1229,8 +1232,9 @@ sensor.skip_frames(30)
 while True:
 	img=sensor.snapshot()
 	lcd.display(img)
-
-#sensor.get_fb()
+```
+# sensor.get_fb()
+```python
 import sensor
 import image
 import lcd
@@ -1243,7 +1247,7 @@ sensor.run(1)
 sensor.skip_frames(30)
 image_fb = sensor.get_fb()
 lcd.display(image_fb)
-	
+```
 #set_pixformat
 
 #set_framesize
@@ -1253,6 +1257,7 @@ lcd.display(image_fb)
 #sensor.height()
 	
 #set_contrast
+```python
 import sensor
 import image
 import lcd
@@ -1272,8 +1277,10 @@ while True:
 	lcd.display(img)
 	flag = ~flag
 	time.sleep(1)
+```
 
 #set_brightness
+```python
 import sensor
 import image
 import lcd
@@ -1294,8 +1301,10 @@ while True:
 	lcd.display(img)
 	flag = ~flag
 	time.sleep(1)
+```
 
 #set_saturation
+```python
 import sensor
 import image
 import lcd
@@ -1316,8 +1325,9 @@ while True:
 	lcd.display(img)
 	flag = ~flag
 	time.sleep(1)
-
+```
 #set_auto_gain
+```python
 import sensor
 import image
 import lcd
@@ -1335,11 +1345,12 @@ while True:
 	lcd.display(img)
 	gain_db = (gain_db + 1) % 32
 	sensor.set_auto_gain(False,gain_db)
-
+```
 #sensor.get_gain_db()
 	
 #sensor.set_auto_exposure() , can turn off/on auto exposure function , but can not set time of exposure, 
 #this may be casued problem of lcd
+```python
 import sensor
 import image
 import lcd
@@ -1355,8 +1366,9 @@ test_eu = sensor.get_exposure_us()
 while 1:
 	img=sensor.snapshot()
 	lcd.display(img)
-
+```
 #set_auto_whitebal  can not work
+```python
 import sensor
 import image
 import lcd
@@ -1371,8 +1383,9 @@ sensor.skip_frames(30)
 while 1:
 	img=sensor.snapshot()
 	lcd.display(img)
-
+```
 #set_hmirror
+```python
 import sensor
 import image
 import lcd
@@ -1393,8 +1406,9 @@ while 1:
 		enable = False
 	else:
 		enable = True
-
+```
 #set_vflip it will make image display error
+```python
 import sensor
 import image
 import lcd
@@ -1416,8 +1430,10 @@ while 1:
 	else:
 		enable = True
 	utime.sleep_ms(500)
-		
+```
 #clock fps
+```python
+
 import sensor
 import image
 import lcd
@@ -1433,13 +1449,12 @@ while True:
 	clock.tick()
 	img = sensor.snapshot()
 	print("fps = ",clock.fps())
-
+```
 
 
 ## video
 
 ```python
-
 import video,time
 from Maix import GPIO
 

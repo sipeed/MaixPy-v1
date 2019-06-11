@@ -28,7 +28,13 @@ build_env:
 	     git submodule update --init $(SDK_DIR);\
 	fi;
 
-MAKE_J_NUMBER=$(shell cat /proc/cpuinfo | grep vendor_id | wc -l)
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	MAKE_J_NUMBER := $(shell cat /proc/cpuinfo | grep vendor_id | wc -l)
+endif
+ifeq ($(UNAME_S),Darwin)
+	MAKE_J_NUMBER := $(shell sysctl -n hw.ncpu)
+endif
 compile: build_env
 	-mkdir -p build
 	cd build && cmake ../$(SDK_DIR_NAME)/ -DPROJ=hello_world -DTOOLCHAIN=$(patsubst %/,%,$(dir $(CROSS_COMPILE))) && make -j${MAKE_J_NUMBER}

@@ -213,7 +213,13 @@ SRC_QSTR_AUTO_DEPS +=
 $(CXX_OBJ):%.o:%.cpp
 	$(Q)$(CXX)  -o $(OUTPUT_DIR)/$@ -c $< -I$(INC) $(CXXFLAGS) -lstdc++
 
-MAKE_J_NUMBER=$(shell cat /proc/cpuinfo | grep vendor_id | wc -l)
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	MAKE_J_NUMBER := $(shell cat /proc/cpuinfo | grep vendor_id | wc -l)
+endif
+ifeq ($(UNAME_S),Darwin)
+	MAKE_J_NUMBER := $(shell sysctl -n hw.ncpu)
+endif
 # $(HEADER_BUILD)/qstr.i.last $(HEADER_BUILD)/qstrdefs.generated.h $(BUILD)/_frozen_mpy.c
 compile: $(BUILD)/genhdr/qstrdefs.generated.h mkbuild $(OUTPUT_BIN)
 	$(call echo_info,"Making compile ...")
