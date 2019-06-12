@@ -12,7 +12,7 @@ sinclude $(MAIXPY_MODULES_CONFIG_MK)
 LIB_NAME ?= drivers
 OUTPUT_DIR := build
 OUTPUT_BIN := $(BIN_DIR)/$(LIB_NAME).a
-INCLUDE := -I $(CUR_DIR) -I $(CUR_DIR)/include -I $(CUR_DIR)/../../../../ -I $(CUR_DIR)/../../mpy_support/
+INCLUDE := -I $(CUR_DIR) -I $(CUR_DIR)/include -I $(CUR_DIR)/../../../../ -I $(CUR_DIR)/../../mpy_support/ -I $(CUR_DIR)/../api/include/
 
 ###### M5Stick #######
 ifeq (${CFG_MAIXPY_M5STICK},y)
