@@ -27,8 +27,9 @@ CFLAGS += $(INCLUDE)
 CFLAGS += $(INCLUDE_ALL)
 
 lib_mic.a:
-	wget https://fdvad021asfd8q.oss-cn-hangzhou.aliyuncs.com/Sipeed_M1/software/lib_mic.a
-	touch lib_mic.a
+	@if [ ! -f lib_mic.a ]; then \
+		echo "no lib_mic.a"; \
+	fi;
 
 lib_sipeed_kpu: 
 	@if [ ! -f lib_sipeed_kpu.a ]; then \

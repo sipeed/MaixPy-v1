@@ -1,2 +1,4 @@
 sipeed_kpu
 !lib_sipeed_kpu.a
+!lib_mic.a
+
