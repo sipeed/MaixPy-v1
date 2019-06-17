@@ -91,6 +91,7 @@ typedef struct _mod_network_socket_obj_t {
 } mod_network_socket_obj_t;
 
 extern const mod_network_nic_type_t mod_network_nic_type_esp8285;
+extern const mod_network_nic_type_t mod_network_nic_type_esp32;
 
 #endif
 
