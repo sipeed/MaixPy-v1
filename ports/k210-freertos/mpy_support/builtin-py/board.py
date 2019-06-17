@@ -50,6 +50,8 @@ class Board_Info:
         self.DVP_XCLK = 46
         self.DVP_PCLK = 47
         self.pin_name=['JTAG_TCK','JTAG_TDI','JTAG_TMS','JTAG_TDO','ISP_RX','ISP_TX','WIFI_TX ','WIFI_RX ','WIFI_EN ','PIN9','PIN10','PIN11','LED_B','LED_G','LED_R','PIN15','BOOT_KEY','PIN17','MIC_ARRAY_BCK','MIC_ARRAY_WS ','MIC_ARRAY_DATA3','MIC_ARRAY_DATA2','MIC_ARRAY_DATA1','MIC_ARRAY_DATA0','MIC_ARRAY_LED','SPI0_CS1','SPI0_MISO','SPI0_CLK ','SPI0_MOSI','SPI0_CS0','MIC0_WS','MIC0_DATA','MIC0_BCK','I2S_WS','I2S_DA','I2S_BCK','LCD_CS','LCD_RST','LCD_DC','LCD_WR ','DVP_SDA','DVP_SCL','DVP_RST','DVP_VSYNC','DVP_PWDN','DVP_HSYNC','DVP_XCLK','DVP_PCLK']
+        self.D = [4, 5, 21, 22, 23, 24, 32, 15, 14, 13, 12, 11, 10, 3]
+
     def pin_map(self,Pin = None):
         num_len = 10
         str_len = 23
