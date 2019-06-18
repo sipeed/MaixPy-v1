@@ -80,9 +80,13 @@ STATIC mp_obj_t modules_ultrasonic_measure(size_t n_args, const mp_obj_t *pos_ar
     {
         ret = ultrasonic_measure_inch(self->gpio, args[ARG_timeout].u_int);
     }
-    if( ret < 0)
+    if( ret == -1)
     {
         mp_raise_ValueError("gpio error");
+    }
+    if( ret == -2)
+    {
+        mp_raise_ValueError("gpio not register pin");
     }
     if( ret == 0)
         mp_raise_msg(&mp_type_OSError, "time out");

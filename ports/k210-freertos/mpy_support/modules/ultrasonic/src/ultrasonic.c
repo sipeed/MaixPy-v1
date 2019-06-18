@@ -20,7 +20,9 @@ static long ultrasonic_measure_us(uint8_t gpio, uint32_t timeout_us)
     set_pin_func_t set_pin = NULL;
     get_pin_func_t get_pin = NULL;
     set_mode_func_t set_mode = NULL;
-    
+
+    if( fpioa_get_io_by_function(gpio) < 0 )
+        return -2;
     if(gpio >= FUNC_GPIO0 && gpio <= FUNC_GPIO7)
     {
         set_mode = gpio_set_drive_mode;
@@ -72,13 +74,17 @@ static long ultrasonic_measure_us(uint8_t gpio, uint32_t timeout_us)
 long ultrasonic_measure_cm(uint8_t gpio, uint32_t timeout_us)
 {
     long us = ultrasonic_measure_us(gpio, timeout_us);
-    return us/29/2;
+    if(us > 0)
+        return us/29/2;
+    return us;
 }
 
 
 long ultrasonic_measure_inch(uint8_t gpio, uint32_t timeout_us)
 {
     long us = ultrasonic_measure_us(gpio, timeout_us);
-    return us/74/2;
+    if(us>0)
+        return us/74/2;
+    return us;
 }
 
