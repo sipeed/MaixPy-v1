@@ -140,6 +140,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(file_obj___exit___obj, 4, 4, file_obj
 STATIC mp_uint_t file_obj_ioctl(mp_obj_t o_in, mp_uint_t request, uintptr_t arg, int *errcode) {
     pyb_file_obj_t *self = MP_OBJ_TO_PTR(o_in);
     spiffs_FILE fp=self->fp;
+    *errcode = 0;
     if (request == MP_STREAM_SEEK) {
         struct mp_stream_seek_t *s = (struct mp_stream_seek_t*)(uintptr_t)arg;
         s32_t ret = 0;
@@ -173,6 +174,7 @@ STATIC mp_uint_t file_obj_ioctl(mp_obj_t o_in, mp_uint_t request, uintptr_t arg,
         // if fs==NULL then the file is closed and in that case this method is a no-op
         if (fp.fd > 0) {
             int32_t ret = SPIFFS_close(fp.fs, fp.fd);
+            self->fp.fd = 0;
             if (ret != 0) {
                 *errcode = MP_EIO;
                 return MP_STREAM_ERROR;
