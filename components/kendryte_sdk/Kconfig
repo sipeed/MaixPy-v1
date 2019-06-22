@@ -1,0 +1,7 @@
+
+menu "Toolchain configuration"
+	config SDK_LOG_LEVEL
+		int "log level, 5:LOG_VERBOSE, 4:LOG_DEBUG, 3:LOG_INFO, 2:LOG_WARN, 1:LOG_ERROR, 0:LOG_NONE"
+		default 5
+endmenu
+

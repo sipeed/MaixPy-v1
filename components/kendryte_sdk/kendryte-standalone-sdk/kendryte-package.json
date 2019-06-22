@@ -1,0 +1,6 @@
+{
+    "name": "framework-kendryte210-standalone-sdk",
+    "description": "This SDK is for Kendryte K210 without OS support.",
+    "version": "0.5.4",
+    "url": "https://github.com/kendryte/kendryte-standalone-sdk"
+}

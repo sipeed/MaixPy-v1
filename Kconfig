@@ -1,0 +1,19 @@
+
+mainmenu "C/CPP CMake project framework Kconfig configuration"
+
+menu "Toolchain configuration"
+	config TOOLCHAIN_PATH
+		string "toolchain path"
+		default ""
+	
+	config TOOLCHAIN_PREFIX
+		string "toolchain prefix"
+		default ""
+endmenu
+
+menu "Components configuration"
+	source "$(COMPONENT_KCONFIGS)"
+endmenu
+
+
+

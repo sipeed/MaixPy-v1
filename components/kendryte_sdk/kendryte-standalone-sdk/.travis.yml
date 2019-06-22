@@ -1,0 +1,74 @@
+sudo: false
+language: cpp
+git:
+  submodules: false
+addons:
+  apt:
+    packages:
+    - python
+    - python-pip
+    - git
+    - wget
+    - make
+    - cmake
+    - libncurses-dev
+    - flex
+    - bison
+    - gperf
+    - aria2
+cache:
+  - pip
+  - directories:
+    - cache
+before_install:
+- export TOOLCHAIN_URL=https://github.com/kendryte/kendryte-gnu-toolchain/releases/download/v8.2.0-20190213/kendryte-toolchain-ubuntu-amd64-8.2.0-20190213.tar.gz
+- export TOOLCHAIN=${TOOLCHAIN_URL##*/}
+- |
+  if [ ! -f $TRAVIS_BUILD_DIR/cache/$TOOLCHAIN ]; then
+    echo "Download toolchain ..."
+    aria2c $TOOLCHAIN_URL -d $TRAVIS_BUILD_DIR/cache -o $TOOLCHAIN
+  else
+    echo "Toolchain is ready download in cache"
+  fi
+- |
+  if [ ! -d $TRAVIS_BUILD_DIR/cache/kendryte-toolchain ]; then
+    echo "Extract toolchain ..."
+    tar -C $TRAVIS_BUILD_DIR/cache -zxvf $TRAVIS_BUILD_DIR/cache/$TOOLCHAIN
+  else
+    echo "Toolchain is ready extract in cache"
+  fi
+install:
+- export PATH=$TRAVIS_BUILD_DIR/cache/kendryte-toolchain/bin:$PATH
+- export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/cache/kendryte-toolchain/bin:$LD_LIBRARY_PATH
+- |
+  cd $TRAVIS_BUILD_DIR
+  export BRANCH=$(if [ "$TRAVIS_BRANCH" == "master" ]; then echo $TRAVIS_BRANCH; else echo "develop"; fi)
+  git clone --single-branch --branch $BRANCH https://github.com/kendryte/kendryte-standalone-demo.git
+  echo "Build branch $BRANCH"
+
+script:
+- export BUILD_DATE=$(date +%Y%m%d)
+## Copy all example code
+- |
+  cd $TRAVIS_BUILD_DIR/src
+  cp -rf $TRAVIS_BUILD_DIR/kendryte-standalone-demo/* .
+  mv $TRAVIS_BUILD_DIR/kendryte-standalone-demo ~/demo
+## Check example code
+- |
+  for DIR in $(ls $TRAVIS_BUILD_DIR/src)
+  do
+    echo "[MAKE]" $TRAVIS_BUILD_DIR/src/$DIR
+    cd $TRAVIS_BUILD_DIR/src/$DIR
+    if [ ! -f "Makefile" ]; then
+      COUNT=$(expr $(ls -1 *.c 2>/dev/null | wc -l) + $(ls -1 *.cpp 2>/dev/null | wc -l) + $(ls -1 *.S 2>/dev/null | wc -l))
+      if [ $COUNT -gt 0 ]; then
+        mkdir build && cd build
+        cmake -DPROJ=$DIR -DTOOLCHAIN=$TRAVIS_BUILD_DIR/cache/kendryte-toolchain/bin ../../../ || exit -1
+        make || exit -1
+      else
+        echo "[IGNORE]" $TRAVIS_BUILD_DIR/src/$DIR
+      fi
+    else
+      make || exit -1
+    fi
+  done

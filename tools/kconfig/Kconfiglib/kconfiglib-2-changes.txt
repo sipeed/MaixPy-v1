@@ -1,0 +1,112 @@
+This is a summary of the changes between Kconfiglib 1 and Kconfiglib 2.
+
+The Kconfiglib 1 API was designed to solve a particular problem, before I even
+knew that I'd release it as a library. I was also hazy on many details of
+Kconfig internals when I first designed it.
+
+Bolting things like implicit menus and symbol introspection onto the Kconfiglib
+1 API would have been awkward, so I decided to redo things the right way.
+
+API changes:
+
+  - Read-only fields now use attributes instead of get_*() methods, which is
+    less clunky to work with.
+
+    A few attributes use @property magic internally, but are still efficient to
+    access due to caching.
+
+  - Tristate values are now represented as 0, 1, 2 instead of "n", "m", "y".
+    This is a small loss in readability in a few spots, but the advantages far
+    outweigh the disadvantages. Tristate values can now be compared directly,
+    and tristate n is naturally false. ("n" < "m" < "y" is false even
+    lexicographically, which is awkward.)
+
+    The original design was an attempt to keep the value format consistent for
+    all types of symbols (as far as I can remember).
+
+  - Much improved value API. Instead of get_upper/lower_bound(), is_assignable(),
+    etc., there's now just a single .assignable attribute, which returns a
+    sorted tuple with the currently assignable values (that would be reflected
+    in the value of the symbol). This corresponds to the selections available
+    in the menuconfig interface.
+
+    For example, sym.assignable might be (0, 2) for a visible, non-selected
+    bool symbol.
+
+  - Many seldom-used APIs, like get_ref_locations(), were removed. They can be
+    implemented manually in a much more general and powerful way with newly
+    added functionality (see e.g. examples/find_symbol.py).
+
+  - Printing a Symbol or other Kconfig object now returns its representation in
+    Kconfig syntax instead of the ugly Kconfiglib 1 format.
+
+  - Symbols and other Kconfig objects now have a __repr__() that returns useful
+    information (name, type, value, user value, prompt, location, etc.)
+
+  - __str__() and __repr__() are deliberately implemented with just public
+    APIs, which indirectly ensures that all Kconfig object properties can be
+    fetched separately.
+
+  - The Item base class had gotten kinda pointless and has been removed.
+    Instead of is_symbol(), etc., just use isinstance() to check what kind of
+    object you're dealing with. There's fewer of them now too.
+
+  - Probably lots of other stuff I forgot to mention.
+
+
+New features:
+
+  - Direct access to the menu tree
+
+    Kconfiglib 1 represented the menu tree with nested lists, which works
+    poorly for e.g. implicit menus. Kconfiglib 2 uses a separate user-visible
+    MenuNode class that corresponds directly to 'struct menu' in the C
+    implementation, storing the same fields.
+
+    The Menu and Comment classes were removed. They're represented as plain
+    menu nodes with node.item set to MENU and COMMENT, respectively.
+
+  - Direct access to symbol properties and their conditions
+
+    Expressions use a simple tuple-based format (think Lisp).
+
+    Kconfiglib 1 stored constant (quoted) symbols as plain Python strings. This
+    makes expressions awkward to work with due to inconsistent value types.
+    Kconfiglib 2 uses constant Symbol instances for quoted symbols, like the C
+    implementation.
+
+  - Better 'choice' handling
+
+    In Kconfiglib 1, choices magically changed mode when values were assigned
+    to choice symbols, which was meant to make .config loading just work. In
+    Kconfiglib 2, the mode must be assigned manually (though most choices can
+    only be in n or y mode anyway and take care of themselves). load_config()
+    was updated to infer the mode from the types of values assigned to choice
+    symbols and set it explicitly.
+
+    Choices now have an .assignable attribute too, which makes the API
+    perfectly consistent between symbols and choices. The choice mode acts as
+    an upper bound on the visibility of the choice symbols (the choice is
+    simply propagated to property conditions, which makes this automatic).
+
+  - Faster parsing code
+
+    The helper classes were merged into the Kconfig (new name for Config)
+    class. This removes a lot of temporary object creation and passing around
+    of values. The 4.14 x86 Kconfigs now parse in about a second on a Core
+    i7-2600k (or much faster than that with PyPy if multiple configurations are
+    loaded).
+
+  - Better invalidation algorithm
+
+    Internal reorganization allowed for a better invalidation algorithm to be
+    used, which stops redundant invalidation much earlier and gives a huge
+    speedup for scripts that set a lot of values. The non-Kconfig-parsing
+    overhead is often irrelevant now. allyesconfig.py runs in about 1.5 seconds
+    when run via 'make scriptconfig', including the 'make' overhead.
+
+  - Probably lots of other stuff I forgot to mention.
+
+
+In general, Kconfiglib 2 is just a better and more general Kconfiglib 1, with
+some old mistakes cleaned up.
