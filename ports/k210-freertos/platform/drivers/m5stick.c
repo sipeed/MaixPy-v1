@@ -28,42 +28,42 @@ bool m5stick_init()
     fpioa_set_function(AXP192_I2C_PIN_SCL, FUNC_I2C0_SCLK);
     fpioa_set_function(AXP192_I2C_PIN_SDA, FUNC_I2C0_SDA);
     maix_i2c_init(I2C_DEVICE_0, 7, 400000);
-    ret = maix_i2c_recv_data(I2C_DEVICE_0, AXP192_ADDR, NULL, 0, cmd, 1);
+    ret = maix_i2c_recv_data(I2C_DEVICE_0, AXP192_ADDR, NULL, 0, cmd, 1, 10);
     if (ret != 0)
         goto end;
     cmd[0] = 0x91;
-    cmd[1] = 0xF0;
-    ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2);
+    cmd[1] = 0xF0; //LCD Backlight: GPIO0 3.3V
+    ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2, 10);
     if(ret!=0)
         goto end;
     cmd[0] = 0x90;
-    cmd[1] = 0x02;
-    ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2);
+    cmd[1] = 0x02; //GPIO LDO mode
+    ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2, 10);
     if(ret!=0)
         goto end;
     cmd[0] = 0x28;
-    cmd[1] = 0xA0;
-    ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2);
+    cmd[1] = 0xA0; //VDD2.8V net: LDO2 2.8V,  VDD 1.5V net: LDO3 1.8V
+    ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2, 10);
     if(ret!=0)
         goto end;
     cmd[0] = 0x27;
-    cmd[1] = 0x2C;
-    ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2);
+    cmd[1] = 0x2C; //VDD1.8V net:  DC-DC3 1.8V
+    ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2, 10);
     if(ret!=0)
         goto end;
     cmd[0] = 0x12;
-    cmd[1] = 0x1F;
-    ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2);
+    cmd[1] = 0x1F; //open all power except EXTEN
+    ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2, 10);
     if(ret!=0)
         goto end;
-    cmd[0] = 0x10;
-    cmd[1] = 0x01;
-    ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2);
-    if(ret!=0)
-        goto end;
+    // cmd[0] = 0x10;
+    // cmd[1] = 0x01;//
+    // ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2, 10);
+    // if(ret!=0)
+    //     goto end;
     cmd[0] = 0x23;
-    cmd[1] = 0x08;
-    ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2);
+    cmd[1] = 0x08; //VDD 0.9v net: DC-DC2 0.9V
+    ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2, 10);
     if(ret!=0)
         goto end;
     

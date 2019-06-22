@@ -90,7 +90,7 @@ int ns2009_hal_i2c_init_default()
 int ns2009_hal_i2c_recv(const uint8_t *send_buf, size_t send_buf_len, uint8_t *receive_buf,
                   size_t receive_buf_len)
 {
-    return maix_i2c_recv_data(m_i2c_num, NS2009_SLV_ADDR, send_buf, send_buf_len, receive_buf, receive_buf_len);
+    return maix_i2c_recv_data(m_i2c_num, NS2009_SLV_ADDR, send_buf, send_buf_len, receive_buf, receive_buf_len, 20);
 }
 
 

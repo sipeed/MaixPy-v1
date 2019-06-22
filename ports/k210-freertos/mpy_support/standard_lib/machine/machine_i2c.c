@@ -186,7 +186,7 @@ STATIC void machine_hard_i2c_print(const mp_print_t *print, mp_obj_t self_in, mp
 STATIC int machine_hard_i2c_readfrom(mp_obj_base_t *self_in, uint16_t addr, uint8_t *dest, size_t len, bool stop) {
     machine_hard_i2c_obj_t *self = MP_OBJ_TO_PTR(self_in);
     //TODO: stop not implement
-    int ret = maix_i2c_recv_data(self->i2c, addr, NULL, 0, dest, len);
+    int ret = maix_i2c_recv_data(self->i2c, addr, NULL, 0, dest, len, 20);
     if(ret < 0)
         ret = -EIO;
     else if( ret == 0)
@@ -198,7 +198,7 @@ STATIC int machine_hard_i2c_writeto(mp_obj_base_t *self_in, uint16_t addr, const
     machine_hard_i2c_obj_t *self = MP_OBJ_TO_PTR(self_in);
     //TODO: stop not implement
     //TODO: send 0 byte date support( only send start, slave address, and wait ack, stop at last)
-    int ret = maix_i2c_send_data(self->i2c, addr, src, len);
+    int ret = maix_i2c_send_data(self->i2c, addr, src, len, 20);
     if(ret != 0)
         ret = -EIO;
     else
@@ -571,7 +571,7 @@ STATIC mp_obj_t machine_i2c_scan(mp_obj_t self_in) {
     // 7-bit addresses 0b0000xxx and 0b1111xxx are reserved
     for (int addr = 0x08; addr < 0x78; ++addr) {
         // int ret = i2c_p->writeto(self, addr, NULL, 0, true);
-        int ret = maix_i2c_recv_data(self->i2c, addr, NULL, 0, &temp, 1);
+        int ret = maix_i2c_recv_data(self->i2c, addr, NULL, 0, &temp, 1, 10);
         if (ret == 0) {
             mp_obj_list_append(list, MP_OBJ_NEW_SMALL_INT(addr));
         }
