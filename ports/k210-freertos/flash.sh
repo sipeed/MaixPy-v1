@@ -68,9 +68,9 @@ bin_file_path="$cwd/output/maixpy.bin"
 
 if [[ -f $bin_file_path ]]; then
     if [[ $monitor == true ]]; then
-        python3 $kflash_py -b $baud -p $device -B $Board -t $bin_file_path
+        python3 $kflash_py -b $baud -p $device -B $Board -S 1 -t $bin_file_path
     else
-        python3 $kflash_py -b $baud -p $device -B $Board $bin_file_path
+        python3 $kflash_py -b $baud -p $device -B $Board -S 1 $bin_file_path
     fi
 else
     echo "bin file not exist!!!!"
