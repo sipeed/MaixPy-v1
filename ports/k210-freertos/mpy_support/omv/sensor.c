@@ -24,6 +24,7 @@
 extern volatile dvp_t* const dvp;
 
 #define OV_CHIP_ID      (0x0A)
+#define OV_CHIP_ID2     (0x0B)
 #define ON_CHIP_ID      (0x00)
 #define MAX_XFER_SIZE   (0xFFFC*4)
 #define systick_sleep mp_hal_delay_ms
@@ -197,17 +198,28 @@ int sensro_ov_detect(sensor_t* sensor)
 			/*set MT9V034 xclk rate*/
 			/*mt9v034_init*/
         } else { // Read OV sensor ID.
-            cambus_readb(sensor->slv_addr, OV_CHIP_ID, &sensor->chip_id);
+            uint8_t tmp;
+            cambus_readb(sensor->slv_addr, OV_CHIP_ID, &tmp);
+            sensor->chip_id = tmp<<8;
+            cambus_readb(sensor->slv_addr, OV_CHIP_ID2, &tmp);
+            sensor->chip_id |= tmp;
             // Initialize sensor struct.
             switch (sensor->chip_id) {
                 case OV9650_ID:
 					/*ov9650_init*/
                     break;
                 case OV2640_ID:
+                    mp_printf(&mp_plat_print, "[MAIXPY]: find ov2640\n");
                     init_ret = ov2640_init(sensor);
                     break;
-                case OV7725_ID:
-					/*ov7725_init*/
+                // case OV7725_ID:
+				// 	/*ov7725_init*/
+                //     printk("find ov7725\r\n");
+                //     init_ret = ov7725_init(sensor);
+                //     break;
+                case OV7740_ID:
+                    mp_printf(&mp_plat_print, "[MAIXPY]: find ov7740\n");
+                    init_ret = ov7740_init(sensor);
                     break;
                 default:
                     // Sensor is not supported.
@@ -244,7 +256,6 @@ int sensro_gc_detect(sensor_t* sensor)
     }
     return 0;
 }
-
 int sensor_init_dvp()
 {
     int init_ret = 0;
@@ -255,8 +266,9 @@ int sensor_init_dvp()
 	fpioa_set_function(44, FUNC_CMOS_PWDN);
 	fpioa_set_function(43, FUNC_CMOS_VSYNC);
 	fpioa_set_function(42, FUNC_CMOS_RST);
-	fpioa_set_function(41, FUNC_SCCB_SCLK);
-	fpioa_set_function(40, FUNC_SCCB_SDA);
+    
+	// fpioa_set_function(41, FUNC_SCCB_SCLK);
+	// fpioa_set_function(40, FUNC_SCCB_SDA);
 
     /* Do a power cycle */
     DCMI_PWDN_HIGH();
@@ -266,33 +278,46 @@ int sensor_init_dvp()
     mp_hal_delay_ms(10);
 
     // Initialize the camera bus, 8bit reg
-    cambus_init(8);
+    // cambus_init(8, -2, 41, 40, 0, 0);
+    cambus_init(8, 2, 41, 40, 0, 0);
 	 // Initialize dvp interface
-	dvp_set_xclk_rate(24000000);
-	dvp_enable_burst();
-	dvp_disable_auto();
-	dvp_set_output_enable(0, 1);	//enable to AI
-	dvp_set_output_enable(1, 1);	//enable to lcd
-	dvp_set_image_format(DVP_CFG_RGB_FORMAT);
-	dvp_set_image_size(OMV_INIT_W, OMV_INIT_H);	//set QVGA default
-	dvp_set_ai_addr(MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + OMV_INIT_W * OMV_INIT_H), (uint32_t)(MAIN_FB()->pix_ai + OMV_INIT_W * OMV_INIT_H * 2));
-	dvp_set_display_addr(MAIN_FB()->pixels);
+	dvp_set_xclk_rate(OMV_XCLK_FREQUENCY);
+
     /* Some sensors have different reset polarities, and we can't know which sensor
-       is connected before initializing cambus and probing the sensor, which in turn
-       requires pulling the sensor out of the reset state. So we try to probe the
-       sensor with both polarities to determine line state. */
+    is connected before initializing cambus and probing the sensor, which in turn
+    requires pulling the sensor out of the reset state. So we try to probe the
+    sensor with both polarities to determine line state. */
     sensor.pwdn_pol = ACTIVE_HIGH;
     sensor.reset_pol = ACTIVE_HIGH;
 
     if(0 == sensro_ov_detect(&sensor)){//find ov sensor
-        mp_printf(&mp_plat_print, "[MAIXPY]: find ov sensor\n");
+        // mp_printf(&mp_plat_print, "[MAIXPY]: find ov sensor\n");
     }
     else if(0 == sensro_gc_detect(&sensor)){//find gc0328 sensor
-        mp_printf(&mp_plat_print, "[MAIXPY]: find gc3028\n");
+        // mp_printf(&mp_plat_print, "[MAIXPY]: find gc3028\n");
     }
-	
-    /* All good! */
-    return 0;
+    else
+    {
+        mp_printf(&mp_plat_print, "[MAIXPY]: no sensor\n");
+        init_ret = -1;
+    }
+    if(sensor.chip_id == OV7740_ID)
+    {
+        dvp_set_image_format(DVP_CFG_YUV_FORMAT);
+    }
+    else
+    {
+        dvp_set_image_format(DVP_CFG_RGB_FORMAT);
+    }
+    dvp_enable_burst();
+	dvp_disable_auto();
+	dvp_set_output_enable(0, 1);	//enable to AI
+	dvp_set_output_enable(1, 1);	//enable to lcd
+	dvp_set_image_size(OMV_INIT_W, OMV_INIT_H);	//set QVGA default
+	dvp_set_ai_addr(MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + OMV_INIT_W * OMV_INIT_H), (uint32_t)(MAIN_FB()->pix_ai + OMV_INIT_W * OMV_INIT_H * 2));
+	dvp_set_display_addr(MAIN_FB()->pixels);    
+
+    return init_ret;
 }
 int sensor_init_irq()
 {
@@ -322,7 +347,7 @@ int sensor_reset()
     sensor.gainceiling = 0;
     if(sensor.reset == NULL)
     {
-        mp_printf(&mp_plat_print, "[MAIXPY]: sensor reset function is null\n");
+        // mp_printf(&mp_plat_print, "[MAIXPY]: sensor reset function is null\n");
         return -1;
     }
     // Call sensor-specific reset function
@@ -332,51 +357,11 @@ int sensor_reset()
     // Disable dvp  IRQ before all cfg done 
     sensor_init_irq();
 
-	mp_printf(&mp_plat_print, "[MAIXPY]: exit sensor_reset\n");
+	// mp_printf(&mp_plat_print, "[MAIXPY]: exit sensor_reset\n");
     return 0;
 }
 
 //-------------------------------Binocular--------------------------------------
-
-int binocular_sensor_init_dvp()
-{
-	fpioa_set_function(47, FUNC_CMOS_PCLK);
-	fpioa_set_function(46, FUNC_CMOS_XCLK);
-	fpioa_set_function(45, FUNC_CMOS_HREF);
-	fpioa_set_function(44, FUNC_CMOS_PWDN);
-	fpioa_set_function(43, FUNC_CMOS_VSYNC);
-	fpioa_set_function(42, FUNC_CMOS_RST);
-	fpioa_set_function(41, FUNC_SCCB_SCLK);
-	fpioa_set_function(40, FUNC_SCCB_SDA);
-
-    /* Do a power cycle */
-    DCMI_PWDN_HIGH();
-    mp_hal_delay_ms(10);
-
-    DCMI_PWDN_LOW();
-    mp_hal_delay_ms(10);
-
-    // Initialize the camera bus, 8bit reg
-    cambus_init(8);
-	 // Initialize dvp interface
-	dvp_set_xclk_rate(24000000);
-	dvp->cmos_cfg |= DVP_CMOS_CLK_DIV(3) | DVP_CMOS_CLK_ENABLE;
-	dvp_enable_burst();
-	dvp_disable_auto();
-	dvp_set_output_enable(0, 1);	//enable to AI
-	dvp_set_output_enable(1, 1);	//enable to lcd
-	dvp_set_image_format(DVP_CFG_RGB_FORMAT);
-	dvp_set_image_size(OMV_INIT_W, OMV_INIT_H);	//set QVGA default
-	dvp_set_ai_addr(MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + OMV_INIT_W * OMV_INIT_H), (uint32_t)(MAIN_FB()->pix_ai + OMV_INIT_W * OMV_INIT_H * 2));
-	dvp_set_display_addr(MAIN_FB()->pixels);
-    /* Some sensors have different reset polarities, and we can't know which sensor
-       is connected before initializing cambus and probing the sensor, which in turn
-       requires pulling the sensor out of the reset state. So we try to probe the
-       sensor with both polarities to determine line state. */
-    sensor.pwdn_pol = ACTIVE_BINOCULAR;
-    sensor.reset_pol = ACTIVE_HIGH;
-
-}
 
 int binocular_sensor_scan()
 {
@@ -441,19 +426,26 @@ int binocular_sensor_scan()
 			/*set MT9V034 xclk rate*/
 			/*mt9v034_init*/
         } else { // Read OV sensor ID.
-            cambus_readb(sensor.slv_addr, OV_CHIP_ID, &sensor.chip_id);
+            uint8_t tmp;
+            cambus_readb(sensor.slv_addr, OV_CHIP_ID, &tmp);
+            sensor.chip_id = tmp<<8;
+            cambus_readb(sensor.slv_addr, OV_CHIP_ID2, &tmp);
+            sensor.chip_id |= tmp;
             // Initialize sensor struct.
             switch (sensor.chip_id) {
                 case OV9650_ID:
 					/*ov9650_init*/
                     break;
                 case OV2640_ID:
-                    mp_printf(&mp_plat_print, "[MAIXPY]: ov2640_init\n");
+                    mp_printf(&mp_plat_print, "[MAIXPY]: find ov2640\n");
                     init_ret = ov2640_init(&sensor);
+                    break;
+                case OV7740_ID:
+                    mp_printf(&mp_plat_print, "[MAIXPY]: find ov7740\n");
+                    init_ret = ov7740_init(sensor);
                     break;
                 case OV7725_ID:
 					/*ov7725_init*/
-                    break;
                 default:
                     // Sensor is not supported.
                     return -3;
@@ -465,21 +457,61 @@ int binocular_sensor_scan()
         // Sensor init failed.
         return -4;
     }
-
-    /* All good! */
-	mp_printf(&mp_plat_print, "[MAIXPY]: exit sensor_init\n");
     return 0;
 }
 
 int binocular_sensor_reset()
 {
 	sensor_init_fb();		//init FB
-	binocular_sensor_init_dvp();//init pins and dvp interface
+    fpioa_set_function(47, FUNC_CMOS_PCLK);
+	fpioa_set_function(46, FUNC_CMOS_XCLK);
+	fpioa_set_function(45, FUNC_CMOS_HREF);
+	fpioa_set_function(44, FUNC_CMOS_PWDN);
+	fpioa_set_function(43, FUNC_CMOS_VSYNC);
+	fpioa_set_function(42, FUNC_CMOS_RST);
+
+    /* Do a power cycle */
+    DCMI_PWDN_HIGH();
+    mp_hal_delay_ms(10);
+
+    DCMI_PWDN_LOW();
+    mp_hal_delay_ms(10);
+
+    // Initialize the camera bus, 8bit reg
+    cambus_init(8, -2, 41, 40, 0, 0);
+	 // Initialize dvp interface
+	dvp_set_xclk_rate(OMV_XCLK_FREQUENCY);
+	dvp->cmos_cfg |= DVP_CMOS_CLK_DIV(3) | DVP_CMOS_CLK_ENABLE;
+
     if(0 != binocular_sensor_scan())//scan I2C, do ov2640 init
     {
         mp_printf(&mp_plat_print, "[MAIXPY]: scan sensor error\n");
         return -1;
     }
+    if(sensor.chip_id == OV7740_ID)
+    {
+        dvp_set_image_format(DVP_CFG_YUV_FORMAT);
+    }
+    else
+    {
+        dvp_set_image_format(DVP_CFG_RGB_FORMAT);
+    }
+
+	dvp_enable_burst();
+	dvp_disable_auto();
+	dvp_set_output_enable(0, 1);	//enable to AI
+	dvp_set_output_enable(1, 1);	//enable to lcd
+	dvp_set_image_size(OMV_INIT_W, OMV_INIT_H);	//set QVGA default
+	dvp_set_ai_addr(MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + OMV_INIT_W * OMV_INIT_H), (uint32_t)(MAIN_FB()->pix_ai + OMV_INIT_W * OMV_INIT_H * 2));
+	dvp_set_display_addr(MAIN_FB()->pixels);
+    /* Some sensors have different reset polarities, and we can't know which sensor
+       is connected before initializing cambus and probing the sensor, which in turn
+       requires pulling the sensor out of the reset state. So we try to probe the
+       sensor with both polarities to determine line state. */
+    sensor.pwdn_pol = ACTIVE_BINOCULAR;
+    sensor.reset_pol = ACTIVE_HIGH;
+
+
     // Reset the sesnor state
     sensor.sde         = 0;
     sensor.pixformat   = 0;
@@ -516,7 +548,7 @@ int binocular_sensor_reset()
     // Disable dvp  IRQ before all cfg done 
     sensor_init_irq();
 
-	mp_printf(&mp_plat_print, "[MAIXPY]: exit sensor_reset\n");
+	// mp_printf(&mp_plat_print, "[MAIXPY]: exit sensor_reset\n");
     return 0;
 }
 

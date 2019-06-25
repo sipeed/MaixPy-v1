@@ -157,8 +157,8 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_PY_UTIME_MP_HAL             (1)
 
 //thread todo
-#define MICROPY_PY_THREAD                   (1)
-#define MICROPY_PY_THREAD_GIL               (1)
+#define MICROPY_PY_THREAD                   (0)
+#define MICROPY_PY_THREAD_GIL               (0)
 #define MICROPY_PY_THREAD_GIL_VM_DIVISOR    (32)
 
 #define MICROPY_FATFS_ENABLE_LFN            (1)

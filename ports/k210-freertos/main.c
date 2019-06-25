@@ -526,8 +526,8 @@ int main()
 	printk("[MAIXPY]cpu:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_CPU));
 	printk("[MAIXPY]kpu:freq:%d\r\n",sysctl_clock_get_freq(SYSCTL_CLOCK_AI));
 	sysctl_clock_enable(SYSCTL_CLOCK_AI);
-	sysctl_set_power_mode(SYSCTL_POWER_BANK6,SYSCTL_POWER_V18);
-	sysctl_set_power_mode(SYSCTL_POWER_BANK7,SYSCTL_POWER_V18);
+	sysctl_set_power_mode(SYSCTL_POWER_BANK6, SYSCTL_POWER_V18);
+	sysctl_set_power_mode(SYSCTL_POWER_BANK7, SYSCTL_POWER_V18);
     sysctl_enable_irq();
 	rtc_init();
 	rtc_timer_set(2019,1, 1,0, 0, 0);

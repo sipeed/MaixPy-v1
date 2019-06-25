@@ -13,8 +13,9 @@
 #include "imlib.h"
 
 #define OV9650_ID       (0x96)
-#define OV2640_ID       (0x26)
+#define OV2640_ID       (0x2642)
 #define OV7725_ID       (0x77)
+#define OV7740_ID       (0x7742)
 #define MT9V034_ID      (0x13)
 #define LEPTON_ID       (0x54)
 
@@ -61,11 +62,12 @@ typedef enum {
 } framesize_t;
 
 typedef enum {
-    FRAMERATE_2FPS =0x9F,
-    FRAMERATE_8FPS =0x87,
-    FRAMERATE_15FPS=0x83,
-    FRAMERATE_30FPS=0x81,
-    FRAMERATE_60FPS=0x80,
+    FRAMERATE_2FPS ,
+    FRAMERATE_8FPS ,
+    FRAMERATE_15FPS,
+    FRAMERATE_25FPS,
+    FRAMERATE_30FPS,
+    FRAMERATE_60FPS,
 } framerate_t;
 
 typedef enum {
@@ -110,7 +112,7 @@ typedef bool (*streaming_cb_t)(image_t *image);
 
 typedef struct _sensor sensor_t;
 typedef struct _sensor {
-    uint8_t  chip_id;           // Sensor ID.
+    uint16_t chip_id;           // Sensor ID.
     uint8_t  slv_addr;          // Sensor I2C slave address.
     uint16_t gs_bpp;            // Grayscale bytes per pixel.
     uint32_t hw_flags;          // Hardware flags (clock polarities/hw capabilities)

@@ -9,7 +9,7 @@
 #ifndef __CAMBUS_H__
 #define __CAMBUS_H__
 #include <stdint.h>
-int cambus_init(uint8_t reg_wid);
+int cambus_init(uint8_t reg_wid, int8_t i2c, int8_t pin_clk, int8_t pin_sda, uint8_t gpio_clk, uint8_t gpio_sda);
 int cambus_scan();
 int cambus_scan_gc0328(void);
 int cambus_readb(uint8_t slv_addr, uint8_t reg_addr,  uint8_t *reg_data);

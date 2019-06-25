@@ -578,8 +578,7 @@ static const uint8_t saturation_regs[NUM_SATURATION_LEVELS + 1][5] = {
 };
 
 static int reset(sensor_t *sensor)
-{
-	mp_printf(&mp_plat_print, "[MAIXPY]: %s | sensor->slv_addr = %x\n",__func__,sensor->slv_addr);
+{	
     int i=0;
     const uint8_t (*regs)[2];
 
@@ -725,7 +724,7 @@ static int set_framesize(sensor_t *sensor, framesize_t framesize)
 
 static int set_framerate(sensor_t *sensor, framerate_t framerate)
 {
-    return 0;
+    return -1;
 }
 
 static int set_contrast(sensor_t *sensor, int level)

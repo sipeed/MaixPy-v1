@@ -184,34 +184,35 @@ static mp_obj_t py_sensor_set_pixformat(mp_obj_t pixformat) {
     return mp_const_true;
 }
 
-//static mp_obj_t py_sensor_set_framerate(mp_obj_t framerate) {
-//    framerate_t fr;
-//    switch (mp_obj_get_int(framerate)) {
-//        case 2:
-//            fr = FRAMERATE_2FPS;
-//            break;
-//        case 8:
-//            fr = FRAMERATE_8FPS;
-//            break;
-//        case 15:
-//            fr = FRAMERATE_15FPS;
-//            break;
-//        case 30:
-//            fr = FRAMERATE_30FPS;
-//            break;
-//        case 60:
-//            fr = FRAMERATE_60FPS;
-//            break;
-//        default:
-//            nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "Invalid framerate"));
-//            break;
-//    }
-
-//    if (sensor_set_framerate(fr) != 0) {
-//        return mp_const_false;
-//    }
-//    return mp_const_true;
-//}
+static mp_obj_t py_sensor_set_framerate(mp_obj_t framerate) {
+    framerate_t fr;
+    switch (mp_obj_get_int(framerate)) {
+        case 2:
+            fr = FRAMERATE_2FPS;
+            break;
+        case 8:
+            fr = FRAMERATE_8FPS;
+            break;
+        case 15:
+            fr = FRAMERATE_15FPS;
+            break;
+        case 25:
+            fr = FRAMERATE_25FPS;
+            break;
+        case 30:
+            fr = FRAMERATE_30FPS;
+            break;
+        case 60:
+            fr = FRAMERATE_60FPS;
+            break;
+        default:
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "Invalid framerate"));
+            break;
+    }
+    if(sensor_set_framerate(fr) != 0)
+        nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "Fail"));
+   return mp_const_none;
+}
 
 static mp_obj_t py_sensor_set_framesize(mp_obj_t framesize) {
     if (sensor_set_framesize(mp_obj_get_int(framesize)) != 0) {
@@ -450,7 +451,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_sensor_get_id_obj,              py_sensor_ge
 //STATIC MP_DEFINE_CONST_FUN_OBJ_3(py_sensor_alloc_extra_fb_obj,      py_sensor_alloc_extra_fb);
 //STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_sensor_dealloc_extra_fb_obj,    py_sensor_dealloc_extra_fb);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_set_pixformat_obj,       py_sensor_set_pixformat);
-//STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_set_framerate_obj,       py_sensor_set_framerate);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_set_framerate_obj,       py_sensor_set_framerate);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_set_framesize_obj,       py_sensor_set_framesize);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_set_windowing_obj,         py_sensor_set_windowing);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_set_gainceiling_obj,     py_sensor_set_gainceiling);
