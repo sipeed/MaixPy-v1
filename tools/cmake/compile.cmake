@@ -2,11 +2,15 @@
 # Convert to cmake path(for Windows)
 file(TO_CMAKE_PATH "${SDK_PATH}" SDK_PATH)
 
-message(STATUS "SDK_PATH:${SDK_PATH}")
-
 get_filename_component(parent_dir ${CMAKE_PARENT_LIST_FILE} DIRECTORY)
 get_filename_component(current_dir ${CMAKE_CURRENT_LIST_FILE} DIRECTORY)
 get_filename_component(parent_dir_name ${parent_dir} NAME)
+
+# Set project dir, so just projec can include this cmake file!!!
+set(PROJECT_SOURCE_DIR ${parent_dir})
+set(PROJECT_BINARY_DIR "${parent_dir}/build")
+message(STATUS "SDK_PATH:${SDK_PATH}")
+message(STATUS "PROJECT_PATH:${PROJECT_SOURCE_DIR}")
 
 function(register_component)
     get_filename_component(component_dir ${CMAKE_CURRENT_LIST_FILE} DIRECTORY)
@@ -96,9 +100,11 @@ endfunction(get_python python)
 
 
 macro(project name)
+    
     get_filename_component(current_dir ${CMAKE_CURRENT_LIST_FILE} DIRECTORY)
     set(PROJECT_SOURCE_DIR ${current_dir})
     set(PROJECT_BINARY_DIR "${current_dir}/build")
+
     # Find components in SDK's components folder, register components
     file(GLOB component_dirs ${SDK_PATH}/components/*)
     foreach(component_dir ${component_dirs})
@@ -113,7 +119,7 @@ macro(project name)
             endif()
             if(EXISTS ${component_dir}/config_defaults.mk)
                 message(STATUS "Find component defaults config of ${base_dir}")
-                list(APPEND kconfig_defaults_files ${component_dir}/config_defaults.mk)
+                list(APPEND kconfig_defaults_files_args --defaults "${component_dir}/config_defaults.mk")
             endif()
         endif()
     endforeach()
@@ -135,7 +141,7 @@ macro(project name)
             endif()
             if(EXISTS ${component_dir}/config_defaults.mk)
                 message(STATUS "Find component defaults config of ${base_dir}")
-                list(APPEND kconfig_defaults_files ${component_dir}/config_defaults.mk)
+                list(APPEND kconfig_defaults_files_args --defaults "${component_dir}/config_defaults.mk")
             endif()
         endif()
     endforeach()
@@ -143,8 +149,12 @@ macro(project name)
         message(FATAL_ERROR "=================\nCan not find main component(folder) in project folder!!\n=================")
     endif()
     if(EXISTS ${PROJECT_SOURCE_DIR}/config_defaults.mk)
-        message(STATUS "Find project defaults config")
-        list(APPEND kconfig_defaults_files ${PROJECT_SOURCE_DIR}/config_defaults.mk)
+        message(STATUS "Find project defaults config(config_defaults.mk)")
+        list(APPEND kconfig_defaults_files_args --defaults "${PROJECT_SOURCE_DIR}/config_defaults.mk")
+    endif()
+    if(EXISTS ${PROJECT_SOURCE_DIR}/.config.mk)
+        message(STATUS "Find project defaults config(config.mk)")
+        list(APPEND kconfig_defaults_files_args --defaults "${PROJECT_SOURCE_DIR}/.config.mk")
     endif()
 
     # Generate config file from Kconfig
@@ -153,21 +163,24 @@ macro(project name)
         message(FATAL_ERROR "python not found, please install python firstly(python3 recommend)!")
     endif()
     message(STATUS "python command: ${python}, version: ${python_info_str}")
+    string(REPLACE ";" " " components_kconfig_files "${kconfig_defaults_files_args}")
     string(REPLACE ";" " " components_kconfig_files "${components_kconfig_files}")
     set(generate_config_cmd ${python}  ${SDK_PATH}/tools/kconfig/genconfig.py
-                            --kconfig ${SDK_PATH}/Kconfig
-                            --defaults ${kconfig_defaults_files}
+                            --kconfig "${SDK_PATH}/Kconfig"
+                            ${kconfig_defaults_files_args}
                             --menuconfig False
-                            --env "COMPONENT_KCONFIGS=${components_kconfig_files}"
+                            --env "SDK_PATH=${SDK_PATH}"
+                            --env "PROJECT_PATH=${PROJECT_SOURCE_DIR}"
                             --output makefile ${PROJECT_BINARY_DIR}/config/global_config.mk
                             --output cmake  ${PROJECT_BINARY_DIR}/config/global_config.cmake
                             --output header ${PROJECT_BINARY_DIR}/config/global_config.h
                             )
     set(generate_config_cmd2 ${python}  ${SDK_PATH}/tools/kconfig/genconfig.py
-                            --kconfig ${SDK_PATH}/Kconfig
-                            --defaults ${kconfig_defaults_files}
+                            --kconfig "${SDK_PATH}/Kconfig"
+                            ${kconfig_defaults_files_args}
                             --menuconfig True
-                            --env "COMPONENT_KCONFIGS=${components_kconfig_files}"
+                            --env "SDK_PATH=${SDK_PATH}"
+                            --env "PROJECT_PATH=${PROJECT_SOURCE_DIR}"
                             --output makefile ${PROJECT_BINARY_DIR}/config/global_config.mk
                             --output cmake  ${PROJECT_BINARY_DIR}/config/global_config.cmake
                             --output header ${PROJECT_BINARY_DIR}/config/global_config.h
@@ -180,26 +193,42 @@ macro(project name)
     # Include confiurations
     set(global_config_dir "${PROJECT_BINARY_DIR}/config")
     include(${global_config_dir}/global_config.cmake)
+    if(WIN32)
+        set(EXT ".exe")
+    else()
+        set(EXT "")
+    endif()
 
     # Config toolchain
     if(CONFIG_TOOLCHAIN_PATH)
+        if(WIN32)
+            file(TO_CMAKE_PATH ${CONFIG_TOOLCHAIN_PATH} CONFIG_TOOLCHAIN_PATH)
+        endif()
+        message(STATUS "TOOLCHAIN_PATH set error:${CONFIG_TOOLCHAIN_PATH}")
         if(NOT IS_DIRECTORY ${CONFIG_TOOLCHAIN_PATH})
             message(FATAL_ERROR "TOOLCHAIN_PATH set error:${CONFIG_TOOLCHAIN_PATH}")
         endif()
-        if(WIN32)
-            file(TO_CMAKE_PATH ${CONFIG_TOOLCHAIN_PATH} TOOLCHAIN_PATH)
-            set(CMAKE_C_COMPILER ${CONFIG_TOOLCHAIN_PATH}/${CONFIG_TOOLCHAIN_PREFIX}gcc.exe)
-            set(CMAKE_CXX_COMPILER ${CONFIG_TOOLCHAIN_PATH}/${CONFIG_TOOLCHAIN_PREFIX}g++.exe)
-            set(CMAKE_ASM_COMPILER ${CONFIG_TOOLCHAIN_PATH}/${CONFIG_TOOLCHAIN_PREFIX}gcc.exe)
-        else()
-            set(CMAKE_C_COMPILER ${CONFIG_TOOLCHAIN_PATH}/${CONFIG_TOOLCHAIN_PREFIX}gcc)
-            set(CMAKE_CXX_COMPILER ${CONFIG_TOOLCHAIN_PATH}/${CONFIG_TOOLCHAIN_PREFIX}g++)
-            set(CMAKE_ASM_COMPILER ${CONFIG_TOOLCHAIN_PATH}/${CONFIG_TOOLCHAIN_PREFIX}gcc)
-        endif()
+        set(CMAKE_C_COMPILER "${CONFIG_TOOLCHAIN_PATH}/${CONFIG_TOOLCHAIN_PREFIX}gcc${EXT}")
+        set(CMAKE_CXX_COMPILER "${CONFIG_TOOLCHAIN_PATH}/${CONFIG_TOOLCHAIN_PREFIX}g++${EXT}")
+        set(CMAKE_ASM_COMPILER "${CONFIG_TOOLCHAIN_PATH}/${CONFIG_TOOLCHAIN_PREFIX}gcc${EXT}")
+        set(CMAKE_LINKER "${CONFIG_TOOLCHAIN_PATH}/${CONFIG_TOOLCHAIN_PREFIX}ld${EXT}")
+    else()
+        set(CMAKE_C_COMPILER "gcc${EXT}")
+        set(CMAKE_CXX_COMPILER "g++${EXT}")
+        set(CMAKE_ASM_COMPILER "gcc${EXT}")
+        set(CMAKE_LINKER  "ld${EXT}")
     endif()
+
+    set(CMAKE_C_COMPILER_WORKS 1)
+    set(CMAKE_CXX_COMPILER_WORKS 1)
+
+    set(CMAKE_C_LINK_EXECUTABLE "<CMAKE_C_COMPILER> <FLAGS> <CMAKE_C_LINK_FLAGS> <OBJECTS> -o <TARGET>.elf <LINK_LIBRARIES>")
+    set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <OBJECTS> -o <TARGET>.elf <LINK_LIBRARIES>")
+    set(CMAKE_SYSTEM_NAME Generic) 
 
     # Declare project
     _project(${name} ASM C CXX)
+
 
     # Add dependence: update configfile, append time and git info for global config header file
     # we didn't generate build info for cmake and makefile for if we do, it will always rebuild cmake
@@ -229,6 +258,9 @@ macro(project name)
     add_custom_target(menuconfig COMMAND ${generate_config_cmd2})
 
     # Add main component(lib)
-    target_link_libraries(${name} main)
+    target_link_libraries(${name} main) 
 endmacro()
+
+include(${SDK_PATH}/tools/cmake/compile_flags.cmake)
+include(${PROJECT_SOURCE_DIR}/compile/compile_flags.cmake)
 

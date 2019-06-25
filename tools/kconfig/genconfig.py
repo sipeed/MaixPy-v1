@@ -1,3 +1,8 @@
+#
+# @file from https://github.com/Neutree/c_cpp_project_framework
+# @author neucrack
+#
+
 import argparse
 import os, sys
 
@@ -65,11 +70,12 @@ parser.add_argument('--kconfig',
                     required=None)
 
 parser.add_argument('--defaults',
+                    action='append',
+                    default=[],
                     help='Optional project defaults file. '
                             'Multiple files can be specified using multiple --defaults arguments.',
-                    nargs='?',
-                    default=[],
-                    action='append')
+                    metavar="FILENAME"
+                    )
 
 parser.add_argument('--output', nargs=2, action='append',
                         help='Write output file (format and output filename)',
@@ -80,7 +86,8 @@ parser.add_argument('--env',
                     action='append',
                     default=[],
                     help='Environment to set when evaluating the config file', 
-                    metavar='VAR=VALUE')
+                    metavar='VAR=VALUE'
+                    )
 
 parser.add_argument("--menuconfig",
                     help="Open menuconfig GUI interface",

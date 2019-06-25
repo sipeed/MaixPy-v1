@@ -12,7 +12,8 @@ menu "Toolchain configuration"
 endmenu
 
 menu "Components configuration"
-	source "$(COMPONENT_KCONFIGS)"
+	osource "${SDK_PATH}/components/*/Kconfig"
+	osource "${PROJECT_PATH}/*/Kconfig"
 endmenu
 
 
