@@ -1,7 +1,7 @@
 ############### Add include ###################
-list(APPEND ADD_INCLUDE "include"
-    )
-list(APPEND ADD_PRIVATE_INCLUDE "")
+# list(APPEND ADD_INCLUDE "include"
+#     )
+# list(APPEND ADD_PRIVATE_INCLUDE "")
 ###############################################
 
 ############ Add source files #################
