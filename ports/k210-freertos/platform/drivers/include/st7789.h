@@ -88,7 +88,7 @@
 #define RST_GPIONUM             (30)
 
 #ifdef MAIXPY_M5STICK
-    #define SPI_CHANNEL             1
+    #define SPI_CHANNEL             0
 #else
     #define SPI_CHANNEL             0
 #endif

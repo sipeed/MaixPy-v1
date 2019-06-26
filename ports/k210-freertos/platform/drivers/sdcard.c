@@ -409,11 +409,19 @@ uint8_t sd_init(void)
 {
 	uint8_t frame[10], index, result;
 	cardinfo.active = 0;
-	fpioa_set_function(27, FUNC_SPI1_SCLK);
-    fpioa_set_function(28, FUNC_SPI1_D0);
-    fpioa_set_function(26, FUNC_SPI1_D1);
-	fpioa_set_function(29, FUNC_GPIOHS0 + SD_CS_PIN);
-    fpioa_set_function(25, FUNC_SPI0_SS0 + SD_SS);
+	#ifdef MAIXPY_M5STICK
+		fpioa_set_function(30, FUNC_SPI1_SCLK);
+		fpioa_set_function(33, FUNC_SPI1_D0);
+		fpioa_set_function(31, FUNC_SPI1_D1);
+		fpioa_set_function(32, FUNC_GPIOHS0 + SD_CS_PIN);
+		// fpioa_set_function(25, FUNC_SPI0_SS0 + SD_SS);
+	#else
+		fpioa_set_function(27, FUNC_SPI1_SCLK);
+		fpioa_set_function(28, FUNC_SPI1_D0);
+		fpioa_set_function(26, FUNC_SPI1_D1);
+		fpioa_set_function(29, FUNC_GPIOHS0 + SD_CS_PIN);
+		// fpioa_set_function(25, FUNC_SPI0_SS0 + SD_SS);
+	#endif
 	/*!< Initialize SD_SPI */
 	sd_lowlevel_init(0);
 	/*!< SD chip select high */
@@ -452,7 +460,10 @@ uint8_t sd_init(void)
 		result = sd_get_response();
 		sd_end_cmd();
 		if (result != 0x01)
+		{
+			mp_printf(&mp_plat_print, "SD_CMD55 ack %X\r\n", result);
 			return 0xFF;
+		}
 		sd_send_cmd(SD_ACMD41, 0x40000000, 0);
 		result = sd_get_response();
 		sd_end_cmd();

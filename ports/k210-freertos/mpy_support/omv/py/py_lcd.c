@@ -135,9 +135,9 @@ static mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_
 			#ifdef MAIXPY_M5STICK
 				fpioa_set_function(21, FUNC_GPIOHS0 + RST_GPIONUM);
 				fpioa_set_function(20, FUNC_GPIOHS0 + DCX_GPIONUM);
-				fpioa_set_function(22, FUNC_SPI1_SS0+SPI_SLAVE_SELECT);
-				fpioa_set_function(19, FUNC_SPI1_SCLK);
-				fpioa_set_function(18, FUNC_SPI1_D0);
+				fpioa_set_function(22, FUNC_SPI0_SS0+SPI_SLAVE_SELECT);
+				fpioa_set_function(19, FUNC_SPI0_SCLK);
+				fpioa_set_function(18, FUNC_SPI0_D0);
 				lcd_init(args[ARG_freq].u_int, false, 52, 40, true);
 			#else
 				// backlight_init = false;
@@ -154,6 +154,8 @@ static mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_
 			mp_raise_ValueError("type error");
 			break;
     }
+	rotation = 0;
+	invert = 0;
     return mp_const_none;
 
 }

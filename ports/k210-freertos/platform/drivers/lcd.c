@@ -91,7 +91,7 @@ void lcd_set_direction(lcd_dir_t dir)
         lcd_ctl.start_offset_w = lcd_ctl.start_offset_w0;
         lcd_ctl.start_offset_h = lcd_ctl.start_offset_h0;
     }
-
+    
     tft_write_command(MEMORY_ACCESS_CTL);
     tft_write_byte((uint8_t *)&dir, 1);
 }

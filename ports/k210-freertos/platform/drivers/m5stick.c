@@ -42,7 +42,7 @@ bool m5stick_init()
     if(ret!=0)
         goto end;
     cmd[0] = 0x28;
-    cmd[1] = 0xA0; //VDD2.8V net: LDO2 2.8V,  VDD 1.5V net: LDO3 1.8V
+    cmd[1] = 0xF0; //VDD2.8V net: LDO2 3.3V,  VDD 1.5V net: LDO3 1.8V
     ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2, 10);
     if(ret!=0)
         goto end;

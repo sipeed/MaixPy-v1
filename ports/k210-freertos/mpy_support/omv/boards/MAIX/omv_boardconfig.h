@@ -58,7 +58,11 @@
 
 // Sensor external clock timer frequency.
 // #define OMV_XCLK_FREQUENCY      (12000000)
+#ifdef MAIXPY_M5STICK
+#define OMV_XCLK_FREQUENCY      (12000000)
+#else
 #define OMV_XCLK_FREQUENCY      (24000000)
+#endif
 // Sensor PLL register value.
 #define OMV_OV7725_PLL_CONFIG   (0x41)  // x4
 #define OMV_OV7725_BANDING      (0x3F)  //TODO:
