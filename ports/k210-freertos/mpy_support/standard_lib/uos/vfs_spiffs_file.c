@@ -200,8 +200,20 @@ STATIC const mp_arg_t file_open_args[] = {
 STATIC mp_obj_t file_open(spiffs_user_mount_t *vfs, const mp_obj_type_t *type, mp_arg_val_t *args) {
 	const char* file_name = mp_obj_str_get_str(args[0].u_obj);
 	int i = 0;
-	while(file_name[i] == '/')i++;
-	char* open_name = &file_name[i];
+	// while(file_name[i] == '/')i++;
+    char* open_name = file_name;
+    // printk("name:%s\r\n", open_name);
+    if(open_name[0] == '.' && open_name[1] == '/')
+    {
+        memmove(open_name, open_name+1, strlen(open_name));
+    }
+    else if(open_name[0] != '/')
+    {
+        open_name = m_new(char, 128);
+        memset(open_name, 0, 128);
+        open_name[0] = '/';
+        strcat(open_name, file_name);
+    }
     const char *mode_s = mp_obj_str_get_str(args[1].u_obj);
     uint32_t mode = 0;
     // TODO make sure only one of r, w, x, a, and b, t are specified

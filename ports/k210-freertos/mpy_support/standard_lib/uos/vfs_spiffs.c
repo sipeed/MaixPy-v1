@@ -167,8 +167,10 @@ STATIC mp_obj_t mp_vfs_spiffs_ilistdir_it_iternext(mp_obj_t self_in) {
         // make 4-tuple with info about this entry
         mp_obj_tuple_t *t = MP_OBJ_TO_PTR(mp_obj_new_tuple(4, NULL));
         if (self->is_str) {
+            while(*fn == '/')fn++;
             t->items[0] = mp_obj_new_str(fn, strlen(fn));
         } else {
+            while(*fn == '/')fn++;
             t->items[0] = mp_obj_new_bytes((const byte*)fn, strlen(fn));
         }
         if (de.type == SPIFFS_TYPE_DIR) {
@@ -247,7 +249,7 @@ STATIC mp_obj_t spiffs_vfs_remove(mp_obj_t vfs_in, mp_obj_t path_in) {
 	spiffs_user_mount_t* vfs = MP_OBJ_TO_PTR(vfs_in);
 	const char *path = mp_obj_str_get_str(path_in);
     int i = 0;
-	while(path[i] == '/')i++;
+	// while(path[i] == '/')i++;
 	char* open_name = &path[i];
 	int res = SPIFFS_remove(&vfs->fs, open_name); 
     if (res != SPIFFS_OK) {
@@ -272,10 +274,10 @@ STATIC mp_obj_t spiffs_vfs_rename(mp_obj_t vfs_in, mp_obj_t path_in, mp_obj_t pa
     const char *old_path = mp_obj_str_get_str(path_in);
     const char *new_path = mp_obj_str_get_str(path_out);
     int i = 0;
-	while(old_path[i] == '/')i++;
+	// while(old_path[i] == '/')i++;
 	char* old_name = &old_path[i];
     i = 0;
-	while(new_path[i] == '/')i++;
+	// while(new_path[i] == '/')i++;
 	char* new_name = &new_path[i];    
     int res = SPIFFS_rename(&self->fs, old_name, new_name);
     if (res == SPIFFS_ERR_CONFLICTING_NAME){
@@ -356,7 +358,7 @@ STATIC mp_obj_t spiffs_vfs_stat(mp_obj_t vfs_in, mp_obj_t path_in) {
 		fno.type = SPIFFS_TYPE_DIR;
     } else {
         int res = 0;
-        while(path[res] == '/')res++;
+        // while(path[res] == '/')res++;
 	    char* open_name = &path[res];
         res = SPIFFS_stat(&self->fs, open_name, &fno);
         if (res != SPIFFS_OK) {
