@@ -13,10 +13,16 @@ parser = argparse.ArgumentParser(description='build tool', prog=os.path.basename
 
 parser.add_argument('--toolchain',
                         help='toolchain path ( absolute path )',
+                        metavar='PATH',
                         default="")
 
 parser.add_argument('--toolchain-prefix',
                         help='toolchain prefix(e.g. mips-elf-',
+                        metavar='PREFIX',
+                        default="")
+parser.add_argument('--verbose',
+                        help='for build command, execute `make VERBOSE=1` to compile',
+                        metavar="BOOL",
                         default="")
 cmd_help ='''project command'''
 parser.add_argument("cmd",
@@ -76,7 +82,10 @@ elif args.cmd == "build":
         res = subprocess.call(["cmake", "-G", gen_project_type, ".."])
         if res != 0:
             exit(1)
-    res = subprocess.call(["make", "-j{}".format(cpu_count())])
+    if args.verbose != "" and args.verbose != "0" and args.verbose.lower() != "false":
+        res = subprocess.call(["make", "VERBOSE=1"])
+    else:
+        res = subprocess.call(["make", "-j{}".format(cpu_count())])
     if res != 0:
         exit(1)
 
