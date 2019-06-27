@@ -16,6 +16,19 @@ try:
     sdk_path = sdk_path
 except Exception:
     sdk_path = os.path.abspath("../../")
+project_path = sys.path[0]
+project_name = ""
+project_cmake_path = project_path+"/CMakeLists.txt"
+project_cmake_content = ""
+with open(project_cmake_path) as f:
+    project_cmake_content = f.read()
+match = re.findall(r"{}(.*){}".format(r"project\(", r"\)"), project_cmake_content, re.MULTILINE|re.DOTALL)
+if len(match) != 0:
+    project_name = match[0]
+    print(project_name)
+if project_name == "":
+    print("[ERROR] Can not find project name in {}".format(project_cmake_path))
+    exit(1)
 
 flash_dir = sdk_path+"/tools/flash"
 if os.path.exists(flash_dir):
