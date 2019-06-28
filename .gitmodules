@@ -7,3 +7,6 @@
 [submodule "tools/flash/kflash_py"]
 	path = tools/flash/kflash_py
 	url = https://github.com/sipeed/kflash.py.git
+[submodule "components/micropython/core"]
+	path = components/micropython/core
+	url = https://github.com/micropython/micropython.git
