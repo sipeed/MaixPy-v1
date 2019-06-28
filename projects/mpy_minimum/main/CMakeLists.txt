@@ -12,7 +12,7 @@ list(APPEND ADD_SRCS  "src/main.c"
 ###############################################
 
 ###### Add required/dependent components ######
-list(APPEND ADD_REQUIREMENTS micropython kendryte_sdk)
+list(APPEND ADD_REQUIREMENTS micropython)
 ###############################################
 
 ############ Add static libs ##################

@@ -128,6 +128,8 @@ elif project_args.cmd == "clean":
 elif project_args.cmd == "distclean":
     print("clean now")
     if os.path.exists("build"):
+        os.chdir("build")
+        subprocess.call(["make", "clean"])
         shutil.rmtree("build")
     print("clean complete")
 elif project_args.cmd == "menuconfig":
