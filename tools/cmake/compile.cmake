@@ -253,7 +253,11 @@ macro(project name)
     foreach(component_dir ${components_dirs})
         get_filename_component(base_dir ${component_dir} NAME)
         add_subdirectory(${component_dir} ${base_dir})
-        add_dependencies(${base_dir} update_build_info) # add build info dependence
+        if(TARGET ${base_dir})
+            add_dependencies(${base_dir} update_build_info) # add build info dependence
+        else()
+            message(STATUS "component ${base_dir} not enabled")
+        endif()
     endforeach()
     
 

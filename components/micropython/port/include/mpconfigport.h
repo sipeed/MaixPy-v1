@@ -55,7 +55,8 @@
 #define MICROPY_PY_SYS              (0)
 #define MICROPY_MODULE_FROZEN_MPY   (1)
 #define MICROPY_CPYTHON_COMPAT      (0)
-#define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_NONE)
+#define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_MPZ)
+#define MPZ_DIG_SIZE                (16)
 #define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_NONE)
 
 // type definitions for the specific machine

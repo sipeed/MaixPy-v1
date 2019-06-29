@@ -1,7 +1,6 @@
 
-menu "Toolchain configuration"
-	config MICROPYTHON_ENABLE
-		bool "enbale micropython module"
-		default false
-endmenu
+
+config MICROPYTHON_ENABLE
+	bool "enbale micropython module"
+	default n
 

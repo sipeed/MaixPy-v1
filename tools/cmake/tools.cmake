@@ -4,7 +4,7 @@
 function(prepend out prefix)
     set(listVar "")
     foreach(f ${ARGN})
-        list(APPEND listVar "${prefix}/${f}")
+        list(APPEND listVar "${prefix}${f}")
     endforeach(f)
     set(${out} "${listVar}" PARENT_SCOPE)
 endfunction()

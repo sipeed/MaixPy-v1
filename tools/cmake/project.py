@@ -130,6 +130,7 @@ elif project_args.cmd == "distclean":
     if os.path.exists("build"):
         os.chdir("build")
         subprocess.call(["make", "clean"])
+        os.chdir("..")
         shutil.rmtree("build")
     print("clean complete")
 elif project_args.cmd == "menuconfig":
