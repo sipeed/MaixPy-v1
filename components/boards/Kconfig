@@ -1,0 +1,14 @@
+
+menu "Board config"
+
+	choice BOARD
+		bool "Select board"
+		default BOARD_MAIX
+		config BOARD_MAIX
+			bool "Select board Maix"
+
+		config BOARD_M5STICK
+			bool "Select board m5stick"
+	endchoice
+endmenu
+

@@ -1,5 +1,5 @@
 
-if(CONFIG_KENDRYTE_SDK_ENABLE)
+if(CONFIG_COMPONENT_KENDRYTE_SDK_ENABLE)
     ################# Add include #################
     list(APPEND ADD_INCLUDE "include"
                             "kendryte-standalone-sdk/lib/bsp/include"
@@ -9,7 +9,7 @@ if(CONFIG_KENDRYTE_SDK_ENABLE)
                             "kendryte-standalone-sdk/lib/freertos/portable"
                             "kendryte-standalone-sdk/lib/utils/include"
         )
-    list(APPEND ADD_PRIVATE_INCLUDE "include_private")
+    # list(APPEND ADD_PRIVATE_INCLUDE "include_private")
     ###############################################
 
     ############## Add source files ###############
@@ -17,6 +17,7 @@ if(CONFIG_KENDRYTE_SDK_ENABLE)
     aux_source_directory("kendryte-standalone-sdk/lib/drivers" ADD_SRCS_DRIVER)
     aux_source_directory("kendryte-standalone-sdk/lib/freertos" ADD_SRCS_FREERTOS)
     aux_source_directory("kendryte-standalone-sdk/lib/freertos/portable" ADD_SRCS_FREERTOS2)
+    aux_source_directory("src" ADD_SRCS_API)
     set(ADD_ASM_SRCS "kendryte-standalone-sdk/lib/bsp/crt.S"
                     "kendryte-standalone-sdk/lib/freertos/portable/portasm.S"
                         )
@@ -24,6 +25,7 @@ if(CONFIG_KENDRYTE_SDK_ENABLE)
                         ${ADD_SRCS_DRIVER}
                         ${ADD_SRCS_FREERTOS}
                         ${ADD_SRCS_FREERTOS2}
+                        ${ADD_SRCS_API}
                         ${ADD_ASM_SRCS}
                             )
     # list(REMOVE_ITEM COMPONENT_SRCS "src/test.c")
@@ -36,7 +38,9 @@ if(CONFIG_KENDRYTE_SDK_ENABLE)
     ###############################################
 
     ############ Add static libs ##################
-    # list(APPEND ADD_STATIC_LIB "lib/libtest.a")
+    list(APPEND ADD_STATIC_LIB "libs/lib_mic.a"
+                               "libs/lib_sipeed_kpu.a"
+                               )
     ###############################################
 
     add_definitions(-DCONFIG_LOG_LEVEL=${CONFIG_SDK_LOG_LEVEL}

@@ -18,3 +18,14 @@ function(abspath out)
     endforeach(f)
     set(${out} "${listVar}" PARENT_SCOPE)
 endfunction()
+
+
+function(append_srcs_dir out_var)
+    set(listVar ${${out_var}})
+    foreach(f ${ARGN})
+        aux_source_directory(${f} tmp)
+        list(APPEND listVar ${tmp})
+    endforeach(f)
+    set(${out_var} "${listVar}" PARENT_SCOPE)
+endfunction()
+

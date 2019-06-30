@@ -1,4 +1,4 @@
-if(CONFIG_MICROPYTHON_ENABLE)
+if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     set(mpy_component_name "micropython")
     get_filename_component(mpy_dir ${CMAKE_CURRENT_LIST_FILE} DIRECTORY)
     set(mpy_core_dir "${mpy_dir}/core")
@@ -8,21 +8,62 @@ if(CONFIG_MICROPYTHON_ENABLE)
     set(mpy_build_gen_header_dir "${mpy_build_dir}/genhdr")
     set(mpy_frozen_py_dir "${mpy_port_dir}/builtin_py")
     set(mpy_build_mpy_dir "${mpy_build_dir}/mpy")
+    set(components_requirements kendryte_sdk drivers boards utils spiffs)
 
     ################# Add include #################
     list(APPEND ADD_INCLUDE "${mpy_core_dir}"
                             "${mpy_core_src_dir}"
+                            "${mpy_core_dir}/lib/oofatfs"
+                            "${mpy_core_dir}/lib/mp-readline"
+                            "${mpy_core_dir}/lib/utils"
+                            "${mpy_core_dir}/lib/netutils"
+                            "${mpy_core_dir}/lib/timeutils"
                             "${mpy_port_dir}/include"
+                            "${mpy_port_dir}/src/audio/include"
+                            "${mpy_port_dir}/src/audio/wav/include"
+                            "${mpy_port_dir}/src/Maix/include"
+                            "${mpy_port_dir}/src/modules/include"
+                            "${mpy_port_dir}/src/modules/ultrasonic/include"
+                            "${mpy_port_dir}/src/nes/include"
+                            "${mpy_port_dir}/src/omv/include"
+                            "${mpy_port_dir}/src/omv/boards/MAIX"
+                            "${mpy_port_dir}/src/omv/img/include"
+                            "${mpy_port_dir}/src/omv/py/include"
+                            "${mpy_port_dir}/src/standard_lib/include"
+                            "${mpy_port_dir}/src/touchscreen/include"
+                            "${mpy_port_dir}/src/touchscreen/ns2009/include"
+                            "${mpy_port_dir}/src/video/include"
+                            "${mpy_port_dir}/src/video/avi/include"
                             "${mpy_build_dir}"
         )
-    # list(APPEND ADD_PRIVATE_INCLUDE "include_private")
+    list(APPEND ADD_PRIVATE_INCLUDE "${mpy_port_dir}/src/nes/mapper")
     ###############################################
 
+    
+
     ############## Add source files ###############
-    aux_source_directory("port/src" MPY_PORT_SRCS)
-    # set(ADD_ASM_SRCS "kendryte-standalone-sdk/lib/bsp/crt.S"
-    #                  "kendryte-standalone-sdk/lib/freertos/portable/portasm.S"
-    #                     )
+    append_srcs_dir(MPY_PORT_SRCS "port/src")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/audio")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/audio/wav")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/Maix")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/modules")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/modules/ultrasonic/src")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/nes")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/omv")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/omv/img")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/omv/py")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/machine")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network/esp32")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network/esp8285")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/socket")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/uos")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/utime")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/touchscreen")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/touchscreen/ns2009")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/video")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/video/avi")
+
     list(APPEND MPY_SRCS    
                     "core/py/mpstate.c"
                     "core/py/nlr.c"
@@ -173,6 +214,15 @@ if(CONFIG_MICROPYTHON_ENABLE)
                         "core/extmod/uos_dupterm.c"
                         "core/lib/embed/abort_.c"
                         "core/lib/utils/printf.c"
+                        "core/lib/utils/stdout_helpers.c"
+                        "core/lib/utils/interrupt_char.c"
+                        "core/lib/utils/pyexec.c"
+                        "core/lib/libc/string0.c"
+                        "core/lib/mp-readline/readline.c"
+                        "core/lib/netutils/netutils.c"
+                        "core/lib/timeutils/timeutils.c"
+                        "core/lib/utils/sys_stdio_mphal.c"
+                        "core/lib/oofatfs/ff.c"
                     )
     set(MPY_FROZEN_SRC "${mpy_build_dir}/frozen_mpy.c")
 
@@ -214,7 +264,14 @@ if(CONFIG_MICROPYTHON_ENABLE)
     set(QSTR_DEFS_COLLECTED ${mpy_build_gen_header_dir}/qstrdefs.collected.h)
     set(QSTR_GEN_EXTRA_CFLAGS -DNO_QSTR -I${mpy_build_dir}/tmp)
     set(QSTR_GLOBAL_DEPENDENCIES ${mpy_core_src_dir}/mpconfig.h ${mpy_port_dir}/include/mpconfigport.h)
-    prepend(include_flags "-I" ${ADD_INCLUDE})
+    # find requirements include  //TODO: maybe cmake have functio or variable can do this
+    set(include_flags ${ADD_INCLUDE})
+    prepend(include_flags "-I" ${include_flags})
+    foreach(component ${components_requirements})
+        get_target_property(include_dir ${component} INTERFACE_INCLUDE_DIRECTORIES)    
+        prepend(include_dir "-I" ${include_dir})
+        list(APPEND include_flags ${include_dir})
+    endforeach()
     string(REPLACE ";" " " include_flags "${include_flags}")
 
     add_custom_command(OUTPUT ${MODULE_DEFS} 
@@ -227,7 +284,7 @@ if(CONFIG_MICROPYTHON_ENABLE)
     separate_arguments(cmd_cflag NATIVE_COMMAND ${CMAKE_C_FLAGS})
     separate_arguments(cmd_cinclude NATIVE_COMMAND ${include_flags})
     add_custom_command(OUTPUT ${QSTR_DEFS_COLLECTED} 
-            COMMAND ${CMAKE_C_COMPILER} -E ${QSTR_GEN_EXTRA_CFLAGS} ${cmd_cflag} ${cmd_cinclude} ${QSTR_SRCS_FULL_PATH} ${QSTR_GLOBAL_DEPENDENCIES} > ${mpy_build_gen_header_dir}/qstr.i.last
+            COMMAND ${CMAKE_C_COMPILER} -E ${QSTR_GEN_EXTRA_CFLAGS} ${cmd_cflag} ${cmd_cinclude} -DFFCONF_H="${mpy_core_dir}/lib/oofatfs/ffconf.h" ${QSTR_SRCS_FULL_PATH} ${QSTR_GLOBAL_DEPENDENCIES} > ${mpy_build_gen_header_dir}/qstr.i.last
             COMMAND ${python} ${mpy_core_src_dir}/makeqstrdefs.py split ${mpy_build_gen_header_dir}/qstr.i.last ${mpy_build_gen_header_dir}/qstr ${QSTR_DEFS_COLLECTED}
             COMMAND touch ${mpy_build_gen_header_dir}/qstr.split
             COMMAND ${python} ${mpy_core_src_dir}/makeqstrdefs.py cat ${mpy_build_gen_header_dir}/qstr.i.last ${mpy_build_gen_header_dir}/qstr ${QSTR_DEFS_COLLECTED}
@@ -236,7 +293,7 @@ if(CONFIG_MICROPYTHON_ENABLE)
         )
 
     add_custom_target(gen_mpy_cross  
-            COMMAND make -j20 -C ${mpy_core_dir}/mpy-cross
+            COMMAND make -C ${mpy_core_dir}/mpy-cross
         )
     separate_arguments(cmd_sed0 NATIVE_COMMAND "s/^Q(.*)/\"&\"/")
     separate_arguments(cmd_sed1 NATIVE_COMMAND "s/^\"\\(Q(.*)\\)\"/\\1/")
@@ -244,7 +301,6 @@ if(CONFIG_MICROPYTHON_ENABLE)
                     COMMAND cat ${PY_QSTR_DEFS} ${QSTR_DEFS} ${QSTR_DEFS_COLLECTED} | sed '${cmd_sed0}' | ${CMAKE_C_COMPILER} -E ${cmd_cflag} ${cmd_cinclude} - | sed '${cmd_sed1}' > ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h
                     COMMAND ${python} ${mpy_core_src_dir}/makeqstrdata.py ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h > ${qstr_header}
                     DEPENDS gen_mpy_cross ${version_header} ${MODULE_DEFS} ${QSTR_DEFS_COLLECTED}
-                    
                 )
     
     file(GLOB frozen_py "${mpy_frozen_py_dir}/*.py")
@@ -270,18 +326,14 @@ if(CONFIG_MICROPYTHON_ENABLE)
 
 
     ###### Add required/dependent components ######
-    # list(APPEND ADD_REQUIREMENTS gcc m c)
+    list(APPEND ADD_REQUIREMENTS ${components_requirements})
     ###############################################
 
     ############ Add static libs ##################
     # list(APPEND ADD_STATIC_LIB "lib/libtest.a")
     ###############################################
-
-    add_definitions(-DFFCONF_H="${mpy_core_dir}/lib/ffconf.h"
+    add_definitions(-DFFCONF_H=\"${mpy_core_dir}/lib/oofatfs/ffconf.h\"
                     )
-
-
-    # add_dependencies(${mpy_component_name} $gen_mpy_cross})
 
     register_component()
 

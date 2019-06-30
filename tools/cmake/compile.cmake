@@ -8,6 +8,7 @@ get_filename_component(parent_dir_name ${parent_dir} NAME)
 
 # Set project dir, so just projec can include this cmake file!!!
 set(PROJECT_SOURCE_DIR ${parent_dir})
+set(PROJECT_PATH       ${PROJECT_SOURCE_DIR})
 set(PROJECT_BINARY_DIR "${parent_dir}/build")
 message(STATUS "SDK_PATH:${SDK_PATH}")
 message(STATUS "PROJECT_PATH:${PROJECT_SOURCE_DIR}")
@@ -58,7 +59,16 @@ function(register_component)
 
     # Add static lib
     if(ADD_STATIC_LIB)
-        target_link_libraries(${component_name} "${component_dir}/${ADD_STATIC_LIB}")
+        foreach(lib ${ADD_STATIC_LIB})
+            if(NOT EXISTS "${lib}")
+                prepend(lib_full "${component_dir}/" ${lib})
+                if(NOT EXISTS "${lib_full}")
+                    message(FATAL_ERROR "Can not find ${lib} or ${lib_full}")
+                endif()
+                set(lib ${lib_full})
+            endif()
+            target_link_libraries(${component_name} ${lib})
+        endforeach()
     endif()
 endfunction()
 
@@ -247,10 +257,24 @@ macro(project name)
     add_custom_command(OUTPUT ${exe_src} COMMAND ${CMAKE_COMMAND} -E touch ${exe_src} VERBATIM)
     add_custom_target(gen_exe_src DEPENDS "${exe_src}")
     add_dependencies(${name} gen_exe_src)
-    
+
+    # Sort component according to priority.conf config file
+    set(component_priority_conf_file "${PROJECT_PATH}/compile/priority.conf")
+    set(sort_components ${python}  ${SDK_PATH}/tools/cmake/sort_components.py
+                                   ${component_priority_conf_file} ${components_dirs}
+                        )
+    execute_process(COMMAND ${sort_components} OUTPUT_VARIABLE component_dirs_sorted RESULT_VARIABLE cmd_res)
+    if(cmd_res EQUAL 2)
+        message(STATUS "No components priority config file")
+        set(component_dirs_sorted ${components_dirs})
+    elseif(cmd_res EQUAL 0)
+        message(STATUS "Config components priority success")
+    else()
+        message(STATUS "Components priority config fail ${component_dirs_sorted}, check config file:${component_priority_conf_file}")
+    endif()
 
     # Call CMakeLists.txt
-    foreach(component_dir ${components_dirs})
+    foreach(component_dir ${component_dirs_sorted})
         get_filename_component(base_dir ${component_dir} NAME)
         add_subdirectory(${component_dir} ${base_dir})
         if(TARGET ${base_dir})

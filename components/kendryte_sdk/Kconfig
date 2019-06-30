@@ -1,7 +1,7 @@
 
 
-config KENDRYTE_SDK_ENABLE
-	bool "Enable kendryte sdk"
+config COMPONENT_KENDRYTE_SDK_ENABLE
+	bool "Enable kendryte sdk component"
 	default n
 menu "Kendryte configurations"
 	visible if KENDRYTE_SDK_ENABLE

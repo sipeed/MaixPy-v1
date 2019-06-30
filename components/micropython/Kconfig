@@ -1,6 +1,9 @@
 
 
-config MICROPYTHON_ENABLE
-	bool "enbale micropython module"
+config COMPONENT_MICROPYTHON_ENABLE
+	bool "Enbale micropython component"
 	default n
 
+menu "Micropython configurations"
+	visible if COMPONENT_MICROPYTHON_ENABLE
+endmenu

@@ -1,9 +1,8 @@
-
-#include "stdio.h"
-#include "global_config.h"
+#include "maixpy.h"
 
 int main()
 {
-    printf("hello\n");
+    maixpy_main();
+    return 0;
 }
 

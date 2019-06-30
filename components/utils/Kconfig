@@ -1,0 +1,6 @@
+
+
+config COMPONENT_UTILS_ENABLE
+	bool "Enbale utils component"
+	default n
+

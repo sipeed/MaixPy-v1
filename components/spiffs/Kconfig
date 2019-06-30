@@ -1,0 +1,6 @@
+
+
+config COMPONENT_SPIFFS_ENABLE
+	bool "Enbale spiffs component"
+	default n
+
