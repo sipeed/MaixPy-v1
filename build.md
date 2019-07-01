@@ -69,7 +69,7 @@ and default toolchain pfrefix is `riscv64-unknown-elf-`.
 
 If you have copied toolchain to `/opt`, just use default.
 
-Or you can custom your toolchain path by 
+Or you can customsize your toolchain path by 
 
 ```
 python3 project.py --toolchain /opt/kendryte-toolchain/bin --toolchain-prefix riscv64-unknown-elf- config 
@@ -83,9 +83,9 @@ python3 project.py clean_conf
 
 * Configure project
 
-Usually, Just use the default configuration.
+Usually, just use the default configuration.
 
-If you want to custom project modules, execute command:
+If you want to customsize project modules, execute command:
 
 ```
 python3 project.py menuconfig
@@ -140,6 +140,13 @@ python3 project.py -B maixduino -p /dev/ttyUSB0 -b 1500000 -S flash
 ```
 
 `-B` means board, `-p` means board serial device port, `-b` means baudrate, `-S` or `--Slow` means download at low speed but more stable mode.
+
+You don't need to confiure again the next time you burn firmware, just use:
+```
+python3 project.py flash
+```
+the configuration saved in `.flash_conf.json`
+
 
 More parameters help by :
 
