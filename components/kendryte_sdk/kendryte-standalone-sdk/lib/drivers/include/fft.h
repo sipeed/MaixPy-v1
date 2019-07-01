@@ -17,6 +17,7 @@
 
 #include <stdint.h>
 #include "platform.h"
+#include "dmac.h"
 
 #ifdef __cplusplus
 extern "C" {

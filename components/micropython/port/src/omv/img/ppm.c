@@ -22,7 +22,7 @@ static void read_int(FIL *fp, uint32_t *i, ppm_read_settings_t *rs)
     enum { EAT_WHITESPACE, EAT_COMMENT, EAT_NUMBER } mode = EAT_WHITESPACE;
     for(*i = 0;;) {
         if (!rs->read_int_c_valid) {
-            //if (file_tell_w_buf(fp) == file_size_w_buf(fp)) return;
+            //if (file_tell_w_buf(fp) == file_size(fp)) return;
             read_byte(fp, &rs->read_int_c);
             rs->read_int_c_valid = true;
         }
@@ -124,7 +124,7 @@ void ppm_read(image_t *img, const char *path)
 void ppm_write_subimg(image_t *img, const char *path, rectangle_t *r)
 {
     rectangle_t rect;
-    if (!rectangle_subimg(img, r, &rect)) ff_no_intersection(NULL);
+    if (!rectangle_subimg(img, r, &rect)) fs_no_intersection(NULL);
     FIL fp;
     file_write_open_raise(&fp, path);
 

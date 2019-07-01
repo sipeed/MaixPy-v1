@@ -28,6 +28,7 @@ typedef struct _machine_uart_obj_t {
 void uart_attach_to_repl(machine_uart_obj_t *self, bool attached);
 int uart_rx_char(machine_uart_obj_t *self);
 mp_uint_t uart_rx_any(machine_uart_obj_t *self);
+void uart_tx_strn(machine_uart_obj_t *uart_obj, const char *str, uint len);
 
 #endif
 

@@ -15,6 +15,7 @@
 #include "common.h"
 #include "omv_boardconfig.h"
 #include "sipeed_conv.h"
+#include "picojpeg_util.h"
 
 /////////////////
 // Point Stuff //
@@ -689,6 +690,8 @@ void imlib_save_image(image_t *img, const char *path, rectangle_t *roi, int qual
         //         fb_free();
         //     }
         //     break;
+        default:
+            break;
     }
 }
 

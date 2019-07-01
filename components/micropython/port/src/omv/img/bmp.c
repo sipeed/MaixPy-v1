@@ -14,6 +14,7 @@
 #include "imlib.h"
 #include "omv_boardconfig.h"
 #include "framebuffer.h"
+#include "py/runtime.h"
 
 // This function inits the geometry values of an image (opens file).
 bool bmp_read_geometry(mp_obj_t fp, image_t *img, bmp_read_settings_t *rs)

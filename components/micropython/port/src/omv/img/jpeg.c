@@ -21,6 +21,7 @@
 
 #include "avi.h"
 #include "video.h"
+#include "py/runtime.h"
 
 #define TIME_JPEG   (0)
 

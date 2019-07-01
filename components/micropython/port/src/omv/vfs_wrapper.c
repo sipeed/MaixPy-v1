@@ -95,56 +95,75 @@ void file_buffer_off(mp_obj_t fp)
 /************ Raise ************/
 NORETURN static void fs_fail(mp_obj_t fp, int res)
 {
-    if (fp) f_close(fp);
+    int err;
+    if(fp)
+        vfs_internal_close(fp, &err);
     nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, ffs_strerror(res)));
 }
 
 NORETURN static void fs_read_fail(mp_obj_t fp)
 {
-    if (fp) f_close(fp);
+    int err;
+    if(fp)
+        vfs_internal_close(fp, &err);
     nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "Failed to read requested bytes!"));
 }
 
 NORETURN static void fs_write_fail(mp_obj_t fp)
 {
-    if (fp) f_close(fp);
+    int err;
+    if(fp)
+        vfs_internal_close(fp, &err);
     nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "Failed to write requested bytes!"));
 }
 
 NORETURN static void fs_expect_fail(mp_obj_t fp)
 {
-    if (fp) f_close(fp);
+    int err;
+    if(fp)
+        vfs_internal_close(fp, &err);
     nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "Unexpected value read!"));
 }
 
 NORETURN void fs_unsupported_format(mp_obj_t fp)
 {
-    if (fp) f_close(fp);
+    int err;
+    if(fp)
+        vfs_internal_close(fp, &err);
     nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "Unsupported format!"));
 }
 
 NORETURN void fs_file_corrupted(mp_obj_t fp)
 {
-    if (fp) f_close(fp);
+    int err;
+    if(fp)
+        vfs_internal_close(fp, &err);
     nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "File corrupted!"));
 }
 
 NORETURN void fs_not_equal(mp_obj_t fp)
 {
-    if (fp) f_close(fp);
+    int err;
+    if(fp)
+        vfs_internal_close(fp, &err);
     nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "Images not equal!"));
 }
 
 NORETURN void fs_no_intersection(mp_obj_t fp)
 {
-    if (fp) f_close(fp);
+    int err;
+    if(fp)
+        vfs_internal_close(fp, &err);
     nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "No intersection!"));
 }
 
 int file_corrupted_raise(mp_obj_t fp)
 {
     int err;
-    vfs_internal_close(fp, &err);
+    if(fp)
+    {
+        vfs_internal_close(fp, &err);
+    }
 	mp_raise_ValueError("file_corrupted_raise!");
 	return err;
 }

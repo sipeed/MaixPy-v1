@@ -10,7 +10,7 @@
 #include "fb_alloc.h"
 #include "vfs_wrapper.h"
 #include "common.h"
-#include "fft.h"
+#include "omv_fft.h"
 // http://processors.wiki.ti.com/index.php/Efficient_FFT_Computation_of_Real_Input
 
 #ifndef OMV_MINIMUM

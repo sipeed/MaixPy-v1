@@ -21,7 +21,7 @@ parser.add_argument("-t", "--terminal", help="[flash] start a terminal after fin
 parser.add_argument("-n", "--noansi", help="[flash] do not use ANSI colors, recommended in Windows CMD", default=False, action="store_true")
 parser.add_argument("-s", "--sram", help="[flash] download firmware to SRAM and boot", default=False, action="store_true")
 parser.add_argument("-B", "--Board",required=False, type=str, default="auto", help="[flash] select dev board, e.g. -B bit", choices=boards_choices)
-parser.add_argument("-S", "--Slow",required=False, help="[flash] slow download mode", default=False)
+parser.add_argument("-S", "--Slow",required=False, help="[flash] slow download mode", default=False, action="store_true")
 dict_arg = {"port":"", 
             "baudrate": 115200,
             "terminal": False,
@@ -129,11 +129,11 @@ if __name__ == '__main__':
         if config["Board"]=="auto":
             kflash.process(terminal=False, dev=config["port"], baudrate=config["baudrate"], \
                 sram = config["sram"], file=firmware, callback=kflash_progress, noansi= config["noansi"], \
-                terminal_auto_size=True)
+                terminal_auto_size=True, slow_mode = config["Slow"])
         else:
             kflash.process(terminal=False, dev=config["port"], baudrate=config["baudrate"], board=config["Board"], \
                 sram = config["sram"], file=firmware, callback=kflash_progress, noansi= config["noansi"], \
-                terminal_auto_size=True)
+                terminal_auto_size=True, slow_mode = config["Slow"])
     except Exception as e:
         flash_success = False
         err_msg = str(e)

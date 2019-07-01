@@ -66,8 +66,10 @@ void mod_network_register_nic(mp_obj_t nic) {
 
 mp_obj_t mod_network_find_nic(const uint8_t *ip) {
     //TODO: find a NIC that is suited to given IP address
-	if(MP_STATE_PORT(modnetwork_nic) != NULL);
+	if(MP_STATE_PORT(modnetwork_nic) != NULL)
+    {
 		return MP_OBJ_FROM_PTR(MP_STATE_PORT(modnetwork_nic));
+    }
     nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "no available NIC"));
 }
 

@@ -1714,7 +1714,7 @@ static void copyY(uint8 dstOfs)
 // Cb convert to RGB and accumulate
 static void convertCb(uint8 dstOfs)
 {
-   uint8 i;
+   uint8 i, j=0;
    uint8* pDstG = gMCUBufG + dstOfs;
    uint8* pDstB = gMCUBufB + dstOfs;
    int16* pSrc = gCoeffBuf;
@@ -1723,7 +1723,8 @@ static void convertCb(uint8 dstOfs)
    {
       uint8 cb = (uint8)*pSrc++;
       int16 cbG, cbB;
-
+      if((j++) + dstOfs > sizeof(gMCUBufG))
+         break;
       cbG = ((cb * 88U) >> 8U) - 44U;
       *pDstG++ = subAndClamp(pDstG[0], cbG);
 

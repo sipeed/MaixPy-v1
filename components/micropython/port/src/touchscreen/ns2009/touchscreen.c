@@ -5,6 +5,7 @@
 #include "machine_i2c.h"
 #include "errno.h"
 #include "ns2009.h"
+#include "tscal.h"
 
 static struct ts_ns2009_pdata_t *ts_ns2009_pdata;
 i2c_device_number_t m_i2c_num = 0;
@@ -85,6 +86,7 @@ int ns2009_hal_i2c_init_default()
     fpioa_set_function(30, FUNC_I2C0_SCLK +  m_i2c_num* 2);
     fpioa_set_function(31, FUNC_I2C0_SDA + m_i2c_num * 2);
     maix_i2c_init(m_i2c_num, 7, 400000);
+    return 0;
 }
 
 int ns2009_hal_i2c_recv(const uint8_t *send_buf, size_t send_buf_len, uint8_t *receive_buf,

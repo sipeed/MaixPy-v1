@@ -1,7 +1,7 @@
 #include "fb_alloc.h"
 #include "omv.h"
 #include "ide_dbg.h"
-
+#include "sensor.h"
 
 bool omv_init_once()
 {

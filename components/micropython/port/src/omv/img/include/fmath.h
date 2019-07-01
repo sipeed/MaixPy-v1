@@ -9,6 +9,7 @@
 #ifndef __FMATH_H
 #define __FMATH_H
 #include <stdint.h>
+#include <math.h>
 
 
 static inline float fast_sqrtf(float x) 

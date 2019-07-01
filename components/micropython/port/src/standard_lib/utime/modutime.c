@@ -41,6 +41,7 @@
 #include "py/runtime.h"
 #include "extmod/utime_mphal.h"
 #include "lib/timeutils/timeutils.h"
+#include "mphalport.h"
 
 /* Clock Type */
 typedef struct _py_clock_obj_t {

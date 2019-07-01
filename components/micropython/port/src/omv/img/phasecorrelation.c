@@ -4,7 +4,7 @@
  */
 
 #include "imlib.h"
-#include "fft.h"
+#include "omv_fft.h"
 #define alt_fast_exp(x, linear) ((linear) ? (x) : (fast_expf(x)))
 #define alt_fast_log(x, linear) ((linear) ? (x) : (fast_log(x)))
 

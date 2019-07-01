@@ -147,4 +147,9 @@ void tft_fill_data(uint32_t *data_buf, uint32_t length)
     }
 }
 
+void tft_set_datawidth(uint8_t width)
+{
+
+}
+
 

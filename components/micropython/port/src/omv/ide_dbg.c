@@ -272,6 +272,7 @@ ack_start:
         is_sending_jpeg = false;
         is_busy_sending = false;
     }
+    return IDE_DBG_STATUS_OK;
 }
 
 ide_dbg_status_t ide_dbg_receive_data(machine_uart_obj_t* uart, uint8_t* data)
@@ -368,6 +369,7 @@ ide_dbg_status_t ide_dbg_receive_data(machine_uart_obj_t* uart, uint8_t* data)
         default: /* error */
             break;
     }
+    return IDE_DBG_STATUS_OK;
 }
 
 ide_dbg_status_t ide_dbg_dispatch_cmd(machine_uart_obj_t* uart, uint8_t* data)
@@ -544,6 +546,7 @@ ide_dbg_status_t ide_dbg_dispatch_cmd(machine_uart_obj_t* uart, uint8_t* data)
             ide_dbg_ack_data(uart);    // ack data
         }
     }
+    return IDE_DBG_STATUS_OK;
 }
 
 bool ide_dbg_script_ready()

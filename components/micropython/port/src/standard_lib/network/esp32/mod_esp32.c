@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdlib.h>
 #include "py/objtuple.h"
 #include "py/objlist.h"
 #include "py/stream.h"

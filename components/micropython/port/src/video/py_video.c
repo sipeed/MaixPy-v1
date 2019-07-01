@@ -3,6 +3,7 @@
 #include <mp.h>
 #include "py/objstr.h"
 #include "video.h"
+#include "mphal.h"
 
 #include "py_image.h"
 

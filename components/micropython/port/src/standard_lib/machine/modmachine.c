@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "modmachine.h"
 #include "sysctl.h"
+#include "sipeed_sys.h"
 
 #if MICROPY_PY_MACHINE
 

@@ -19,6 +19,7 @@
 #include "sleep.h"
 #include "sensor.h"
 #include "mphalport.h"
+#include "cambus.h"
 #if 1
 enum
 {
@@ -1028,6 +1029,7 @@ static int gc0328_set_colorbar(sensor_t *sensor, int enable)
 {
     uint8_t reg;
     int ret = 0;
+    return ret;
 }
 
 static int gc0328_set_auto_gain(sensor_t *sensor, int enable, float gain_db, float gain_db_ceiling)

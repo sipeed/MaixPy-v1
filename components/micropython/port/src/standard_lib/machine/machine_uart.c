@@ -54,6 +54,8 @@
 #include "buffer.h"
 #include "imlib_config.h"
 
+extern int uart_channel_getc(uart_device_number_t channel);
+
 #define Maix_DEBUG 0
 #if Maix_DEBUG==1
 #define debug_print(x,arg...) mp_printf(&mp_plat_print, "[MaixPy]"x,##arg)

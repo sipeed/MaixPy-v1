@@ -16,6 +16,7 @@
 #include "imlib.h"
 #include "xalloc.h"
 #include "ff.h"
+#include "vfs_wrapper.h"
 
 #ifndef OMV_MINIMUM
 

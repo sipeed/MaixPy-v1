@@ -34,6 +34,8 @@
 #include "py_helper.h"
 #include "extmod/vfs.h"
 #include "vfs_wrapper.h"
+#include "py_image.h"
+#include "syscalls.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1360,7 +1362,9 @@ STATIC mp_obj_t py_kpu_netinfo(mp_obj_t py_kpu_net_obj)
 	
 	int len = sipeed_kpu_model_get_layer_num(kpu_net->kmodel_ctx);
     if(len <= 0)
+    {
         mp_raise_ValueError("get layer num error!");
+    }
 	kpu_layer_argument_t *layer; 
 	list_t out;
     list_init(&out, sizeof(py_kpu_netinfo_list_data_t));

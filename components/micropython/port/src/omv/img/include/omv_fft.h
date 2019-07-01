@@ -6,8 +6,8 @@
  * FFT LIB - can do 1024 point real FFTs and 512 point complex FFTs
  *
  */
-#ifndef __FFT_H__
-#define __FFT_H__
+#ifndef __OMV_FFT_H__
+#define __OMV_FFT_H__
 #include <stdint.h>
 #include "imlib.h"
 typedef struct fft1d_controller {

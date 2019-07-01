@@ -392,6 +392,7 @@ STATIC int esp8285_socket_gethostbyname(mp_obj_t nic, const char *name, mp_uint_
 		self = nic;
 		return get_host_byname(&nic_obj.esp8285,name,len,out_ip);
 	}
+    return -1;
 }
 
 STATIC mp_obj_t esp8285_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {

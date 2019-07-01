@@ -14,6 +14,7 @@ extern TaskHandle_t mp_main_task_handle;
 //uint32_t mp_hal_ticks_cpu(void);
 void mp_hal_delay_us(mp_uint_t us);
 void mp_hal_delay_ms(mp_uint_t ms);
-
+extern mp_uint_t systick_current_millis(void);
+void mp_hal_wake_main_task_from_isr(void);
 #endif
 

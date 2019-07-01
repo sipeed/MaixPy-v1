@@ -252,5 +252,8 @@ int sensor_set_lens_correction(int enable, int radi, int coef);
 
 // Default snapshot function.
 int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_cb);
+
+int sensor_run(int enable);
+
 #endif /* __SENSOR_H__ */
 

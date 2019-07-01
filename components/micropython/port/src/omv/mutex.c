@@ -54,7 +54,7 @@ int mutex_try_lock(mutex_t *mutex, uint32_t tid)
 
 void mutex_unlock(mutex_t *mutex, uint32_t tid)
 {
-	if(mutex->tid = tid)
+	if(mutex->tid == tid)
 	{
 		mutex->lock = 0;
 		mutex->tid = 0;

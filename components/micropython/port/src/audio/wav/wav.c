@@ -126,8 +126,8 @@ wav_err_t wav_init(wav_decode_t *wav_obj,void* head, uint32_t head_size, uint32_
 mp_obj_t wav_play_process(audio_t* audio,uint32_t file_size)
 {
 	uint32_t head_len = 0;
-	uint32_t err_code = 0;
-	uint32_t close_code = 0;
+	int err_code = 0;
+	int close_code = 0;
 	mp_obj_list_t* ret_list = (mp_obj_list_t*)m_new(mp_obj_list_t,sizeof(mp_obj_list_t));//m_new
 
     mp_obj_list_init(ret_list, 0);
@@ -176,7 +176,7 @@ mp_obj_t wav_play_process(audio_t* audio,uint32_t file_size)
 	mp_obj_list_append(ret_list, mp_obj_new_int(wav_fmt->blockalign));
 	mp_obj_list_append(ret_list, mp_obj_new_int(wav_fmt->bitspersample));
 	mp_obj_list_append(ret_list, mp_obj_new_int(wav_fmt->datasize));
-	vfs_internal_seek(audio->fp,head_len,VFS_SEEK_SET,err_code);
+	vfs_internal_seek(audio->fp,head_len,VFS_SEEK_SET, &err_code);
 	if(err_code != 0)
 	{
 		mp_printf(&mp_plat_print, "[MAIXPY]: seek error  close file\n");
@@ -185,7 +185,7 @@ mp_obj_t wav_play_process(audio_t* audio,uint32_t file_size)
 		vfs_internal_close(audio->fp,&close_code);
 		mp_raise_OSError(err_code);
 	}
-	memset(audio->buf, audio->points * sizeof(uint32_t), 0);//clear buffer
+	memset(audio->buf, 0, audio->points * sizeof(uint32_t));//clear buffer
 
 	wav_decode_t* wav_play_obj = audio->play_obj;
 	for(int i = 0; i < MAX_PLAY_BUF_NUM; i++)//init wav buf
@@ -211,7 +211,7 @@ mp_obj_t wav_play(audio_t* audio)
 	wav_decode_t* wav_play_obj = play_obj;
 	Maix_i2s_obj_t* i2s_dev = audio->dev;//get device
 	uint32_t read_num = 0;
-	uint32_t err_code = 0;
+	int err_code = 0;
 	if(play_obj->audio_buf[play_obj->read_order].empty)//empty ,altread to read
 	{
 		short MSB_audio = 0;
@@ -284,8 +284,8 @@ mp_obj_t wav_play(audio_t* audio)
 mp_obj_t wav_record_process(audio_t* audio,uint32_t channels)//channels = Number of channels
 {
 	uint32_t head_len = 0;
-    uint32_t err_code = 0;
-    uint32_t close_code = 0;
+    int err_code = 0;
+    int close_code = 0;
 	Maix_i2s_obj_t* i2s_dev = audio->dev;
     for(int i = 0; i < 4; i++){
         if(I2S_RECEIVER == i2s_dev->channel[i].mode){//find the received channel
@@ -326,7 +326,7 @@ mp_obj_t wav_record_process(audio_t* audio,uint32_t channels)//channels = Number
 		vfs_internal_close(audio->fp,&close_code);
 		mp_raise_OSError(err_code);
 	}
-	memset(audio->buf, audio->points * sizeof(uint32_t), 0);//clear buffer
+	memset(audio->buf, 0, audio->points * sizeof(uint32_t));//clear buffer
 	//
 	wav_encode_t* wav_record_obj = audio->record_obj;
 	for(int i = 0; i < MAX_RECORD_BUF_NUM; i++)//init wav buf
@@ -352,7 +352,7 @@ mp_obj_t wav_record(audio_t* audio,dmac_channel_number_t DMA_channel)
 	wav_encode_t* record_obj = audio->record_obj; //get format
 	Maix_i2s_obj_t* i2s_dev = audio->dev;//get device
 	uint32_t read_num = 0;
-	uint32_t err_code = 0;
+	int err_code = 0;
 	if(!record_obj->audio_buf[record_obj->write_order].empty)//empty ,altread to read
 	{
 		// mp_printf(&mp_plat_print, "[MAIXPY]: read_order = %d\n",play_obj->read_order);
@@ -362,11 +362,12 @@ mp_obj_t wav_record(audio_t* audio,dmac_channel_number_t DMA_channel)
 	{
 
 	}
+	return mp_const_none;
 }
 int wav_process_data(audio_t* audio)//GO righit channel record, right chnanel play
 {
 	wav_encode_t* wav_encode = audio->record_obj;
-	uint32_t err_code = 0;
+	int err_code = 0;
 
 	// for(int i = 0; i < audio->points; i++){
 	// 	mp_printf(&mp_plat_print, "data[%d] : LSB = %x | MSB = %x\n",i, audio->buf[i] & 0xffff, (audio->buf[i] >> 16) & 0xffff);
@@ -405,8 +406,8 @@ void wav_record_buf_free(wav_encode_t* wav_encode)
 
 void wav_finish(audio_t* audio)
 {
-	uint32_t err_code = 0;
-    uint32_t close_code = 0;
+	int err_code = 0;
+    int close_code = 0;
 	if(audio->play_obj != NULL)
 	{
 		wav_decode_t* wav_play_obj = audio->play_obj;

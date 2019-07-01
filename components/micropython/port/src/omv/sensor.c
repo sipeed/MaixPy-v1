@@ -21,6 +21,9 @@
 #include "syslog.h"
 #include "ff.h"
 #include "gc0328.h"
+#include "ov7740.h"
+#include "mphalport.h"
+
 extern volatile dvp_t* const dvp;
 
 #define OV_CHIP_ID      (0x0A)
@@ -442,7 +445,7 @@ int binocular_sensor_scan()
                     break;
                 case OV7740_ID:
                     mp_printf(&mp_plat_print, "[MAIXPY]: find ov7740\n");
-                    init_ret = ov7740_init(sensor);
+                    init_ret = ov7740_init(&sensor);
                     break;
                 case OV7725_ID:
 					/*ov7725_init*/

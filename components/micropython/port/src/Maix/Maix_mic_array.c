@@ -18,6 +18,7 @@
 #include "fpioa.h"
 #include "lib_mic.h"
 #include "sipeed_sk9822.h"
+#include "py_image.h"
 
 #define PLL2_OUTPUT_FREQ 45158400UL
 

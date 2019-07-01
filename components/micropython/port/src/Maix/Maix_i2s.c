@@ -40,7 +40,6 @@ STATIC void Maix_i2s_print(const mp_print_t *print, mp_obj_t self_in, mp_print_k
         self->i2s_num,self->sample_rate,self->points_num);
     for(int channel_iter = 0; channel_iter < 4; channel_iter++)
     {
-        self->channel[channel_iter];
         mp_printf(print, "[MAIXPY]channle%d:(resolution=%u, cycles=%u, align_mode=%u, mode=%u)\n",
                   channel_iter,
                   self->channel[channel_iter].resolution,

@@ -31,6 +31,7 @@
 
 #include "gpio.h"
 #include "gpiohs.h"
+#include "plic.h"
 
 #include "py/runtime.h"
 #include "py/mphal.h"
@@ -166,7 +167,7 @@ void Maix_gpios_deinit(void) {
     
     for (int i = 0; i < MP_ARRAY_SIZE(Maix_gpio_obj); ++i) {
         if (Maix_gpio_obj[i].gpio_type != GPIO) {
-            gpiohs_irq_disable(Maix_gpio_obj[i].id);
+            plic_irq_disable(IRQN_GPIOHS0_INTERRUPT + Maix_gpio_obj[i].id);
         }
     }
 }
@@ -336,7 +337,7 @@ STATIC mp_obj_t Maix_gpio_irq(size_t n_args, const mp_obj_t *pos_args, mp_map_t 
                 }
                 self->callback = handler;
                 gpiohs_set_pin_edge((uint8_t)self->id,trigger);
-                gpiohs_irq_register((uint8_t)self->id, args[MP_QSTR_priority].u_int, Maix_gpio_isr_handler, (void *)self);
+                gpiohs_irq_register((uint8_t)self->id, args[ARG_priority].u_int, Maix_gpio_isr_handler, (void *)self);
             }else{
 
             }
@@ -354,8 +355,7 @@ STATIC mp_obj_t Maix_gpio_disirq(size_t n_args, const mp_obj_t *pos_args, mp_map
     Maix_gpio_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
 
     if (self->gpio_type != GPIO) {
-
-        gpiohs_irq_disable((uint8_t)self->id);
+        plic_irq_disable(IRQN_GPIOHS0_INTERRUPT + (uint8_t)self->id);
     }
     return mp_const_none;
 }
@@ -521,6 +521,7 @@ STATIC mp_obj_t Maix_gpio_irq_trigger(size_t n_args, const mp_obj_t *args) {
         mp_raise_ValueError("Reading this property is not supported");
     }
     // not support to return original trigger value
+    return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(Maix_gpio_irq_trigger_obj, 1, 2, Maix_gpio_irq_trigger);
 

@@ -359,7 +359,7 @@ bool recvFind(esp8285_obj* nic,uint8_t* target, uint32_t timeout);
  * Recvive data from uart and search first target and cut out the subchar* between begin and end(excluding begin and end self). 
  * Return true if target found, false for timeout.
  */
-bool recvFindAndFilter(esp8285_obj* nic,uint8_t* target, uint8_t* begin, uint8_t* end, uint8_t* data, uint32_t timeout);
+bool recvFindAndFilter(esp8285_obj* nic,uint8_t* target, uint8_t* begin, uint8_t* end, uint8_t** data, uint32_t timeout);
 
 /*
  * Receive a package from uart. 
@@ -376,21 +376,21 @@ uint32_t recvPkg(esp8285_obj*nic,uint8_t *buffer, uint32_t buffer_size, uint32_t
 bool eAT(esp8285_obj* nic);
 bool eATE(esp8285_obj* nic,bool enable);
 bool eATRST(esp8285_obj* nic);
-bool eATGMR(esp8285_obj* nic,uint8_t* version);
+bool eATGMR(esp8285_obj* nic,uint8_t** version);
 bool qATCWMODE(esp8285_obj* nic,uint8_t *mode);
 bool sATCWMODE(esp8285_obj* nic,uint8_t mode);
 bool sATCWJAP(esp8285_obj* nic,uint8_t* ssid, uint8_t* pwd);
 bool sATCWDHCP(esp8285_obj* nic,uint8_t mode, bool enabled);
 bool eATCWQAP(esp8285_obj* nic);
 
-bool eATCIPSTATUS(esp8285_obj* nic,uint8_t* list);
+bool eATCIPSTATUS(esp8285_obj* nic,uint8_t** list);
 bool sATCIPSTARTSingle(esp8285_obj* nic,uint8_t* type, uint8_t* addr, uint32_t port);
 bool sATCIPSTARTMultiple(esp8285_obj*nic,uint8_t mux_id, uint8_t* type, uint8_t* addr, uint32_t port);
 bool sATCIPSENDSingle(esp8285_obj*nic,const uint8_t *buffer, uint32_t len, uint32_t timeout);
 bool sATCIPSENDMultiple(esp8285_obj* nic,uint8_t mux_id, const uint8_t *buffer, uint32_t len);
 bool sATCIPCLOSEMulitple(esp8285_obj* nic,uint8_t mux_id);
 bool eATCIPCLOSESingle(esp8285_obj* nic);
-bool eATCIFSR(esp8285_obj* nic,uint8_t* list);
+bool eATCIFSR(esp8285_obj* nic,uint8_t** list);
 bool sATCIPMUX(esp8285_obj* nic,uint8_t mode);
 bool sATCIPSERVER(esp8285_obj* nic,uint8_t mode, uint32_t port);
 bool sATCIPSTO(esp8285_obj* nic,uint32_t timeout);

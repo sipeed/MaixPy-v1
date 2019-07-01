@@ -8,6 +8,7 @@
 #include <errno.h>
 #include "io.h"
 #include "lcd.h"
+#include "vfs_internal.h"
 
 extern volatile i2s_t *const i2s[3]; //TODO: remove register, replace with function
 
@@ -159,6 +160,7 @@ int video_hal_audio_deinit(avi_t* avi)
     u_ccr.reg_data = readl(&i2s[I2S_DEVICE_0]->ccr);
     u_ccr.ccr.dma_tx_en = 0;
     writel(u_ccr.reg_data, &i2s[I2S_DEVICE_0]->ccr);
+    return 0;
 }
 
 int video_hal_audio_play(uint8_t* data, uint32_t len, uint8_t channels)
@@ -276,7 +278,7 @@ uint8_t* video_hal_malloc(uint32_t size)
     return (uint8_t*)malloc(size);
 }
 
-uint8_t* video_hal_free(uint8_t* ptr)
+void video_hal_free(uint8_t* ptr)
 {
     free(ptr);
 }

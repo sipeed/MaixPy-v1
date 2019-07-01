@@ -17,8 +17,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "i2s.h"
 #include "fft.h"
+#include "i2s.h"
 #include "math.h"
 
 #include "py/obj.h"

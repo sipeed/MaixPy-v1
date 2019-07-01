@@ -223,6 +223,7 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
                         "core/lib/timeutils/timeutils.c"
                         "core/lib/utils/sys_stdio_mphal.c"
                         "core/lib/oofatfs/ff.c"
+                        "core/lib/oofatfs/ffunicode.c"
                     )
     set(MPY_FROZEN_SRC "${mpy_build_dir}/frozen_mpy.c")
 
@@ -284,16 +285,21 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     separate_arguments(cmd_cflag NATIVE_COMMAND ${CMAKE_C_FLAGS})
     separate_arguments(cmd_cinclude NATIVE_COMMAND ${include_flags})
     add_custom_command(OUTPUT ${QSTR_DEFS_COLLECTED} 
-            COMMAND ${CMAKE_C_COMPILER} -E ${QSTR_GEN_EXTRA_CFLAGS} ${cmd_cflag} ${cmd_cinclude} -DFFCONF_H="${mpy_core_dir}/lib/oofatfs/ffconf.h" ${QSTR_SRCS_FULL_PATH} ${QSTR_GLOBAL_DEPENDENCIES} > ${mpy_build_gen_header_dir}/qstr.i.last
-            COMMAND ${python} ${mpy_core_src_dir}/makeqstrdefs.py split ${mpy_build_gen_header_dir}/qstr.i.last ${mpy_build_gen_header_dir}/qstr ${QSTR_DEFS_COLLECTED}
-            COMMAND touch ${mpy_build_gen_header_dir}/qstr.split
-            COMMAND ${python} ${mpy_core_src_dir}/makeqstrdefs.py cat ${mpy_build_gen_header_dir}/qstr.i.last ${mpy_build_gen_header_dir}/qstr ${QSTR_DEFS_COLLECTED}
+            COMMAND ls ${mpy_build_gen_header_dir}
+            COMMAND echo "-------1------" && ${CMAKE_C_COMPILER} -E ${QSTR_GEN_EXTRA_CFLAGS} ${cmd_cflag} ${cmd_cinclude} -DFFCONF_H="${mpy_core_dir}/lib/oofatfs/ffconf.h" ${QSTR_SRCS_FULL_PATH} ${QSTR_GLOBAL_DEPENDENCIES} > ${mpy_build_gen_header_dir}/qstr.i.last
+            COMMAND ls ${mpy_build_gen_header_dir}
+            COMMAND echo "-------2------" && ${python} ${mpy_core_src_dir}/makeqstrdefs.py split ${mpy_build_gen_header_dir}/qstr.i.last ${mpy_build_gen_header_dir}/qstr ${QSTR_DEFS_COLLECTED}
+            COMMAND ls ${mpy_build_gen_header_dir}
+            COMMAND echo "-------3------" && touch ${mpy_build_gen_header_dir}/qstr.split
+            COMMAND ls ${mpy_build_gen_header_dir}
+            COMMAND echo "-------4------" && ${python} ${mpy_core_src_dir}/makeqstrdefs.py cat ${mpy_build_gen_header_dir}/qstr.i.last ${mpy_build_gen_header_dir}/qstr ${QSTR_DEFS_COLLECTED}
+            COMMAND ls ${mpy_build_gen_header_dir}
             DEPENDS ${MODULE_DEFS}
             VERBATIM
         )
-
     add_custom_target(gen_mpy_cross  
-            COMMAND make -C ${mpy_core_dir}/mpy-cross
+            COMMAND ${CMAKE_MAKE_PROGRAM} -C ${mpy_core_dir}/mpy-cross
+            COMMENT "Generate mpy-cross ..."
         )
     separate_arguments(cmd_sed0 NATIVE_COMMAND "s/^Q(.*)/\"&\"/")
     separate_arguments(cmd_sed1 NATIVE_COMMAND "s/^\"\\(Q(.*)\\)\"/\\1/")
@@ -301,6 +307,7 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
                     COMMAND cat ${PY_QSTR_DEFS} ${QSTR_DEFS} ${QSTR_DEFS_COLLECTED} | sed '${cmd_sed0}' | ${CMAKE_C_COMPILER} -E ${cmd_cflag} ${cmd_cinclude} - | sed '${cmd_sed1}' > ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h
                     COMMAND ${python} ${mpy_core_src_dir}/makeqstrdata.py ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h > ${qstr_header}
                     DEPENDS gen_mpy_cross ${version_header} ${MODULE_DEFS} ${QSTR_DEFS_COLLECTED}
+                    COMMENT "Generate QSTR header ..."
                 )
     
     file(GLOB frozen_py "${mpy_frozen_py_dir}/*.py")

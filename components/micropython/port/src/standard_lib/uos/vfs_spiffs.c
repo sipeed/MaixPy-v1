@@ -243,6 +243,7 @@ STATIC mp_obj_t spiffs_vfs_remove_internal(mp_obj_t vfs_in, mp_obj_t path_in, mp
 //    } else {
 //        mp_raise_OSError(attr ? MP_ENOTDIR : MP_EISDIR);
 //    }
+    return mp_const_none;
 }
 
 STATIC mp_obj_t spiffs_vfs_remove(mp_obj_t vfs_in, mp_obj_t path_in) {

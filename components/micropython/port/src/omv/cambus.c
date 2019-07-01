@@ -15,6 +15,7 @@
 #include "sysctl.h"
 #include "fpioa.h"
 #include "sipeed_i2c.h"
+#include "mphalport.h"
 
 
 /**

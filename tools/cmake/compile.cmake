@@ -247,9 +247,10 @@ macro(project name)
     # we didn't generate build info for cmake and makefile for if we do, it will always rebuild cmake
     # everytime we execute make
     set(gen_build_info_config_cmd ${python}  ${SDK_PATH}/tools/kconfig/update_build_info.py
-                                  --configfile header ${PROJECT_BINARY_DIR}/config/global_config.h
+                                            --configfile header ${PROJECT_BINARY_DIR}/config/global_build_info.h
                                   )
-    add_custom_target(update_build_info COMMAND ${gen_build_info_config_cmd})
+    add_custom_target(update_build_info COMMAND ${gen_build_info_config_cmd}
+                                        COMMENT "Generating global_build_info.h ...")
 
     # Create exe_src.c to satisfy cmake's `add_executable` interface!
     set(exe_src ${CMAKE_BINARY_DIR}/exe_src.c)

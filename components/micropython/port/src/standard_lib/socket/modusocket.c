@@ -373,6 +373,7 @@ mp_uint_t socket_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_t arg, int *
     }
 	if(self->nic_type->ioctl)
     	return self->nic_type->ioctl(self, request, arg, errcode);
+    return EPERM;
 }
 
 

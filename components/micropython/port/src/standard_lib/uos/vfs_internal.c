@@ -241,6 +241,7 @@ mp_uint_t vfs_internal_size(mp_obj_t fs)
         FIL f = ((pyb_file_fatfs_obj_t*)fs)->fp;
         return f_size(&f);
     }
+    return EIO;
 }
 
 

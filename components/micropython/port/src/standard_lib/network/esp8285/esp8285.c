@@ -39,6 +39,7 @@
 #include "uart.h"
 #include "uarths.h"
 #include "esp8285.h"
+#include "sleep.h"
 
 STATIC void kmp_get_next(char* targe, int next[])
 {  
@@ -126,7 +127,7 @@ bool reset(esp8285_obj* nic)
 uint8_t* getVersion(esp8285_obj* nic)
 {
     uint8_t* version;
-    eATGMR(nic,version);
+    eATGMR(nic,&version);
     return version;
 }
 
@@ -166,14 +167,14 @@ bool leaveAP(esp8285_obj* nic)
 uint8_t* getIPStatus(esp8285_obj* nic)
 {
     uint8_t* list;
-    eATCIPSTATUS(nic,list);
+    eATCIPSTATUS(nic, &list);
     return list;
 }
 
 uint8_t* getLocalIP(esp8285_obj* nic)
 {
     uint8_t* list;
-    eATCIFSR(nic,list);
+    eATCIFSR(nic, &list);
     return list;
 }
 
@@ -537,7 +538,7 @@ bool recvFind(esp8285_obj* nic,uint8_t* target, uint32_t timeout)
     return false;
 }
 
-bool recvFindAndFilter(esp8285_obj* nic,uint8_t* target, uint8_t* begin, uint8_t* end, uint8_t* data, uint32_t timeout)
+bool recvFindAndFilter(esp8285_obj* nic,uint8_t* target, uint8_t* begin, uint8_t* end, uint8_t** data, uint32_t timeout)
 {
     recvString_1(nic,target, timeout);
     if (data_find(nic->buffer,ESP8285_BUF_SIZE,target) != -1) {
@@ -545,8 +546,8 @@ bool recvFindAndFilter(esp8285_obj* nic,uint8_t* target, uint8_t* begin, uint8_t
         int32_t index2 = data_find(nic->buffer,ESP8285_BUF_SIZE,end);
         if (index1 != -1 && index2 != -1) {
             index1 += strlen(begin);
-			data = m_new(uint8_t, index2 - index1);
-			memcpy(data,nic->buffer[index1], index2 - index1);
+			*data = m_new(uint8_t, index2 - index1);
+			memcpy(*data,nic->buffer[index1], index2 - index1);
             return true;
         }
     }
@@ -594,7 +595,7 @@ bool eATRST(esp8285_obj* nic)
     return recvFind(nic,"OK",1000);
 }
 
-bool eATGMR(esp8285_obj* nic,uint8_t* version)
+bool eATGMR(esp8285_obj* nic,uint8_t** version)
 {
 
 	int errcode = 0;
@@ -618,7 +619,7 @@ bool qATCWMODE(esp8285_obj* nic,uint8_t *mode)
     }
     rx_empty(nic);
 	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
-    ret = recvFindAndFilter(nic,"OK", "+CWMODE:", "\r\n\r\nOK", str_mode,1000); 
+    ret = recvFindAndFilter(nic,"OK", "+CWMODE:", "\r\n\r\nOK", &str_mode,1000); 
     if (ret) {
         *mode = atoi(str_mode);
         return true;
@@ -698,7 +699,7 @@ bool eATCWQAP(esp8285_obj* nic)
     return recvFind(nic,"OK",1000);
 }
 
-bool eATCIPSTATUS(esp8285_obj* nic,uint8_t* list)
+bool eATCIPSTATUS(esp8285_obj* nic,uint8_t** list)
 {
     int errcode = 0;
 	uint8_t* cmd = "AT+CIPSTATUS\r\n";
@@ -815,7 +816,7 @@ bool eATCIPCLOSESingle(esp8285_obj* nic)
 	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
     return recvFind(nic,"OK", 5000);
 }
-bool eATCIFSR(esp8285_obj* nic,uint8_t* list)
+bool eATCIFSR(esp8285_obj* nic,uint8_t** list)
 {
 	int errcode = 0;
 	uint8_t* cmd = "AT+CIFSR\r\n";

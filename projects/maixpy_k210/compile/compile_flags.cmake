@@ -34,6 +34,9 @@ set(CMAKE_C_FLAGS 	-mcmodel=medany
                     -Wno-strict-aliasing
                     -Wno-override-init
                     -Wno-error=format=
+                    -Wno-error=format-truncation=
+                    -Wno-error=restrict
+                    -Wno-error=sequence-point
                     )
 ################################
 
@@ -67,6 +70,9 @@ set(CMAKE_CXX_FLAGS -mcmodel=medany
                     -Wno-strict-aliasing
                     -Wno-override-init
                     -Wno-error=format=
+                    -Wno-error=format-truncation=
+                    -Wno-error=restrict
+                    -Wno-error=sequence-point
                     )
 ################################
 

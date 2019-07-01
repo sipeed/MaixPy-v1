@@ -13,6 +13,8 @@
 #include "ov7740.h"
 #include "omv_boardconfig.h"
 #include "sensor.h"
+#include "sleep.h"
+#include "cambus.h"
 
 static const uint8_t default_regs[][2] = {
 	{0x47, 0x02}  ,
@@ -95,7 +97,7 @@ static const uint8_t brightness_regs[NUM_BRIGHTNESS_LEVELS][2] = {
 };
 
 #define NUM_CONTRAST_LEVELS (9)
-static const uint8_t contrast_regs[NUM_CONTRAST_LEVELS][1] = {
+static const uint8_t contrast_regs[NUM_CONTRAST_LEVELS][3] = {
     {0x20, 0x10, 0xD0}, /* -4 */
     {0x20, 0x14, 0x80}, /* -3 */
     {0x20, 0x18, 0x48}, /* -2 */
@@ -127,7 +129,7 @@ static int reset(sensor_t *sensor)
     ret = cambus_writeb(sensor->slv_addr, 0x12, 0x80);
 
     // Delay 2 ms
-    mp_hal_delay_ms(2);
+    msleep(2);
 
     // Write default regsiters
     for (int i = 0; default_regs[i][0]; i++) {
@@ -137,7 +139,7 @@ static int reset(sensor_t *sensor)
     return ret;
 }
 
-static int sleep(sensor_t *sensor, int enable)
+static int ov7740_sleep(sensor_t *sensor, int enable)
 {
     if(enable)
     {
@@ -386,7 +388,7 @@ int ov7740_init(sensor_t *sensor)
     // Initialize sensor structure.
     sensor->gs_bpp              = 2;
     sensor->reset               = reset;
-    sensor->sleep               = sleep;
+    sensor->sleep               = ov7740_sleep;
     sensor->read_reg            = read_reg;
     sensor->write_reg           = write_reg;
     sensor->set_pixformat       = set_pixformat;

@@ -16,10 +16,12 @@
 #define __GC0328_H
 
 #include <stdint.h>
+#include "sensor.h"
 
 #define GC0328_ID       (0x9d)
 #define GC0328_ADDR     (0x42)
 int gc0328_reset(void);
 uint8_t gc0328_scan(void);
+int gc0328_init(sensor_t *sensor);
 
 #endif /* __GC0328_H */

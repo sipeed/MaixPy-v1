@@ -25,7 +25,6 @@ void fs_no_intersection(mp_obj_t fp);
 
 
 
-
 int file_corrupted_raise(mp_obj_t fp);
 const char *ffs_strerror(int res);
 
@@ -56,6 +55,7 @@ int read_data_raise(mp_obj_t fp, void *data, mp_uint_t size);
 int write_data(mp_obj_t fp, const void *data, mp_uint_t size);
 int write_data_raise(mp_obj_t fp, const void *data, mp_uint_t size);
 int file_write(mp_obj_t fp, void *data, mp_uint_t size, mp_uint_t* size_out);
+int file_read(mp_obj_t fp, void *data, mp_uint_t size, mp_uint_t* size_out);
 int read_data_raise(mp_obj_t fp, void *data, mp_uint_t size);
 
 #endif

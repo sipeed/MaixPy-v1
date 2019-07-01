@@ -62,7 +62,8 @@ int video_hal_file_size(avi_t* avi);
  */
 int video_hal_image_encode_mjpeg(avi_t* avi, image_t* img);
 uint8_t* video_hal_malloc(uint32_t size);
-uint8_t* video_hal_free(uint8_t* ptr);
+void video_hal_free(uint8_t* ptr);
+int video_hal_audio_deinit(avi_t* avi);
 
 
 #endif

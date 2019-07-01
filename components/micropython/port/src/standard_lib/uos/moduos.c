@@ -182,6 +182,7 @@ STATIC mp_obj_t mod_os_flash_format(void) {
     {
         return mp_const_true;
     }
+    return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_0(mod_os_flash_format_obj, mod_os_flash_format);
 

@@ -195,6 +195,7 @@ bool peripherals_init()
 #ifdef MAIXPY_M5STICK
 	m5stick_init();
 #endif
+	return true;
 }
 
 MP_NOINLINE STATIC spiffs_user_mount_t* init_flash_spiffs()
@@ -553,7 +554,7 @@ int maixpy_main()
 #else
 	mp_task();
 #endif
-
+	return 0;
 }
 void do_str(const char *src, mp_parse_input_kind_t input_kind) {
     nlr_buf_t nlr;

@@ -50,4 +50,11 @@ typedef struct _Maix_audio_obj_t {
     mp_obj_base_t base;
     audio_t audio;
 } Maix_audio_obj_t;
+
+mp_obj_t wav_play_process(audio_t* audio,uint32_t file_size);
+mp_obj_t wav_play(audio_t* audio);
+mp_obj_t wav_record_process(audio_t* audio,uint32_t channels);
+void wav_finish(audio_t* audio);
+mp_obj_t wav_record(audio_t* audio,dmac_channel_number_t DMA_channel);
+
 #endif // MICROPY_INCLUDED_MAIX_MAIX_H

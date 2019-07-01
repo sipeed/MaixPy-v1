@@ -19,5 +19,8 @@
 
 void sipeed_init_mic_array_led(void);
 // void sipeed_calc_voice_strength(uint8_t voice_data[]);
+void sk9822_start_frame(void);
+void sk9822_stop_frame(void);
+void sk9822_send_data(uint32_t data);
 
 #endif
