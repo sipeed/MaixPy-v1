@@ -107,7 +107,7 @@ Doc refer to [maixpy.sipeed.com](https://maixpy.sipeed.com)
 
 ## Build From Source
 
-See [build doc](ports/k210-freertos/README.md)
+See [build doc](build.md)
 
 ## License
 

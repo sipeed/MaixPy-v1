@@ -107,7 +107,7 @@ while True:
 
 ## 从源码构建自己的固件
 
-参考 [build doc](ports/k210-freertos/README.md)
+参考 [构建文档](build.md)
 
 ## 开源协议
 

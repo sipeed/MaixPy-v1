@@ -1,0 +1,161 @@
+Build Maixpy from source code
+=========
+
+
+## Get source code
+
+* Clone by https link
+
+```
+git clone https://github.com/sipeed/MaixPy.git
+```
+
+* Or clone by git link( recommend )
+
+Ensure you have ssh key by command 
+
+```
+cat ~/.ssh/id_rsa.pub 
+```
+
+If not , execute 
+
+```
+ssh-keygen -t rsa
+```
+
+Then clone by command:
+
+```
+git clone git@github.com:sipeed/MaixPy.git
+```
+
+## Install dependencies
+
+Ubuntu for example:
+
+```
+sudo apt update
+sudo apt install python3 python3-pip build-essential
+sudo pip3 install -r requirements.txt
+
+```
+
+## Download toolchain
+
+Download the latest toolchain from [here](https://github.com/kendryte/kendryte-gnu-toolchain/releases)
+
+And extract to `/opt/kendryte-toolchain/`
+
+```
+tar -Jxvf kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz
+sudo cp -rf kendryte-toolchain /opt
+ls /opt/kendryte-toolchain/bin
+```
+
+## Configure project
+
+* Switch path to project director
+
+```
+cd MaixPy
+cd projects/maixpy_k210
+```
+
+* Configure toolchain path
+
+The default toolchain path is `/opt/kendryte-toolchain/bin`,
+and default toolchain pfrefix is `riscv64-unknown-elf-`.
+
+If you have copied toolchain to `/opt`, just use default.
+
+Or you can custom your toolchain path by 
+
+```
+python3 project.py --toolchain /opt/kendryte-toolchain/bin --toolchain-prefix riscv64-unknown-elf- config 
+```
+
+And clean config to default by command
+
+```
+python3 project.py clean_conf
+```
+
+* Configure project
+
+Usually, Just use the default configuration.
+
+If you want to custom project modules, execute command:
+
+```
+python3 project.py menuconfig
+```
+
+This command will display a configure panel with GUI,
+then change settings and save configuration.
+
+## Build
+
+```
+python3 project.py build
+```
+
+And clean project by:
+
+```
+python3 project.py clean
+```
+
+Clean all build files by:
+
+```
+python3 project.py distclean
+```
+
+The make system is generated from `cmake`, 
+you must run
+
+```
+python3 project.py rebuild
+```
+
+to rebuild make system after you add or delete source files
+
+
+
+
+## Flash (Burn) to board
+
+
+For example, you have one `Maix Go` board:
+
+```
+python3 project.py -B goE -p /dev/ttyUSB1 -b 1500000 flash
+```
+
+For `Maixduino` board:
+
+```
+python3 project.py -B maixduino -p /dev/ttyUSB0 -b 1500000 -S flash
+```
+
+`-B` means board, `-p` means board serial device port, `-b` means baudrate, `-S` or `--Slow` means download at low speed but more stable mode.
+
+More parameters help by :
+
+```
+python3 project.py --help
+```
+
+
+## Others
+
+* Code conventions: TODO
+* Build system: refer to [c_cpp_project_framework](https://github.com/Neutree/c_cpp_project_framework)
+
+
+
+
+
+
+
