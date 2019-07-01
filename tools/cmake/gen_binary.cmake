@@ -5,6 +5,6 @@ set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <CMAKE_CXX_LINK_FLAGS> <OBJE
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_OBJCOPY} --output-format=binary ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.elf ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.bin
     DEPENDS ${PROJECT_NAME}
-    COMMENT "-- Generating .bin file ...")
+    COMMENT "-- Generating .bin firmware at ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.bin")
 
 

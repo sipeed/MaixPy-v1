@@ -10,24 +10,10 @@ Build Maixpy from source code
 git clone https://github.com/sipeed/MaixPy.git
 ```
 
-* Or clone by git link( recommend )
-
-Ensure you have ssh key by command 
+* Then get submodules
 
 ```
-cat ~/.ssh/id_rsa.pub 
-```
-
-If not , execute 
-
-```
-ssh-keygen -t rsa
-```
-
-Then clone by command:
-
-```
-git clone git@github.com:sipeed/MaixPy.git
+git submodule update --init
 ```
 
 ## Install dependencies
