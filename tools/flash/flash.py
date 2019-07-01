@@ -30,7 +30,7 @@ dict_arg = {"port":"",
             "Board": "auto",
             "Slow": False
             }
-dict_arg_not_save = ["sram", "terminal"]
+dict_arg_not_save = ["sram", "terminal", "Slow"]
 
 def kflash_py_printCallback(*args, end = "\n"):
         msg = ""

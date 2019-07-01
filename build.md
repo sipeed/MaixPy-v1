@@ -141,11 +141,15 @@ python3 project.py -B maixduino -p /dev/ttyUSB0 -b 1500000 -S flash
 
 `-B` means board, `-p` means board serial device port, `-b` means baudrate, `-S` or `--Slow` means download at low speed but more stable mode.
 
+the configuration saved in `.flash_conf.json` except args: `--sram`(`-s`)、`--terminal`(`-t`)、`--Slow`(`-S`)
 You don't need to confiure again the next time you burn firmware, just use:
 ```
 python3 project.py flash
 ```
-the configuration saved in `.flash_conf.json`
+or 
+```
+python3 project.py -S flash
+```
 
 
 More parameters help by :
