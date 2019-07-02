@@ -37,7 +37,7 @@ menu "Micropython configurations"
 		default n
 	
 	config MAIXPY_LVGL_ENABLE
-		bool "Integrate LittlvGL to maixpy"
+		bool "Enbale LittlvGL"
 		default n
 
 endmenu

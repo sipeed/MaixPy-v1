@@ -8,6 +8,7 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     set(mpy_build_gen_header_dir "${mpy_build_dir}/genhdr")
     set(mpy_frozen_py_dir "${mpy_port_dir}/builtin_py")
     set(mpy_build_mpy_dir "${mpy_build_dir}/mpy")
+    set(lvgl_build_dir "${mpy_build_dir}/port/lvgl")
     set(components_requirements kendryte_sdk drivers boards utils spiffs)
 
     ################# Add include #################
@@ -24,16 +25,11 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
                             "${mpy_port_dir}/src/Maix/include"
                             "${mpy_port_dir}/src/modules/include"
                             "${mpy_port_dir}/src/modules/ultrasonic/include"
-                            "${mpy_port_dir}/src/nes/include"
                             "${mpy_port_dir}/src/omv/include"
                             "${mpy_port_dir}/src/omv/boards/MAIX"
                             "${mpy_port_dir}/src/omv/img/include"
                             "${mpy_port_dir}/src/omv/py/include"
                             "${mpy_port_dir}/src/standard_lib/include"
-                            "${mpy_port_dir}/src/touchscreen/include"
-                            "${mpy_port_dir}/src/touchscreen/ns2009/include"
-                            "${mpy_port_dir}/src/video/include"
-                            "${mpy_port_dir}/src/video/avi/include"
                             "${mpy_build_dir}"
         )
     list(APPEND ADD_PRIVATE_INCLUDE "${mpy_port_dir}/src/nes/mapper")
@@ -48,7 +44,6 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     append_srcs_dir(MPY_PORT_SRCS "port/src/Maix")
     append_srcs_dir(MPY_PORT_SRCS "port/src/modules")
     append_srcs_dir(MPY_PORT_SRCS "port/src/modules/ultrasonic/src")
-    append_srcs_dir(MPY_PORT_SRCS "port/src/nes")
     append_srcs_dir(MPY_PORT_SRCS "port/src/omv")
     append_srcs_dir(MPY_PORT_SRCS "port/src/omv/img")
     append_srcs_dir(MPY_PORT_SRCS "port/src/omv/py")
@@ -59,10 +54,6 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/socket")
     append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/uos")
     append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/utime")
-    append_srcs_dir(MPY_PORT_SRCS "port/src/touchscreen")
-    append_srcs_dir(MPY_PORT_SRCS "port/src/touchscreen/ns2009")
-    append_srcs_dir(MPY_PORT_SRCS "port/src/video")
-    append_srcs_dir(MPY_PORT_SRCS "port/src/video/avi")
 
     list(APPEND MPY_SRCS    
                     "core/py/mpstate.c"
@@ -236,6 +227,105 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     set_property(SOURCE ${MPY_FROZEN_SRC} PROPERTY GENERATED 1)
     ###############################################
 
+
+    ############# OPTIONAL MODULES PART 1 ##############
+    # nes emulator
+    if(CONFIG_MAIXPY_NES_ENABLE)
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/nes/include")
+        append_srcs_dir(ADD_SRCS "port/src/nes")
+    endif()
+    # video support
+    if(CONFIG_MAIXPY_VIDEO_ENABLE)
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/video/include"
+                                "${mpy_port_dir}/src/video/avi/include"
+                                )
+        append_srcs_dir(ADD_SRCS "port/src/video")
+        append_srcs_dir(ADD_SRCS "port/src/video/avi")
+    endif()
+    # touch screen
+    if(CONFIG_MAIXPY_TOUCH_SCREEN_ENABLE)
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/touchscreen/include"
+                                )
+        append_srcs_dir(ADD_SRCS "port/src/touchscreen")
+        if(CONFIG_MAIXPY_TOUCH_SCREEN_DRIVER_NS2009)
+            list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/touchscreen/ns2009/include")
+            append_srcs_dir(ADD_SRCS "port/src/touchscreen/ns2009")
+        endif()
+    endif()
+    # omv minimum
+    if(CONFIG_MAIXPY_OMV_MINIMUM)
+        # TODO:
+        message(STATUS "OMV minimum enabled")
+    endif()
+    # LVGL
+    if(CONFIG_MAIXPY_LVGL_ENABLE)
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/lvgl/include"
+                                "${mpy_port_dir}/src/lvgl/lv_bindings/include"
+                                "${mpy_port_dir}/src/lvgl/lv_bindings/lvgl"
+                                "${mpy_port_dir}/src/lvgl/lv_bindings/lvgl/src"
+                                "${mpy_port_dir}/src/lvgl/lv_bindings/lvgl/src/lv_core"
+                                "${mpy_port_dir}/src/lvgl/lv_bindings/lvgl/src/lv_draw"
+                                "${mpy_port_dir}/src/lvgl/lv_bindings/lvgl/src/lv_font"
+                                "${mpy_port_dir}/src/lvgl/lv_bindings/lvgl/src/lv_hal"
+                                "${mpy_port_dir}/src/lvgl/lv_bindings/lvgl/src/lv_misc"
+                                "${mpy_port_dir}/src/lvgl/lv_bindings/lvgl/src/lv_objx"
+                                "${mpy_port_dir}/src/lvgl/lv_bindings/lvgl/src/lv_themes"
+                                "${mpy_port_dir}/src/lvgl/lv_bindings"
+                                )
+        append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl/lv_bindings/lvgl/src/lv_core")
+        append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl/lv_bindings/lvgl/src/lv_draw")
+        append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl/lv_bindings/lvgl/src/lv_font")
+        append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl/lv_bindings/lvgl/src/lv_hal")
+        append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl/lv_bindings/lvgl/src/lv_misc")
+        append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl/lv_bindings/lvgl/src/lv_objx")
+        append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl/lv_bindings/lvgl/src/lv_themes")
+        set(LVGL_MPY_GEN_SRC "${lvgl_build_dir}/lv_mpy.c")
+        # add relative path for  ${mpy_build_gen_header_dir}/qstr.i.last need
+        file(RELATIVE_PATH LVGL_MPY_GEN_SRC_REL ${CMAKE_CURRENT_LIST_DIR} ${LVGL_MPY_GEN_SRC})
+        list(APPEND ADD_SRCS ${LVGL_MPY_SRCS} ${LVGL_MPY_GEN_SRC_REL})
+        set_property(SOURCE ${LVGL_MPY_GEN_SRC} PROPERTY GENERATED 1)
+        
+        set(lvgl_gen_py_tool ${mpy_port_dir}/src/lvgl/lv_bindings/gen/gen_mpy.py)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DLV_CONF_H=1 -DLV_CONF_INCLUDE_SIMPLE")
+    else()
+        set(LVGL_MPY_GEN_SRC "")
+    endif()
+    #############################################
+
+    ################## FLAGS ####################
+    # find requirements include  //TODO: maybe cmake have functio or variable can do this
+    set(include_dir_flags ${ADD_INCLUDE})
+    prepend(include_dir_flags "-I" ${include_dir_flags})
+    foreach(component ${components_requirements})
+        get_target_property(include_dir ${component} INTERFACE_INCLUDE_DIRECTORIES)    
+        prepend(include_dir "-I" ${include_dir})
+        list(APPEND include_dir_flags ${include_dir})
+    endforeach()
+    string(REPLACE ";" " " include_dir_flags "${include_dir_flags}")
+    separate_arguments(cmd_param_cflag NATIVE_COMMAND ${CMAKE_C_FLAGS})
+    separate_arguments(cmd_param_cinclude NATIVE_COMMAND ${include_dir_flags})
+    #############################################
+
+    ########### OPTIONAL MODULES PART 2 #########
+
+    # lvgl
+    if(CONFIG_MAIXPY_LVGL_ENABLE)
+        separate_arguments(cmd_param_lvgl_fake_libc_inc NATIVE_COMMAND ${mpy_port_dir}/src/lvgl/lv_bindings/pycparser/utils/fake_libc_include)
+        set(lvgl_core_header ${mpy_port_dir}/src/lvgl/lv_bindings/lvgl/lvgl.h)
+        set(LVGL_MPY_GEN_SRC_PP ${lvgl_build_dir}/lvgl.pp.c)
+        add_custom_command(OUTPUT ${LVGL_MPY_GEN_SRC_PP}
+                    COMMAND mkdir -p ${lvgl_build_dir}
+                    COMMAND ${CMAKE_C_COMPILER} -E ${cmd_param_cflag} ${cmd_param_cinclude} -I${cmd_param_lvgl_fake_libc_inc} ${lvgl_core_header} > ${LVGL_MPY_GEN_SRC_PP}
+                    DEPENDS ${lvgl_core_header}
+                    )
+        add_custom_command(OUTPUT ${LVGL_MPY_GEN_SRC}
+                    COMMAND ${python} ${lvgl_gen_py_tool} ${cmd_param_cinclude} -M maixpy -MP maix -E ${LVGL_MPY_GEN_SRC_PP} ${lvgl_core_header} > ${LVGL_MPY_GEN_SRC}
+                    DEPENDS ${LVGL_MPY_GEN_SRC_PP}
+                )
+    endif()
+    #############################################
+
+
     ############ QSTR(SRC_QSTR) ##############
     set(QSTR_SRCS ${ADD_SRCS})
     list(REMOVE_ITEM QSTR_SRCS  "core/py/nlr.c"
@@ -251,7 +341,8 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     set(version_header ${mpy_build_gen_header_dir}/mpversion.h)
     add_custom_target(gen_version_header
                             COMMAND mkdir -p ${mpy_build_gen_header_dir}
-                            COMMAND ${python} ${mpy_core_src_dir}/makeversionhdr.py ${version_header} 
+                            COMMAND ${python} ${mpy_core_src_dir}/makeversionhdr.py ${version_header}
+                            DEPENDS ${LVGL_MPY_GEN_SRC} 
                             VERBATIM
                         )
 
@@ -265,15 +356,6 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     set(QSTR_DEFS_COLLECTED ${mpy_build_gen_header_dir}/qstrdefs.collected.h)
     set(QSTR_GEN_EXTRA_CFLAGS -DNO_QSTR -I${mpy_build_dir}/tmp)
     set(QSTR_GLOBAL_DEPENDENCIES ${mpy_core_src_dir}/mpconfig.h ${mpy_port_dir}/include/mpconfigport.h)
-    # find requirements include  //TODO: maybe cmake have functio or variable can do this
-    set(include_flags ${ADD_INCLUDE})
-    prepend(include_flags "-I" ${include_flags})
-    foreach(component ${components_requirements})
-        get_target_property(include_dir ${component} INTERFACE_INCLUDE_DIRECTORIES)    
-        prepend(include_dir "-I" ${include_dir})
-        list(APPEND include_flags ${include_dir})
-    endforeach()
-    string(REPLACE ";" " " include_flags "${include_flags}")
 
     add_custom_target(gen_module_defs
             COMMAND ${python} ${mpy_core_src_dir}/makemoduledefs.py --vpath=${mpy_core_dir}, ${mpy_dir},  ${QSTR_SRCS} > ${MODULE_DEFS}
@@ -282,10 +364,8 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
         )
 
     abspath(QSTR_SRCS_FULL_PATH ${QSTR_SRCS})
-    separate_arguments(cmd_cflag NATIVE_COMMAND ${CMAKE_C_FLAGS})
-    separate_arguments(cmd_cinclude NATIVE_COMMAND ${include_flags})
     add_custom_command(OUTPUT ${mpy_build_gen_header_dir}/qstr.i.last 
-            COMMAND ${CMAKE_C_COMPILER} -E ${QSTR_GEN_EXTRA_CFLAGS} ${cmd_cflag} ${cmd_cinclude} -DFFCONF_H="${mpy_core_dir}/lib/oofatfs/ffconf.h" ${QSTR_SRCS_FULL_PATH} ${QSTR_GLOBAL_DEPENDENCIES} > ${mpy_build_gen_header_dir}/qstr.i.last
+            COMMAND ${CMAKE_C_COMPILER} -E ${QSTR_GEN_EXTRA_CFLAGS} ${cmd_param_cflag} ${cmd_param_cinclude} -DFFCONF_H="${mpy_core_dir}/lib/oofatfs/ffconf.h" ${QSTR_SRCS_FULL_PATH} ${QSTR_GLOBAL_DEPENDENCIES} > ${mpy_build_gen_header_dir}/qstr.i.last
             DEPENDS gen_module_defs
             VERBATIM
         )
@@ -304,7 +384,7 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     separate_arguments(cmd_sed1 NATIVE_COMMAND "s/^\"\\(Q(.*)\\)\"/\\1/")
     
     add_custom_target(gen_qstrdefs_preprocessed_h
-                    COMMAND cat ${PY_QSTR_DEFS} ${QSTR_DEFS} ${QSTR_DEFS_COLLECTED} | sed '${cmd_sed0}' | ${CMAKE_C_COMPILER} -E ${cmd_cflag} ${cmd_cinclude} - | sed '${cmd_sed1}' > ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h
+                    COMMAND cat ${PY_QSTR_DEFS} ${QSTR_DEFS} ${QSTR_DEFS_COLLECTED} | sed '${cmd_sed0}' | ${CMAKE_C_COMPILER} -E ${cmd_param_cflag} ${cmd_param_cinclude} - | sed '${cmd_sed1}' > ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h
                     DEPENDS gen_mpy_cross gen_version_header gen_module_defs gen_collected_h
                 )
     add_custom_command(OUTPUT ${qstr_header}

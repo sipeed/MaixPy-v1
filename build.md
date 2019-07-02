@@ -1,6 +1,7 @@
 Build Maixpy from source code
 =========
 
+Only suport Linux now! not test on Windows or macOS
 
 ## Get source code
 
@@ -13,7 +14,16 @@ git clone https://github.com/sipeed/MaixPy.git
 * Then get submodules
 
 ```
+git submodule update --recursive --init
+```
+
+It will regiter and clone all submodules, if you don't want to register all submodules, cause some modules is unnecessary, just execute
+```
 git submodule update --init
+# or 
+git submodule update --init path_to_submodule
+# or
+git submodule update --init --recursive path_to_submodule
 ```
 
 ## Install dependencies

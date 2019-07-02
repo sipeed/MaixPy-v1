@@ -266,15 +266,15 @@ extern const struct _mp_obj_module_t mp_module_modules;
 
 
 // openmv minimum
-#ifndef MAIXPY_OMV_MINIMUM_FUNCTION
-#define MAIXPY_OMV_MINIMUM_FUNCTION         (0) // Minimum function
-#endif //MAIXPY_OMV_MINIMUM_FUNCTION
+#ifndef CONFIG_MAIXPY_OMV_MINIMUM
+#define CONFIG_MAIXPY_OMV_MINIMUM           (0) // Minimum function
+#endif //CONFIG_MAIXPY_OMV_MINIMUM
 
 // video record play
-#ifndef MAIXPY_VIDEO_SUPPORT
-#define MAIXPY_VIDEO_SUPPORT                (0) // avi video support
-#endif //MAIXPY_VIDEO_SUPPORT
-#if MAIXPY_VIDEO_SUPPORT
+#ifndef CONFIG_MAIXPY_VIDEO_ENABLE
+#define CONFIG_MAIXPY_VIDEO_ENABLE          (0) // avi video support
+#endif //CONFIG_MAIXPY_VIDEO_ENABLE
+#if CONFIG_MAIXPY_VIDEO_ENABLE
 extern const struct _mp_obj_module_t video_module;
 #define MAIXPY_PY_VIDEO_DEF \
     { MP_OBJ_NEW_QSTR(MP_QSTR_video), (mp_obj_t)&video_module },
@@ -283,10 +283,10 @@ extern const struct _mp_obj_module_t video_module;
 #endif
 
 // nes game emulator
-#ifndef MAIXPY_NES_EMULATOR_SUPPORT
-#define MAIXPY_NES_EMULATOR_SUPPORT         (0) // NES gamer emulator
-#endif //MAIXPY_NES_EMULATOR_SUPPORT
-#if MAIXPY_NES_EMULATOR_SUPPORT
+#ifndef CONFIG_MAIXPY_NES_ENABLE
+#define CONFIG_MAIXPY_NES_ENABLE         (0) // NES gamer emulator
+#endif //CONFIG_MAIXPY_NES_ENABLE
+#if CONFIG_MAIXPY_NES_ENABLE
 extern const struct _mp_obj_module_t nes_module;
 #define MAIXPY_PY_NES_DEF \
     { MP_OBJ_NEW_QSTR(MP_QSTR_nes), (mp_obj_t)&nes_module },
@@ -295,12 +295,12 @@ extern const struct _mp_obj_module_t nes_module;
 #endif
 
 // lvgl GUI lib
-#ifndef MAIXPY_LVGL_SUPPORT
-#define MAIXPY_LVGL_SUPPORT                 (0) // lvgl GUI lib
+#ifndef CONFIG_MAIXPY_LVGL_ENABLE
+#define CONFIG_MAIXPY_LVGL_ENABLE           (0) // lvgl GUI lib
 #endif
-#if MAIXPY_LVGL_SUPPORT
-#undef MAIXPY_LVGL_SUPPORT
-#define MAIXPY_LVGL_SUPPORT                 (1) // lvgl GUI lib
+#if CONFIG_MAIXPY_LVGL_ENABLE
+#undef CONFIG_MAIXPY_LVGL_ENABLE
+#define CONFIG_MAIXPY_LVGL_ENABLE           (1) // lvgl GUI lib
 extern const struct _mp_obj_module_t mp_module_lvgl;
 extern const struct _mp_obj_module_t mp_module_lvgl_helper;
 #define MAIXPY_PY_LVGL_DEF \
@@ -308,13 +308,13 @@ extern const struct _mp_obj_module_t mp_module_lvgl_helper;
     { MP_OBJ_NEW_QSTR(MP_QSTR_lvgl_helper), (mp_obj_t)&mp_module_lvgl_helper },
 #else
 #define MAIXPY_PY_LVGL_DEF
-#endif // MAIXPY_LVGL_SUPPORT
+#endif // CONFIG_MAIXPY_LVGL_ENABLE
 
 // touchscreen
-#ifndef MAIXPY_TOUCH_SCREEN_SUPPORT
-#define MAIXPY_TOUCH_SCREEN_SUPPORT          (0)
+#ifndef CONFIG_MAIXPY_TOUCH_SCREEN_ENABLE
+#define CONFIG_MAIXPY_TOUCH_SCREEN_ENABLE    (0)
 #endif
-#if MAIXPY_TOUCH_SCREEN_SUPPORT
+#if CONFIG_MAIXPY_TOUCH_SCREEN_ENABLE
 extern const struct _mp_obj_module_t mp_module_touchscreen;
 #define MAIXPY_PY_TOUCHSCREEN_DEF \
     { MP_OBJ_NEW_QSTR(MP_QSTR_touchscreen), (mp_obj_t)&mp_module_touchscreen },
