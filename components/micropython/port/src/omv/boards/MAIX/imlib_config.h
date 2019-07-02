@@ -11,14 +11,14 @@
 
 #include "mpconfigport.h"
 
-#if MAIXPY_OMV_MINIMUM_FUNCTION
+#if CONFIG_MAIXPY_OMV_MINIMUM
 
 //#define IMLIB_ENABLE_YUV_LAB_FUNC
 
 #define OMV_MINIMUM
 
 /////////////////////////////////////////////////////////////////////////
-#else //MAIXPY_OMV_MINIMUM_FUNCTION
+#else //CONFIG_MAIXPY_OMV_MINIMUM
 /////////////////////////////////////////////////////////////////////////
 
 
@@ -138,6 +138,6 @@
 
 //#define IMLIB_ENABLE_YUV_LAB_FUNC
 
-#endif //MAIXPY_OMV_MINIMUM_FUNCTION
+#endif //CONFIG_MAIXPY_OMV_MINIMUM
 
 #endif //__IMLIB_CONFIG_H__

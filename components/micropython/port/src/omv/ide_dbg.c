@@ -642,7 +642,7 @@ void      ide_save_file()
 
 bool ide_debug_init0()
 {
-
+    return true;
 }
 
 void ide_dbg_init()

@@ -24,13 +24,14 @@
 #include "py/runtime.h"
 //#include "sipeed_sys.h"
 
-static const mp_obj_type_t py_cascade_type;
 static const mp_obj_type_t py_image_type;
 
 //extern const char *ffs_strerror(FRESULT res);
 extern uint32_t systick_current_millis(void);
 
 #ifndef OMV_MINIMUM
+
+static const mp_obj_type_t py_cascade_type;
 
 // Haar Cascade ///////////////////////////////////////////////////////////////
 
