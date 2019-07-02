@@ -89,7 +89,7 @@ typedef int16_t lv_coord_t;
 
 /* Garbage Collector settings
  * Used if lvgl is binded to higher level language and the memory is managed by that language */
-#define LV_ENABLE_GC 1 /* Enable GC for Micropython */
+#define LV_ENABLE_GC 0 /* Enable GC for Micropython */
 #if LV_ENABLE_GC != 0
 // #  define LV_GC_INCLUDE "py/mpstate.h"
 // #  define LV_MEM_CUSTOM_REALLOC   m_realloc      /*Wrapper to realloc*/
