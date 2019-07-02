@@ -3,4 +3,5 @@
 config COMPONENT_DRIVERS_ENABLE
 	bool "Enbale drivers component"
 	default n
+	select COMPONENT_KENDRYTE_SDK_ENABLE
 

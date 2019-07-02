@@ -3,7 +3,41 @@
 config COMPONENT_MICROPYTHON_ENABLE
 	bool "Enbale micropython component"
 	default n
+	select COMPONENT_KENDRYTE_SDK_ENABLE
+	select COMPONENT_DRIVERS_ENABLE
+	select COMPONENT_SPIFFS_ENABLE
+	select COMPONENT_UTILS_ENABLE
 
 menu "Micropython configurations"
-	visible if COMPONENT_MICROPYTHON_ENABLE
+	depends on COMPONENT_MICROPYTHON_ENABLE
+	
+	config MAIXPY_NES_ENABLE
+		bool "Enable NES emulator"
+		default y
+		depends on COMPONENT_MICROPYTHON_ENABLE
+	
+	config MAIXPY_VIDEO_ENABLE
+		bool "Enable video module"
+		default y
+
+	config MAIXPY_TOUCH_SCREEN_ENABLE
+		bool "Enable touch screen module"
+		default y
+
+	choice MAIXPY_TOUCH_SCREEN_DRIVER
+		bool "Select touch screen driver"
+		default MAIXPY_TOUCH_SCREEN_DRIVER_NS2009
+		depends on MAIXPY_TOUCH_SCREEN_ENABLE
+		config MAIXPY_TOUCH_SCREEN_DRIVER_NS2009
+			bool "Select ns2009 touch screen driver"
+	endchoice
+
+	config MAIXPY_OMV_MINIMUM
+		bool "Minimum size OMV function"
+		default n
+	
+	config MAIXPY_LVGL_ENABLE
+		bool "Integrate LittlvGL to maixpy"
+		default n
+
 endmenu
