@@ -10,34 +10,42 @@ config COMPONENT_MICROPYTHON_ENABLE
 
 menu "Micropython configurations"
 	depends on COMPONENT_MICROPYTHON_ENABLE
+	menu "Modules configurations"
 	
-	config MAIXPY_NES_ENABLE
-		bool "Enable NES emulator"
-		default y
-		depends on COMPONENT_MICROPYTHON_ENABLE
-	
-	config MAIXPY_VIDEO_ENABLE
-		bool "Enable video module"
-		default y
+		config MAIXPY_NES_ENABLE
+			bool "Enable NES emulator"
+			default y
+			depends on COMPONENT_MICROPYTHON_ENABLE
+		
+		config MAIXPY_VIDEO_ENABLE
+			bool "Enable video module"
+			default y
 
-	config MAIXPY_TOUCH_SCREEN_ENABLE
-		bool "Enable touch screen module"
-		default y
+		config MAIXPY_TOUCH_SCREEN_ENABLE
+			bool "Enable touch screen module"
+			default y
 
-	choice MAIXPY_TOUCH_SCREEN_DRIVER
-		bool "Select touch screen driver"
-		default MAIXPY_TOUCH_SCREEN_DRIVER_NS2009
-		depends on MAIXPY_TOUCH_SCREEN_ENABLE
-		config MAIXPY_TOUCH_SCREEN_DRIVER_NS2009
-			bool "Select ns2009 touch screen driver"
-	endchoice
+		choice MAIXPY_TOUCH_SCREEN_DRIVER
+			bool "Select touch screen driver"
+			default MAIXPY_TOUCH_SCREEN_DRIVER_NS2009
+			depends on MAIXPY_TOUCH_SCREEN_ENABLE
+			config MAIXPY_TOUCH_SCREEN_DRIVER_NS2009
+				bool "Select ns2009 touch screen driver"
+		endchoice
 
-	config MAIXPY_OMV_MINIMUM
-		bool "Minimum size OMV function"
-		default n
-	
-	config MAIXPY_LVGL_ENABLE
-		bool "Enbale LittlvGL"
-		default n
+		config MAIXPY_OMV_MINIMUM
+			bool "Minimum size OMV function"
+			default n
+		
+		config MAIXPY_LVGL_ENABLE
+			bool "Enbale LittlvGL"
+			default n
+	endmenu
+
+	menu "Debug configurations"
+		config MAIXPY_K210_UARTHS_DEBUG
+			bool "Use UARTHS to debug(pin9, pin10), UART2 to REPL(pin4, pin5)"
+			default n
+	endmenu
 
 endmenu
