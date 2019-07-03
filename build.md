@@ -37,6 +37,8 @@ sudo pip3 install -r requirements.txt
 
 ```
 
+recommend `python3` instead of python2
+
 ## Download toolchain
 
 Download the latest toolchain from [here](https://github.com/kendryte/kendryte-gnu-toolchain/releases)

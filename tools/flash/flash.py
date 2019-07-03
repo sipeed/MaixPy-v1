@@ -3,6 +3,7 @@
 # @author neucrack
 #
 
+from __future__ import print_function
 import argparse
 import os, sys, time, re, shutil
 import subprocess
@@ -32,12 +33,13 @@ dict_arg = {"port":"",
             }
 dict_arg_not_save = ["sram", "terminal", "Slow"]
 
-def kflash_py_printCallback(*args, end = "\n"):
-        msg = ""
-        for i in args:
-            msg += str(i)
-        msg.replace("\n", " ")
-        print(msg, end=end)
+def kflash_py_printCallback(*args, **kwargs):
+    end = kwargs.pop("end", "\n")
+    msg = ""
+    for i in args:
+        msg += str(i)
+    msg.replace("\n", " ")
+    print(msg, end=end)
 
 def kflash_progress(fileTypeStr, current, total, speedStr):
     # print("{}/{}".format(current, total))
