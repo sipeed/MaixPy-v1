@@ -19,6 +19,7 @@
 #include <string.h>
 #include <malloc.h>
 /*****mpy****/
+#include "mpconfigport.h"
 #include "py/compile.h"
 #include "py/runtime.h"
 #include "py/repl.h"
@@ -83,7 +84,10 @@
 #include "m5stick.h"
 #endif
 
-// #define MAIXPY_DEBUG_UARTHS_REPL_UART3
+#ifdef MAIXPY_K210_UARTHS_DEBUG
+#define MAIXPY_DEBUG_UARTHS_REPL_UART2 // Debug by UARTHS  (use `printk()`) and REPL by UART2
+#endif
+
 
 #define UART_BUF_LENGTH_MAX 269
 
@@ -367,8 +371,8 @@ soft_reset:
 #if MICROPY_HW_UART_REPL
 		{
 			mp_obj_t args[3] = {
-				#ifdef MAIXPY_DEBUG_UARTHS_REPL_UART3
-				MP_OBJ_NEW_SMALL_INT(UART_DEVICE_3),
+				#ifdef MAIXPY_DEBUG_UARTHS_REPL_UART2
+				MP_OBJ_NEW_SMALL_INT(UART_DEVICE_2),
 				#else
 				MP_OBJ_NEW_SMALL_INT(MICROPY_UARTHS_DEVICE),
 				#endif
@@ -383,11 +387,11 @@ soft_reset:
 			{
 				args[1] = MP_OBJ_NEW_SMALL_INT(115200);
 			}
-			#ifdef MAIXPY_DEBUG_UARTHS_REPL_UART3
+			#ifdef MAIXPY_DEBUG_UARTHS_REPL_UART2
 			fpioa_set_function(9, FUNC_UARTHS_RX);
 		    fpioa_set_function(10,  FUNC_UARTHS_TX);
-			fpioa_set_function(4, FUNC_UART3_RX);
-		    fpioa_set_function(5,  FUNC_UART3_TX);
+			fpioa_set_function(4, FUNC_UART2_RX);
+		    fpioa_set_function(5,  FUNC_UART2_TX);
 			#else
 			fpioa_set_function(4, FUNC_UARTHS_RX);
 		    fpioa_set_function(5,  FUNC_UARTHS_TX);
@@ -484,7 +488,6 @@ void* arg_list[16];
 int core1_function(void *ctx)
 {
     uint64_t core = current_coreid();
-    //printk("Core %ld Hello world\r\n", core);
 
     while(1)
 	{

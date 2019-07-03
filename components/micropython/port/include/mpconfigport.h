@@ -385,6 +385,13 @@ extern const struct _mp_obj_module_t mp_module_touchscreen;
 //#define MICROPY_MIN_USE_STM32_MCU (1)
 //#endif
 
+//TODO:
+#if MICROPY_PY_USOCKET_EVENTS
+#define MICROPY_PY_USOCKET_EVENTS_HANDLER 
+#else
+#define MICROPY_PY_USOCKET_EVENTS_HANDLER
+#endif
+
 #if MICROPY_PY_THREAD
 #define MICROPY_EVENT_POLL_HOOK \
     do { \
@@ -394,7 +401,12 @@ extern const struct _mp_obj_module_t mp_module_touchscreen;
         MP_THREAD_GIL_ENTER(); \
     } while (0);
 #else
-#define MICROPY_EVENT_POLL_HOOK 
+#define MICROPY_EVENT_POLL_HOOK \
+    do { \
+        extern void mp_handle_pending(void); \
+        mp_handle_pending(); \
+        MICROPY_PY_USOCKET_EVENTS_HANDLER \
+    } while (0);
 #endif
 
 
