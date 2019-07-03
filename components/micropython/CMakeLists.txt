@@ -355,7 +355,7 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     set(MODULE_DEFS ${mpy_build_gen_header_dir}/moduledefs.h)
     set(QSTR_DEFS_COLLECTED ${mpy_build_gen_header_dir}/qstrdefs.collected.h)
     set(QSTR_GEN_EXTRA_CFLAGS -DNO_QSTR -I${mpy_build_dir}/tmp)
-    set(QSTR_GLOBAL_DEPENDENCIES ${mpy_core_src_dir}/mpconfig.h ${mpy_port_dir}/include/mpconfigport.h)
+    set(QSTR_GLOBAL_DEPENDENCIES ${mpy_core_src_dir}/mpconfig.h ${mpy_port_dir}/include/mpconfigport.h ${global_config_dir}/global_config.h)
 
     add_custom_target(gen_module_defs
             COMMAND ${python} ${mpy_core_src_dir}/makemoduledefs.py --vpath=${mpy_core_dir}, ${mpy_dir},  ${QSTR_SRCS} > ${MODULE_DEFS}
@@ -366,7 +366,7 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     abspath(QSTR_SRCS_FULL_PATH ${QSTR_SRCS})
     add_custom_command(OUTPUT ${mpy_build_gen_header_dir}/qstr.i.last 
             COMMAND ${CMAKE_C_COMPILER} -E ${QSTR_GEN_EXTRA_CFLAGS} ${cmd_param_cflag} ${cmd_param_cinclude} -DFFCONF_H="${mpy_core_dir}/lib/oofatfs/ffconf.h" ${QSTR_SRCS_FULL_PATH} ${QSTR_GLOBAL_DEPENDENCIES} > ${mpy_build_gen_header_dir}/qstr.i.last
-            DEPENDS gen_module_defs
+            DEPENDS gen_module_defs ${QSTR_GLOBAL_DEPENDENCIES}
             VERBATIM
         )
     add_custom_target(gen_collected_h
@@ -383,13 +383,13 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     separate_arguments(cmd_sed0 NATIVE_COMMAND "s/^Q(.*)/\"&\"/")
     separate_arguments(cmd_sed1 NATIVE_COMMAND "s/^\"\\(Q(.*)\\)\"/\\1/")
     
-    add_custom_target(gen_qstrdefs_preprocessed_h
+    add_custom_command(OUTPUT ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h
                     COMMAND cat ${PY_QSTR_DEFS} ${QSTR_DEFS} ${QSTR_DEFS_COLLECTED} | sed '${cmd_sed0}' | ${CMAKE_C_COMPILER} -E ${cmd_param_cflag} ${cmd_param_cinclude} - | sed '${cmd_sed1}' > ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h
-                    DEPENDS gen_mpy_cross gen_version_header gen_module_defs gen_collected_h
+                    DEPENDS gen_mpy_cross gen_version_header gen_module_defs gen_collected_h ${mpy_build_gen_header_dir}/qstr.i.last 
                 )
     add_custom_command(OUTPUT ${qstr_header}
                     COMMAND ${python} ${mpy_core_src_dir}/makeqstrdata.py ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h > ${qstr_header}
-                    DEPENDS gen_qstrdefs_preprocessed_h
+                    DEPENDS ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h ${mpy_build_gen_header_dir}/qstr.i.last 
                 )
     
     file(GLOB frozen_py "${mpy_frozen_py_dir}/*.py")
