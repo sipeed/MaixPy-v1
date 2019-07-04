@@ -304,14 +304,7 @@ int sensor_init_dvp()
         mp_printf(&mp_plat_print, "[MAIXPY]: no sensor\n");
         init_ret = -1;
     }
-    if(sensor.chip_id == OV7740_ID)
-    {
-        dvp_set_image_format(DVP_CFG_YUV_FORMAT);
-    }
-    else
-    {
-        dvp_set_image_format(DVP_CFG_RGB_FORMAT);
-    }
+    dvp_set_image_format(DVP_CFG_YUV_FORMAT);
     dvp_enable_burst();
 	dvp_disable_auto();
 	dvp_set_output_enable(0, 1);	//enable to AI
@@ -359,7 +352,7 @@ int sensor_reset()
     }
     // Disable dvp  IRQ before all cfg done 
     sensor_init_irq();
-
+    mp_hal_delay_ms(20);
 	// mp_printf(&mp_plat_print, "[MAIXPY]: exit sensor_reset\n");
     return 0;
 }
@@ -1024,14 +1017,21 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
 		image->w = MAIN_FB()->w;
 		image->h = MAIN_FB()->h;
 		image->bpp = MAIN_FB()->bpp;
-		image->pixels = MAIN_FB()->pixels;
 		image->pix_ai = MAIN_FB()->pix_ai;
 		//as data come in is in u32 LE format, we need exchange its order
 		//unsigned long t0,t1;
 		//t0=read_cycle();
 		//exchang_data_byte((image->pixels), (MAIN_FB()->w)*(MAIN_FB()->h)*2);
 		//exchang_pixel((image->pixels), (MAIN_FB()->w)*(MAIN_FB()->h)); //cost 3ms@400M
-		reverse_u32pixel((image->pixels), (MAIN_FB()->w)*(MAIN_FB()->h)/2);
+        if(sensor->pixformat == PIXFORMAT_GRAYSCALE)
+        {
+            image->pixels = MAIN_FB()->pix_ai;
+        }
+        else
+        {
+            image->pixels = MAIN_FB()->pixels;
+		    reverse_u32pixel((image->pixels), (MAIN_FB()->w)*(MAIN_FB()->h)/2);
+        }
 		//t1=read_cycle();
 		//mp_printf(&mp_plat_print, "%ld-%ld=%ld, %ld us!\r\n",t1,t0,(t1-t0),((t1-t0)*1000000/400000000)); 
 		if (streaming_cb) {

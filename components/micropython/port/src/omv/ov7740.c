@@ -15,6 +15,7 @@
 #include "sensor.h"
 #include "sleep.h"
 #include "cambus.h"
+#include "dvp.h"
 
 static const uint8_t default_regs[][2] = {
 	{0x47, 0x02}  ,
@@ -172,7 +173,10 @@ static int set_pixformat(sensor_t *sensor, pixformat_t pixformat)
     switch (pixformat) {
         case PIXFORMAT_RGB565:
         case PIXFORMAT_YUV422:
+            dvp_set_image_format(DVP_CFG_YUV_FORMAT);
+            break;
         case PIXFORMAT_GRAYSCALE:
+            dvp_set_image_format(DVP_CFG_Y_FORMAT);
             break;
         case PIXFORMAT_BAYER:
             // sensor support but we not support for DVP of k210 not support RAW format(just support YUV442 and RGB565)

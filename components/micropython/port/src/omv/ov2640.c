@@ -86,7 +86,6 @@ static const uint8_t ov2640_default[][2] = { //k210
 	{0x4c, 0x00},
 	{0x87, 0xd5},
 	{0x88, 0x3f},
-	{0xd7, 0x03},//[pixformat]:
 	{0xd9, 0x10},
 	{0xd3, 0x82},
 	{0xc8, 0x08},
@@ -168,16 +167,20 @@ static const uint8_t ov2640_default[][2] = { //k210
 	{0x5c, 0x00},
 	{0xc3, 0xed},
 	{0x7f, 0x00},
-	{0xda, 0x08},//pixformat
 	{0xe5, 0x1f},
-	{0xe1, 0x67},//pixformat
-	{0xe0, 0x00},
 	{0xdd, 0x7f},
 	{0x05, 0x00},
 #if 1	//color bar
 	{0xff, 0x01},
 	{0x12, 0x02},
 #endif
+    { BANK_SEL, BANK_SEL_DSP },
+    { RESET,   RESET_DVP},
+    { 0xC2,    0x0C},
+    { 0xD7,     0x01 },
+    { 0xDA,  0x01 },
+    { 0xE1,     0x67 },
+    { RESET,    0x00 },
 	{0x00, 0x00}
 
 };
@@ -516,36 +519,36 @@ static const uint8_t uxga_regs[][2] = {
         {0, 0},
 };
 
-static const uint8_t yuv422_regs[][2] = {
-        { BANK_SEL, BANK_SEL_DSP },
-        { RESET,   RESET_DVP},
-        { 0xD7,     0x01 },
-        { IMAGE_MODE, IMAGE_MODE_YUV422 },
-        { 0xE1,     0x67 },
-        { RESET,    0x00 },
-        {0, 0},
-};
+// static const uint8_t yuv422_regs[][2] = {
+//         { BANK_SEL, BANK_SEL_DSP },
+//         { RESET,   RESET_DVP},
+//         { 0xD7,     0x01 },
+//         { IMAGE_MODE, IMAGE_MODE_YUV422 },
+//         { 0xE1,     0x67 },
+//         { RESET,    0x00 },
+//         {0, 0},
+// };
 
-static const uint8_t rgb565_regs[][2] = {
-        { BANK_SEL,   BANK_SEL_DSP },
-        { RESET,      RESET_DVP},
-        { 0xD7,       0x03},
-        { IMAGE_MODE, IMAGE_MODE_RGB565 },
-        { 0xE1,       0x77 },
-        { RESET,      0x00 },
-        {0,           0},
-};
+// static const uint8_t rgb565_regs[][2] = {
+//         { BANK_SEL,   BANK_SEL_DSP },
+//         { RESET,      RESET_DVP},
+//         { 0xD7,       0x03},
+//         { IMAGE_MODE, IMAGE_MODE_RGB565 },
+//         { 0xE1,       0x77 },
+//         { RESET,      0x00 },
+//         {0,           0},
+// };
 
-static const uint8_t jpeg_regs[][2] = {
-        { BANK_SEL, BANK_SEL_DSP },
-        { RESET,   RESET_DVP},
-        { IMAGE_MODE, IMAGE_MODE_JPEG_EN|IMAGE_MODE_RGB565 },
-        { 0xD7,     0x03 },
-        { 0xE1,     0x77 },
-        { QS,       0x0C },
-        { RESET,    0x00 },
-        {0, 0},
-};
+// static const uint8_t jpeg_regs[][2] = {
+//         { BANK_SEL, BANK_SEL_DSP },
+//         { RESET,   RESET_DVP},
+//         { IMAGE_MODE, IMAGE_MODE_JPEG_EN|IMAGE_MODE_RGB565 },
+//         { 0xD7,     0x03 },
+//         { 0xE1,     0x77 },
+//         { QS,       0x0C },
+//         { RESET,    0x00 },
+//         {0, 0},
+// };
 
 #define NUM_BRIGHTNESS_LEVELS (5)
 static const uint8_t brightness_regs[NUM_BRIGHTNESS_LEVELS + 1][5] = {
@@ -628,40 +631,40 @@ static int set_pixformat(sensor_t *sensor, pixformat_t pixformat)
     const uint8_t (*regs)[2]=NULL;
 
     /* read pixel format reg */
+    // switch (pixformat) {
+    //     case PIXFORMAT_RGB565:
+    //         regs = rgb565_regs;
+    //         break;
+    //     case PIXFORMAT_YUV422:
+    //     case PIXFORMAT_GRAYSCALE:
+    //         regs = yuv422_regs;
+    //         break;
+    //     case PIXFORMAT_JPEG:
+    //         regs = jpeg_regs;
+
+    //         break;
+    //     default:
+    //         return -1;
+    // }
+
+    // /* Write initial regsiters */
+    // while (regs[i][0]) {
+    //     cambus_writeb(sensor->slv_addr, regs[i][0], regs[i][1]);
+    //     i++;
+    // }
     switch (pixformat) {
         case PIXFORMAT_RGB565:
-            regs = rgb565_regs;
-            break;
-        case PIXFORMAT_YUV422:
-        case PIXFORMAT_GRAYSCALE:
-            regs = yuv422_regs;
-            break;
-        case PIXFORMAT_JPEG:
-            regs = jpeg_regs;
-
-            break;
-        default:
-            return -1;
-    }
-
-    /* Write initial regsiters */
-    while (regs[i][0]) {
-        cambus_writeb(sensor->slv_addr, regs[i][0], regs[i][1]);
-        i++;
-    }
-    switch (pixformat) {
-        case PIXFORMAT_RGB565:
-			dvp_set_image_format(DVP_CFG_RGB_FORMAT);
-            break;
+	// 		dvp_set_image_format(DVP_CFG_RGB_FORMAT);
+    //         break;
         case PIXFORMAT_YUV422:
             dvp_set_image_format(DVP_CFG_YUV_FORMAT);
             break;
         case PIXFORMAT_GRAYSCALE:
 			dvp_set_image_format(DVP_CFG_Y_FORMAT);
             break;
-        case PIXFORMAT_JPEG:
-			dvp_set_image_format(DVP_CFG_RGB_FORMAT);
-            break;
+    //     case PIXFORMAT_JPEG:
+	// 		dvp_set_image_format(DVP_CFG_RGB_FORMAT);
+    //         break;
         default:
             return -1;
     }
