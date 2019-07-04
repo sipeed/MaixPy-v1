@@ -255,6 +255,11 @@ static mp_obj_t py_sensor_set_windowing(mp_obj_t roi_obj) {
         nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError,
             "The selected window is outside the bounds of the frame"));
     }
+    if(w%8!=0 || h%8!=0)
+    {
+        nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError,
+            "value must be multiple of 8"));
+    }
 
     if (sensor_set_windowing(x, y, w, h) != 0) {
         return mp_const_false;
