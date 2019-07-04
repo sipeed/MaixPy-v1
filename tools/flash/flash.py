@@ -153,7 +153,7 @@ if __name__ == '__main__':
         if config["sram"]:
             reset = False
         sys.argv=[project_path+"/tools/flash/flash.py"]
-        serial.tools.miniterm.main(default_port=config["port"], default_baudrate=config["baudrate"], default_dtr=reset, default_rts=reset)
+        serial.tools.miniterm.main(default_port=config["port"], default_baudrate=115200, default_dtr=reset, default_rts=reset)
         
 
     ######################################################

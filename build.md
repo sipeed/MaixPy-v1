@@ -53,7 +53,14 @@ ls /opt/kendryte-toolchain/bin
 
 ## Configure project
 
-* Switch path to project director
+* Switch path to `hello_world` project director
+
+```
+cd MaixPy
+cd projects/hello_world
+```
+
+or maixpy project
 
 ```
 cd MaixPy
