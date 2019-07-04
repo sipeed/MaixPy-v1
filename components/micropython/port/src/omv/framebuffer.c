@@ -79,7 +79,21 @@ void fb_update_jpeg_buffer()
         // Lock FB
         if (mutex_try_lock(&JPEG_FB()->lock, MUTEX_TID_OMV)) {
             // Set JPEG src and dst images.
-            image_t src = {.w=MAIN_FB()->w, .h=MAIN_FB()->h, .bpp=MAIN_FB()->bpp,     .pixels=MAIN_FB()->pixels};
+            image_t src;
+            if(MAIN_FB()->bpp == 1)//grayscale
+            {
+                src.w=MAIN_FB()->w;
+                src.h=MAIN_FB()->h;
+                src.bpp=MAIN_FB()->bpp;
+                src.pixels=MAIN_FB()->pix_ai;
+            }
+            else
+            {
+                src.w=MAIN_FB()->w;
+                src.h=MAIN_FB()->h;
+                src.bpp=MAIN_FB()->bpp;
+                src.pixels=MAIN_FB()->pixels;
+            }
             image_t dst = {.w=MAIN_FB()->w, .h=MAIN_FB()->h, .bpp=(OMV_JPEG_BUF_SIZE-64),  .pixels=JPEG_FB()->pixels};
 
             // Note: lower quality saves USB bandwidth and results in a faster IDE FPS.
