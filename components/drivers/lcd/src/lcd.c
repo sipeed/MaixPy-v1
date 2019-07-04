@@ -307,7 +307,8 @@ void lcd_draw_pic_gray(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height
 {	
     uint32_t i;
     lcd_set_area(x1, y1, x1 + width - 1, y1 + height - 1);
-    for(i=0; i< LCD_MAX_PIXELS; i+=2)
+    uint32_t size = width*height;
+    for(i=0; i< size; i+=2)
     {
         g_lcd_display_buff[i] = gray2rgb565_swap[ptr[i+1]>>2]; //COLOR_R8_G8_B8_TO_RGB565(ptr[i+1], ptr[i+LCD_MAX_PIXELS+1], ptr[i+LCD_MAX_PIXELS*2+1]); //gray2rgb565_swap[ptr[i+1]>>2];
         g_lcd_display_buff[i+1] = gray2rgb565_swap[ptr[i]>>2]; //COLOR_R8_G8_B8_TO_RGB565(ptr[i], ptr[i+LCD_MAX_PIXELS], ptr[i+LCD_MAX_PIXELS*2]); //gray2rgb565_swap[ptr[i]>>2];

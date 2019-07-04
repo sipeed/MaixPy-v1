@@ -23,6 +23,7 @@
 #include "gc0328.h"
 #include "ov7740.h"
 #include "mphalport.h"
+#include "printf.h"
 
 extern volatile dvp_t* const dvp;
 
@@ -1025,7 +1026,7 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
 		//exchang_pixel((image->pixels), (MAIN_FB()->w)*(MAIN_FB()->h)); //cost 3ms@400M
         if(sensor->pixformat == PIXFORMAT_GRAYSCALE)
         {
-            image->pixels = MAIN_FB()->pix_ai;
+            image->pixels = image->pix_ai;
         }
         else
         {
