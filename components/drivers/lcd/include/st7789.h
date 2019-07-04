@@ -87,11 +87,7 @@
 #define DCX_GPIONUM             (31)
 #define RST_GPIONUM             (30)
 
-#ifdef MAIXPY_M5STICK
-    #define SPI_CHANNEL             0
-#else
-    #define SPI_CHANNEL             0
-#endif
+#define SPI_CHANNEL             0
 #define SPI_DMA_CH				DMAC_CHANNEL1
 #define SPI_SLAVE_SELECT        3
 /* clang-format on */

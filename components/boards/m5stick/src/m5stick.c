@@ -1,12 +1,14 @@
 
-#ifdef MAIXPY_M5STICK
+
 
 #include "sipeed_i2c.h"
 #include "stdint.h"
 #include "stdbool.h"
 #include "fpioa.h"
 #include "sysctl.h"
+#include "global_config.h"
 
+#ifdef CONFIG_BOARD_M5STICK
 
 #define AXP192_I2C_PIN_SCL  28
 #define AXP192_I2C_PIN_SDA  29

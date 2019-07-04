@@ -78,13 +78,14 @@
 #include "omv.h"
 #include "sipeed_conv.h"
 #include "ide_dbg.h"
+#include "global_config.h"
 
 /********* others *******/
-#ifdef MAIXPY_M5STICK
+#ifdef CONFIG_BOARD_M5STICK
 #include "m5stick.h"
 #endif
 
-#ifdef MAIXPY_K210_UARTHS_DEBUG
+#ifdef CONFIG_MAIXPY_K210_UARTHS_DEBUG
 #define MAIXPY_DEBUG_UARTHS_REPL_UART2 // Debug by UARTHS  (use `printk()`) and REPL by UART2
 #endif
 
@@ -196,7 +197,7 @@ bool flash_init(uint8_t* manuf_id, uint8_t* device_id)
 
 bool peripherals_init()
 {
-#ifdef MAIXPY_M5STICK
+#ifdef CONFIG_BOARD_M5STICK
 	m5stick_init();
 #endif
 	return true;

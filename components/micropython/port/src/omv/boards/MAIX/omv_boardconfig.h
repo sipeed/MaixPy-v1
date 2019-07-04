@@ -11,6 +11,7 @@
 
 #include "imlib_config.h"
 #include "lcd.h"
+#include "global_config.h"
 
 #define OMV_INIT_W LCD_W_MAX
 #define OMV_INIT_H LCD_H_MAX
@@ -58,7 +59,7 @@
 
 // Sensor external clock timer frequency.
 // #define OMV_XCLK_FREQUENCY      (12000000)
-#ifdef MAIXPY_M5STICK
+#ifdef CONFIG_BOARD_M5STICK
 #define OMV_XCLK_FREQUENCY      (12000000)
 #else
 #define OMV_XCLK_FREQUENCY      (24000000)

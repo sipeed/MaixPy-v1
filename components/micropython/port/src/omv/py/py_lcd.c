@@ -22,7 +22,7 @@
 #include "task.h"
 
 #include "sysctl.h"
-
+#include "global_config.h"
 
 // extern uint8_t g_lcd_buf[];
 
@@ -101,7 +101,7 @@ static mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_
     };
     static const mp_arg_t allowed_args[] = {
 		{ MP_QSTR_type, MP_ARG_INT, {.u_int = LCD_SHIELD} },
-#ifdef MAIXPY_M5STICK
+#ifdef CONFIG_BOARD_M5STICK
         { MP_QSTR_freq, MP_ARG_INT, {.u_int = 40000000} },
 #else
 		{ MP_QSTR_freq, MP_ARG_INT, {.u_int = 15000000} },

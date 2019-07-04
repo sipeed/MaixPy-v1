@@ -410,7 +410,7 @@ uint8_t sd_init(void)
 {
 	uint8_t frame[10], index, result;
 	cardinfo.active = 0;
-	#ifdef MAIXPY_M5STICK
+	#ifdef CONFIG_BOARD_M5STICK
 		fpioa_set_function(30, FUNC_SPI1_SCLK);
 		fpioa_set_function(33, FUNC_SPI1_D0);
 		fpioa_set_function(31, FUNC_SPI1_D1);
