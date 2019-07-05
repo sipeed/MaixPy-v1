@@ -121,18 +121,19 @@ STATIC mp_obj_t esp32_make_new(const mp_obj_type_t *type, size_t n_args, size_t 
 
 STATIC mp_obj_t esp32_adc(mp_obj_t self_in)
 {
-    uint16_t adc[ESP32_ADC_CH_NUM];
+    #define ESP32_ADC_CH_NUM_TEMP  (ESP32_ADC_CH_NUM+1)
+    uint16_t adc[ESP32_ADC_CH_NUM_TEMP] = {0};//TODO: 6 channel support!!!
 
     if (esp32_spi_get_adc_val(adc) == 0)
     {
         mp_obj_t *tuple, *tmp;
 
-        tmp = (mp_obj_t *)malloc(ESP32_ADC_CH_NUM * sizeof(mp_obj_t));
+        tmp = (mp_obj_t *)malloc(ESP32_ADC_CH_NUM_TEMP * sizeof(mp_obj_t));
 
-        for (uint8_t index = 0; index < ESP32_ADC_CH_NUM; index++)
+        for (uint8_t index = 0; index < ESP32_ADC_CH_NUM_TEMP; index++)
             tmp[index] = mp_obj_new_int(adc[index]);
 
-        tuple = mp_obj_new_tuple(ESP32_ADC_CH_NUM, tmp);
+        tuple = mp_obj_new_tuple(ESP32_ADC_CH_NUM_TEMP, tmp);
 
         free(tmp);
         return tuple;

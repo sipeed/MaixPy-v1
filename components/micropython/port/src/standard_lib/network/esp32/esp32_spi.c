@@ -1579,7 +1579,7 @@ int8_t esp32_spi_get_adc_val(uint16_t *val)
         return -1;
     }
 
-    for (uint8_t i = 0; i < ESP32_ADC_CH_NUM; i++)
+    for (uint8_t i = 0, j=5; i < ESP32_ADC_CH_NUM; i++, --j)
     {
         if (resp->params[i]->param_len != 2)
         {
@@ -1589,7 +1589,7 @@ int8_t esp32_spi_get_adc_val(uint16_t *val)
             resp->del(resp);
             return -1;
         }
-        *(val + i) = resp->params[i]->param[0] << 8 | resp->params[i]->param[1];
+        *(val + j) = resp->params[i]->param[0] << 8 | resp->params[i]->param[1];
     }
     resp->del(resp);
     return 0;
