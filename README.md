@@ -109,6 +109,8 @@ Doc refer to [maixpy.sipeed.com](https://maixpy.sipeed.com)
 
 See [build doc](build.md)
 
+The historic version see [historic branch](https://github.com/sipeed/MaixPy/tree/historic) (No longer maintained, just keep commit history)
+
 ## License
 
 See [LICENSE](LICENSE.md) file

@@ -41,7 +41,7 @@ recommend `python3` instead of python2
 
 ## Download toolchain
 
-Download the latest toolchain from [here](https://github.com/kendryte/kendryte-gnu-toolchain/releases)
+Download the latest toolchain from [here](https://github.com/kendryte/kendryte-gnu-toolchain/releases), or [kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz(CDN)](http://dl.cdn.sipeed.com/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz)
 
 And extract to `/opt/kendryte-toolchain/`
 
