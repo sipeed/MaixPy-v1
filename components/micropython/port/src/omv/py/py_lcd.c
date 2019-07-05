@@ -23,6 +23,7 @@
 
 #include "sysctl.h"
 #include "global_config.h"
+#include "boards.h"
 
 // extern uint8_t g_lcd_buf[];
 
@@ -31,8 +32,8 @@
 // extern mp_obj_t pyb_spi_deinit(mp_obj_t self_in);
 
 // static mp_obj_t spi_port = NULL;
-static int width = 0;
-static int height = 0;
+static uint16_t width_curr = 0, width_conf = 0;
+static uint16_t height_curr = 0, height_conf = 0;
 static enum {
 	LCD_NONE,
 	LCD_SHIELD
@@ -82,8 +83,9 @@ static mp_obj_t py_lcd_deinit()
         case LCD_NONE:
             return mp_const_none;
         case LCD_SHIELD:
-            width = 0;
-            height = 0;
+			lcd_destroy();
+            width_curr = 0;
+            height_curr = 0;
             type = LCD_NONE;
             return mp_const_none;
     }
@@ -97,16 +99,16 @@ static mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_
 	enum { 
 		ARG_type,
         ARG_freq,
-		ARG_color
+		ARG_color,
+		ARG_width,
+		ARG_height
     };
     static const mp_arg_t allowed_args[] = {
 		{ MP_QSTR_type, MP_ARG_INT, {.u_int = LCD_SHIELD} },
-#ifdef CONFIG_BOARD_M5STICK
-        { MP_QSTR_freq, MP_ARG_INT, {.u_int = 40000000} },
-#else
-		{ MP_QSTR_freq, MP_ARG_INT, {.u_int = 15000000} },
-#endif
-		{ MP_QSTR_color, MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} }
+		{ MP_QSTR_freq, MP_ARG_INT, {.u_int = CONFIG_LCD_DEFAULT_FREQ} },
+		{ MP_QSTR_color, MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
+		{ MP_QSTR_width, MP_ARG_OBJ, {.u_int = CONFIG_LCD_DEFAULT_WIDTH} },
+		{ MP_QSTR_height, MP_ARG_OBJ, {.u_int = CONFIG_LCD_DEFAULT_HEIGHT} }
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -129,24 +131,35 @@ static mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_
 			return mp_const_none;
 		case LCD_SHIELD:
 		{
-			width = LCD_W;
-			height = LCD_H;
+			int ret;
+			width_conf = args[ARG_width].u_int;
+			height_conf = args[ARG_height].u_int;
+			width_curr = width_conf;
+			height_curr = height_conf;
 			type = LCD_SHIELD;
-			#ifdef MAIXPY_M5STICK
+			#ifdef CONFIG_BOARD_M5STICK
 				fpioa_set_function(21, FUNC_GPIOHS0 + RST_GPIONUM);
 				fpioa_set_function(20, FUNC_GPIOHS0 + DCX_GPIONUM);
 				fpioa_set_function(22, FUNC_SPI0_SS0+SPI_SLAVE_SELECT);
 				fpioa_set_function(19, FUNC_SPI0_SCLK);
 				fpioa_set_function(18, FUNC_SPI0_D0);
-				lcd_init(args[ARG_freq].u_int, false, 52, 40, true);
+				ret = d_init(args[ARG_freq].u_int, false, 52, 40, true, width_curr, height_curr);
 			#else
 				// backlight_init = false;
 				fpioa_set_function(37, FUNC_GPIOHS0 + RST_GPIONUM);
 				fpioa_set_function(38, FUNC_GPIOHS0 + DCX_GPIONUM);
 				fpioa_set_function(36, FUNC_SPI0_SS0+SPI_SLAVE_SELECT);
-				fpioa_set_function(39, FUNC_SPI0_SCLK);
-				lcd_init(args[ARG_freq].u_int, true, 0, 0, false);
-			#endif	
+				fpioa_set_function(39, FUNC_SPI0_SCLK);EIO
+				ret = lcd_init(args[ARG_freq].u_int, true, 0, 0, false, width_curr, height_curr);
+			#endif
+			if(ret != 0)
+			{
+				width_conf = 0;
+				height_conf = 0;
+				width_curr = 0;
+				height_curr = 0;
+				mp_raise_OSError(ret);
+			}
 			lcd_clear(color);
 			break;
         }
@@ -170,13 +183,13 @@ static mp_obj_t py_lcd_direction(mp_obj_t dir_obj)
 static mp_obj_t py_lcd_width()
 {
     if (type == LCD_NONE) return mp_const_none;
-    return mp_obj_new_int(width);
+    return mp_obj_new_int(width_curr);
 }
 
 static mp_obj_t py_lcd_height()
 {
     if (type == LCD_NONE) return mp_const_none;
-    return mp_obj_new_int(height);
+    return mp_obj_new_int(height_curr);
 }
 
 static mp_obj_t py_lcd_type()
@@ -212,22 +225,22 @@ static mp_obj_t py_lcd_display(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
     // Fit X. bigger or smaller, cut or pad to center
 	if(oft.x < 0 || oft.y < 0)
     {
-		if (rect.w > width) {
-			int adjust = rect.w - width;
+		if (rect.w > width_curr) {
+			int adjust = rect.w - width_curr;
 			rect.w -= adjust;
 			rect.x += adjust / 2;
-		} else if (rect.w < width) {
-			int adjust = width - rect.w;
+		} else if (rect.w < width_curr) {
+			int adjust = width_curr - rect.w;
 			l_pad = adjust / 2;
 			r_pad = (adjust + 1) / 2;
 		}
 		// Fit Y. bigger or smaller, cut or pad to center
-		if (rect.h > height) {
-			int adjust = rect.h - height;
+		if (rect.h > height_curr) {
+			int adjust = rect.h - height_curr;
 			rect.h -= adjust;
 			rect.y += adjust / 2;
-		} else if (rect.h < height) {
-			int adjust = height - rect.h;
+		} else if (rect.h < height_curr) {
+			int adjust = height_curr - rect.h;
 			t_pad = adjust / 2;
 			b_pad = (adjust + 1) / 2;
 		}
@@ -246,10 +259,10 @@ static mp_obj_t py_lcd_display(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
 			//fill pad
 			if(oft.x < 0 || oft.y < 0)
 			{
-				lcd_fill_rectangle(0,0, width, t_pad, BLACK);
-				lcd_fill_rectangle(0,height-b_pad, width, height, BLACK);
-				lcd_fill_rectangle(0,t_pad, l_pad, height-b_pad, BLACK);
-				lcd_fill_rectangle(width-r_pad,t_pad, width, height-b_pad, BLACK);
+				lcd_fill_rectangle(0,0, width_curr, t_pad, BLACK);
+				lcd_fill_rectangle(0,height_curr-b_pad, width_curr, height_curr, BLACK);
+				lcd_fill_rectangle(0,t_pad, l_pad, height_curr-b_pad, BLACK);
+				lcd_fill_rectangle(width_curr-r_pad,t_pad, width_curr, height_curr-b_pad, BLACK);
 			}
             if(is_cut){	//cut from img
 				if (IM_IS_GS(arg_img)) {
@@ -362,13 +375,13 @@ STATIC mp_obj_t py_lcd_rotation(uint n_args, const mp_obj_t *args)
 		switch(rotation) {
 			case 0:
 			case 2:
-				width  = LCD_W;
-				height = LCD_H;
+				width_curr  = width_conf;
+				height_curr = height_conf;
 				break;
 			case 1:
 			case 3:
-				width  = LCD_H;
-				height = LCD_W;
+				width_curr  = height_conf;
+				height_curr = width_conf;
 				break;
 		}
 		if(invert)
@@ -403,28 +416,46 @@ end:
 }
 
 //x0,y0,string,font color,bg color
-static uint16_t str_buf[LCD_W/8*16*8];  //1 pixel = 2byte
-static char str_cut[LCD_W/8+1];
 STATIC mp_obj_t py_lcd_draw_string(uint n_args, const mp_obj_t *args)
 {
+	uint16_t str_buf = NULL;
+	char* str_cut = NULL;
+	str_buf = (uint16_t*)malloc(width_conf/8*16*8*2);
+	if(!str_buf)
+		mp_raise_OSError(MP_ENOMEM);
+	str_cut = (uint16_t*)malloc(width_conf/8+1);
+	if(!str_cut)
+	{
+		free(str_buf);
+		mp_raise_OSError(MP_ENOMEM);
+	}
+
     uint16_t x0 = mp_obj_get_int(args[0]);
 	uint16_t y0 = mp_obj_get_int(args[1]);
 	char* str  = mp_obj_str_get_str(args[2]);
 	uint16_t fontc = RED;
 	uint16_t bgc = BLACK;
-	if(str == NULL) return mp_const_none;
-	if(x0 < 0 || x0 >= LCD_W || y0 < 0 || y0 > LCD_H-16) return mp_const_none;
+	if(str == NULL)
+		return mp_const_none;
+	if(x0 < 0 || x0 >= width_conf || y0 < 0 || y0 > height_conf-16)
+		return mp_const_none;
 	int len = strlen(str);
 	int width,height;
-    if(n_args >= 4) fontc = mp_obj_get_int(args[3]);
-	if(n_args >= 5) bgc = mp_obj_get_int(args[4]);
-	if(len>(LCD_W-x0)/8) len = (LCD_W-x0)/8;
-	if(len <= 0) return mp_const_none;
+    if(n_args >= 4)
+		fontc = mp_obj_get_int(args[3]);
+	if(n_args >= 5)
+		bgc = mp_obj_get_int(args[4]);
+	if(len>(width_conf-x0)/8)
+		len = (width_conf-x0)/8;
+	if(len <= 0) 
+		return mp_const_none;
 	memcpy(str_cut,str,len);
 	str_cut[len]=0;
 	width = len*8; height = 16;
 	lcd_ram_draw_string(str_cut, str_buf, fontc, bgc);
 	lcd_draw_picture(x0, y0, width, height, str_buf);
+	free(str_buf);
+	free(str_cut);
 	return mp_const_none;
 }
 

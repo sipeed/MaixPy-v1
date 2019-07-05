@@ -14,6 +14,7 @@
  */
 #include <string.h>
 #include <unistd.h>
+#include "stdlib.h"
 #include "lcd.h"
 #include "font.h"
 #include "sleep.h"
@@ -21,7 +22,10 @@
 
 static lcd_ctl_t lcd_ctl;
 
-uint16_t g_lcd_display_buff[LCD_Y_MAX*LCD_X_MAX];
+static uint16_t* g_lcd_display_buff = NULL;
+static uint16_t g_lcd_w = 0;
+static uint16_t g_lcd_h = 0;
+static bool g_lcd_init = false;
 
 // static uint16_t gray2rgb565[64]={
 // 0x0000, 0x2000, 0x4108, 0x6108, 0x8210, 0xa210, 0xc318, 0xe318, 
@@ -56,11 +60,23 @@ void lcd_interrupt_enable(void)
     lcd_ctl.mode = 1;
 }
 
-void lcd_init(uint32_t freq, bool oct, uint16_t offset_w, uint16_t offset_h, bool invert_color)
+int lcd_init(uint32_t freq, bool oct, uint16_t offset_w, uint16_t offset_h, bool invert_color, uint16_t width, uint16_t height)
 {
     uint8_t data = 0;
     lcd_ctl.start_offset_w0 = offset_w;
     lcd_ctl.start_offset_h0 = offset_h;
+    if(g_lcd_w != width || g_lcd_h = height)
+    {
+        if(g_lcd_display_buff)
+        {
+            free(g_lcd_display_buff);
+        }
+        g_lcd_display_buff = (uint16_t*)malloc(width*height*2);
+        if(!g_lcd_display_buff)
+            return 12; //ENOMEM
+        g_lcd_w = width;
+        g_lcd_h = height;
+    }
     tft_hard_init(freq, oct);
     /*soft reset*/
     tft_write_command(SOFTWARE_RESET);
@@ -84,24 +100,39 @@ void lcd_init(uint32_t freq, bool oct, uint16_t offset_w, uint16_t offset_h, boo
     /*display on*/
     tft_write_command(DISPALY_ON);
     msleep(100);
-    lcd_polling_enable();
+    lcd_polling_enable();    
+    g_lcd_init = true;
+    return true;
+}
+
+void lcd_destroy()
+{
+    if(g_lcd_display_buff)
+    {
+        free(g_lcd_display_buff);
+        g_lcd_display_buff = NULL;
+    }
+    g_lcd_w = 0;
+    g_lcd_h = 0;
 }
 
 void lcd_set_direction(lcd_dir_t dir)
 {
+    if(!g_lcd_init)
+        return;
     //dir |= 0x08;  //excahnge RGB
     lcd_ctl.dir = dir;
     if (dir & DIR_XY_MASK)
     {
-        lcd_ctl.width = LCD_Y_MAX - 1;
-        lcd_ctl.height = LCD_X_MAX - 1;
+        lcd_ctl.width = g_lcd_w - 1;
+        lcd_ctl.height = g_lcd_h - 1;
         lcd_ctl.start_offset_w = lcd_ctl.start_offset_h0;
         lcd_ctl.start_offset_h = lcd_ctl.start_offset_w0;
     }
     else
     {
-        lcd_ctl.width = LCD_X_MAX - 1;
-        lcd_ctl.height = LCD_Y_MAX - 1;
+        lcd_ctl.width = g_lcd_h - 1;
+        lcd_ctl.height = g_lcd_w - 1;
         lcd_ctl.start_offset_w = lcd_ctl.start_offset_w0;
         lcd_ctl.start_offset_h = lcd_ctl.start_offset_h0;
     }
@@ -238,7 +269,7 @@ void lcd_clear(uint16_t color)
     uint32_t data = ((uint32_t)color << 16) | (uint32_t)color;
 
     lcd_set_area(0, 0, lcd_ctl.width, lcd_ctl.height);
-    tft_fill_data(&data, LCD_X_MAX * LCD_Y_MAX / 2);
+    tft_fill_data(&data, g_lcd_h * g_lcd_w / 2);
 }
 
 void lcd_fill_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color)
@@ -246,7 +277,7 @@ void lcd_fill_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint
 	if((x1 == x2) || (y1 == y2)) return;
 	uint32_t data = ((uint32_t)color << 16) | (uint32_t)color;
     lcd_set_area(x1, y1, x2-1, y2-1);
-    tft_fill_data(&data, LCD_X_MAX * LCD_Y_MAX / 2);
+    tft_fill_data(&data, (x2 - x1) * (y2 - y1)) / 2);
 }
 
 void lcd_draw_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t width, uint16_t color)
@@ -277,8 +308,9 @@ void lcd_draw_picture(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height,
 {
     uint32_t i;
     uint16_t* p = (uint16_t*)ptr;
+    uint32_t size = width*height;
     lcd_set_area(x1, y1, x1 + width - 1, y1 + height - 1);
-    for(i=0; i< LCD_MAX_PIXELS; i+=2)
+    for(i=0; i< size; i+=2)
     {
         g_lcd_display_buff[i] = SWAP_16(*(p+1));
         g_lcd_display_buff[i+1] = SWAP_16(*(p));
@@ -310,8 +342,8 @@ void lcd_draw_pic_gray(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height
     uint32_t size = width*height;
     for(i=0; i< size; i+=2)
     {
-        g_lcd_display_buff[i] = gray2rgb565_swap[ptr[i+1]>>2]; //COLOR_R8_G8_B8_TO_RGB565(ptr[i+1], ptr[i+LCD_MAX_PIXELS+1], ptr[i+LCD_MAX_PIXELS*2+1]); //gray2rgb565_swap[ptr[i+1]>>2];
-        g_lcd_display_buff[i+1] = gray2rgb565_swap[ptr[i]>>2]; //COLOR_R8_G8_B8_TO_RGB565(ptr[i], ptr[i+LCD_MAX_PIXELS], ptr[i+LCD_MAX_PIXELS*2]); //gray2rgb565_swap[ptr[i]>>2];
+        g_lcd_display_buff[i] = gray2rgb565_swap[ptr[i+1]>>2];
+        g_lcd_display_buff[i+1] = gray2rgb565_swap[ptr[i]>>2];
     }
     tft_write_word(g_lcd_display_buff, width * height / 2);
 }

@@ -81,9 +81,7 @@
 #include "global_config.h"
 
 /********* others *******/
-#ifdef CONFIG_BOARD_M5STICK
-#include "m5stick.h"
-#endif
+#include "boards.h"
 
 #ifdef CONFIG_MAIXPY_K210_UARTHS_DEBUG
 #define MAIXPY_DEBUG_UARTHS_REPL_UART2 // Debug by UARTHS  (use `printk()`) and REPL by UART2
@@ -197,10 +195,9 @@ bool flash_init(uint8_t* manuf_id, uint8_t* device_id)
 
 bool peripherals_init()
 {
-#ifdef CONFIG_BOARD_M5STICK
-	m5stick_init();
-#endif
-	return true;
+	int ret;
+	ret = boards_init();
+	return ret == 0;
 }
 
 MP_NOINLINE STATIC spiffs_user_mount_t* init_flash_spiffs()

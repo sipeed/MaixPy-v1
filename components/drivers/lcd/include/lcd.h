@@ -17,20 +17,8 @@
 
 #include <stdint.h>
 #include "st7789.h"
-#include "driver_config.h"
-
-// #define LCD_W_MAX 640
-// #define LCD_H_MAX 480
-
-// #define LCD_W     320
-// #define LCD_H     240
-
 
 /* clang-format off */
-#define LCD_X_MAX   (LCD_H)
-#define LCD_Y_MAX   (LCD_W)
-#define LCD_MAX_PIXELS (LCD_X_MAX*LCD_Y_MAX) //LCD_X_MAX*LCD_Y_MAX
-
 #define BLACK       0x0000
 #define NAVY        0x000F
 #define DARKGREEN   0x03E0
@@ -81,7 +69,8 @@ typedef struct _lcd_ctl
 
 void lcd_polling_enable(void);
 void lcd_interrupt_enable(void);
-void lcd_init(uint32_t freq, bool oct, uint16_t offset_w, uint16_t offset_h, bool invert_color);
+int lcd_init(uint32_t freq, bool oct, uint16_t offset_w, uint16_t offset_h, bool invert_color, uint16_t width, uint16_t height);
+void lcd_destroy();
 void lcd_clear(uint16_t color);
 void lcd_set_freq(uint32_t freq);
 uint32_t lcd_get_freq();
