@@ -1,0 +1,39 @@
+language:
+  - c
+compiler:
+  - gcc
+cache:
+  directories:
+    - "${HOME}/.maixpy_cache"
+env:
+  global:
+    - rev=$(git rev-parse --short HEAD)
+    - BRANCH=$(if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then echo $TRAVIS_BRANCH; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi)
+    - curr_branch=$TRAVIS_BRANCH
+branches:
+  only:
+    - master
+
+stages:
+  - name: maixpy_build
+
+jobs:
+  include:
+    - stage: maixpy_build
+      env: NAME="maixpy build"
+      install:
+        - sudo apt-get update
+        - sudo apt-get install -y sshpass
+        - wget https://github.com/kendryte/kendryte-gnu-toolchain/releases/download/v8.2.0-20190409/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz
+        - sudo tar -Jxvf kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz -C /opt
+      script:
+        - echo "TRAVIS_BRANCH=$TRAVIS_BRANCH, BRANCH=$BRANCH"
+        - cd projects/maixpy_k210
+        - python project.py build
+        - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then exit 0; fi
+        - time_now=$(date "+%Y_%m_%d_%H_%M_%S")
+        - firmware_name=maixpy_${curr_branch}_${time_now}_${rev}.bin && echo ${firmware_name}
+        - cd build
+        - mv maixpy.bin $firmware_name
+        - sudo sh -c "echo StrictHostKeyChecking no >>/etc/ssh/ssh_config"
+        - sshpass -p ${USER_PASSWD} scp $firmware_name ${SERVER_USER}@${SERVER_ADDR}:${SERVER_FOLDER_PATH}/${curr_branch}/
