@@ -32,12 +32,22 @@ Ubuntu for example:
 
 ```
 sudo apt update
-sudo apt install python3 python3-pip build-essential
+sudo apt install python3 python3-pip build-essential cmake
 sudo pip3 install -r requirements.txt
 
 ```
+> recommend `python3` instead of python2
 
-recommend `python3` instead of python2
+Check `CMake` version by 
+
+```
+cmake --version
+```
+
+The `cmake` version should be at least `v3.9`, if not, please install latest `cmake` manually from [cmake website](https://cmake.org/download/)
+
+
+
 
 ## Download toolchain
 
