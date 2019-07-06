@@ -45,9 +45,11 @@ Download the latest toolchain from [here](https://github.com/kendryte/kendryte-g
 
 And extract to `/opt/kendryte-toolchain/`
 
+For example:
+
 ```
-tar -Jxvf kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz
-sudo cp -rf kendryte-toolchain /opt
+wget http://dl.cdn.sipeed.com/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz
+sudo tar -Jxvf kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz -C /opt
 ls /opt/kendryte-toolchain/bin
 ```
 
