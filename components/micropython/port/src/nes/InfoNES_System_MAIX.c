@@ -21,11 +21,11 @@
 #include "InfoNES.h"
 #include "sysctl.h"
 #include "py/mpstate.h"
+#include "global_config.h"
 
 #if MAIXPY_NES_EMULATOR_SUPPORT
 #define MAX_SAMPLES_PER_SYNC 750
 
-extern uint8_t g_dvp_buf[];
 extern NES_DWORD * FrameBuffer;
 
 extern int nes_cycle_us;
@@ -64,6 +64,10 @@ int InfoNES_Menu()
 /* Read ROM image file */
 int InfoNES_ReadRom( const char *pszFileName )
 {
+    if( !WorkFrame )
+    {
+        WorkFrame = (WORD*)malloc(CONFIG_LCD_DEFAULT_WIDTH * CONFIG_LCD_DEFAULT_HEIGHT * 2);
+    }
 /*
  *  Read ROM image file
  *
@@ -133,6 +137,11 @@ void InfoNES_ReleaseRom()
     if(g_rom_file_content)
         free(g_rom_file_content);
     g_rom_file_content = NULL;
+    if(WorkFrame)
+    {
+        free(WorkFrame);
+        WorkFrame = NULL;
+    }
 }
 
 static int exchang_data_byte(uint8_t* addr,uint32_t length)

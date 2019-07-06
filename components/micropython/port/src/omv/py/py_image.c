@@ -515,7 +515,7 @@ static mp_obj_t py_image_del(mp_obj_t img_obj)
     {
         if( (MAIN_FB()->pixels != NULL) &&
             (img->data >= MAIN_FB()->pixels) &&
-            (img->data <  (MAIN_FB()->pixels+OMV_INIT_RESOLUTION  * OMV_INIT_BPP) )
+            (img->data <  (MAIN_FB()->pixels + MAIN_FB()->w_max * MAIN_FB()->h_max * OMV_INIT_BPP) )
            )
         {
            return mp_const_none;
@@ -6336,7 +6336,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_image_grayscale_to_rgb_obj, py_image_graysca
 mp_obj_t py_image_load_image(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     const char *path = NULL;
-    point_t xy;
+    point_t xy = {0, 0};
     bool copy_to_fb = py_helper_keyword_int(n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_copy_to_fb), false);
 	py_helper_keyword_xy(NULL, n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_size), &xy);
     if (copy_to_fb) fb_update_jpeg_buffer();
@@ -6384,8 +6384,8 @@ mp_obj_t py_image_load_image(uint n_args, const mp_obj_t *args, mp_map_t *kw_arg
     }
     else
     {
-        image.w = OMV_INIT_W;
-        image.h = OMV_INIT_H;
+        image.w = CONFIG_LCD_DEFAULT_WIDTH;
+        image.h = CONFIG_LCD_DEFAULT_HEIGHT;
 		if(xy.x >0 && xy.y >0)
 		{
 			image.w = xy.x;

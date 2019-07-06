@@ -195,7 +195,7 @@ void bmp_read(image_t *img, const char *path)
         img->pixels = xalloc(img->w * img->h * img->bpp);
     else
     {
-        if( (img->w * img->h * img->bpp) > OMV_INIT_W*OMV_INIT_H*2 )
+        if( (img->w * img->h * img->bpp) > MAIN_FB()->w_max * MAIN_FB()->h_max * OMV_INIT_BPP )
         {
             mp_raise_OSError(MP_EINVAL);    
         }

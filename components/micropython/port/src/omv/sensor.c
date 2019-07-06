@@ -23,7 +23,6 @@
 #include "gc0328.h"
 #include "ov7740.h"
 #include "mphalport.h"
-#include "printf.h"
 
 extern volatile dvp_t* const dvp;
 
@@ -100,12 +99,6 @@ static int sensor_irq(void *ctx)
 	return 0;
 }
 
- 
-extern uint8_t* g_ai_buf_in;
-// extern uint8_t* g_ai_buf_out;
-extern uint8_t* g_dvp_buf;
-// extern uint8_t* g_lcd_buf;
-// extern uint8_t* g_jpg_buf;
 
 void sensor_init_fb()
 {
@@ -129,8 +122,12 @@ void sensor_init_fb()
 	MAIN_FB()->u=0;
     MAIN_FB()->v=0;
 	MAIN_FB()->bpp=0;
-	MAIN_FB()->pixels = &g_dvp_buf;
-	MAIN_FB()->pix_ai = &g_ai_buf_in;
+    if(MAIN_FB()->pixels)
+        free(MAIN_FB()->pixels);
+    if(MAIN_FB()->pix_ai)
+        free(MAIN_FB()->pix_ai);
+	MAIN_FB()->pixels = NULL;
+	MAIN_FB()->pix_ai = NULL;
 }
 
 void sensor_init0()
@@ -310,9 +307,12 @@ int sensor_init_dvp()
 	dvp_disable_auto();
 	dvp_set_output_enable(0, 1);	//enable to AI
 	dvp_set_output_enable(1, 1);	//enable to lcd
-	dvp_set_image_size(OMV_INIT_W, OMV_INIT_H);	//set QVGA default
-	dvp_set_ai_addr(MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + OMV_INIT_W * OMV_INIT_H), (uint32_t)(MAIN_FB()->pix_ai + OMV_INIT_W * OMV_INIT_H * 2));
-	dvp_set_display_addr(MAIN_FB()->pixels);    
+    if(sensor.size_set)
+    {
+        dvp_set_image_size(MAIN_FB()->w_max, MAIN_FB()->h_max);
+        dvp_set_ai_addr(MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h), (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h * 2));
+        dvp_set_display_addr(MAIN_FB()->pixels);
+    }
 
     return init_ret;
 }
@@ -332,6 +332,7 @@ int sensor_init_irq()
 
 int sensor_reset()
 {
+    sensor.reset_set = false;
 	sensor_init_fb();		//init FB
     if (sensor_init_dvp() != 0) { //init pins, scan I2C, do ov2640 init
       return -1;
@@ -354,8 +355,37 @@ int sensor_reset()
     // Disable dvp  IRQ before all cfg done 
     sensor_init_irq();
     mp_hal_delay_ms(20);
+    sensor.reset_set = true;
+    if(sensor.size_set)
+    {
+        sensor_run(1);
+    }
 	// mp_printf(&mp_plat_print, "[MAIXPY]: exit sensor_reset\n");
     return 0;
+}
+
+void sensor_deinit()
+{
+    sensor_run(0);
+    dvp_set_image_size(0, 0);
+    dvp_set_ai_addr(NULL, NULL, NULL);
+    dvp_set_display_addr(NULL);
+    if(MAIN_FB()->pixels)
+        free(MAIN_FB()->pixels);
+    if(MAIN_FB()->pix_ai)
+        free(MAIN_FB()->pix_ai);
+    MAIN_FB()->pixels = NULL;
+    MAIN_FB()->pix_ai = NULL;
+    MAIN_FB()->w = 0;
+    MAIN_FB()->h = 0;
+    MAIN_FB()->w_max = 0;
+    MAIN_FB()->h_max = 0;
+    MAIN_FB()->u = 0;
+    MAIN_FB()->v = 0;
+    MAIN_FB()->bpp = -1;
+    MAIN_FB()->x = 0;
+    MAIN_FB()->y = 0;
+    memset(&sensor, 0, sizeof(sensor));
 }
 
 //-------------------------------Binocular--------------------------------------
@@ -498,9 +528,12 @@ int binocular_sensor_reset()
 	dvp_disable_auto();
 	dvp_set_output_enable(0, 1);	//enable to AI
 	dvp_set_output_enable(1, 1);	//enable to lcd
-	dvp_set_image_size(OMV_INIT_W, OMV_INIT_H);	//set QVGA default
-	dvp_set_ai_addr(MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + OMV_INIT_W * OMV_INIT_H), (uint32_t)(MAIN_FB()->pix_ai + OMV_INIT_W * OMV_INIT_H * 2));
-	dvp_set_display_addr(MAIN_FB()->pixels);
+    if(sensor.size_set)
+    {
+        dvp_set_image_size(MAIN_FB()->w_max, MAIN_FB()->h_max);
+        dvp_set_ai_addr(MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h), (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h * 2));
+        dvp_set_display_addr(MAIN_FB()->pixels);
+    }
     /* Some sensors have different reset polarities, and we can't know which sensor
        is connected before initializing cambus and probing the sensor, which in turn
        requires pulling the sensor out of the reset state. So we try to probe the
@@ -599,7 +632,6 @@ int sensor_write_reg(uint8_t reg_addr, uint16_t reg_data)
 
 int sensor_set_pixformat(pixformat_t pixformat)
 {
-
     if (sensor.set_pixformat == NULL
         || sensor.set_pixformat(&sensor, pixformat) != 0) {
         // Operation not supported
@@ -615,11 +647,15 @@ int sensor_set_pixformat(pixformat_t pixformat)
 
 int sensor_set_framesize(framesize_t framesize)
 {
+    sensor.size_set = false;
+
+    int w_old = MAIN_FB()->w;
+    int h_old = MAIN_FB()->h;
     // Call the sensor specific function
     if (sensor.set_framesize == NULL
         || sensor.set_framesize(&sensor, framesize) != 0) {
         // Operation not supported
-        return -1;
+        return EIO;
     }
     // Set framebuffer size
     sensor.framesize = framesize;
@@ -631,10 +667,36 @@ int sensor_set_framesize(framesize_t framesize)
     // Set MAIN FB width and height.
     MAIN_FB()->w = resolution[framesize][0];
     MAIN_FB()->h = resolution[framesize][1];
-	dvp_set_ai_addr(MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h), (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h * 2));
+    MAIN_FB()->w_max = MAIN_FB()->w;
+    MAIN_FB()->h_max = MAIN_FB()->h;
+    if(MAIN_FB()->w != w_old || MAIN_FB()->h != h_old)
+    {
+        if(MAIN_FB()->pixels)
+            free(MAIN_FB()->pixels);
+        if(MAIN_FB()->pix_ai)
+            free(MAIN_FB()->pix_ai);
+        MAIN_FB()->pixels = (uint8_t*)malloc( (MAIN_FB()->w * MAIN_FB()->h * OMV_INIT_BPP + 127)/128*128 );
+        if(!MAIN_FB()->pixels)
+            return ENOMEM;
+        MAIN_FB()->pix_ai = (uint8_t*)malloc( (MAIN_FB()->w * MAIN_FB()->h * 3 + 63)/64*64);
+        if(!MAIN_FB()->pix_ai)
+        {
+            free(MAIN_FB()->pixels);
+            MAIN_FB()->pixels = NULL;
+            return ENOMEM;
+        }
+    }
+    if(sensor.reset_set)
+    {
+        dvp_set_image_size(MAIN_FB()->w_max, MAIN_FB()->h_max);
+        dvp_set_ai_addr(MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h), (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h * 2));
+        dvp_set_display_addr(MAIN_FB()->pixels);
+        sensor_run(1);
+    }
     // Set MAIN FB backup width and height.
     MAIN_FB()->u = resolution[framesize][0];
     MAIN_FB()->v = resolution[framesize][1];
+    sensor.size_set = true;
     return 0;
 }
 
@@ -883,7 +945,7 @@ static void sensor_check_buffsize()
             break;
     }
 
-    if ((MAIN_FB()->w * MAIN_FB()->h * bpp) > (OMV_INIT_W * OMV_INIT_H * OMV_INIT_BPP)) {
+    if ((MAIN_FB()->w * MAIN_FB()->h * bpp) > (MAIN_FB()->w_max * MAIN_FB()->h_max * OMV_INIT_BPP)) {
 		mp_printf(&mp_plat_print, "%s: Image size too big to fit into buf!\n", __func__);
         if (sensor.pixformat == PIXFORMAT_GRAYSCALE) {
             // Crop higher GS resolutions to QVGA
@@ -951,6 +1013,8 @@ void sensor_flush(void)
 
 int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_cb)
 {	
+    if(!sensor->reset_set || !sensor->size_set)
+        return -2;
     bool streaming = (streaming_cb != NULL); // Streaming mode.
 	if(image == NULL) return -1;
     // Compress the framebuffer for the IDE preview, only if it's not the first frame,

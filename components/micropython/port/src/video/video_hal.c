@@ -15,8 +15,8 @@ extern volatile i2s_t *const i2s[3]; //TODO: remove register, replace with funct
 int video_hal_display(image_t* img, video_display_roi_t img_roi)
 {
 	int is_cut;
-    uint16_t lcd_width  = LCD_W;
-    uint16_t lcd_height = LCD_H;
+    uint16_t lcd_width  = lcd_get_width();
+    uint16_t lcd_height = lcd_get_height();
     int l_pad = 0, r_pad = 0;
     int t_pad = 0, b_pad = 0;
 

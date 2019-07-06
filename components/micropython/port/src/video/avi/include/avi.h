@@ -193,6 +193,7 @@ typedef struct
 
     void*    file;
 	uint8_t* video_buf;
+	uint8_t* img_buf;
 	uint32_t offset_movi;         //start index of movi flag
 
 	audio_buf_info_t audio_buf[AVI_AUDIO_BUF_MAX_NUM];

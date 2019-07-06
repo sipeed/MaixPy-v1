@@ -21,7 +21,6 @@ static float conv_data[9*3*3] ={
 -1,-1,-1,-1,8,-1,-1,-1,-1,
 };
 
-extern uint8_t g_ai_buf_in[];
 // extern uint8_t g_ai_buf_out[];
 static volatile uint8_t _ai_done_flag;
 static int kpu_done(void *ctx)

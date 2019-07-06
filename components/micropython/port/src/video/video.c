@@ -11,21 +11,31 @@ int video_play_avi_init(const char* path, avi_t* avi)
     
     int err;
     uint32_t offset;
-    uint8_t* buf = VIDEO_BUFF();
+
+    video_play_avi_destroy(avi);
+
+    uint8_t* buf = (uint8_t*)video_hal_malloc(VIDEO_AVI_BUFF_SIZE);
+    if(!buf)
+        return 12;//ENOMEM
     mp_obj_t file = vfs_internal_open(path, "rb", &err);
 
     if(file==MP_OBJ_NULL || err!=0)
+    {
+        video_hal_free(buf);
         return err;
+    }
     avi->file = (void*)file;
     mp_uint_t read_size = vfs_internal_read(file, buf, VIDEO_AVI_BUFF_SIZE, &err);
     if(err != 0 )
     {
+        video_hal_free(buf);
         video_stop_play(avi);
         return err;
     }
     err = avi_init(buf, read_size, avi);
     if(err != 0)
     {
+        video_hal_free(buf);
         video_stop_play(avi);
         return err;
     }
@@ -35,11 +45,19 @@ int video_play_avi_init(const char* path, avi_t* avi)
     err = avi_get_streaminfo(buf+avi->offset_movi+4, avi);
     if( err != 0)
     {
+        video_hal_free(buf);
         video_stop_play(avi);
         return err;
     }
     // mp_printf(&mp_plat_print, "----2--:%d %d\n", avi->stream_id, avi->stream_size);
     vfs_internal_seek(file, avi->offset_movi+12, VFS_SEEK_SET, &err);
+    avi->img_buf = (uint8_t*)video_hal_malloc(avi->width * avi->height * 2);
+    if(!avi->img_buf)
+    {
+        video_hal_free(buf);
+        video_stop_play(avi);
+        return 12;//ENOMEM
+    }
     avi->video_buf = buf;
     avi->frame_count = 0;
     avi->status = VIDEO_STATUS_RESUME;
@@ -54,6 +72,20 @@ int video_play_avi_init(const char* path, avi_t* avi)
     avi_debug_info(avi);
 #endif
     return 0;
+}
+
+void video_play_avi_destroy(avi_t* avi)
+{
+    if(avi->video_buf)
+    {
+        video_hal_free(avi->video_buf);
+        avi->video_buf = NULL;
+    }
+    if(avi->img_buf)
+    {
+        video_hal_free(avi->img_buf);
+        avi->img_buf = NULL;
+    }
 }
 
 video_status_t video_play_avi(avi_t* avi)
@@ -88,7 +120,7 @@ video_status_t video_play_avi(avi_t* avi)
             video_stop_play(avi);
             return err;
         }
-        img.data = IMAGE_BUFF();
+        img.data = avi->img_buf;
         err = picojpeg_util_read(&img, MP_OBJ_NULL, avi->video_buf, avi->stream_size);
         if( err != 0)
         {

@@ -18,7 +18,7 @@
 #include "lcd.h"
 #include "font.h"
 #include "sleep.h"
-#include "printf.h"
+#include "global_config.h"
 
 static lcd_ctl_t lcd_ctl;
 
@@ -65,7 +65,7 @@ int lcd_init(uint32_t freq, bool oct, uint16_t offset_w, uint16_t offset_h, bool
     uint8_t data = 0;
     lcd_ctl.start_offset_w0 = offset_w;
     lcd_ctl.start_offset_h0 = offset_h;
-    if(g_lcd_w != width || g_lcd_h = height)
+    if(g_lcd_w != width || g_lcd_h != height)
     {
         if(g_lcd_display_buff)
         {
@@ -89,6 +89,9 @@ int lcd_init(uint32_t freq, bool oct, uint16_t offset_w, uint16_t offset_h, bool
     data = 0x55;
     tft_write_byte(&data, 1);
     msleep(10);
+    
+    g_lcd_init = true;
+
     lcd_set_direction(DIR_YX_RLDU);
     if(invert_color)
     {
@@ -100,9 +103,8 @@ int lcd_init(uint32_t freq, bool oct, uint16_t offset_w, uint16_t offset_h, bool
     /*display on*/
     tft_write_command(DISPALY_ON);
     msleep(100);
-    lcd_polling_enable();    
-    g_lcd_init = true;
-    return true;
+    lcd_polling_enable();
+    return 0;
 }
 
 void lcd_destroy()
@@ -115,6 +117,18 @@ void lcd_destroy()
     g_lcd_w = 0;
     g_lcd_h = 0;
 }
+
+
+uint16_t lcd_get_width()
+{
+    return g_lcd_w;
+}
+
+uint16_t lcd_get_height()
+{
+    return g_lcd_h;
+}
+
 
 void lcd_set_direction(lcd_dir_t dir)
 {
@@ -141,7 +155,7 @@ void lcd_set_direction(lcd_dir_t dir)
     tft_write_byte((uint8_t *)&dir, 1);
 }
 
-static uint32_t lcd_freq = 20000000; // default to 20MHz
+static uint32_t lcd_freq = CONFIG_LCD_DEFAULT_FREQ;
 void lcd_set_freq(uint32_t freq)
 {
     tft_set_clk_freq(freq);
@@ -267,7 +281,6 @@ void lcd_ram_draw_string(char *str, uint32_t *ptr, uint16_t font_color, uint16_t
 void lcd_clear(uint16_t color)
 {
     uint32_t data = ((uint32_t)color << 16) | (uint32_t)color;
-
     lcd_set_area(0, 0, lcd_ctl.width, lcd_ctl.height);
     tft_fill_data(&data, g_lcd_h * g_lcd_w / 2);
 }
@@ -277,7 +290,7 @@ void lcd_fill_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint
 	if((x1 == x2) || (y1 == y2)) return;
 	uint32_t data = ((uint32_t)color << 16) | (uint32_t)color;
     lcd_set_area(x1, y1, x2-1, y2-1);
-    tft_fill_data(&data, (x2 - x1) * (y2 - y1)) / 2);
+    tft_fill_data(&data, (x2 - x1) * (y2 - y1) / 2);
 }
 
 void lcd_draw_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t width, uint16_t color)
@@ -292,13 +305,13 @@ void lcd_draw_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint
         *p++ = data;
 
     lcd_set_area(x1, y1, x2, y1 + width - 1);
-    tft_write_byte(data_buf, ((x2 - x1 + 1) * width + 1)*2 );
+    tft_write_byte((uint8_t*)data_buf, ((x2 - x1 + 1) * width + 1)*2 );
     lcd_set_area(x1, y2 - width + 1, x2, y2);
-    tft_write_byte(data_buf, ((x2 - x1 + 1) * width + 1)*2 );
+    tft_write_byte((uint8_t*)data_buf, ((x2 - x1 + 1) * width + 1)*2 );
     lcd_set_area(x1, y1, x1 + width - 1, y2);
-    tft_write_byte(data_buf, ((y2 - y1 + 1) * width + 1)*2 );
+    tft_write_byte((uint8_t*)data_buf, ((y2 - y1 + 1) * width + 1)*2 );
     lcd_set_area(x2 - width + 1, y1, x2, y2);
-    tft_write_byte(data_buf, ((y2 - y1 + 1) * width + 1)*2 );
+    tft_write_byte((uint8_t*)data_buf, ((y2 - y1 + 1) * width + 1)*2 );
 }
 
 

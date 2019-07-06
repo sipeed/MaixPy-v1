@@ -29,8 +29,6 @@
 
 #if MAIXPY_NES_EMULATOR_SUPPORT
 
-extern uint8_t g_dvp_buf[];
-
 
 int nes_stick=0;
 int nes_volume=5;  //0~8

@@ -13,10 +13,6 @@
 #include "lcd.h"
 #include "global_config.h"
 
-#define OMV_INIT_W LCD_W_MAX
-#define OMV_INIT_H LCD_H_MAX
-#define OMV_INIT_RESOLUTION OMV_INIT_W*OMV_INIT_H
-
 #define OMV_INIT_BPP 2
 
 // IDE config
@@ -59,11 +55,7 @@
 
 // Sensor external clock timer frequency.
 // #define OMV_XCLK_FREQUENCY      (12000000)
-#ifdef CONFIG_BOARD_M5STICK
-#define OMV_XCLK_FREQUENCY      (12000000)
-#else
-#define OMV_XCLK_FREQUENCY      (24000000)
-#endif
+#define OMV_XCLK_FREQUENCY      (CONFIG_SENSOR_FREQ)
 // Sensor PLL register value.
 #define OMV_OV7725_PLL_CONFIG   (0x41)  // x4
 #define OMV_OV7725_BANDING      (0x3F)  //TODO:
@@ -73,7 +65,7 @@
 #define OMV_BOOTLDR_LED_PORT    (GPIOC)
 
 // RAW buffer size
-#define OMV_RAW_BUF_SIZE        (OMV_INIT_W * OMV_INIT_H * OMV_INIT_BPP)
+#define OMV_RAW_BUF_SIZE        (MAIN_FB()->w_max * MAIN_FB()->h_max * OMV_INIT_BPP)
 
 // Enable hardware JPEG
 #define OMV_HARDWARE_JPEG       (0)

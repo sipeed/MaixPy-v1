@@ -27,7 +27,11 @@ static mp_obj_t py_binocular_sensor_reset() {
 
 static mp_obj_t py_sensor_reset() {
     PY_ASSERT_FALSE_MSG(sensor_reset() != 0, "Reset Failed");
-    sensor_run(1);
+    return mp_const_none;
+}
+
+static mp_obj_t py_sensor_deinit() {
+    sensor_deinit();
     return mp_const_none;
 }
 
@@ -52,10 +56,14 @@ static mp_obj_t py_sensor_snapshot(uint n_args, const mp_obj_t *args, mp_map_t *
 
     // Sanity checks
     PY_ASSERT_TRUE_MSG((sensor.pixformat != PIXFORMAT_JPEG), "Operation not supported on JPEG");
-
-    if (sensor.snapshot(&sensor, (image_t*) py_image_cobj(image), NULL)==-1) {
-        nlr_raise(mp_obj_new_exception_msg(&mp_type_RuntimeError, "Sensor Timeout!!"));
-        return mp_const_false;
+    int ret = sensor.snapshot(&sensor, (image_t*) py_image_cobj(image), NULL);
+    if(ret == -1)
+    {
+        nlr_raise(mp_obj_new_exception_msg(&mp_type_RuntimeError, "Sensor timeout!"));
+    }
+    else if(ret == -2)
+    {
+        nlr_raise(mp_obj_new_exception_msg(&mp_type_RuntimeError, "Not init!"));
     }
 
     return image;
@@ -216,10 +224,11 @@ static mp_obj_t py_sensor_set_framerate(mp_obj_t framerate) {
 }
 
 static mp_obj_t py_sensor_set_framesize(mp_obj_t framesize) {
-    if (sensor_set_framesize(mp_obj_get_int(framesize)) != 0) {
-        return mp_const_false;
+    int ret = sensor_set_framesize(mp_obj_get_int(framesize));
+    if ( ret != 0) {
+        mp_raise_OSError(ret);
     }
-    return mp_const_true;
+    return mp_const_none;
 }
 
 static mp_obj_t py_sensor_set_windowing(mp_obj_t roi_obj) {
@@ -445,6 +454,7 @@ static mp_obj_t py_sensor_read_reg(mp_obj_t addr) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_binocular_sensor_reset_obj,     py_binocular_sensor_reset);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_sensor_reset_obj,               py_sensor_reset);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_sensor_deinit_obj,              py_sensor_deinit);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_sleep_obj,               py_sensor_sleep);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_shutdown_obj,            py_sensor_shutdown);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_sensor_flush_obj,               py_sensor_flush);
@@ -532,6 +542,7 @@ STATIC const mp_map_elem_t globals_dict_table[] = {
     
     { MP_OBJ_NEW_QSTR(MP_QSTR_binocular_reset),     (mp_obj_t)&py_binocular_sensor_reset_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_reset),               (mp_obj_t)&py_sensor_reset_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_deinit),              (mp_obj_t)&py_sensor_deinit_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_sleep),               (mp_obj_t)&py_sensor_sleep_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_shutdown),            (mp_obj_t)&py_sensor_shutdown_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_flush),               (mp_obj_t)&py_sensor_flush_obj },

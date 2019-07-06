@@ -107,8 +107,8 @@ static mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_
 		{ MP_QSTR_type, MP_ARG_INT, {.u_int = LCD_SHIELD} },
 		{ MP_QSTR_freq, MP_ARG_INT, {.u_int = CONFIG_LCD_DEFAULT_FREQ} },
 		{ MP_QSTR_color, MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
-		{ MP_QSTR_width, MP_ARG_OBJ, {.u_int = CONFIG_LCD_DEFAULT_WIDTH} },
-		{ MP_QSTR_height, MP_ARG_OBJ, {.u_int = CONFIG_LCD_DEFAULT_HEIGHT} }
+		{ MP_QSTR_width, MP_ARG_INT, {.u_int = CONFIG_LCD_DEFAULT_WIDTH} },
+		{ MP_QSTR_height, MP_ARG_INT, {.u_int = CONFIG_LCD_DEFAULT_HEIGHT} }
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -143,13 +143,13 @@ static mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_
 				fpioa_set_function(22, FUNC_SPI0_SS0+SPI_SLAVE_SELECT);
 				fpioa_set_function(19, FUNC_SPI0_SCLK);
 				fpioa_set_function(18, FUNC_SPI0_D0);
-				ret = d_init(args[ARG_freq].u_int, false, 52, 40, true, width_curr, height_curr);
+				ret = lcd_init(args[ARG_freq].u_int, false, 52, 40, true, width_curr, height_curr);
 			#else
 				// backlight_init = false;
 				fpioa_set_function(37, FUNC_GPIOHS0 + RST_GPIONUM);
 				fpioa_set_function(38, FUNC_GPIOHS0 + DCX_GPIONUM);
 				fpioa_set_function(36, FUNC_SPI0_SS0+SPI_SLAVE_SELECT);
-				fpioa_set_function(39, FUNC_SPI0_SCLK);EIO
+				fpioa_set_function(39, FUNC_SPI0_SCLK);
 				ret = lcd_init(args[ARG_freq].u_int, true, 0, 0, false, width_curr, height_curr);
 			#endif
 			if(ret != 0)
@@ -418,12 +418,14 @@ end:
 //x0,y0,string,font color,bg color
 STATIC mp_obj_t py_lcd_draw_string(uint n_args, const mp_obj_t *args)
 {
-	uint16_t str_buf = NULL;
+	uint32_t* str_buf = NULL;
 	char* str_cut = NULL;
-	str_buf = (uint16_t*)malloc(width_conf/8*16*8*2);
+	if(width_conf==0 || height_conf == 0)
+		mp_raise_msg(&mp_type_ValueError, "not init");
+	str_buf = (uint32_t*)malloc(width_conf/8*16*8*2);
 	if(!str_buf)
 		mp_raise_OSError(MP_ENOMEM);
-	str_cut = (uint16_t*)malloc(width_conf/8+1);
+	str_cut = (char*)malloc(width_conf/8+1);
 	if(!str_cut)
 	{
 		free(str_buf);

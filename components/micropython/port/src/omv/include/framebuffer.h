@@ -15,6 +15,7 @@
 typedef struct framebuffer {
     int x,y;
     int w,h;
+    int w_max, h_max;
     int u,v;
     int bpp;
 	uint8_t* pixels;

@@ -99,6 +99,7 @@ STATIC mp_obj_t py_video_del(size_t n_args, const mp_obj_t *args, mp_map_t *kw_a
     if( !avi->record ) // play
     {
         video_hal_audio_deinit(avi);
+        video_play_avi_destroy(avi);
     }
     else // record
     {
@@ -156,7 +157,7 @@ mp_obj_t py_video_open(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
         MP_ARRAY_SIZE(machine_video_open_allowed_args), machine_video_open_allowed_args, args_parsed);
     if(path[len-1]=='i' && path[len-2]=='v' && path[len-3]=='a' && path[len-4]=='.')
     {
-        py_video_avi_obj_t *o = m_new_obj(py_video_avi_obj_t);
+        py_video_avi_obj_t *o = m_new_obj_with_finaliser(py_video_avi_obj_t);
         o->base.type = &py_video_avi_type;
         avi_t* avi = &o->obj;
         memset(avi, 0, sizeof(avi_t));

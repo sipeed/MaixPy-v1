@@ -116,6 +116,8 @@ typedef struct _sensor {
     uint8_t  slv_addr;          // Sensor I2C slave address.
     uint16_t gs_bpp;            // Grayscale bytes per pixel.
     uint32_t hw_flags;          // Hardware flags (clock polarities/hw capabilities)
+    bool     reset_set;         // reset called
+    bool     size_set;          // set_framesie called
 
     uint32_t vsync_pin;         // VSYNC GPIO output pin.
     polarity_t pwdn_pol; // PWDN polarity (TODO move to hw_flags)
@@ -170,6 +172,9 @@ void sensor_init0();
 
 // Reset the sensor to its default state.
 int sensor_reset();
+
+// destroy resources created by sensor
+void sensor_deinit();
 
 // Return sensor PID.
 int sensor_get_id();

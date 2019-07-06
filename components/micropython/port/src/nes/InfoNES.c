@@ -167,9 +167,8 @@ WORD DoubleFrame[ 2 ][ NES_DISP_WIDTH * NES_DISP_HEIGHT ];
 WORD *WorkFrame;
 WORD WorkFrameIdx;
 #else
-extern uint8_t g_dvp_buf[];
 //WORD WorkFrame[ NES_DISP_WIDTH * NES_DISP_HEIGHT ];
-WORD* WorkFrame=(WORD*)g_dvp_buf;
+WORD* WorkFrame = NULL;
 #endif
 
 /* Character Buffer */

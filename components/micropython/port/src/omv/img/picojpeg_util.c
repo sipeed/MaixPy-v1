@@ -175,9 +175,9 @@ uint8 *pjpeg_load_from_file(mp_obj_t file, uint8_t* buf, uint32_t buf_len, int *
    }
    else
    {
-      if( (row_pitch * decoded_height) > (OMV_INIT_W*OMV_INIT_H*2) )
+      if( (row_pitch * decoded_height) > (MAIN_FB()->w_max * MAIN_FB()->h_max * OMV_INIT_BPP) )
       {
-         mp_printf(&mp_plat_print, "[MaixPy] image: max supported size: %dx%x\n", OMV_INIT_W, OMV_INIT_H);
+         mp_printf(&mp_plat_print, "[MaixPy] image: max supported size: %dx%x\n", MAIN_FB()->w_max, MAIN_FB()->h_max);
          *err = MP_EINVAL;
          return NULL;
       }

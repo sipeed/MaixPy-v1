@@ -124,7 +124,7 @@ you must run
 python3 project.py rebuild
 ```
 
-to rebuild make system after you add or delete source files
+to rebuild make system after you add/delete source files or edit kconfig files
 
 
 

@@ -22,5 +22,9 @@ menu "Board config"
 	config LCD_DEFAULT_FREQ
 		int "LCD default driver clock frequency"
 		default 15000000
+
+	config SENSOR_FREQ
+		int "Sensor clock(xclk) frequency"
+		default 24000000
 endmenu
 

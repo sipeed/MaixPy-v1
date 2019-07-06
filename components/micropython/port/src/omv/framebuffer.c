@@ -10,13 +10,8 @@
 #include "omv_boardconfig.h"
 #include "framebuffer.h"
 
-//total 600KB
-uint8_t g_ai_buf_in[OMV_INIT_W * OMV_INIT_H * 3] __attribute__((aligned(128)));
-// uint8_t g_ai_buf_out[OMV_INIT_W * OMV_INIT_H * 3] __attribute__((aligned(128)));
-uint8_t g_dvp_buf[OMV_INIT_W * OMV_INIT_H * 2] __attribute__((aligned(64)));
-// uint8_t g_lcd_buf[OMV_INIT_W * OMV_INIT_H * 2] __attribute__((aligned(64)));
 mutex_t lock_tmp;
-static framebuffer_t _fb_framebuffer0={0,0,0,0,0,0,0,g_dvp_buf,g_ai_buf_in};
+static framebuffer_t _fb_framebuffer0={0,0,0,0,0,0,0,NULL,NULL};
 // static framebuffer_t _fb_framebuffer1={0,0,0,0,0,0,0,NULL,g_ai_buf_out};
 framebuffer_t *fb_framebuffer = &_fb_framebuffer0;
 
