@@ -19,8 +19,6 @@
 #include "omv_boardconfig.h"
 #include "imlib_config.h"
 
-#include "avi.h"
-#include "video.h"
 #include "py/runtime.h"
 
 #define TIME_JPEG   (0)

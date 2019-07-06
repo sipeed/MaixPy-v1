@@ -36,6 +36,9 @@ menu "Micropython configurations"
 		config MAIXPY_OMV_MINIMUM
 			bool "Minimum size OMV function"
 			default n
+		config MAIXPY_OMV_CONV_YUV_FAST
+			bool "Add YUV convert table, close this will reduce code but lower speed"
+			default y
 		
 		config MAIXPY_LVGL_ENABLE
 			bool "Enbale LittlvGL"

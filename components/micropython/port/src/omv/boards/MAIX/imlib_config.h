@@ -10,10 +10,13 @@
 #define __IMLIB_CONFIG_H__
 
 #include "mpconfigport.h"
+#include "global_config.h"
 
 #if CONFIG_MAIXPY_OMV_MINIMUM
 
-//#define IMLIB_ENABLE_YUV_LAB_FUNC
+#ifndef CONFIG_MAIXPY_OMV_CONV_YUV_FAST
+    #define IMLIB_ENABLE_YUV_LAB_FUNC
+#endif
 
 #define OMV_MINIMUM
 
@@ -136,7 +139,9 @@
 // Enable selective_search()
 #define IMLIB_ENABLE_SELECTIVE_SEARCH
 
-//#define IMLIB_ENABLE_YUV_LAB_FUNC
+#ifndef CONFIG_MAIXPY_OMV_CONV_YUV_FAST
+    #define IMLIB_ENABLE_YUV_LAB_FUNC
+#endif
 
 #endif //CONFIG_MAIXPY_OMV_MINIMUM
 
