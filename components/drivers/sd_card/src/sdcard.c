@@ -9,11 +9,12 @@
 #include "sleep.h"
 #include "syslog.h"
 #include "utils.h"
+#include "global_config.h"
 
 #define MAIX_SDCARD_DEBUG 0
 #if MAIX_SDCARD_DEBUG==1
 #include "printf.h"
-#define debug_print(x,arg...) printk(&mp_plat_print, x,##arg)
+#define debug_print(x,arg...) printk(x,##arg)
 #else 
 #define debug_print(x,arg...) 
 #endif
@@ -499,7 +500,12 @@ uint8_t sd_init(void)
 		return 0xFF;
 	}
 	if ((frame[0] & 0x40) == 0)
+	{
+		#if CONFIG_SPI_SD_CARD_FORCE_HIGH_SPEED
+			SD_HIGH_SPEED_ENABLE();
+		#endif
 		sd_version = 1;
+	}
 	else
 	{
 		sd_version = 2;

@@ -5,3 +5,13 @@ config COMPONENT_DRIVERS_ENABLE
 	default n
 	select COMPONENT_KENDRYTE_SDK_ENABLE
 
+menu "Drivers configuration"
+	depends on COMPONENT_DRIVERS_ENABLE
+
+	menu "SD card"
+		config SPI_SD_CARD_FORCE_HIGH_SPEED
+			bool "Force SPI SD card high speed mode"
+			default y
+	endmenu
+endmenu
+
