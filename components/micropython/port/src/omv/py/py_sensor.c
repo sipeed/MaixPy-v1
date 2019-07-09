@@ -20,13 +20,27 @@
 
 extern sensor_t sensor;
 
-static mp_obj_t py_binocular_sensor_reset() {
-    PY_ASSERT_FALSE_MSG(binocular_sensor_reset() != 0, "Reset Failed");
+static mp_obj_t py_binocular_sensor_reset(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
+{
+    mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_freq), MP_MAP_LOOKUP);
+    mp_int_t freq = OMV_XCLK_FREQUENCY;
+    if(kw_arg)
+    {
+        freq = mp_obj_get_int(kw_arg->value);
+    }
+    PY_ASSERT_FALSE_MSG(binocular_sensor_reset(freq) != 0, "Reset Failed");
     return mp_const_none;
 }
 
-static mp_obj_t py_sensor_reset() {
-    PY_ASSERT_FALSE_MSG(sensor_reset() != 0, "Reset Failed");
+static mp_obj_t py_sensor_reset(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
+{
+    mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_freq), MP_MAP_LOOKUP);
+    mp_int_t freq = OMV_XCLK_FREQUENCY;
+    if(kw_arg)
+    {
+        freq = mp_obj_get_int(kw_arg->value);
+    }
+    PY_ASSERT_FALSE_MSG(sensor_reset(freq) != 0, "Reset Failed");
     return mp_const_none;
 }
 
@@ -452,8 +466,8 @@ static mp_obj_t py_sensor_read_reg(mp_obj_t addr) {
 //            sensor.id.MIDH, sensor.id.MIDL, sensor.id.PID, sensor.id.VER);
 //}
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_binocular_sensor_reset_obj,     py_binocular_sensor_reset);
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_sensor_reset_obj,               py_sensor_reset);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_binocular_sensor_reset_obj, 0, py_binocular_sensor_reset);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_sensor_reset_obj,       0,     py_sensor_reset);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_sensor_deinit_obj,              py_sensor_deinit);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_sleep_obj,               py_sensor_sleep);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_shutdown_obj,            py_sensor_shutdown);

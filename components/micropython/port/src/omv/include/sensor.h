@@ -166,12 +166,12 @@ extern const int resolution[][2];
 
 void sensor_flush(void);
 
-int binocular_sensor_reset();
+int binocular_sensor_reset(mp_int_t freq);
 
 void sensor_init0();
 
 // Reset the sensor to its default state.
-int sensor_reset();
+int sensor_reset(mp_int_t freq);
 
 // destroy resources created by sensor
 void sensor_deinit();

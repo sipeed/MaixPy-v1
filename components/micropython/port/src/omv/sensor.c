@@ -257,7 +257,7 @@ int sensro_gc_detect(sensor_t* sensor)
     }
     return 0;
 }
-int sensor_init_dvp()
+int sensor_init_dvp(mp_int_t freq)
 {
     int init_ret = 0;
 	
@@ -282,7 +282,7 @@ int sensor_init_dvp()
     // cambus_init(8, -2, 41, 40, 0, 0);
     cambus_init(8, 2, 41, 40, 0, 0);
 	 // Initialize dvp interface
-	dvp_set_xclk_rate(OMV_XCLK_FREQUENCY);
+	dvp_set_xclk_rate(freq);
 
     /* Some sensors have different reset polarities, and we can't know which sensor
     is connected before initializing cambus and probing the sensor, which in turn
@@ -330,11 +330,11 @@ int sensor_init_irq()
 	return 0;
 }
 
-int sensor_reset()
+int sensor_reset(mp_int_t freq)
 {
     sensor.reset_set = false;
 	sensor_init_fb();		//init FB
-    if (sensor_init_dvp() != 0) { //init pins, scan I2C, do ov2640 init
+    if (sensor_init_dvp(freq) != 0) { //init pins, scan I2C, do ov2640 init
       return -1;
     }
     // Reset the sesnor state
@@ -487,7 +487,7 @@ int binocular_sensor_scan()
     return 0;
 }
 
-int binocular_sensor_reset()
+int binocular_sensor_reset(mp_int_t freq)
 {
 	sensor_init_fb();		//init FB
     fpioa_set_function(47, FUNC_CMOS_PCLK);
@@ -507,7 +507,7 @@ int binocular_sensor_reset()
     // Initialize the camera bus, 8bit reg
     cambus_init(8, -2, 41, 40, 0, 0);
 	 // Initialize dvp interface
-	dvp_set_xclk_rate(OMV_XCLK_FREQUENCY);
+	dvp_set_xclk_rate(freq);
 	dvp->cmos_cfg |= DVP_CMOS_CLK_DIV(3) | DVP_CMOS_CLK_ENABLE;
 
     if(0 != binocular_sensor_scan())//scan I2C, do ov2640 init
