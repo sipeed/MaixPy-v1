@@ -532,7 +532,7 @@ int binocular_sensor_reset(mp_int_t freq)
     {
         dvp_set_image_size(MAIN_FB()->w_max, MAIN_FB()->h_max);
         dvp_set_ai_addr(MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h), (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h * 2));
-        dvp_set_display_addr(MAIN_FB()->pixels);
+        dvp_set_display_addr((uint32_t)(MAIN_FB()->pixels));
     }
     /* Some sensors have different reset polarities, and we can't know which sensor
        is connected before initializing cambus and probing the sensor, which in turn
@@ -985,19 +985,41 @@ int exchang_pixel(uint16_t* addr,uint32_t resoltion)
   return 0;
 }
 
+typedef int (*dual_func_t)(int);
+extern volatile dual_func_t dual_func;
+static uint32_t* g_pixs = NULL;
+static uint32_t g_pixs_size = 0;
+
+static int reverse_u32pixel_2(int core)
+{
+    uint32_t data;
+    uint32_t* pend = g_pixs+g_pixs_size;
+    for(;g_pixs<pend;g_pixs++)
+    {
+        data = *(g_pixs);
+        *(g_pixs) = ((data & 0x000000FF) << 24) | ((data & 0x0000FF00) << 8) | 
+                ((data & 0x00FF0000) >> 8) | ((data & 0xFF000000) >> 24) ;
+    }
+    return 0;
+}
+
 int reverse_u32pixel(uint32_t* addr,uint32_t length)
 {
   if(NULL == addr)
     return -1;
 
   uint32_t data;
-  uint32_t* pend = addr+length;
+  g_pixs_size = length/2;
+  uint32_t* pend = addr+g_pixs_size;
+  g_pixs = pend;
+  dual_func = reverse_u32pixel_2;
   for(;addr<pend;addr++)
   {
 	  data = *(addr);
 	  *(addr) = ((data & 0x000000FF) << 24) | ((data & 0x0000FF00) << 8) | 
                 ((data & 0x00FF0000) >> 8) | ((data & 0xFF000000) >> 24) ;
   }  //1.7ms
+  while(dual_func){}
   
   
   return 0;
@@ -1095,7 +1117,7 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
         else
         {
             image->pixels = MAIN_FB()->pixels;
-		    reverse_u32pixel((image->pixels), (MAIN_FB()->w)*(MAIN_FB()->h)/2);
+		    reverse_u32pixel((uint32_t*)(image->pixels), (MAIN_FB()->w)*(MAIN_FB()->h)/2);
         }
 		//t1=read_cycle();
 		//mp_printf(&mp_plat_print, "%ld-%ld=%ld, %ld us!\r\n",t1,t0,(t1-t0),((t1-t0)*1000000/400000000)); 
