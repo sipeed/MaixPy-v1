@@ -13,7 +13,8 @@ extern void* arg_list[16];
 #define CORE_NUM 2
 
 volatile static uint64_t _t0,_t1;
-#define DBG_TIME //{_t1=read_cycle();printf("%d: %ld us\r\n", __LINE__, ((_t1-_t0)/6000*10*2UL)); _t0=read_cycle();};
+// #include "printf.h"
+#define DBG_TIME //{_t1=read_cycle();printk("%d: %ld us\r\n", __LINE__, ((_t1-_t0)/6000*10*2UL)); _t0=read_cycle();};
 
 #ifdef IMLIB_ENABLE_FIND_LINES
 #define find_lines_565_init() \
@@ -27,6 +28,21 @@ arg_list[5]=(void*)hough_divide; \
 arg_list[6]=(void*)r_diag_len_div; \
 arg_list[7]=(void*)theta_size; \
 }while(0)
+
+
+#define find_lines_grayscale_init() \
+do{ \
+arg_list[0]=(void*)ptr;	\
+arg_list[1]=(void*)acc; \
+arg_list[2]=(void*)roi; \
+arg_list[3]=(void*)x_stride; \
+arg_list[4]=(void*)x_stride; \
+arg_list[5]=(void*)hough_divide; \
+arg_list[6]=(void*)r_diag_len_div; \
+arg_list[7]=(void*)theta_size; \
+}while(0)
+
+
 
 static int find_lines_565(int ps)
 {
@@ -106,6 +122,85 @@ static int find_lines_565(int ps)
 		}
 	}
 return 0;
+}
+
+int find_lines_grayscale(int ps)
+{
+    image_t *ptr = (image_t *)arg_list[0];
+	uint32_t *acc = (uint32_t *)arg_list[1];
+	rectangle_t *roi = (rectangle_t *)arg_list[2];
+	unsigned int x_stride = (unsigned int )arg_list[3];
+	unsigned int y_stride = (unsigned int )arg_list[4];
+	int hough_divide = (int )arg_list[5];
+	int r_diag_len_div = (int)arg_list[6];
+	int theta_size = (int)arg_list[7];
+
+    int i_all = roi->y + roi->h - 1 - (roi->y + 1);
+	int i_start = (i_all+y_stride-1)*ps/y_stride/CORE_NUM*y_stride + roi->y + 1;	//place a little more for core0
+	int i_end = (i_all+y_stride-1)*(ps+1)/y_stride/CORE_NUM*y_stride + roi->y + 1;
+
+    for (int y = i_start; y < i_end; y += y_stride) {
+        uint8_t *row_ptr = IMAGE_COMPUTE_GRAYSCALE_PIXEL_ROW_PTR(ptr, y);
+        for (int x = roi->x + (y % x_stride) + 1, xx = roi->x + roi->w - 1; x < xx; x += x_stride) {
+            int pixel; // Sobel Algorithm Below
+            int x_acc = 0;
+            int y_acc = 0;
+
+            row_ptr -= ptr->w;
+
+            pixel = IMAGE_GET_GRAYSCALE_PIXEL_FAST(row_ptr, x - 1);
+            x_acc += pixel * +1; // x[0,0] -> pixel * +1
+            y_acc += pixel * +1; // y[0,0] -> pixel * +1
+
+            pixel = IMAGE_GET_GRAYSCALE_PIXEL_FAST(row_ptr, x);
+                                    // x[0,1] -> pixel * 0
+            y_acc += pixel * +2; // y[0,1] -> pixel * +2
+
+            pixel = IMAGE_GET_GRAYSCALE_PIXEL_FAST(row_ptr, x + 1);
+            x_acc += pixel * -1; // x[0,2] -> pixel * -1
+            y_acc += pixel * +1; // y[0,2] -> pixel * +1
+
+            row_ptr += ptr->w;
+
+            pixel = IMAGE_GET_GRAYSCALE_PIXEL_FAST(row_ptr, x - 1);
+            x_acc += pixel * +2; // x[1,0] -> pixel * +2
+                                    // y[1,0] -> pixel * 0
+
+            // pixel = IMAGE_GET_GRAYSCALE_PIXEL_FAST(row_ptr, x);
+            // x[1,1] -> pixel * 0
+            // y[1,1] -> pixel * 0
+
+            pixel = IMAGE_GET_GRAYSCALE_PIXEL_FAST(row_ptr, x + 1);
+            x_acc += pixel * -2; // x[1,2] -> pixel * -2
+                                    // y[1,2] -> pixel * 0
+
+            row_ptr += ptr->w;
+
+            pixel = IMAGE_GET_GRAYSCALE_PIXEL_FAST(row_ptr, x - 1);
+            x_acc += pixel * +1; // x[2,0] -> pixel * +1
+            y_acc += pixel * -1; // y[2,0] -> pixel * -1
+
+            pixel = IMAGE_GET_GRAYSCALE_PIXEL_FAST(row_ptr, x);
+                                    // x[2,1] -> pixel * 0
+            y_acc += pixel * -2; // y[2,1] -> pixel * -2
+
+            pixel = IMAGE_GET_GRAYSCALE_PIXEL_FAST(row_ptr, x + 1);
+            x_acc += pixel * -1; // x[2,2] -> pixel * -1
+            y_acc += pixel * -1; // y[2,2] -> pixel * -1
+
+            row_ptr -= ptr->w;
+
+            int theta = fast_roundf((x_acc ? fast_atan2f(y_acc, x_acc) : 1.570796f) * 57.295780) % 180; // * (180 / PI)
+            if (theta < 0) theta += 180;
+            int rho = (fast_roundf(((x - roi->x) * cos_table[theta])
+                        + ((y - roi->y) * sin_table[theta])) / hough_divide) + r_diag_len_div;
+            int acc_index = (rho * theta_size) + ((theta / hough_divide) + 1); // add offset
+
+            int acc_value = acc[acc_index] + fast_roundf(fast_sqrtf((x_acc * x_acc) + (y_acc * y_acc)));
+            acc[acc_index] = acc_value;
+        }
+    }
+    return 0;
 }
 
 
@@ -191,68 +286,12 @@ DBG_TIME  //1.5ms
             }
             break;
         }
-        case IMAGE_BPP_GRAYSCALE: {
-            for (int y = roi->y + 1, yy = roi->y + roi->h - 1; y < yy; y += y_stride) {
-                uint8_t *row_ptr = IMAGE_COMPUTE_GRAYSCALE_PIXEL_ROW_PTR(ptr, y);
-                for (int x = roi->x + (y % x_stride) + 1, xx = roi->x + roi->w - 1; x < xx; x += x_stride) {
-                    int pixel; // Sobel Algorithm Below
-                    int x_acc = 0;
-                    int y_acc = 0;
-
-                    row_ptr -= ptr->w;
-
-                    pixel = IMAGE_GET_GRAYSCALE_PIXEL_FAST(row_ptr, x - 1);
-                    x_acc += pixel * +1; // x[0,0] -> pixel * +1
-                    y_acc += pixel * +1; // y[0,0] -> pixel * +1
-
-                    pixel = IMAGE_GET_GRAYSCALE_PIXEL_FAST(row_ptr, x);
-                                         // x[0,1] -> pixel * 0
-                    y_acc += pixel * +2; // y[0,1] -> pixel * +2
-
-                    pixel = IMAGE_GET_GRAYSCALE_PIXEL_FAST(row_ptr, x + 1);
-                    x_acc += pixel * -1; // x[0,2] -> pixel * -1
-                    y_acc += pixel * +1; // y[0,2] -> pixel * +1
-
-                    row_ptr += ptr->w;
-
-                    pixel = IMAGE_GET_GRAYSCALE_PIXEL_FAST(row_ptr, x - 1);
-                    x_acc += pixel * +2; // x[1,0] -> pixel * +2
-                                         // y[1,0] -> pixel * 0
-
-                    // pixel = IMAGE_GET_GRAYSCALE_PIXEL_FAST(row_ptr, x);
-                    // x[1,1] -> pixel * 0
-                    // y[1,1] -> pixel * 0
-
-                    pixel = IMAGE_GET_GRAYSCALE_PIXEL_FAST(row_ptr, x + 1);
-                    x_acc += pixel * -2; // x[1,2] -> pixel * -2
-                                         // y[1,2] -> pixel * 0
-
-                    row_ptr += ptr->w;
-
-                    pixel = IMAGE_GET_GRAYSCALE_PIXEL_FAST(row_ptr, x - 1);
-                    x_acc += pixel * +1; // x[2,0] -> pixel * +1
-                    y_acc += pixel * -1; // y[2,0] -> pixel * -1
-
-                    pixel = IMAGE_GET_GRAYSCALE_PIXEL_FAST(row_ptr, x);
-                                         // x[2,1] -> pixel * 0
-                    y_acc += pixel * -2; // y[2,1] -> pixel * -2
-
-                    pixel = IMAGE_GET_GRAYSCALE_PIXEL_FAST(row_ptr, x + 1);
-                    x_acc += pixel * -1; // x[2,2] -> pixel * -1
-                    y_acc += pixel * -1; // y[2,2] -> pixel * -1
-
-                    row_ptr -= ptr->w;
-
-                    int theta = fast_roundf((x_acc ? fast_atan2f(y_acc, x_acc) : 1.570796f) * 57.295780) % 180; // * (180 / PI)
-                    if (theta < 0) theta += 180;
-                    int rho = (fast_roundf(((x - roi->x) * cos_table[theta])
-                                + ((y - roi->y) * sin_table[theta])) / hough_divide) + r_diag_len_div;
-                    int acc_index = (rho * theta_size) + ((theta / hough_divide) + 1); // add offset
-
-                    int acc_value = acc[acc_index] + fast_roundf(fast_sqrtf((x_acc * x_acc) + (y_acc * y_acc)));
-                    acc[acc_index] = acc_value;
-                }
-            }
+        case IMAGE_BPP_GRAYSCALE:
+        {   
+            find_lines_grayscale_init();
+            dual_func = find_lines_grayscale;
+            find_lines_grayscale(0);
+            while(dual_func){};
             break;
         }
         case IMAGE_BPP_RGB565: {
@@ -499,16 +538,55 @@ void imlib_find_line_segments(list_t *out, image_t *ptr, rectangle_t *roi, unsig
 #endif //IMLIB_ENABLE_FIND_LINE_SEGMENTS
 
 #ifdef IMLIB_ENABLE_FIND_CIRCLES
-void imlib_find_circles(list_t *out, image_t *ptr, rectangle_t *roi, unsigned int x_stride, unsigned int y_stride,
-                        uint32_t threshold, unsigned int x_margin, unsigned int y_margin, unsigned int r_margin,
-                        unsigned int r_min, unsigned int r_max, unsigned int r_step)
+
+#define find_circles_param_init() \
+do{ \
+arg_list[0]=(void*)theta_acc;	\
+arg_list[1]=(void*)magnitude_acc; \
+arg_list[2]=(void*)roi; \
+arg_list[3]=(void*)x_stride; \
+arg_list[4]=(void*)y_stride; \
+arg_list[5]=(void*)threshold; \
+arg_list[6]=(void*)x_margin; \
+arg_list[7]=(void*)y_margin; \
+arg_list[8]=(void*)r_margin; \
+arg_list[9]=(void*)r_min; \
+arg_list[10]=(void*)r_max; \
+arg_list[11]=(void*)r_step; \
+arg_list[12]=(void*)outs; \
+arg_list[13]=(void*)ptr; \
+}while(0)
+
+
+static int find_circles(int core)
 {
-    uint16_t *theta_acc = fb_alloc0(sizeof(uint16_t) * roi->w * roi->h);
-    uint16_t *magnitude_acc = fb_alloc0(sizeof(uint16_t) * roi->w * roi->h);
+    uint16_t *theta_acc   =    (uint16_t*)arg_list[0];
+    uint16_t *magnitude_acc =  (uint16_t*)arg_list[1];
+    rectangle_t *roi =         (rectangle_t*)arg_list[2];
+    unsigned int x_stride =    (unsigned int)arg_list[3];
+    unsigned int y_stride =    (unsigned int)arg_list[4];
+    uint32_t threshold    =    (uint32_t)arg_list[5];
+    unsigned int x_margin =    (unsigned int)arg_list[6];
+    unsigned int y_margin =    (unsigned int)arg_list[7];
+    unsigned int r_margin =    (unsigned int)arg_list[8];
+    unsigned int r_min    =    (unsigned int)arg_list[9];
+    unsigned int r_max    =    (unsigned int)arg_list[10];
+    unsigned int r_step   =    (unsigned int)arg_list[11];
+    list_t** out = (list_t**)arg_list[12];
+    image_t *ptr = (image_t*)arg_list[13];
+
+    int i_start = roi->y + 1;
+    int i_end   = roi->y + roi->h - 1;
+    int i_len = (i_end - i_start)/2;
+    i_start = i_start + i_len*core;
+    if(core != (CORE_NUM-1) )
+    {
+        i_end = i_start + i_len;
+    }
 
     switch (ptr->bpp) {
         case IMAGE_BPP_BINARY: {
-            for (int y = roi->y + 1, yy = roi->y + roi->h - 1; y < yy; y += y_stride) {
+            for (int y = i_start; y < i_end; y += y_stride) {
                 uint32_t *row_ptr = IMAGE_COMPUTE_BINARY_PIXEL_ROW_PTR(ptr, y);
                 for (int x = roi->x + (y % x_stride) + 1, xx = roi->x + roi->w - 1; x < xx; x += x_stride) {
                     int pixel; // Sobel Algorithm Below
@@ -571,7 +649,7 @@ void imlib_find_circles(list_t *out, image_t *ptr, rectangle_t *roi, unsigned in
             break;
         }
         case IMAGE_BPP_GRAYSCALE: {
-            for (int y = roi->y + 1, yy = roi->y + roi->h - 1; y < yy; y += y_stride) {
+            for (int y = i_start; y < i_end; y += y_stride) {
                 uint8_t *row_ptr = IMAGE_COMPUTE_GRAYSCALE_PIXEL_ROW_PTR(ptr, y);
                 for (int x = roi->x + (y % x_stride) + 1, xx = roi->x + roi->w - 1; x < xx; x += x_stride) {
                     int pixel; // Sobel Algorithm Below
@@ -634,7 +712,7 @@ void imlib_find_circles(list_t *out, image_t *ptr, rectangle_t *roi, unsigned in
             break;
         }
         case IMAGE_BPP_RGB565: {
-            for (int y = roi->y + 1, yy = roi->y + roi->h - 1; y < yy; y += y_stride) {
+            for (int y = i_start; y < i_end; y += y_stride) {
                 uint16_t *row_ptr = IMAGE_COMPUTE_RGB565_PIXEL_ROW_PTR(ptr, y);
                 for (int x = roi->x + (y % x_stride) + 1, xx = roi->x + roi->w - 1; x < xx; x += x_stride) {
                     int pixel; // Sobel Algorithm Below
@@ -720,14 +798,100 @@ void imlib_find_circles(list_t *out, image_t *ptr, rectangle_t *roi, unsigned in
     //     270
     //
     // Y_MAX
+    return 0;
+}
 
+#define find_circles_param_init2() \
+do{ \
+arg_list[0]=(void*)theta_acc;	\
+arg_list[1]=(void*)magnitude_acc; \
+arg_list[2]=(void*)roi; \
+arg_list[3]=(void*)r; \
+arg_list[4]=(void*)acc; \
+arg_list[5]=(void*)w_size; \
+arg_list[6]=(void*)h_size; \
+arg_list[7]=(void*)hough_divide; \
+arg_list[8]=(void*)a_size; \
+}while(0)
+
+int find_circles_subproccess(int core)
+{
+    uint16_t *theta_acc     =    (uint16_t*)arg_list[0];
+    uint16_t *magnitude_acc =   (uint16_t*)arg_list[1];
+    rectangle_t *roi =          (rectangle_t*)arg_list[2];
+    int r            =    (int)arg_list[3];
+    uint32_t* acc    =    (uint32_t*)arg_list[4];
+    int w_size       =    (int)arg_list[5];
+    int h_size       =    (int)arg_list[6];
+    int hough_divide =    (int)arg_list[7];
+    int a_size       =    (int)arg_list[8];
+
+    int i_start = 0;
+    int i_end   = roi->h;
+    int i_len = (i_end - i_start)/2;
+    i_start = i_start + i_len*core;
+    if(core != (CORE_NUM-1) )
+    {
+        i_end = i_start + i_len;
+    }
+    for (int y = i_start; y < i_end; y++) {
+        for (int x = 0, xx = roi->w; x < xx; x++) {
+            int index = (roi->w * y) + x;
+            int theta = theta_acc[index];
+            int magnitude = magnitude_acc[index];
+            if (!magnitude) continue;
+
+            // We have to do the below step twice because the gradient may be pointing inside or outside the circle.
+            // Only graidents pointing inside of the circle sum up to produce a large magnitude.
+
+            for (;;) { // Hi to lo edge direction
+                int a = fast_roundf(x + (r * cos_table[theta])) - r;
+                if ((a < 0) || (w_size <= a)) break; // circle doesn't fit in the window
+                int b = fast_roundf(y + (r * sin_table[theta])) - r;
+                if ((b < 0) || (h_size <= b)) break; // circle doesn't fit in the window
+                int acc_index = (((b / hough_divide) + 1) * a_size) + ((a / hough_divide) + 1); // add offset
+
+                int acc_value = acc[acc_index] += magnitude;
+                acc[acc_index] = acc_value;
+                break;
+            }
+
+            for (;;) { // Lo to hi edge direction
+                int a = fast_roundf(x + (r * cos_table[(theta + 180) % 360])) - r;
+                if ((a < 0) || (w_size <= a)) break; // circle doesn't fit in the window
+                int b = fast_roundf(y + (r * sin_table[(theta + 180) % 360])) - r;
+                if ((b < 0) || (h_size <= b)) break; // circle doesn't fit in the window
+                int acc_index = (((b / hough_divide) + 1) * a_size) + ((a / hough_divide) + 1); // add offset
+
+                int acc_value = acc[acc_index] += magnitude;
+                acc[acc_index] = acc_value;
+                break;
+            }
+        }
+    }
+    return 0;
+}
+
+
+void imlib_find_circles(list_t *out, image_t *ptr, rectangle_t *roi, unsigned int x_stride, unsigned int y_stride,
+                        uint32_t threshold, unsigned int x_margin, unsigned int y_margin, unsigned int r_margin,
+                        unsigned int r_min, unsigned int r_max, unsigned int r_step)
+{
+    uint16_t *theta_acc = fb_alloc0(sizeof(uint16_t) * roi->w * roi->h);
+    uint16_t *magnitude_acc = fb_alloc0(sizeof(uint16_t) * roi->w * roi->h);
+    list_t out1;
+    list_t* outs[2] = {out, &out1};
     list_init(out, sizeof(find_circles_list_lnk_data_t));
-
+    list_init(&out1, sizeof(find_circles_list_lnk_data_t));
+    find_circles_param_init();
+    dual_func = find_circles;
+    find_circles(0);
+    while(dual_func){}
+    
     for (int r = r_min, rr = r_max; r < rr; r += r_step) { // ignore r = 0/1
         int a_size, b_size, hough_divide = 1; // divides a and b accumulators
         int w_size = roi->w - (2 * r);
         int h_size = roi->h - (2 * r);
-
         for (;;) { // shrink to fit...
             a_size = 1 + ((w_size + hough_divide - 1) / hough_divide) + 1; // left & right padding
             b_size = 1 + ((h_size + hough_divide - 1) / hough_divide) + 1; // top & bottom padding
@@ -735,45 +899,11 @@ void imlib_find_circles(list_t *out, image_t *ptr, rectangle_t *roi, unsigned in
             hough_divide = hough_divide << 1; // powers of 2...
             if (hough_divide > 4) fb_alloc_fail(); // support 1, 2, 4
         }
-
-        uint32_t *acc = fb_alloc0(sizeof(uint32_t) * a_size * b_size);
-
-        for (int y = 0, yy = roi->h; y < yy; y++) {
-            for (int x = 0, xx = roi->w; x < xx; x++) {
-                int index = (roi->w * y) + x;
-                int theta = theta_acc[index];
-                int magnitude = magnitude_acc[index];
-                if (!magnitude) continue;
-
-                // We have to do the below step twice because the gradient may be pointing inside or outside the circle.
-                // Only graidents pointing inside of the circle sum up to produce a large magnitude.
-
-                for (;;) { // Hi to lo edge direction
-                    int a = fast_roundf(x + (r * cos_table[theta])) - r;
-                    if ((a < 0) || (w_size <= a)) break; // circle doesn't fit in the window
-                    int b = fast_roundf(y + (r * sin_table[theta])) - r;
-                    if ((b < 0) || (h_size <= b)) break; // circle doesn't fit in the window
-                    int acc_index = (((b / hough_divide) + 1) * a_size) + ((a / hough_divide) + 1); // add offset
-
-                    int acc_value = acc[acc_index] += magnitude;
-                    acc[acc_index] = acc_value;
-                    break;
-                }
-
-                for (;;) { // Lo to hi edge direction
-                    int a = fast_roundf(x + (r * cos_table[(theta + 180) % 360])) - r;
-                    if ((a < 0) || (w_size <= a)) break; // circle doesn't fit in the window
-                    int b = fast_roundf(y + (r * sin_table[(theta + 180) % 360])) - r;
-                    if ((b < 0) || (h_size <= b)) break; // circle doesn't fit in the window
-                    int acc_index = (((b / hough_divide) + 1) * a_size) + ((a / hough_divide) + 1); // add offset
-
-                    int acc_value = acc[acc_index] += magnitude;
-                    acc[acc_index] = acc_value;
-                    break;
-                }
-            }
-        }
-
+    uint32_t *acc = fb_alloc0(sizeof(uint32_t) * a_size * b_size);
+    find_circles_param_init2();
+    dual_func = find_circles_subproccess;
+    find_circles_subproccess(0);
+    while(dual_func){}
         for (int y = 1, yy = b_size - 1; y < yy; y++) {
             uint32_t *row_ptr = acc + (a_size * y);
 
