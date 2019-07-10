@@ -32,6 +32,7 @@ set(CMAKE_C_FLAGS 	-mcmodel=medany
                     -Wno-error=pointer-sign
                     -Wno-pointer-to-int-cast
                     -Wno-strict-aliasing
+                    -Wno-int-to-pointer-cast
                     )
 ################################
 
@@ -63,6 +64,7 @@ set(CMAKE_CXX_FLAGS -mcmodel=medany
                     -Wno-error=pointer-sign
                     -Wno-pointer-to-int-cast
                     -Wno-strict-aliasing
+                    -Wno-int-to-pointer-cast
                     )
 ################################
 

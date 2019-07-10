@@ -37,6 +37,7 @@ set(CMAKE_C_FLAGS 	-mcmodel=medany
                     -Wno-error=format-truncation=
                     -Wno-error=restrict
                     -Wno-error=sequence-point
+                    -Wno-int-to-pointer-cast
                     )
 ################################
 
@@ -73,6 +74,7 @@ set(CMAKE_CXX_FLAGS -mcmodel=medany
                     -Wno-error=format-truncation=
                     -Wno-error=restrict
                     -Wno-error=sequence-point
+                    -Wno-int-to-pointer-cast
                     )
 ################################
 
