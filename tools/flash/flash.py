@@ -95,7 +95,7 @@ if __name__ == '__main__':
     if config != config_old:
         print("-- flash config changed, update at {}".format(flash_conf_path))
         with open(flash_conf_path, "w+") as f:
-            json.dump(config, f)
+            json.dump(config, f, indent=4)
     # mask options that not read from file
     for key in config:
         if key in dict_arg_not_save:
