@@ -43,7 +43,6 @@ arg_list[7]=(void*)theta_size; \
 }while(0)
 
 
-
 static int find_lines_565(int ps)
 {
 	image_t *ptr = (image_t *)arg_list[0];
@@ -553,8 +552,7 @@ arg_list[8]=(void*)r_margin; \
 arg_list[9]=(void*)r_min; \
 arg_list[10]=(void*)r_max; \
 arg_list[11]=(void*)r_step; \
-arg_list[12]=(void*)outs; \
-arg_list[13]=(void*)ptr; \
+arg_list[12]=(void*)ptr; \
 }while(0)
 
 
@@ -572,17 +570,13 @@ static int find_circles(int core)
     unsigned int r_min    =    (unsigned int)arg_list[9];
     unsigned int r_max    =    (unsigned int)arg_list[10];
     unsigned int r_step   =    (unsigned int)arg_list[11];
-    list_t** out = (list_t**)arg_list[12];
-    image_t *ptr = (image_t*)arg_list[13];
+    image_t *ptr = (image_t*)arg_list[12];
 
     int i_start = roi->y + 1;
     int i_end   = roi->y + roi->h - 1;
-    int i_len = (i_end - i_start)/2;
-    i_start = i_start + i_len*core;
-    if(core != (CORE_NUM-1) )
-    {
-        i_end = i_start + i_len;
-    }
+    int i_len = (i_end - i_start);
+    i_start = (i_len+y_stride-1)/y_stride*y_stride*core/CORE_NUM + roi->y + 1;
+    i_end = (i_len+y_stride-1)/y_stride*y_stride*(core+1)/CORE_NUM + roi->y + 1;
 
     switch (ptr->bpp) {
         case IMAGE_BPP_BINARY: {
@@ -879,10 +873,7 @@ void imlib_find_circles(list_t *out, image_t *ptr, rectangle_t *roi, unsigned in
 {
     uint16_t *theta_acc = fb_alloc0(sizeof(uint16_t) * roi->w * roi->h);
     uint16_t *magnitude_acc = fb_alloc0(sizeof(uint16_t) * roi->w * roi->h);
-    list_t out1;
-    list_t* outs[2] = {out, &out1};
     list_init(out, sizeof(find_circles_list_lnk_data_t));
-    list_init(&out1, sizeof(find_circles_list_lnk_data_t));
     find_circles_param_init();
     dual_func = find_circles;
     find_circles(0);
