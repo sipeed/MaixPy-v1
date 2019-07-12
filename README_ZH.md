@@ -115,5 +115,18 @@ while True:
 
 查看 [LICENSE](LICENSE.md) 文件
 
+## 其它： 使用本仓库作为 `SDK` 用 `C` 语言开发
 
+本仓库除了作为 `MaixPy` 工程的源码存在以外， 由于`MaixPy`作为一个组件存在， 可以配置为不参与编译， 所以也可以作为 `C SDK` 来进行开发， 使用方法见 [构建文档](build.md), 可以从编译下载`projects/hello_world`开始
+
+大致上编译下载过程如下：
+
+```
+wget http://dl.cdn.sipeed.com/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz
+sudo tar -Jxvf kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz -C /opt
+cd projects/hello_world
+python3 project.py menuconfig
+python3 project.py build
+python3 project.py flash -B dan -b 1500000 -p /dev/ttyUSB0 -t
+```
 

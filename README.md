@@ -115,3 +115,21 @@ The historic version see [historic branch](https://github.com/sipeed/MaixPy/tree
 
 See [LICENSE](LICENSE.md) file
 
+
+## Other: As C SDK for C developers
+
+
+In addition to the source code of the `MaixPy` project, since `MaixPy` exists as a component, it can be configured to not participate in compilation, so this repository can also be developed as `C SDK`. For the usage details, see [Building Documentation](build.md), which can be started by compiling and downloading `projects/hello_world`.
+
+The compilation process is briefly as follows:
+
+```
+wget http://dl.cdn.sipeed.com/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz
+sudo tar -Jxvf kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz -C /opt
+cd projects/hello_world
+python3 project.py menuconfig
+python3 project.py build
+python3 project.py flash -B dan -b 1500000 -p /dev/ttyUSB0 -t
+```
+
+
