@@ -15,7 +15,7 @@
 #define ESP8285_BUF_SIZE 4096 
 #define MICROPY_UART_NIC 1
 /***********freq mod******************/
-#define FREQ_STORE_FILE_NAME "freq.conf"
+#define FREQ_STORE_FILE_NAME "/freq.conf" //must start with '/'
 #define FREQ_PLL0_MAX        1200000000UL //1800MHz max
 #define FREQ_PLL0_DEFAULT    832000000UL
 #define FREQ_PLL0_MIN        52000000UL

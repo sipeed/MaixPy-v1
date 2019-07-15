@@ -39,9 +39,7 @@ mp_obj_t vfs_internal_spiffs_open(spiffs_user_mount_t* vfs, const char* path, co
     
     *error_code = 0;
     uint16_t i = 0;
-    // while(path[i] == '/')i++;
     char* open_name = path;
-    // printk("name:%s\r\n", open_name);
     if(open_name[0] == '.' && open_name[1] == '/')
     {
         memmove(open_name, open_name+1, strlen(open_name));

@@ -166,6 +166,8 @@ STATIC mp_obj_t mp_vfs_spiffs_ilistdir_it_iternext(mp_obj_t self_in) {
 
         // make 4-tuple with info about this entry
         mp_obj_tuple_t *t = MP_OBJ_TO_PTR(mp_obj_new_tuple(4, NULL));
+        if(fn[0] != '/') // for old code compatible
+            continue;
         if (self->is_str) {
             while(*fn == '/')fn++;
             t->items[0] = mp_obj_new_str(fn, strlen(fn));
@@ -250,8 +252,18 @@ STATIC mp_obj_t spiffs_vfs_remove(mp_obj_t vfs_in, mp_obj_t path_in) {
 	spiffs_user_mount_t* vfs = MP_OBJ_TO_PTR(vfs_in);
 	const char *path = mp_obj_str_get_str(path_in);
     int i = 0;
-	// while(path[i] == '/')i++;
-	char* open_name = &path[i];
+    char* open_name = path;
+    if(path[0] == '.' && path[1] == '/')
+    {
+        memmove(open_name, open_name+1, strlen(open_name));
+    }
+    else if(path[0] != '/')
+    {
+        open_name = m_new(char, 128);
+        memset(open_name, 0, 128);
+        open_name[0] = '/';
+        strcat(open_name, path);
+    }
 	int res = SPIFFS_remove(&vfs->fs, open_name); 
     if (res != SPIFFS_OK) {
 	   	mp_printf(&mp_plat_print, "[MaixPy]:SPIFFS Error Code %d\n",res);
@@ -275,11 +287,31 @@ STATIC mp_obj_t spiffs_vfs_rename(mp_obj_t vfs_in, mp_obj_t path_in, mp_obj_t pa
     const char *old_path = mp_obj_str_get_str(path_in);
     const char *new_path = mp_obj_str_get_str(path_out);
     int i = 0;
-	// while(old_path[i] == '/')i++;
 	char* old_name = &old_path[i];
+    if(old_path[0] == '.' && old_path[1] == '/')
+    {
+        memmove(old_name, old_name+1, strlen(old_name));
+    }
+    else if(old_path[0] != '/')
+    {
+        old_name = m_new(char, 128);
+        memset(old_name, 0, 128);
+        old_name[0] = '/';
+        strcat(old_name, old_path);
+    }
     i = 0;
-	// while(new_path[i] == '/')i++;
 	char* new_name = &new_path[i];    
+    if(new_path[0] == '.' && new_path[1] == '/')
+    {
+        memmove(new_name, new_name+1, strlen(new_name));
+    }
+    else if(new_path[0] != '/')
+    {
+        new_name = m_new(char, 128);
+        memset(new_name, 0, 128);
+        new_name[0] = '/';
+        strcat(new_name, new_path);
+    }
     int res = SPIFFS_rename(&self->fs, old_name, new_name);
     if (res == SPIFFS_ERR_CONFLICTING_NAME){
         // if new_name exists then try removing it (but only if it's a file)
@@ -298,7 +330,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_3(spiffs_vfs_rename_obj, spiffs_vfs_rename);
 
 STATIC mp_obj_t spiffs_vfs_mkdir(mp_obj_t vfs_in, mp_obj_t path_o) {
 //	mp_printf(&mp_plat_print, "[MaixPy]spiffs only support flat directory\n");
-	mp_raise_OSError(MP_EIO);
+	mp_raise_NotImplementedError("SPIFFS not support");
 /*
     mp_obj_fat_vfs_t *self = MP_OBJ_TO_PTR(vfs_in);
     const char *path = mp_obj_str_get_str(path_o);
@@ -353,14 +385,24 @@ STATIC mp_obj_t spiffs_vfs_stat(mp_obj_t vfs_in, mp_obj_t path_in) {
 
     //FILINFO fno;
 	spiffs_stat fno;
-    if (path[0] == 0 || (path[0] == '/' && path[1] == 0)) {
+    if ( (path[0] == 0 || (path[0] == '/' && path[1] == 0)) || (path[0]=='.' && path[1]=='/') ) {
         // stat root directory
         fno.size = 0;
 		fno.type = SPIFFS_TYPE_DIR;
     } else {
         int res = 0;
-        // while(path[res] == '/')res++;
 	    char* open_name = &path[res];
+        if(path[0] == '.' && path[1] == '/')
+        {
+            memmove(open_name, open_name+1, strlen(open_name));
+        }
+        else if(path[0] != '/')
+        {
+            open_name = m_new(char, 128);
+            memset(open_name, 0, 128);
+            open_name[0] = '/';
+            strcat(open_name, path);
+        }
         res = SPIFFS_stat(&self->fs, open_name, &fno);
         if (res != SPIFFS_OK) {
 //			mp_printf(&mp_plat_print, "[MaixPy]:SPIFFS Error Code %d\n",res);
