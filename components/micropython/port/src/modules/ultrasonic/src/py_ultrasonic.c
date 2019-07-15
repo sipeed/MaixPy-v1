@@ -4,7 +4,7 @@
 #include "py/runtime.h"
 #include "py/mphal.h"
 #include "py/mperrno.h"
-#include "mpconfigport.h"
+#include "py/mpconfig.h"
 #include "ultrasonic.h"
 #include "fpioa.h"
 

@@ -10,7 +10,7 @@
 #ifndef InfoNES_TYPES_H_INCLUDED
 #define InfoNES_TYPES_H_INCLUDED
 
-#include "mpconfigport.h"
+#include "py/mpconfig.h"
 #if MAIXPY_NES_EMULATOR_SUPPORT
 
 /*-------------------------------------------------------------------*/

@@ -31,7 +31,7 @@
 #include "py/mphal.h"
 #include "py/mperrno.h"
 // #include "extmod/machine_i2c.h"
-#include "mpconfigport.h"
+#include "py/mpconfig.h"
 #include "sleep.h"
 #include "machine_i2c.h"
 

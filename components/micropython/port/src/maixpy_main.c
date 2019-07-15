@@ -19,7 +19,7 @@
 #include <string.h>
 #include <malloc.h>
 /*****mpy****/
-#include "mpconfigport.h"
+#include "py/mpconfig.h"
 #include "py/compile.h"
 #include "py/runtime.h"
 #include "py/repl.h"

@@ -4,7 +4,7 @@
 #include "stdbool.h"
 #include "stdint.h"
 
-#include "mpconfigport.h"
+#include "py/mpconfig.h"
 
 
 #include "imlib.h" // need image_t related

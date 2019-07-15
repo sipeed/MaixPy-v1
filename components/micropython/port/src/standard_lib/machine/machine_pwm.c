@@ -31,7 +31,7 @@
 #include "mphalport.h"
 #include "pwm.h"
 #include "fpioa.h"
-#include "mpconfigport.h"
+#include "py/mpconfig.h"
 #include "machine_timer.h"
 #include "sysctl.h"
 

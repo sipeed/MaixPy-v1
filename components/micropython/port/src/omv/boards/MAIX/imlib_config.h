@@ -9,7 +9,7 @@
 #ifndef __IMLIB_CONFIG_H__
 #define __IMLIB_CONFIG_H__
 
-#include "mpconfigport.h"
+#include "py/mpconfig.h"
 #include "global_config.h"
 
 #if CONFIG_MAIXPY_OMV_MINIMUM
