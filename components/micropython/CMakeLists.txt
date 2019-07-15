@@ -401,6 +401,7 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
         list(APPEND frozen_mpy ${mpy_path})
         add_custom_command(OUTPUT ${mpy_path} 
                             COMMAND mkdir -p ${mpy_build_mpy_dir}
+                            DEPENDS ${py}
                             COMMAND ${mpy_core_dir}/mpy-cross/mpy-cross -o ${mpy_path} -s ${py_name}.py ${py}
                     )
         # add_custom_target("mpy_${py_name}_target" DEPENDS ${mpy})
