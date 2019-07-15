@@ -13,3 +13,9 @@
 [submodule "components/micropython/port/src/lvgl/lv_bindings"]
 	path = components/micropython/port/src/lvgl/lv_bindings
 	url = https://github.com/littlevgl/lv_binding_micropython.git
+[submodule "components/spiffs/core"]
+	path = components/spiffs/core
+	url = https://github.com/pellepl/spiffs.git
+[submodule "components/spiffs/tools/mkspiffs"]
+	path = components/spiffs/tools/mkspiffs
+	url = https://github.com/igrr/mkspiffs.git
