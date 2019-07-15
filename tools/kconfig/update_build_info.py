@@ -80,24 +80,41 @@ INFO_FORMAT_STR = {"header": [str_define_start_header, str_define_end_header, ti
                    "makefile": [str_define_start_makefile, str_define_end_makefile, time_str_makefile, git_str_makefile],
                   }
 
-def append_time_info(filename, file_type):
+def remove_old_config_info(start_flag_str, end_flag_str, content):
+    match = re.findall(r"{}(.*){}".format(start_flag_str, end_flag_str), content, re.MULTILINE|re.DOTALL)
+    if len(match) == 0:
+        content += start_flag_str+end_flag_str
+    else:
+        content = content.replace(match[0], "")
+    return content
+
+def append_time_info(time_info_filename, version_info_filename, file_type):
     str_time_define_start = INFO_FORMAT_STR[file_type][0]
     str_time_define_end   = INFO_FORMAT_STR[file_type][1]
     append_format_time_str= INFO_FORMAT_STR[file_type][2]
     append_format_git_str = INFO_FORMAT_STR[file_type][3]
+    content = ""
+    content2 = ""
+    content2_old = content2
     try:
-        f = open(filename)
+        f = open(time_info_filename)
         content = f.read()
         f.close()
     except Exception:
-        content = ""
+        pass
+    if version_info_filename:
+        try:
+            f = open(version_info_filename)
+            content2 = f.read()
+            content2_old = content2
+            f.close()
+        except Exception:
+            pass
     time_now = time.localtime(time.time())
     # remove old config info
-    match = re.findall(r"{}(.*){}".format(str_time_define_start, str_time_define_end), content, re.MULTILINE|re.DOTALL)
-    if len(match) == 0:
-        content += str_time_define_start+str_time_define_end
-    else:
-        content = content.replace(match[0], "")
+    content = remove_old_config_info(str_time_define_start, str_time_define_end, content)
+    content2 = remove_old_config_info(str_time_define_start, str_time_define_end, content2)
+    
     # time info
     time_define = append_format_time_str.format(time_now.tm_year,
                                         time_now.tm_mon,
@@ -187,22 +204,54 @@ def append_time_info(filename, file_type):
                                               dirty_value)
     # append time and git info to content
     content = content.split(str_time_define_end)
-    content = (time_define+git_define+str_time_define_end).join(content)
+    if not version_info_filename:
+        content = (time_define+git_define+str_time_define_end).join(content)
+    else:
+        content2 = content2.split(str_time_define_end)
+        content = (time_define+str_time_define_end).join(content)
+        content2 = (git_define+str_time_define_end).join(content2)
     # update config file
-    with open(filename, "w") as f:
+    with open(time_info_filename, "w") as f:
         f.write(content)
+    if version_info_filename and content2 != content2_old:
+        with open(version_info_filename, "w") as f:
+            f.write(content2)
 
 def write_config(filename):
-    print("-- Update build time and version info to makefile config at: " + filename)
-    append_time_info(filename, "makefile")
+    print("-- Update build time and version info to makefile config at: " + str(filename))
+    time_info_filename = None
+    version_info_filename = None
+    if filename[0] != None and filename[0].lower() != "none" and os.path.exists(filename[0]):
+        time_info_filename = filename[0]
+    if filename[1] != None and filename[1].lower() != "none" and os.path.exists(filename[1]):
+        version_info_filename = filename[1]
+    if time_info_filename == None:
+        raise Exception("param error")
+    append_time_info(time_info_filename, version_info_filename, "makefile")
 
 def write_cmake(filename):
-    print("-- Update build time and version info to cmake  config  at: " + filename)
-    append_time_info(filename, "cmake")
+    print("-- Update build time and version info to cmake  config  at: " + str(filename))
+    time_info_filename = None
+    version_info_filename = None
+    if filename[0] != None and filename[0].lower() != "none" and os.path.exists(filename[0]):
+        time_info_filename = filename[0]
+    if filename[1] != None and filename[1].lower() != "none" and os.path.exists(filename[1]):
+        version_info_filename = filename[1]
+    if time_info_filename == None:
+        raise Exception("param error")
+    append_time_info(time_info_filename, version_info_filename, "cmake")
 
 def write_header(filename):
-    print("-- Update build time and version info to header  config  at: " + filename)
-    append_time_info(filename, "header")
+    print("-- Update build time and version info to header  config  at: " + str(filename))
+    time_info_filename = None
+    version_info_filename = None
+    if filename[0] != None and filename[0].lower() != "none":
+        time_info_filename = filename[0]
+    if filename[1] != None and filename[1].lower() != "none":
+        version_info_filename = filename[1]
+    if time_info_filename == None:
+        raise Exception("param error")
+    append_time_info(time_info_filename, version_info_filename, "header")
 
 parser = argparse.ArgumentParser(description='generate time info for', prog=os.path.basename(sys.argv[0]))
 
@@ -212,19 +261,19 @@ OUTPUT_FORMATS = {"makefile": write_config,
                   }
 
 
-parser.add_argument('--configfile', nargs=2, action='append',
-                        help='Write config file (format and output filename)',
-                        metavar=('FORMAT', 'FILENAME'),
+parser.add_argument('--configfile', nargs=3, action='append',
+                        help='Write config file (format and output filename), version_filename can be None so all version info will append to time_filename',
+                        metavar=('FORMAT', 'TIME_FILENAME', "VERSION_FILENAME"),
                         default=[])
 
 args = parser.parse_args()
 
 out_format = {}
-for fmt, filename in args.configfile:
+for fmt, filename, version_filename in args.configfile:
     if fmt not in OUTPUT_FORMATS.keys():
         print("Format %s not supported! Known formats:%s" %(fmt, OUTPUT_FORMATS.keys()))
         sys.exit(1)
-    out_format[fmt] = filename
+    out_format[fmt] = (filename, version_filename)
 
 for fmt, filename in out_format.items():
     # if not os.path.exists(filename):

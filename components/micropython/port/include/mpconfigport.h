@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "global_config.h"
+#include "global_build_info_version.h"
 // options to control how MicroPython is built
 
 // You can disable the built-in MicroPython compiler by setting the following
@@ -10,6 +11,27 @@
 #ifndef _MPCONFIGPORT_H_
 #define _MPCONFIGPORT_H_
 
+
+// Current version of MicroPython
+#undef MICROPY_VERSION_MAJOR
+#undef MICROPY_VERSION_MINOR
+#undef MICROPY_VERSION_MICRO
+
+#define MICROPY_VERSION_MAJOR BUILD_VERSION_MAJOR
+#define MICROPY_VERSION_MINOR BUILD_VERSION_MINOR
+#define MICROPY_VERSION_MICRO BUILD_VERSION_DEV
+
+// Combined version as a 32-bit number for convenience
+#define MICROPY_VERSION ( \
+    MICROPY_VERSION_MAJOR << 16 \
+    | MICROPY_VERSION_MINOR << 8 \
+    | MICROPY_VERSION_MICRO)
+
+// String version
+#define MICROPY_VERSION_STRING \
+    MP_STRINGIFY(MICROPY_VERSION_MAJOR) "." \
+    MP_STRINGIFY(MICROPY_VERSION_MINOR) "." \
+    MP_STRINGIFY(MICROPY_VERSION_MICRO)
 
 // object representation and NLR handling
 #define MICROPY_OBJ_BASE_ALIGNMENT  __attribute__((aligned(8)))
