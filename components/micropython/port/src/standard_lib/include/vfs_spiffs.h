@@ -30,6 +30,7 @@
 #include "py/obj.h"
 #include "extmod/vfs.h"
 #include "spiffs.h"
+#include "global_config.h"
 // these are the values for fs_user_mount_t.flags
 #define MODULE_SPIFFS       (0x0001) // readblocks[2]/writeblocks[2] contain native func
 #define SYS_SPIFFS     (0x0002) // fs_user_mount_t obj should be freed on umount
@@ -92,9 +93,9 @@ typedef enum {
 }SPIFFS_ERR;
 
 
-extern u8_t spiffs_work_buf[SPIFFS_CFG_LOG_PAGE_SZ(fs)*2];
-extern u8_t spiffs_fds[32*4];
-extern u8_t spiffs_cache_buf[(SPIFFS_CFG_LOG_PAGE_SZ(fs)+32)*4];
+extern u8_t spiffs_work_buf[CONFIG_SPIFFS_LOGICAL_PAGE_SIZE*2];
+extern u8_t spiffs_fds[CONFIG_SPIFFS_LOGICAL_BLOCK_SIZE/CONFIG_SPIFFS_LOGICAL_PAGE_SIZE*4];
+extern u8_t spiffs_cache_buf[(CONFIG_SPIFFS_LOGICAL_PAGE_SIZE+CONFIG_SPIFFS_LOGICAL_BLOCK_SIZE/CONFIG_SPIFFS_LOGICAL_PAGE_SIZE)*4];
 
 extern const byte SPIFFS_errno_table[43];
 extern const mp_obj_type_t mp_spiffs_vfs_type;

@@ -34,7 +34,6 @@
 #include "py/stream.h"
 #include "py/mperrno.h"
 #include "vfs_spiffs.h"
-#include "spiffs-port.h"
 
 
 spiffs* glb_fs;

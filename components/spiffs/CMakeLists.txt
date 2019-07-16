@@ -2,14 +2,33 @@ if(CONFIG_COMPONENT_SPIFFS_ENABLE)
 
     list(APPEND ADD_INCLUDE "spiffs_port/include"
                             "core/src")
-    aux_source_directory("spiffs_port/src"    PORT_SRCS)
+    # aux_source_directory("spiffs_port/src"    PORT_SRCS)
     aux_source_directory("core/src"         SPIFFS_SRCS)
     list(APPEND ADD_SRCS ${SPIFFS_SRCS}
-                         ${PORT_SRCS}
                          )
     list(APPEND ADD_REQUIREMENTS drivers)
-    register_component()
 
+    # Add flags for spiffs
+    if(CONFIG_SPIFFS_CACHE)
+        list(APPEND ADD_DEFINITIONS -DSPIFFS_CACHE=1 -DSPIFFS_TEMPORAL_FD_CACHE=1)
+    else()
+        list(APPEND ADD_DEFINITIONS -DSPIFFS_CACHE=0 -DSPIFFS_TEMPORAL_FD_CACHE=0)
+    endif()
+    if(CONFIG_SPIFFS_CACHE_WR)
+        list(APPEND ADD_DEFINITIONS -DSPIFFS_CACHE_WR=1)
+    else()
+        list(APPEND ADD_DEFINITIONS -DSPIFFS_CACHE_WR=0)
+    endif()
+    if(CONFIG_SPIFFS_CACHE_STATS)
+        list(APPEND ADD_DEFINITIONS -DSPIFFS_CACHE_STATS=1)
+    else()
+        list(APPEND ADD_DEFINITIONS -DSPIFFS_CACHE_STATS=0)
+    endif()
+    
+    list(APPEND ADD_DEFINITIONS -DSPIFFS_OBJ_NAME_LEN=CONFIG_SPIFFS_OBJ_NAME_LEN)
+    list(APPEND ADD_DEFINITIONS -DSPIFFS_READ_ONLY=0 -DSPIFFS_ALIGNED_OBJECT_INDEX_TABLES=1 -DSPIFFS_SINGLETON=0 -DSPIFFS_USE_MAGIC=1 -DSPIFFS_USE_MAGIC_LENGTH=1 -DSPIFFS_HAL_CALLBACK_EXTRA=1)
+
+    register_component()
 endif()
 
 

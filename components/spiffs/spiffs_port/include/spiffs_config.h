@@ -363,7 +363,7 @@
 typedef u16_t spiffs_block_ix;
 // Page index type. Make sure the size of this type can hold
 // the highest page number of all pages - i.e. spiffs_file_system_size / log_page_size
-typedef u16_t spiffs_page_ix;
+typedef u32_t spiffs_page_ix;
 // Object id type - most significant bit is reserved for index flag. Make sure the
 // size of this type can hold the highest object id on a full system,
 // i.e. 2 + (spiffs_file_system_size / (2*log_page_size))*2

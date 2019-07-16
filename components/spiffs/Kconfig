@@ -3,4 +3,97 @@
 config COMPONENT_SPIFFS_ENABLE
 	bool "Enbale spiffs component"
 	default n
+menu "SPIFFS Configuration"
+	depends on COMPONENT_SPIFFS_ENABLE
 
+	menu "SPIFFS Cache Configuration"
+        config SPIFFS_CACHE
+            bool "Enable SPIFFS Cache"
+            default "y"
+            help
+                Enables/disable memory read caching of nucleus file system
+                operations.
+
+        config SPIFFS_CACHE_WR
+            bool "Enable SPIFFS Write Caching"
+            default "y"
+            depends on SPIFFS_CACHE
+            help
+                Enables memory write caching for file descriptors in hydrogen.
+
+        config SPIFFS_CACHE_STATS
+            bool "Enable SPIFFS Cache Statistics"
+            default "n"
+            depends on SPIFFS_CACHE
+            help
+                Enable/disable statistics on caching. Debug/test purpose only.
+    endmenu
+
+	config SPIFFS_SIZE
+		hex "SPIFFS size"
+		default 0x300000
+
+	config SPIFFS_START_ADDR
+		hex "Start address of SPIFFS"
+		default 0xD00000
+		help
+			must be on block boundary
+
+	config SPIFFS_EREASE_SIZE
+		hex "Erease size of SPIFFS, see the datasheet"
+		default 0x1000
+	
+	config SPIFFS_LOGICAL_BLOCK_SIZE
+		hex "Log block size of SPIFFS(default 32*4k)"
+		default 0x20000
+		help
+			logical size of a block, must be on physical block size boundary
+			and must never be less than a physical block
+
+	config SPIFFS_LOGICAL_PAGE_SIZE
+		hex "Log page size of SPIFFS(default 4k(SPIFFS_LOGICAL_BLOCK_SIZE/32))"
+		default 0x1000
+		help
+			logical size of a page, must be at least logical block size / 8
+
+	config SPIFFS_OBJ_NAME_LEN
+        int "Set SPIFFS Maximum Name Length"
+        default 128
+        range 1 256
+	
+	menu "Debug Configuration"
+
+        config SPIFFS_DBG
+            bool "Enable general SPIFFS debug"
+            default "n"
+            help
+                Enabling this option will print general debug mesages to the console.
+
+        config SPIFFS_API_DBG
+            bool "Enable SPIFFS API debug"
+            default "n"
+            help
+                Enabling this option will print API debug mesages to the console.
+
+        config SPIFFS_GC_DBG
+            bool "Enable SPIFFS Garbage Cleaner debug"
+            default "n"
+            help
+                Enabling this option will print GC debug mesages to the console.
+
+        config SPIFFS_CACHE_DBG
+            bool "Enable SPIFFS Cache debug"
+            default "n"
+            depends on SPIFFS_CACHE
+            help
+                Enabling this option will print cache debug mesages to the console.
+
+        config SPIFFS_CHECK_DBG
+            bool "Enable SPIFFS Filesystem Check debug"
+            default "n"
+            help
+                Enabling this option will print Filesystem Check debug mesages
+                to the console.
+    endmenu
+	
+endmenu

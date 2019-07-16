@@ -10,7 +10,6 @@
 #include "sleep.h"
 #include "syscalls.h"
 
-#include "spiffs-port.h"
 #include "spiffs_config.h"
 #include "spiffs_configport.h"
 
@@ -137,15 +136,15 @@ s32_t spiffs_erase_method(spiffs* fs,uint32_t addr, uint32_t size)
 int mp_module_spiffs_mount(spiffs* fs,spiffs_config* cfg)
 {
 	u8_t* spiffs_work_buf = (u8_t*)m_malloc(fs->cfg.log_page_size * 2 );
-	u8_t* spiffs_fds = (u8_t*)m_malloc(32*4);
-	u8_t* spiffs_cache_buf = (u8_t*)m_malloc((fs->cfg.log_page_size+32)*4);
+	u8_t* spiffs_fds = (u8_t*)m_malloc(fs->cfg.log_block_size/fs->cfg.log_page_size*4);
+	u8_t* spiffs_cache_buf = (u8_t*)m_malloc((fs->cfg.log_page_size+fs->cfg.log_block_size/fs->cfg.log_page_size)*4);
 	int res = SPIFFS_mount(fs,
 						   cfg,
 						   spiffs_work_buf,
 						   spiffs_fds,
-						   32*4,
+						   fs->cfg.log_block_size/fs->cfg.log_page_size*4,
 					       spiffs_cache_buf,
-						   (SPIFFS_CFG_LOG_PAGE_SZ(fs)+32)*4,
+						   (fs->cfg.log_block_size/fs->cfg.log_page_size)*4,
 						   0);
 	mp_printf(&mp_plat_print, "[MAIXPY]:Spiffs Mount %s \n", res?"failed":"successful");
 	return res;

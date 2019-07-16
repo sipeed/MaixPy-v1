@@ -50,8 +50,7 @@
 #if MICROPY_spiffs
 #include "spiffs.h"
 #endif
-#include "spiffs-port.h"
-#include "spiffs_configport.h"
+#include "spiffs_config.h"
 #include "rng.h"
 #include "machine_uart.h"
 #include "vfs_spiffs.h"

@@ -40,9 +40,9 @@
 
 #include "lib/timeutils/timeutils.h"
 
-#include "spiffs-port.h"
 #include "vfs_spiffs.h"
-#include "spiffs_configport.h"
+#include "spiffs_config.h"
+#include "global_config.h"
 #if _MAX_SS == _MIN_SS
 #define SECSIZE(fs) (_MIN_SS)
 #else
@@ -52,9 +52,9 @@
 #define GET_ERR_CODE(res) ((-res)-10000+1)
 #define mp_obj_spiffs_vfs_t spiffs_user_mount_t
 const mp_obj_type_t mp_spiffs_vfs_type;
-u8_t spiffs_work_buf[SPIFFS_CFG_LOG_PAGE_SZ(fs)*2];
-u8_t spiffs_fds[32*4];
-u8_t spiffs_cache_buf[(SPIFFS_CFG_LOG_PAGE_SZ(fs)+32)*4];
+u8_t spiffs_work_buf[CONFIG_SPIFFS_LOGICAL_PAGE_SIZE*2];
+u8_t spiffs_fds[CONFIG_SPIFFS_LOGICAL_BLOCK_SIZE/CONFIG_SPIFFS_LOGICAL_PAGE_SIZE*4];
+u8_t spiffs_cache_buf[(CONFIG_SPIFFS_LOGICAL_PAGE_SIZE+CONFIG_SPIFFS_LOGICAL_BLOCK_SIZE/CONFIG_SPIFFS_LOGICAL_PAGE_SIZE)*4];
 
 STATIC mp_import_stat_t spiffs_vfs_import_stat(void *vfs_in,const char *path) {
     spiffs_user_mount_t *vfs = vfs_in;
@@ -450,11 +450,10 @@ STATIC mp_obj_t spiffs_vfs_statvfs(mp_obj_t vfs_in, mp_obj_t path_in) {
     }
     mp_obj_tuple_t *t = MP_OBJ_TO_PTR(mp_obj_new_tuple(10, NULL));
 
-    t->items[0] = MP_OBJ_NEW_SMALL_INT(SPIFFS_CFG_LOG_BLOCK_SZ()); // file system block size
+    t->items[0] = MP_OBJ_NEW_SMALL_INT(CONFIG_SPIFFS_LOGICAL_BLOCK_SIZE); // file system block size
     t->items[1] = t->items[0]; //  fragment size
-    t->items[2] = MP_OBJ_NEW_SMALL_INT(total/SPIFFS_CFG_LOG_BLOCK_SZ()); // size of fs in f_frsize units
-    t->items[3] = MP_OBJ_NEW_SMALL_INT((total-used)/SPIFFS_CFG_LOG_BLOCK_SZ()
-); // f_bfree
+    t->items[2] = MP_OBJ_NEW_SMALL_INT(total/CONFIG_SPIFFS_LOGICAL_BLOCK_SIZE); // size of fs in f_frsize units
+    t->items[3] = MP_OBJ_NEW_SMALL_INT((total-used)/CONFIG_SPIFFS_LOGICAL_BLOCK_SIZE); // f_bfree
     t->items[4] = t->items[3]; // f_bavail
     t->items[5] = MP_OBJ_NEW_SMALL_INT(0); // f_files
     t->items[6] = MP_OBJ_NEW_SMALL_INT(0); // f_ffree

@@ -67,8 +67,7 @@
 #include "task.h"
 /*******storage********/
 #include "vfs_spiffs.h"
-#include "spiffs_configport.h"
-#include "spiffs-port.h"
+#include "spiffs_config.h"
 #include "machine_sdcard.h"
 #include "machine_uart.h"
 /**********omv**********/
@@ -114,9 +113,6 @@ TaskHandle_t mp_main_task_handle;
 #endif
 
 #define FORMAT_FS_FORCE 0
-// u8_t spiffs_work_buf[SPIFFS_CFG_LOG_PAGE_SZ(fs)*2];
-// u8_t spiffs_fds[32*4];
-// u8_t spiffs_cache_buf[(SPIFFS_CFG_LOG_PAGE_SZ(fs)+32)*4];
 spiffs_user_mount_t spiffs_user_mount_handle;
 
 void do_str(const char *src, mp_parse_input_kind_t input_kind);
@@ -206,18 +202,18 @@ MP_NOINLINE STATIC spiffs_user_mount_t* init_flash_spiffs()
 	spiffs_user_mount_t* vfs_spiffs = &spiffs_user_mount_handle;
 	vfs_spiffs->flags = SYS_SPIFFS;
 	vfs_spiffs->base.type = &mp_spiffs_vfs_type;
-	vfs_spiffs->fs.user_data = vfs_spiffs;
+	vfs_spiffs->fs.user_data = (void*)vfs_spiffs;
 	vfs_spiffs->cfg.hal_read_f = spiffs_read_method;
 	vfs_spiffs->cfg.hal_write_f = spiffs_write_method;
 	vfs_spiffs->cfg.hal_erase_f = spiffs_erase_method;
 	
-	vfs_spiffs->cfg.phys_size = SPIFFS_CFG_PHYS_SZ(); // use all spi flash
-	vfs_spiffs->cfg.phys_addr = SPIFFS_CFG_PHYS_ADDR(); // start spiffs at start of spi flash
-	vfs_spiffs->cfg.phys_erase_block = SPIFFS_CFG_PHYS_ERASE_SZ(); // according to datasheet
-	vfs_spiffs->cfg.log_block_size = SPIFFS_CFG_LOG_BLOCK_SZ(); // let us not complicate things
-	vfs_spiffs->cfg.log_page_size = SPIFFS_CFG_LOG_PAGE_SZ(); // as we said
-	int res = SPIFFS_mount(&vfs_spiffs->fs,
-					   &vfs_spiffs->cfg,
+	vfs_spiffs->cfg.phys_size = CONFIG_SPIFFS_SIZE;
+	vfs_spiffs->cfg.phys_addr = CONFIG_SPIFFS_START_ADDR;
+	vfs_spiffs->cfg.phys_erase_block = CONFIG_SPIFFS_EREASE_SIZE;
+	vfs_spiffs->cfg.log_block_size = CONFIG_SPIFFS_LOGICAL_BLOCK_SIZE;
+	vfs_spiffs->cfg.log_page_size = CONFIG_SPIFFS_LOGICAL_PAGE_SIZE;
+	int res = SPIFFS_mount(&(vfs_spiffs->fs),
+					   &(vfs_spiffs->cfg),
 					   spiffs_work_buf,
 					   spiffs_fds,
 					   sizeof(spiffs_fds),
