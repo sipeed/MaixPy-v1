@@ -1,3 +1,9 @@
+#
+# @file from https://github.com/Neutree/c_cpp_project_framework
+# @author neucrack
+# @license Apache 2.0
+#
+
 
 # Convert to cmake path(for Windows)
 file(TO_CMAKE_PATH "${SDK_PATH}" SDK_PATH)
@@ -56,6 +62,16 @@ function(register_component)
 
     # Add requirements
     target_link_libraries(${component_name} ${ADD_REQUIREMENTS})
+
+    # Add definitions public
+    foreach(difinition ${ADD_DEFINITIONS})
+        target_compile_options(${component_name} PUBLIC ${difinition})
+    endforeach()
+
+    # Add definitions private
+    foreach(difinition ${ADD_DEFINITIONS_PRIVATE})
+        target_compile_options(${component_name} PRIVATE ${difinition})
+    endforeach()
 
     # Add static lib
     if(ADD_STATIC_LIB)
