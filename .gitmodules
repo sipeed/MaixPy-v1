@@ -17,3 +17,6 @@
 	path = components/spiffs/core
 	url = https://github.com/pellepl/spiffs.git
 
+[submodule "tools/spiffs/mkspiffs"]
+	path = tools/spiffs/mkspiffs
+	url = https://github.com/igrr/mkspiffs.git
