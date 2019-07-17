@@ -82,7 +82,7 @@ static void find_iris(image_t *src, array_t *gradients, int x_off, int y_off, in
                 vec_t *v = (vec_t *) array_at(gradients, i);
 
                 // get vector from gradient to centor d
-                vec_t d ={x-v->cx, y-v->cy};
+                vec_t d ={x-v->cx, y-v->cy, 0, 0, 0};
 
                 // normalize d vector
                 float m = fast_sqrtf(d.x*d.x+d.y*d.y);

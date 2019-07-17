@@ -129,7 +129,7 @@ static const mp_obj_type_t py_video_avi_type = {
 };
 
 
-mp_obj_t py_video_open(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
+mp_obj_t py_video_open(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     const char *path = mp_obj_str_get_str(args[0]);
     GET_STR_LEN(args[0], len);

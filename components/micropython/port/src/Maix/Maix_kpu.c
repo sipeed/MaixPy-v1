@@ -118,7 +118,7 @@ static void py_kpu_net_obj_print(const mp_print_t *print, mp_obj_t self_in, mp_p
         addr = mp_obj_get_int(self->model_addr);
     }
 
-    const char net_args[512];
+    char net_args[512];
 
     if(py_kpu_class_yolo2_print_to_buf(self->net_args, net_args) != 0)
     {
@@ -304,15 +304,15 @@ int model_deinit(kpu_task_t *task)
 {
     for (uint32_t i = 0; i < task->layers_length; i++)
     {
-        free(task->layers[i].kernel_calc_type_cfg.data.active_addr);
-        free(task->layers[i].kernel_pool_type_cfg.data.bwsx_base_addr);
-        free(task->layers[i].kernel_load_cfg.data.para_start_addr);
+        free((void*)task->layers[i].kernel_calc_type_cfg.data.active_addr);
+        free((void*)task->layers[i].kernel_pool_type_cfg.data.bwsx_base_addr);
+        free((void*)task->layers[i].kernel_load_cfg.data.para_start_addr);
     }
     free(task->layers);
     return 0;
 }
 
-STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
+STATIC mp_obj_t py_kpu_class_load(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
     int err = 0;
     uint32_t model_size;
@@ -383,7 +383,7 @@ STATIC mp_obj_t py_kpu_class_load(uint n_args, const mp_obj_t *pos_args, mp_map_
     o->net_args = mp_const_none;
     o->net_deinit = mp_const_none;
     o->model_size = mp_obj_new_int(model_size);
-    o->max_layers = sipeed_kpu_model_get_layer_num(o->kmodel_ctx);
+    o->max_layers = mp_obj_new_int(sipeed_kpu_model_get_layer_num(o->kmodel_ctx));
 
     return MP_OBJ_FROM_PTR(o);
 
@@ -548,7 +548,7 @@ mp_obj_t py_kpu_calss_yolo2_deinit(mp_obj_t self_in)
     }
 }
 
-STATIC mp_obj_t py_kpu_class_init_yolo2(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
+STATIC mp_obj_t py_kpu_class_init_yolo2(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
     enum { ARG_kpu_net, ARG_threshold, ARG_nms_value, ARG_anchor_number, ARG_anchor};
     static const mp_arg_t allowed_args[] = {
@@ -734,7 +734,7 @@ static void ai_done(void *ctx)
     g_ai_done_flag = 1;
 }
 
-STATIC mp_obj_t py_kpu_class_run_yolo2(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
+STATIC mp_obj_t py_kpu_class_run_yolo2(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
     if(mp_obj_get_type(pos_args[0]) == &py_kpu_net_obj_type)
     {
@@ -856,7 +856,7 @@ void call_deinit(call_net_arg_deinit call_back, mp_obj_t o)
     call_back(o);
 }
 
-STATIC mp_obj_t py_kpu_deinit(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
+STATIC mp_obj_t py_kpu_deinit(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
     if(mp_obj_get_type(pos_args[0]) == &py_kpu_net_obj_type)
     {
@@ -1066,7 +1066,7 @@ mp_obj_t py_kpu_fmap_index(mp_obj_t self_in) { return mp_obj_new_int(((py_kpu_fm
 mp_obj_t py_kpu_fmap_w(mp_obj_t self_in) { return mp_obj_new_int(((py_kpu_fmap_obj_t *)self_in)->fmap.w); }
 mp_obj_t py_kpu_fmap_h(mp_obj_t self_in) { return mp_obj_new_int(((py_kpu_fmap_obj_t *)self_in)->fmap.h); }
 mp_obj_t py_kpu_fmap_ch(mp_obj_t self_in) { return mp_obj_new_int(((py_kpu_fmap_obj_t *)self_in)->fmap.ch); }
-mp_obj_t py_kpu_fmap_typecode(mp_obj_t self_in) { return mp_obj_new_str(((py_kpu_fmap_obj_t *)self_in)->fmap.typecode,1); }
+mp_obj_t py_kpu_fmap_typecode(mp_obj_t self_in) { return mp_obj_new_str((const char*)((py_kpu_fmap_obj_t *)self_in)->fmap.typecode,1); }
 
 static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_fmap_size_obj,      py_kpu_fmap_size);
 static MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_fmap_index_obj,     py_kpu_fmap_index);
@@ -1118,14 +1118,14 @@ STATIC mp_obj_t py_kpu_set_layers(mp_obj_t kpu_net_obj, mp_obj_t len_obj)
 	py_kpu_net_obj_t *kpu_net = MP_OBJ_TO_PTR(kpu_net_obj);
 	int layers_length = mp_obj_get_int(len_obj);	//how many layers you want calculate, set <=0 to calculate all layers
 	int max_length = mp_obj_get_int(kpu_net->max_layers);
-    sipeed_kpu_err_t ret;
+    // sipeed_kpu_err_t ret;
 	
 	if(layers_length > 0)
 	{	//set layer count
 		if(layers_length <= max_length)
 		{
 			//mp_printf(&mp_plat_print, "set layers_length to %d\r\n", layers_length);
-            ret = sipeed_kpu_model_set_output(kpu_net->kmodel_ctx, 0, layers_length);
+            /* ret = */sipeed_kpu_model_set_output(kpu_net->kmodel_ctx, 0, layers_length);
 		}
 		else
 		{
@@ -1141,7 +1141,7 @@ STATIC mp_obj_t py_kpu_set_layers(mp_obj_t kpu_net_obj, mp_obj_t len_obj)
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(py_kpu_set_layers_obj, py_kpu_set_layers);
 
-STATIC mp_obj_t py_kpu_forward(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
+STATIC mp_obj_t py_kpu_forward(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
 	enum { ARG_kpu_net, ARG_img, ARG_out_index};
     static const mp_arg_t allowed_args[] = {
@@ -1185,7 +1185,7 @@ STATIC mp_obj_t py_kpu_forward(uint n_args, const mp_obj_t *pos_args, mp_map_t *
 		uint8_t* features;
 		size_t count;
 		kpu_model_layer_type_t layer_type;
-        ret = sipeed_kpu_model_get_layer_type(kpu_net->kmodel_ctx, kpu_net->max_layers-1, &layer_type);
+        ret = sipeed_kpu_model_get_layer_type(kpu_net->kmodel_ctx, mp_obj_get_int(kpu_net->max_layers)-1, &layer_type);
         if(ret != SIPEED_KPU_ERR_NONE)
         {
             snprintf(char_temp, sizeof(char_temp), "%d", ret);
@@ -1202,10 +1202,10 @@ STATIC mp_obj_t py_kpu_forward(uint n_args, const mp_obj_t *pos_args, mp_map_t *
 		fmap_t* fmap = &(o->fmap);
 		fmap->data = features;
 		fmap->size = (uint32_t)count + 1;
-		fmap->index = kpu_net->max_layers-1;
+		fmap->index = mp_obj_get_int(kpu_net->max_layers)-1;
 		if(layer_type == KL_K210_CONV)
 		{	//conv layer
-			kpu_layer_argument_t* layer = sipeed_kpu_model_get_conv_layer(kpu_net->kmodel_ctx, kpu_net->max_layers-1);
+			kpu_layer_argument_t* layer = sipeed_kpu_model_get_conv_layer(kpu_net->kmodel_ctx, mp_obj_get_int(kpu_net->max_layers)-1);
             if(!layer)
             {
                 snprintf(char_temp, sizeof(char_temp), "%d", SIPEED_KPU_ERR_GET_CONV_LAYER);

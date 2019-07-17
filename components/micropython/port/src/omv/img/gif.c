@@ -12,7 +12,7 @@
 #include "imlib.h"
 #define BLOCK_SIZE (126) // (2^7) - 2 // (DO NOT CHANGE!)
 
-void gif_open(FIL *fp, int width, int height, bool color, bool loop)
+void gif_open(mp_obj_t fp, int width, int height, bool color, bool loop)
 {
     file_buffer_on(fp);
 
@@ -44,7 +44,7 @@ void gif_open(FIL *fp, int width, int height, bool color, bool loop)
     file_buffer_off(fp);
 }
 
-void gif_add_frame(FIL *fp, image_t *img, uint16_t delay)
+void gif_add_frame(mp_obj_t fp, image_t *img, uint16_t delay)
 {
     file_buffer_on(fp);
 
@@ -109,7 +109,7 @@ void gif_add_frame(FIL *fp, image_t *img, uint16_t delay)
     file_buffer_off(fp);
 }
 
-void gif_close(FIL *fp)
+void gif_close(mp_obj_t fp)
 {
     write_byte(fp, ';');
     file_close(fp);

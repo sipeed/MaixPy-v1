@@ -603,7 +603,6 @@ void imlib_load_image(image_t *img, const char *path, mp_obj_t file)
 {
     int err = 0;
     char magic[2];
-    uint16_t tmp;
     bool is_file_obj = true;
 
     if( !file )

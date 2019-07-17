@@ -251,7 +251,6 @@ STATIC void machine_hw_spi_init(mp_obj_base_t *self_in, size_t n_args, const mp_
     int cs[4] = {-1, -1, -1, -1};
     int d[8] = {-1,-1,-1,-1,-1,-1,-1,-1};
     int ret;
-    bool valid = false;
     bool is_set_fpioa = false;
     sck   = check_pin(args[ARG_sck].u_obj);
     cs[0] = check_pin(args[ARG_cs0].u_obj);
@@ -446,7 +445,7 @@ STATIC mp_obj_t mp_machine_spi_readinto(size_t n_args, const mp_obj_t *pos_args,
         { MP_QSTR_write, MP_ARG_INT, {.u_int = 0} },
         { MP_QSTR_cs, MP_ARG_INT, {.u_int = 0} },
     };
-    machine_hw_spi_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+    // machine_hw_spi_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
 
     mp_arg_val_t args[MP_ARRAY_SIZE(machine_spi_read_allowed_args)];
     mp_arg_parse_all(n_args - 2, pos_args + 2, kw_args,

@@ -20,7 +20,6 @@
 /* clang-format off */
 #define DATALENGTH                          8
 
-#define SPI_SLAVE_SELECT                    (0x01)
 
 #define w25qxx_FLASH_PAGE_SIZE              256
 #define w25qxx_FLASH_SECTOR_SIZE            4096

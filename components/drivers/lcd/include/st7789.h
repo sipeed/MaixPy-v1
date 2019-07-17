@@ -9,7 +9,7 @@
 /* clang-format off */
 #define NO_OPERATION            0x00
 #define SOFTWARE_RESET          0x01
-#define READ_ID                 0x04
+// #define READ_ID                 0x04
 #define READ_STATUS             0x09
 #define READ_POWER_MODE         0x0A
 #define READ_MADCTL             0x0B
@@ -89,7 +89,7 @@
 
 #define SPI_CHANNEL             0
 #define SPI_DMA_CH				DMAC_CHANNEL1
-#define SPI_SLAVE_SELECT        3
+#define LCD_SPI_SLAVE_SELECT        3
 /* clang-format on */
 
 void tft_hard_init(uint32_t freq, bool oct);

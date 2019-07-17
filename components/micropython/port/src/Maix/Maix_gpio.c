@@ -172,13 +172,14 @@ void Maix_gpios_deinit(void) {
     }
 }
 
-STATIC void Maix_gpio_isr_handler(void *arg) {
+STATIC int Maix_gpio_isr_handler(void *arg) {
    Maix_gpio_obj_t *self = arg;
    //only gpiohs support irq,so only support gpiohs in this func
    mp_obj_t handler = self->callback;
    mp_call_function_2(handler, MP_OBJ_FROM_PTR(self), mp_obj_new_int_from_uint(self->id));
 //    mp_sched_schedule(handler, MP_OBJ_FROM_PTR(self));
 //    mp_hal_wake_main_task_from_isr();
+    return 0;
 }
 
 gpio_num_t Maix_gpio_get_id(mp_obj_t pin_in) {
@@ -213,7 +214,7 @@ STATIC mp_obj_t Maix_gpio_obj_init_helper(const Maix_gpio_obj_t *self, size_t n_
         mp_int_t pin_io_mode = mp_obj_get_int(args[ARG_mode].u_obj);
         if (0 <= self->num && self->num < MP_ARRAY_SIZE(Maix_gpio_obj)) {
             self = (Maix_gpio_obj_t*)&Maix_gpio_obj[self->num];
-            if(pin_io_mode == GPIO_DM_OUTPUT && args[ARG_pull].u_obj != mp_const_none && args[ARG_pull].u_obj != GPIO_DM_PULL_NONE){
+            if(pin_io_mode == GPIO_DM_OUTPUT && args[ARG_pull].u_obj != mp_const_none && mp_obj_get_int(args[ARG_pull].u_obj) != GPIO_DM_PULL_NONE){
                 mp_raise_ValueError("When this pin is in output mode, it is not allowed to pull up and down.");
             }else{
                 if(args[ARG_pull].u_obj != mp_const_none && mp_obj_get_int(args[ARG_pull].u_obj) != GPIO_DM_PULL_NONE ){

@@ -160,13 +160,12 @@ static void lcd_draw_cross(int x, int y, uint16_t color)
 
 static void cairo_draw_string(int x, int y, const char *title)
 {
-    lcd_draw_string(x, y, title, WHITE);
+    lcd_draw_string(x, y, (char*)title, WHITE);
 }
 
 int do_tscal(struct ts_ns2009_pdata_t *ts_ns2009_pdata, int width, int height, int* c)
 {
     struct tscal_t cal;
-    lcd_ctl_t lcd_ctl;
 
     // char buffer[256];
     int index;

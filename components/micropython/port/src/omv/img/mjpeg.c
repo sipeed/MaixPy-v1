@@ -19,7 +19,7 @@
 #define LENGTH_1_OFFSET         (35*4)
 #define MOVI_OFFSET             (54*4)
 
-void mjpeg_open(FIL *fp, int width, int height)
+void mjpeg_open(mp_obj_t fp, int width, int height)
 {
     write_data(fp, "RIFF", 4); // FOURCC fcc; - 0
     write_long(fp, 0); // DWORD cb; size - updated on close - 1
@@ -89,7 +89,7 @@ void mjpeg_open(FIL *fp, int width, int height)
     write_data(fp, "movi", 4); // FOURCC fcc; - 55
 }
 
-void mjpeg_add_frame(FIL *fp, uint32_t *frames, uint32_t *bytes, image_t *img, int quality)
+void mjpeg_add_frame(mp_obj_t fp, uint32_t *frames, uint32_t *bytes, image_t *img, int quality)
 {
     write_data(fp, "00dc", 4); // FOURCC fcc;
     *frames += 1;
@@ -114,7 +114,7 @@ void mjpeg_add_frame(FIL *fp, uint32_t *frames, uint32_t *bytes, image_t *img, i
     }
 }
 
-void mjpeg_close(FIL *fp, uint32_t *frames, uint32_t *bytes, float fps)
+void mjpeg_close(mp_obj_t fp, uint32_t *frames, uint32_t *bytes, float fps)
 {
     // Needed
     file_seek(fp, SIZE_OFFSET, 0);

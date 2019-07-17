@@ -39,7 +39,7 @@ int mp_hal_stdin_rx_chr(void) {
 	}
 
 }
-void mp_hal_debug_tx_strn_cooked(void *env, const char *str, uint32_t len);
+void mp_hal_debug_tx_strn_cooked(void *env, const char *str, size_t len);
 
 const mp_print_t mp_debug_print = {NULL, mp_hal_debug_tx_strn_cooked};
 
@@ -54,7 +54,7 @@ void mp_hal_stdout_tx_strn(const char *str, mp_uint_t len) {
    	mp_uos_dupterm_tx_strn(str, len);
 }
 
-void mp_hal_debug_tx_strn_cooked(void *env, const char *str, uint32_t len) {
+void mp_hal_debug_tx_strn_cooked(void *env, const char *str, size_t len) {
     (void)env;
     while (len--) {
         if (*str == '\n') {

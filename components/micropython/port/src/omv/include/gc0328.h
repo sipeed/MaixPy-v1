@@ -20,7 +20,7 @@
 
 #define GC0328_ID       (0x9d)
 #define GC0328_ADDR     (0x42)
-int gc0328_reset(void);
+int gc0328_reset(sensor_t*);
 uint8_t gc0328_scan(void);
 int gc0328_init(sensor_t *sensor);
 

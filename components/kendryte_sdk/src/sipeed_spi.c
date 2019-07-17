@@ -132,7 +132,7 @@ static void sipeed_spi_set_tmod(uint8_t spi_num, uint32_t tmod)
 void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select_t chip_select, const uint8_t *tx_buff,uint8_t *rx_buff,  size_t tx_len, size_t rx_len)
 {
     configASSERT(spi_num < SPI_DEVICE_MAX && spi_num != 2);
-    configASSERT(tx_len > 0 && rx_len>=0 && tx_len >= rx_len);
+    configASSERT(tx_len > 0 && tx_len >= rx_len);
     size_t index, fifo_len;
     sipeed_spi_set_tmod(spi_num, SPI_TMOD_TRANS_RECV);
 

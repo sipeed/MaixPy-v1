@@ -7,7 +7,7 @@
 
 extern void *py_image_cobj(mp_obj_t img_obj);
 
-mp_obj_t py_func_unavailable(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
+mp_obj_t py_func_unavailable(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     PY_ASSERT_TRUE_MSG(false, "This function is unavailable on your OpenMV Cam.");
     return args[0];
@@ -42,7 +42,7 @@ image_t *py_helper_arg_to_image_color(const mp_obj_t arg)
     return arg_img;
 }
 
-image_t *py_helper_keyword_to_image_mutable(uint n_args, const mp_obj_t *args, uint arg_index,
+image_t *py_helper_keyword_to_image_mutable(size_t n_args, const mp_obj_t *args, uint arg_index,
                                             mp_map_t *kw_args, mp_obj_t kw, image_t *default_val)
 {
     mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, kw, MP_MAP_LOOKUP);
@@ -56,7 +56,7 @@ image_t *py_helper_keyword_to_image_mutable(uint n_args, const mp_obj_t *args, u
     return default_val;
 }
 
-image_t *py_helper_keyword_to_image_mutable_mask(uint n_args, const mp_obj_t *args, uint arg_index,
+image_t *py_helper_keyword_to_image_mutable_mask(size_t n_args, const mp_obj_t *args, uint arg_index,
                                                  mp_map_t *kw_args)
 {
     return py_helper_keyword_to_image_mutable(n_args, args, arg_index, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_mask), NULL);
@@ -128,7 +128,7 @@ void py_helper_keyword_rectangle_roi(image_t *img, uint n_args, const mp_obj_t *
     py_helper_keyword_rectangle(img, n_args, args, arg_index, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_roi), r);
 }
 
-int py_helper_keyword_int(uint n_args, const mp_obj_t *args, uint arg_index,
+int py_helper_keyword_int(size_t n_args, const mp_obj_t *args, uint arg_index,
                           mp_map_t *kw_args, mp_obj_t kw, int default_val)
 {
     mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, kw, MP_MAP_LOOKUP);
@@ -142,7 +142,7 @@ int py_helper_keyword_int(uint n_args, const mp_obj_t *args, uint arg_index,
     return default_val;
 }
 
-float py_helper_keyword_float(uint n_args, const mp_obj_t *args, uint arg_index,
+float py_helper_keyword_float(size_t n_args, const mp_obj_t *args, uint arg_index,
                               mp_map_t *kw_args, mp_obj_t kw, float default_val)
 {
     mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, kw, MP_MAP_LOOKUP);
@@ -156,7 +156,7 @@ float py_helper_keyword_float(uint n_args, const mp_obj_t *args, uint arg_index,
     return default_val;
 }
 
-void py_helper_keyword_int_array(uint n_args, const mp_obj_t *args, uint arg_index,
+void py_helper_keyword_int_array(size_t n_args, const mp_obj_t *args, uint arg_index,
                                  mp_map_t *kw_args, mp_obj_t kw, int *x, int size)
 {
     mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, kw, MP_MAP_LOOKUP);
@@ -172,7 +172,7 @@ void py_helper_keyword_int_array(uint n_args, const mp_obj_t *args, uint arg_ind
     }
 }
 
-void py_helper_keyword_float_array(uint n_args, const mp_obj_t *args, uint arg_index,
+void py_helper_keyword_float_array(size_t n_args, const mp_obj_t *args, uint arg_index,
                                    mp_map_t *kw_args, mp_obj_t kw, float *x, int size)
 {
     mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, kw, MP_MAP_LOOKUP);
@@ -188,7 +188,7 @@ void py_helper_keyword_float_array(uint n_args, const mp_obj_t *args, uint arg_i
     }
 }
 
-uint py_helper_consume_array(uint n_args, const mp_obj_t *args, uint arg_index, size_t len, const mp_obj_t **items)
+uint py_helper_consume_array(size_t n_args, const mp_obj_t *args, uint arg_index, size_t len, const mp_obj_t **items)
 {
     if (MP_OBJ_IS_TYPE(args[arg_index], &mp_type_tuple) || MP_OBJ_IS_TYPE(args[arg_index], &mp_type_list)) {
         mp_obj_get_array_fixed_n(args[arg_index], len, (mp_obj_t **) items);
@@ -291,7 +291,7 @@ void py_helper_arg_to_thresholds(const mp_obj_t arg, list_t *thresholds)
     }
 }
 
-void py_helper_keyword_thresholds(uint n_args, const mp_obj_t *args, uint arg_index,
+void py_helper_keyword_thresholds(size_t n_args, const mp_obj_t *args, uint arg_index,
                                   mp_map_t *kw_args, list_t *thresholds)
 {
     mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_thresholds), MP_MAP_LOOKUP);
@@ -315,7 +315,7 @@ int py_helper_ksize_to_n(int ksize)
     return ((ksize * 2) + 1) * ((ksize * 2) + 1);
 }
 
-mp_obj_t py_helper_keyword_object(uint n_args, const mp_obj_t *args, uint arg_index, mp_map_t *kw_args, mp_obj_t kw)
+mp_obj_t py_helper_keyword_object(size_t n_args, const mp_obj_t *args, uint arg_index, mp_map_t *kw_args, mp_obj_t kw)
 {
     mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, kw, MP_MAP_LOOKUP);
 

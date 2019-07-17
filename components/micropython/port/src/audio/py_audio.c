@@ -51,7 +51,7 @@ STATIC mp_obj_t Maix_audio_init_helper(Maix_audio_obj_t *self, size_t n_args, co
           ARG_points};
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_array, MP_ARG_OBJ , {.u_obj = mp_const_none} },
-        { MP_QSTR_path,  MP_ARG_OBJ  , {.u_int = mp_const_none} },
+        { MP_QSTR_path,  MP_ARG_OBJ  , {.u_obj = mp_const_none} },
         { MP_QSTR_points, MP_ARG_INT | MP_ARG_KW_ONLY , {.u_int = MAX_SAMPLE_POINTS} },
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -84,7 +84,7 @@ STATIC mp_obj_t Maix_audio_init_helper(Maix_audio_obj_t *self, size_t n_args, co
     }else if(args[ARG_path].u_obj != mp_const_none)
     {
         int err = 0;
-        char* path_str = mp_obj_str_get_str(args[ARG_path].u_obj);
+        char* path_str = (char*)mp_obj_str_get_str(args[ARG_path].u_obj);
         mp_obj_t fp = vfs_internal_open(path_str,"rb",&err);
         if( err != 0)
             mp_raise_OSError(err);
@@ -129,8 +129,8 @@ STATIC mp_obj_t Maix_audio_init(size_t n_args, const mp_obj_t *args, mp_map_t *k
 MP_DEFINE_CONST_FUN_OBJ_KW(Maix_audio_init_obj,0 ,Maix_audio_init);
 
 //----------------bo byte ------------------------
-STATIC mp_obj_t Maix_audio_to_bytes(Maix_audio_obj_t* self) {
-    audio_t* audio = &self->audio; 
+STATIC mp_obj_t Maix_audio_to_bytes(void* self) {
+    audio_t* audio = &((Maix_audio_obj_t*)self)->audio; 
     if(audio->buf == NULL || audio->points == 0)
         mp_raise_msg(&mp_type_AttributeError,"empty Audio");
     mp_obj_array_t* audio_array = m_new_obj(mp_obj_array_t);

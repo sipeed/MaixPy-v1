@@ -112,8 +112,9 @@ mp_uint_t uart_rx_any(machine_uart_obj_t *self)
 	}
 }
 
-mp_obj_t uart_any(machine_uart_obj_t *self)
+mp_obj_t uart_any(mp_obj_t self_)
 {
+	machine_uart_obj_t* self = (machine_uart_obj_t*)self_;
 	return mp_obj_new_int(uart_rx_any(self));
 }
 MP_DEFINE_CONST_FUN_OBJ_1(machine_uart_any_obj, uart_any);
@@ -248,10 +249,9 @@ bool uart_rx_wait(machine_uart_obj_t *self, uint32_t timeout)
     }
 }
 
-
-// assumes there is a character available
-int uart_rx_char(machine_uart_obj_t *self) 
+int uart_rx_char(mp_obj_t self_) 
 {
+	machine_uart_obj_t* self = (machine_uart_obj_t*)self_;
     if (self->read_buf_tail != self->read_buf_head) {
         uint8_t data;
         data = self->read_buf[self->read_buf_tail];
@@ -269,6 +269,13 @@ int uart_rx_char(machine_uart_obj_t *self)
 	return -1;
 }
 
+
+// assumes there is a character available
+mp_obj_t uart_rx_char_py(void *self_) 
+{
+	return mp_obj_new_int(uart_rx_char(self_));
+}
+
 mp_obj_t uart_readchar(machine_uart_obj_t *self) 
 {
 	int data = uart_rx_char(self);
@@ -279,7 +286,7 @@ mp_obj_t uart_readchar(machine_uart_obj_t *self)
 	}
 	return MP_OBJ_NULL;
 }
-MP_DEFINE_CONST_FUN_OBJ_1(machine_uart_rx_char_obj, uart_rx_char);
+MP_DEFINE_CONST_FUN_OBJ_1(machine_uart_rx_char_obj, uart_rx_char_py);
 
 int uart_rx_data(machine_uart_obj_t *self,uint8_t* buf_in,uint32_t size) 
 {
@@ -322,7 +329,7 @@ STATIC size_t uart_tx_data(machine_uart_obj_t *self, const void *src_data, size_
     } 
     */
     //timeout = 2 * self->timeout_char;
-    const uint8_t *src = (uint8_t*)src_data;
+    uint8_t *src = (uint8_t*)src_data;
     size_t num_tx = 0;
 	size_t cal = 0;
 	if(self->attached_to_repl)
@@ -339,7 +346,7 @@ STATIC size_t uart_tx_data(machine_uart_obj_t *self, const void *src_data, size_
 				if(MICROPY_UARTHS_DEVICE == self->uart_num)
 					cal = uarths_send_data(src+num_tx, size - num_tx);
 				else if(UART_DEVICE_MAX > self->uart_num)
-					cal= uart_send_data(self->uart_num, (char*)(src+num_tx), size - num_tx);	
+					cal= uart_send_data(self->uart_num, (const char*)(src+num_tx), size - num_tx);	
 				num_tx += cal;
 			}
 		}
@@ -354,7 +361,7 @@ STATIC size_t uart_tx_data(machine_uart_obj_t *self, const void *src_data, size_
 			if(MICROPY_UARTHS_DEVICE == self->uart_num)
 				cal = uarths_send_data(src+num_tx, size - num_tx);
 			else if(UART_DEVICE_MAX > self->uart_num)
-				cal= uart_send_data(self->uart_num, (char*)(src+num_tx), size - num_tx);
+				cal= uart_send_data(self->uart_num, (const char*)(src+num_tx), size - num_tx);
  	        num_tx = num_tx + cal;
 	    }
 	}

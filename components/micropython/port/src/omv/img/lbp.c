@@ -93,16 +93,16 @@ int imlib_lbp_desc_distance(uint8_t *d0, uint8_t *d1)
     return sum;
 }
 
-int imlib_lbp_desc_save(FIL *fp, uint8_t *desc)
+int imlib_lbp_desc_save(mp_obj_t fp, uint8_t *desc)
 {
-    UINT bytes;
+    mp_uint_t bytes;
     // Write descriptor
     return file_write(fp, desc, LBP_DESC_SIZE, &bytes);
 }
 
-int imlib_lbp_desc_load(FIL *fp, uint8_t **desc)
+int imlib_lbp_desc_load(mp_obj_t fp, uint8_t **desc)
 {
-    UINT bytes;
+    mp_uint_t bytes;
     FRESULT res=FR_OK;
 
     *desc = NULL;

@@ -38,7 +38,7 @@ STATIC mp_obj_t Maix_set_function(size_t n_args, const mp_obj_t *pos_args, mp_ma
 	uint16_t pin_num = args[ARG_pin].u_int;
 	fpioa_function_t func_num = args[ARG_func].u_int;
 	
-	if(pin_num < 0 || pin_num > FPIOA_NUM_IO)		
+	if(pin_num > FPIOA_NUM_IO)		
 		mp_raise_ValueError("Don't have this Pin");
 	
 	if(func_num < 0 || func_num > USABLE_FUNC_NUM)

@@ -55,7 +55,7 @@ typedef struct _ipconfig_obj
 typedef struct _esp8285_obj
 {
 	mp_obj_t uart_obj;
-	uint8_t buffer[ESP8285_BUF_SIZE];
+	char buffer[ESP8285_BUF_SIZE];
 	
 }esp8285_obj;
 
@@ -81,7 +81,7 @@ bool reset(esp8285_obj* nic);
  * @return the char* of version. 
  */
  
-uint8_t* getVersion(esp8285_obj* nic);
+char* getVersion(esp8285_obj* nic);
 
 /**
  * Set operation mode to staion. 
@@ -101,7 +101,7 @@ bool setOprToStation(esp8285_obj* nic);
  * @retval false - failure.
  * @note This method will take a couple of seconds. 
  */
-bool joinAP(esp8285_obj* nic,uint8_t* ssid, uint8_t* pwd);
+bool joinAP(esp8285_obj* nic, const char* ssid, const char* pwd);
 
 
 /**
@@ -112,7 +112,7 @@ bool joinAP(esp8285_obj* nic,uint8_t* ssid, uint8_t* pwd);
  * 
  * @note This method will enable DHCP but only for client mode!
  */
-bool enableClientDHCP(esp8285_obj* nic,uint8_t mode, bool enabled);
+bool enableClientDHCP(esp8285_obj* nic,char mode, bool enabled);
 
 /**
  * Leave AP joined before. 
@@ -127,14 +127,14 @@ bool leaveAP(esp8285_obj* nic);
  * 
  * @return the status. 
  */
-uint8_t* getIPStatus(esp8285_obj* nic);
+char* getIPStatus(esp8285_obj* nic);
 
 /**
  * Get the IP address of ESP8266. 
  *
  * @return the IP list. 
  */
-uint8_t* getLocalIP(esp8285_obj* nic);
+char* getLocalIP(esp8285_obj* nic);
 
 /**
  * Enable IP MUX(multiple connection mode). 
@@ -166,7 +166,7 @@ bool disableMUX(esp8285_obj* nic);
  * @retval true - success.
  * @retval false - failure.
  */
-bool createTCP(esp8285_obj* nic,uint8_t* addr, uint32_t port);
+bool createTCP(esp8285_obj* nic,char* addr, uint32_t port);
 /**
  * Release TCP connection in single mode. 
  * 
@@ -183,7 +183,7 @@ bool releaseTCP(esp8285_obj* nic);
  * @retval true - success.
  * @retval false - failure.
  */
-bool registerUDP(esp8285_obj* nic,uint8_t* addr, uint32_t port);
+bool registerUDP(esp8285_obj* nic,char* addr, uint32_t port);
 
 /**
  * Unregister UDP port number in single mode. 
@@ -202,7 +202,7 @@ bool unregisterUDP(esp8285_obj* nic);
  * @retval true - success.
  * @retval false - failure.
  */
-bool createTCP_mul(esp8285_obj* nic,uint8_t mux_id, uint8_t* addr, uint32_t port);
+bool createTCP_mul(esp8285_obj* nic,char mux_id, char* addr, uint32_t port);
 
 /**
  * Release TCP connection in multiple mode. 
@@ -211,7 +211,7 @@ bool createTCP_mul(esp8285_obj* nic,uint8_t mux_id, uint8_t* addr, uint32_t port
  * @retval true - success.
  * @retval false - failure.
  */
-bool releaseTCP_mul(esp8285_obj* nic,uint8_t mux_id);
+bool releaseTCP_mul(esp8285_obj* nic,char mux_id);
 
 /**
  * Register UDP port number in multiple mode.
@@ -222,7 +222,7 @@ bool releaseTCP_mul(esp8285_obj* nic,uint8_t mux_id);
  * @retval true - success.
  * @retval false - failure.
  */
-bool registerUDP_mul(esp8285_obj* nic,uint8_t mux_id, uint8_t* addr, uint32_t port);
+bool registerUDP_mul(esp8285_obj* nic,char mux_id, char* addr, uint32_t port);
 
 /**
  * Unregister UDP port number in multiple mode. 
@@ -231,7 +231,7 @@ bool registerUDP_mul(esp8285_obj* nic,uint8_t mux_id, uint8_t* addr, uint32_t po
  * @retval true - success.
  * @retval false - failure.
  */
-bool unregisterUDP_mul(esp8285_obj* nic,uint8_t mux_id);
+bool unregisterUDP_mul(esp8285_obj* nic,char mux_id);
 
 /**
  * Set the timeout of TCP Server. 
@@ -254,8 +254,8 @@ bool setTCPServerTimeout(esp8285_obj* nic,uint32_t timeout);
  * @retval false - failure.
  *
  * @see char* getIPStatus(void);
- * @see uint32_t recv(uint8_t *coming_mux_id, uint8_t *buffer, uint32_t len, uint32_t timeout);
- * @see bool releaseTCP(uint8_t mux_id);
+ * @see uint32_t recv(char* coming_mux_id, char* buffer, uint32_t len, uint32_t timeout);
+ * @see bool releaseTCP(char mux_id);
  */
 bool startTCPServer(esp8285_obj* nic,uint32_t port);
 
@@ -275,7 +275,7 @@ bool stopTCPServer(esp8285_obj* nic);
  * @retval false - failure.
  *
  * @see char* getIPStatus(void);
- * @see uint32_t recv(uint8_t *coming_mux_id, uint8_t *buffer, uint32_t len, uint32_t timeout);
+ * @see uint32_t recv(char* coming_mux_id, char* buffer, uint32_t len, uint32_t timeout);
  */
 bool startServer(esp8285_obj* nic,uint32_t port);
 
@@ -287,7 +287,7 @@ bool startServer(esp8285_obj* nic,uint32_t port);
  */
 bool stopServer(esp8285_obj* nic);
 
-bool get_host_byname(esp8285_obj* nic,uint8_t* host,uint32_t len,uint8_t* out_ip);
+bool get_host_byname(esp8285_obj* nic, const char* host,uint32_t len,char* out_ip);
 
 /**
  * Send data based on TCP or UDP builded already in single mode. 
@@ -297,7 +297,7 @@ bool get_host_byname(esp8285_obj* nic,uint8_t* host,uint32_t len,uint8_t* out_ip
  * @retval true - success.
  * @retval false - failure.
  */
-bool esp_send(esp8285_obj* nic,const uint8_t *buffer, uint32_t len, uint32_t timeout);
+bool esp_send(esp8285_obj* nic,const char* buffer, uint32_t len, uint32_t timeout);
         
 /**
  * Send data based on one of TCP or UDP builded already in multiple mode. 
@@ -308,7 +308,7 @@ bool esp_send(esp8285_obj* nic,const uint8_t *buffer, uint32_t len, uint32_t tim
  * @retval true - success.
  * @retval false - failure.
  */
-bool esp_send_mul(esp8285_obj* nic,uint8_t mux_id, const uint8_t *buffer, uint32_t len);
+bool esp_send_mul(esp8285_obj* nic,char mux_id, const char* buffer, uint32_t len);
 
 /**
  * Receive data from TCP or UDP builded already in single mode. 
@@ -318,7 +318,7 @@ bool esp_send_mul(esp8285_obj* nic,uint8_t mux_id, const uint8_t *buffer, uint32
  * @param timeout - the time waiting data. 
  * @return the length of data received actually. 
  */
-uint32_t esp_recv(esp8285_obj* nic,uint8_t *buffer, uint32_t buffer_size, uint32_t timeout);
+uint32_t esp_recv(esp8285_obj* nic,char* buffer, uint32_t buffer_size, uint32_t timeout);
 
 /**
  * Receive data from one of TCP or UDP builded already in multiple mode. 
@@ -329,7 +329,7 @@ uint32_t esp_recv(esp8285_obj* nic,uint8_t *buffer, uint32_t buffer_size, uint32
  * @param timeout - the time waiting data. 
  * @return the length of data received actually. 
  */
-uint32_t esp_recv_mul(esp8285_obj* nic,uint8_t mux_id, uint8_t *buffer, uint32_t buffer_size, uint32_t timeout);
+uint32_t esp_recv_mul(esp8285_obj* nic,char mux_id, char* buffer, uint32_t buffer_size, uint32_t timeout);
 
 /**
  * Receive data from all of TCP or UDP builded already in multiple mode. 
@@ -343,7 +343,7 @@ uint32_t esp_recv_mul(esp8285_obj* nic,uint8_t mux_id, uint8_t *buffer, uint32_t
  * @param timeout - the time waiting data. 
  * @return the length of data received actually. 
  */
-uint32_t esp_recv_mul_id(esp8285_obj* nic,uint8_t *coming_mux_id, uint8_t *buffer, uint32_t buffer_size, uint32_t timeout);
+uint32_t esp_recv_mul_id(esp8285_obj* nic,char* coming_mux_id, char* buffer, uint32_t buffer_size, uint32_t timeout);
 
 /* 
  * Empty the buffer or UART RX.
@@ -353,13 +353,13 @@ void rx_empty(esp8285_obj* nic);
 /* 
  * Recvive data from uart and search first target. Return true if target found, false for timeout.
  */
-bool recvFind(esp8285_obj* nic,uint8_t* target, uint32_t timeout);
+bool recvFind(esp8285_obj* nic, const char* target, uint32_t timeout);
 
 /* 
  * Recvive data from uart and search first target and cut out the subchar* between begin and end(excluding begin and end self). 
  * Return true if target found, false for timeout.
  */
-bool recvFindAndFilter(esp8285_obj* nic,uint8_t* target, uint8_t* begin, uint8_t* end, uint8_t** data, uint32_t timeout);
+bool recvFindAndFilter(esp8285_obj* nic,const char* target, const char* begin, const char* end, char** data, uint32_t timeout);
 
 /*
  * Receive a package from uart. 
@@ -370,39 +370,39 @@ bool recvFindAndFilter(esp8285_obj* nic,uint8_t* target, uint8_t* begin, uint8_t
  * @param timeout - the duration waitting data comming.
  * @param coming_mux_id - in single connection mode, should be NULL and not NULL in multiple. 
  */
-uint32_t recvPkg(esp8285_obj*nic,uint8_t *buffer, uint32_t buffer_size, uint32_t *data_len, uint32_t timeout, uint8_t *coming_mux_id);
+uint32_t recvPkg(esp8285_obj*nic,char* buffer, uint32_t buffer_size, uint32_t *data_len, uint32_t timeout, char* coming_mux_id);
 
 
 bool eAT(esp8285_obj* nic);
 bool eATE(esp8285_obj* nic,bool enable);
 bool eATRST(esp8285_obj* nic);
-bool eATGMR(esp8285_obj* nic,uint8_t** version);
-bool qATCWMODE(esp8285_obj* nic,uint8_t *mode);
-bool sATCWMODE(esp8285_obj* nic,uint8_t mode);
-bool sATCWJAP(esp8285_obj* nic,uint8_t* ssid, uint8_t* pwd);
-bool sATCWDHCP(esp8285_obj* nic,uint8_t mode, bool enabled);
+bool eATGMR(esp8285_obj* nic,char** version);
+bool qATCWMODE(esp8285_obj* nic,char* mode);
+bool sATCWMODE(esp8285_obj* nic,char mode);
+bool sATCWJAP(esp8285_obj* nic, const char* ssid, const char* pwd);
+bool sATCWDHCP(esp8285_obj* nic,char mode, bool enabled);
 bool eATCWQAP(esp8285_obj* nic);
 
-bool eATCIPSTATUS(esp8285_obj* nic,uint8_t** list);
-bool sATCIPSTARTSingle(esp8285_obj* nic,uint8_t* type, uint8_t* addr, uint32_t port);
-bool sATCIPSTARTMultiple(esp8285_obj*nic,uint8_t mux_id, uint8_t* type, uint8_t* addr, uint32_t port);
-bool sATCIPSENDSingle(esp8285_obj*nic,const uint8_t *buffer, uint32_t len, uint32_t timeout);
-bool sATCIPSENDMultiple(esp8285_obj* nic,uint8_t mux_id, const uint8_t *buffer, uint32_t len);
-bool sATCIPCLOSEMulitple(esp8285_obj* nic,uint8_t mux_id);
+bool eATCIPSTATUS(esp8285_obj* nic,char** list);
+bool sATCIPSTARTSingle(esp8285_obj* nic, const char* type, char* addr, uint32_t port);
+bool sATCIPSTARTMultiple(esp8285_obj*nic,char mux_id, char* type, char* addr, uint32_t port);
+bool sATCIPSENDSingle(esp8285_obj*nic,const char* buffer, uint32_t len, uint32_t timeout);
+bool sATCIPSENDMultiple(esp8285_obj* nic,char mux_id, const char* buffer, uint32_t len);
+bool sATCIPCLOSEMulitple(esp8285_obj* nic,char mux_id);
 bool eATCIPCLOSESingle(esp8285_obj* nic);
-bool eATCIFSR(esp8285_obj* nic,uint8_t** list);
-bool sATCIPMUX(esp8285_obj* nic,uint8_t mode);
-bool sATCIPSERVER(esp8285_obj* nic,uint8_t mode, uint32_t port);
+bool eATCIFSR(esp8285_obj* nic,char** list);
+bool sATCIPMUX(esp8285_obj* nic,char mode);
+bool sATCIPSERVER(esp8285_obj* nic,char mode, uint32_t port);
 bool sATCIPSTO(esp8285_obj* nic,uint32_t timeout);
-bool sATCIPMODE(esp8285_obj* nic,uint8_t mode);
-bool sATCIPDOMAIN(esp8285_obj* nic,uint8_t* domain_name);
+bool sATCIPMODE(esp8285_obj* nic,char mode);
+bool sATCIPDOMAIN(esp8285_obj* nic, const char* domain_name);
 bool qATCWJAP_CUR(esp8285_obj* nic);
-bool sATCIPSTA_CUR(esp8285_obj* nic,uint8_t* ip,uint8_t* gateway,uint8_t* netmask);
+bool sATCIPSTA_CUR(esp8285_obj* nic, const char* ip,char* gateway,char* netmask);
 bool qATCIPSTA_CUR(esp8285_obj* nic);
 bool eINIT(esp8285_obj* nic);
 bool get_ipconfig(esp8285_obj* nic, ipconfig_obj* ipconfig);
 bool eATCWLAP(esp8285_obj* nic);
-bool eATCWSAP(esp8285_obj* nic, char* ssid, char* key, int chl, int ecn);
+bool eATCWSAP(esp8285_obj* nic, const char* ssid, const char* key, int chl, int ecn);
 bool eATCWLAP_Start(esp8285_obj* nic);
 bool eATCWLAP_Get(esp8285_obj* nic, bool* end);
 /*
@@ -411,7 +411,7 @@ bool eATCWLAP_Get(esp8285_obj* nic, bool* end);
  */
  
 /*
-* bool sATCWSAP(char* ssid, char* pwd, uint8_t chl, uint8_t ecn);
+* bool sATCWSAP(char* ssid, char* pwd, char chl, char ecn);
 * bool eATCWLIF(char* &list);
 
 */
@@ -451,7 +451,7 @@ bool eATCWLAP_Get(esp8285_obj* nic, bool* end);
  * @param ecn - the way of encrypstion (0 - OPEN, 1 - WEP, 
  *  2 - WPA_PSK, 3 - WPA2_PSK, 4 - WPA_WPA2_PSK, default: 4). 
  * @note This method should not be called when station mode.
- * bool setSoftAPParam(char* ssid, char* pwd, uint8_t chl = 7, uint8_t ecn = 4);
+ * bool setSoftAPParam(char* ssid, char* pwd, char chl = 7, char ecn = 4);
 */
 
 /**

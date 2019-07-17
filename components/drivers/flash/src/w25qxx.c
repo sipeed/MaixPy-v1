@@ -61,7 +61,7 @@ w25qxx_status_t w25qxx_init_dma(uint8_t spi_index, uint8_t spi_ss)
     spi_chip_select = spi_ss;
     sipeed_spi_init(spi_bus_no, SPI_WORK_MODE_0, SPI_FF_STANDARD, DATALENGTH, 0);
     uint32_t spi_clk =  sysctl_clock_get_freq(SYSCTL_CLOCK_CPU) / 400 * 25 ;
-    uint32_t spi_clk_return = sipeed_spi_set_clk_rate(spi_bus_no, spi_clk);
+    /*uint32_t spi_clk_return = */sipeed_spi_set_clk_rate(spi_bus_no, spi_clk);
     w25qxx_page_program_fun = w25qxx_page_program_dma;
     w25qxx_read_fun = w25qxx_stand_read_data_dma;
     return W25QXX_OK;

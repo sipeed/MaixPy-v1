@@ -128,7 +128,7 @@ STATIC mp_obj_t Maix_fft_freq(size_t n_args, const mp_obj_t *pos_args, mp_map_t 
          ARG_sample_rate,
     };
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_points, MP_ARG_INT, {.u_obj = 64} },
+        { MP_QSTR_points, MP_ARG_INT, {.u_int = 64} },
         { MP_QSTR_sample_rate, MP_ARG_INT, {.u_int = 16000} },
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];

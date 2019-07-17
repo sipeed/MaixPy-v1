@@ -619,16 +619,16 @@ static int read_reg(sensor_t *sensor, uint8_t reg_addr)
     return reg_data;
 }
 
-static int write_reg(sensor_t *sensor, uint8_t reg_addr, uint8_t reg_data)
+static int write_reg(sensor_t *sensor, uint8_t reg_addr, uint16_t reg_data)
 {
-    return cambus_writeb(sensor->slv_addr, reg_addr, reg_data);
+    return cambus_writeb(sensor->slv_addr, reg_addr, (uint8_t)reg_data);
 }
 
 
 static int set_pixformat(sensor_t *sensor, pixformat_t pixformat)
 {
-    int i=0;
-    const uint8_t (*regs)[2]=NULL;
+    // int i=0;
+    // const uint8_t (*regs)[2]=NULL;
 
     /* read pixel format reg */
     // switch (pixformat) {

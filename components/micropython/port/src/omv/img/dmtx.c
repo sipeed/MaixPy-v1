@@ -2769,7 +2769,7 @@ static int
 ReadModuleColor(DmtxDecode *dec, DmtxRegion *reg, int symbolRow, int symbolCol,
       int sizeIdx, int colorPlane)
 {
-   int err;
+   // int err;
    int i;
    int symbolRows, symbolCols;
    int color, colorTmp=0;
@@ -2788,7 +2788,7 @@ ReadModuleColor(DmtxDecode *dec, DmtxRegion *reg, int symbolRow, int symbolCol,
 
       dmtxMatrix3VMultiplyBy(&p, reg->fit2raw);
 
-      err = dmtxDecodeGetPixelValue(dec, (int)(p.X + 0.5), (int)(p.Y + 0.5),
+      /* err = */dmtxDecodeGetPixelValue(dec, (int)(p.X + 0.5), (int)(p.Y + 0.5),
             colorPlane, &colorTmp);
       color += colorTmp;
    }
@@ -2815,9 +2815,9 @@ MatrixRegionFindSize(DmtxDecode *dec, DmtxRegion *reg)
    int colorOnAvg, bestColorOnAvg;
    int colorOffAvg, bestColorOffAvg;
    int contrast, bestContrast;
-   DmtxImage *img;
+   // DmtxImage *img;
 
-   img = dec->image;
+   // img = dec->image;
    bestSizeIdx = DmtxUndefined;
    bestContrast = 0;
    bestColorOnAvg = bestColorOffAvg = 0;
@@ -3329,6 +3329,10 @@ TrailBlazeContinuous(DmtxDecode *dec, DmtxRegion *reg, DmtxPointFlow flowBegin, 
 
    /* Clear "visited" bit from trail */
    clears = TrailClear(dec, reg, 0x80);
+   if(clears)
+   {
+
+   }
    assert(posAssigns + negAssigns == clears - 1);
 
    /* XXX clean this up ... redundant test above */
@@ -3354,7 +3358,7 @@ TrailBlazeGapped(DmtxDecode *dec, DmtxRegion *reg, DmtxBresLine line, int stream
    int xDiff, yDiff;
    int steps;
    int stepDir, dirMap[] = { 0, 1, 2, 7, 8, 3, 6, 5, 4 };
-   DmtxPassFail err;
+   // DmtxPassFail err;
    DmtxPixelLoc beforeStep, afterStep;
    DmtxPointFlow flow, flowNext;
    DmtxPixelLoc loc0;
@@ -3379,7 +3383,7 @@ TrailBlazeGapped(DmtxDecode *dec, DmtxRegion *reg, DmtxBresLine line, int stream
          if(flowNext.mag == DmtxUndefined)
             break;
 
-         err = BresLineGetStep(line, flowNext.loc, &travel, &outward);
+         /* err = */BresLineGetStep(line, flowNext.loc, &travel, &outward);
          if(flowNext.mag < 50 || outward < 0 || (outward == 0 && travel < 0)) {
             onEdge = DmtxFalse;
          }
@@ -4616,7 +4620,7 @@ RsDecode(unsigned char *code, int sizeIdx, int fix)
 {
    int i;
    int blockStride, blockIdx;
-   int blockDataWords, blockErrorWords, blockTotalWords, blockMaxCorrectable;
+   int blockDataWords, blockErrorWords,/*  blockTotalWords, */blockMaxCorrectable;
    int symbolDataWords, symbolErrorWords, symbolTotalWords;
    DmtxBoolean error, repairable;
    DmtxPassFail passFail;
@@ -4642,7 +4646,7 @@ RsDecode(unsigned char *code, int sizeIdx, int fix)
    {
       /* Data word count depends on blockIdx due to special case at 144x144 */
       blockDataWords = dmtxGetBlockDataSize(sizeIdx, blockIdx);
-      blockTotalWords = blockErrorWords + blockDataWords;
+      // blockTotalWords = blockErrorWords + blockDataWords;
 
       /* Populate received list (rec) with data and error codewords */
       dmtxByteListInit(&rec, 0, 0, &passFail); CHKPASS;
@@ -5252,7 +5256,10 @@ dmtxImageCreate(unsigned char *pxl, int width, int height, int pack)
       default:
          return NULL;
    }
+   if(err)
+   {
 
+   }
    return img;
 }
 
@@ -5681,7 +5688,9 @@ dmtxByteListPrint(DmtxByteList *list, char *prefix)
    int i;
 
    if(prefix != NULL)
+   {
       fprintf(stdout, "%s", prefix);
+   }
 
    for(i = 0; i < list->length; i++)
       fprintf(stdout, " %d", list->b[i]);

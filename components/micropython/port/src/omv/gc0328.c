@@ -968,15 +968,14 @@ static int gc0328_read_reg(sensor_t *sensor, uint8_t reg_addr)
     return reg_data;
 }
 
-static int gc0328_write_reg(sensor_t *sensor, uint8_t reg_addr, uint8_t reg_data)
+static int gc0328_write_reg(sensor_t *sensor, uint8_t reg_addr, uint16_t reg_data)
 {
-    return cambus_writeb(sensor->slv_addr, reg_addr, reg_data);
+    return cambus_writeb(sensor->slv_addr, reg_addr, (uint8_t)reg_data);
 }
 
 
 static int gc0328_set_pixformat(sensor_t *sensor, pixformat_t pixformat)
 {
-    int i=0;
     return 0;
 }
 
@@ -1027,56 +1026,48 @@ static int gc0328_set_quality(sensor_t *sensor, int qs)
 
 static int gc0328_set_colorbar(sensor_t *sensor, int enable)
 {
-    uint8_t reg;
     int ret = 0;
     return ret;
 }
 
 static int gc0328_set_auto_gain(sensor_t *sensor, int enable, float gain_db, float gain_db_ceiling)
 {
-   uint8_t reg;
    int ret = 0;
    return ret;
 }
 
 static int gc0328_get_gain_db(sensor_t *sensor, float *gain_db)
 {
-    uint8_t reg, gain;
     int ret = 0;
     return ret;
 }
 
 static int gc0328_set_auto_exposure(sensor_t *sensor, int enable, int exposure_us)
 {
-    uint8_t reg;
     int ret = 0;
     return ret;
 }
 
 static int gc0328_get_exposure_us(sensor_t *sensor, int *exposure_us)
 {
-    uint8_t reg, aec_10, aec_92, aec_1510;
     int ret = 0;
     return ret;
 }
 
 static int gc0328_set_auto_whitebal(sensor_t *sensor, int enable, float r_gain_db, float g_gain_db, float b_gain_db)
 {
-    uint8_t reg;
     int ret = 0;
     return ret;
 }
 
 static int gc0328_get_rgb_gain_db(sensor_t *sensor, float *r_gain_db, float *g_gain_db, float *b_gain_db)
 {
-    uint8_t reg;
     int ret = 0;
     return ret;
 }
 
 static int gc0328_set_hmirror(sensor_t *sensor, int enable)
 {
-    uint8_t reg;
     int ret = 0;
     return ret;
 }
@@ -1089,7 +1080,7 @@ static int gc0328_set_vflip(sensor_t *sensor, int enable)
 }
 
 
-int gc0328_reset(void)
+int gc0328_reset(sensor_t* sensor)
 {
     uint16_t index = 0;
 

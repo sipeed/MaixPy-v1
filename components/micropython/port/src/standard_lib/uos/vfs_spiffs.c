@@ -157,7 +157,7 @@ STATIC mp_obj_t mp_vfs_spiffs_ilistdir_it_iternext(mp_obj_t self_in) {
 //	static const char types[] = "?fdhs"; // file, dir, hardlink, softlink
     for (;;) {
 		de_ret = SPIFFS_readdir(&self->dir, &de);		
-        char *fn = de.name;
+        char *fn = (char*)de.name;
         if (de_ret == NULL || fn[0] == 0) {
             // stop on error or end of dir
             break;
@@ -251,8 +251,7 @@ STATIC mp_obj_t spiffs_vfs_remove_internal(mp_obj_t vfs_in, mp_obj_t path_in, mp
 STATIC mp_obj_t spiffs_vfs_remove(mp_obj_t vfs_in, mp_obj_t path_in) {
 	spiffs_user_mount_t* vfs = MP_OBJ_TO_PTR(vfs_in);
 	const char *path = mp_obj_str_get_str(path_in);
-    int i = 0;
-    char* open_name = path;
+    char* open_name = (char*)path;
     if(path[0] == '.' && path[1] == '/')
     {
         memmove(open_name, open_name+1, strlen(open_name));
@@ -287,7 +286,7 @@ STATIC mp_obj_t spiffs_vfs_rename(mp_obj_t vfs_in, mp_obj_t path_in, mp_obj_t pa
     const char *old_path = mp_obj_str_get_str(path_in);
     const char *new_path = mp_obj_str_get_str(path_out);
     int i = 0;
-	char* old_name = &old_path[i];
+	char* old_name = (char*)&old_path[i];
     if(old_path[0] == '.' && old_path[1] == '/')
     {
         memmove(old_name, old_name+1, strlen(old_name));
@@ -300,7 +299,7 @@ STATIC mp_obj_t spiffs_vfs_rename(mp_obj_t vfs_in, mp_obj_t path_in, mp_obj_t pa
         strcat(old_name, old_path);
     }
     i = 0;
-	char* new_name = &new_path[i];    
+	char* new_name = (char*)&new_path[i];    
     if(new_path[0] == '.' && new_path[1] == '/')
     {
         memmove(new_name, new_name+1, strlen(new_name));
@@ -391,7 +390,7 @@ STATIC mp_obj_t spiffs_vfs_stat(mp_obj_t vfs_in, mp_obj_t path_in) {
 		fno.type = SPIFFS_TYPE_DIR;
     } else {
         int res = 0;
-	    char* open_name = &path[res];
+	    char* open_name = (char*)&path[res];
         if(path[0] == '.' && path[1] == '/')
         {
             memmove(open_name, open_name+1, strlen(open_name));
@@ -436,7 +435,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(spiffs_vfs_stat_obj, spiffs_vfs_stat);
 // Get the status of a VFS.
 STATIC mp_obj_t spiffs_vfs_statvfs(mp_obj_t vfs_in, mp_obj_t path_in) {
 
-    const char* path = mp_obj_str_get_str(path_in);
+    // const char* path = mp_obj_str_get_str(path_in);
 
     spiffs_user_mount_t *self = MP_OBJ_TO_PTR(vfs_in);
     (void)path_in;

@@ -78,9 +78,9 @@ STATIC mp_obj_t Maix_mic_array_init(size_t n_args, const mp_obj_t *pos_args, mp_
     int ret = lib_mic_init(DMAC_CHANNEL4, lib_mic_cb, thermal_map_data);
     if(ret != 0)
     {
-        uint8_t tmp[64];
+        char tmp[64];
         sprintf(tmp,"lib_mic init error with %d",ret);
-        mp_raise_ValueError(tmp);
+        mp_raise_ValueError((const char*)tmp);
         return mp_const_false;
     }
     lib_init_flag = 1;

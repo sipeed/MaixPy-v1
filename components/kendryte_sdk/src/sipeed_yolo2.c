@@ -143,8 +143,8 @@ static int entry_index(region_layer_t *rl, int location, int entry)
 static void softmax(float *data, int n, int stride)
 {
     int i;
-    int diff;
-    float e;
+    // int diff;
+    // float e;
     float sum = 0;
     float largest_i = data[0];
 
@@ -288,7 +288,7 @@ static void get_region_boxes(region_layer_t *rl, float *predictions, float **pro
     correct_region_boxes(rl, boxes);
 }
 
-static int nms_comparator(void *pa, void *pb)
+static int nms_comparator(const void *pa, const void *pb)
 {
     sortable_box_t a = *(sortable_box_t *)pa;
     sortable_box_t b = *(sortable_box_t *)pb;
@@ -394,7 +394,6 @@ static void region_layer_output(region_layer_t *rl, obj_info_t *obj_info)
     uint32_t obj_number = 0;
     uint32_t image_width = rl->image_width;
     uint32_t image_height = rl->image_height;
-    uint32_t boxes_number = rl->boxes_number;
     float threshold = rl->threshold;
     box_t *boxes = (box_t *)rl->boxes;
 

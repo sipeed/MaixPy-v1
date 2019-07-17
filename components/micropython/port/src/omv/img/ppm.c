@@ -17,7 +17,7 @@ static void read_int_reset(ppm_read_settings_t *rs)
     rs->read_int_c_valid = false;
 }
 
-static void read_int(FIL *fp, uint32_t *i, ppm_read_settings_t *rs)
+static void read_int(mp_obj_t fp, uint32_t *i, ppm_read_settings_t *rs)
 {
     enum { EAT_WHITESPACE, EAT_COMMENT, EAT_NUMBER } mode = EAT_WHITESPACE;
     for(*i = 0;;) {
@@ -49,7 +49,7 @@ static void read_int(FIL *fp, uint32_t *i, ppm_read_settings_t *rs)
 }
 
 // This function inits the geometry values of an image.
-void ppm_read_geometry(FIL *fp, image_t *img, const char *path, ppm_read_settings_t *rs)
+void ppm_read_geometry(mp_obj_t fp, image_t *img, const char *path, ppm_read_settings_t *rs)
 {
     read_int_reset(rs);
     read_byte_expect(fp, 'P');
@@ -67,7 +67,7 @@ void ppm_read_geometry(FIL *fp, image_t *img, const char *path, ppm_read_setting
 }
 
 // This function reads the pixel values of an image.
-void ppm_read_pixels(FIL *fp, image_t *img, int line_start, int line_end, ppm_read_settings_t *rs)
+void ppm_read_pixels(mp_obj_t fp, image_t *img, int line_start, int line_end, ppm_read_settings_t *rs)
 {
     if (rs->ppm_fmt == '2') {
         for (int i = line_start; i < line_end; i++) {
@@ -110,7 +110,7 @@ void ppm_read_pixels(FIL *fp, image_t *img, int line_start, int line_end, ppm_re
 
 void ppm_read(image_t *img, const char *path)
 {
-    FIL fp;
+    mp_obj_t fp;
     ppm_read_settings_t rs;
     file_read_open_raise(&fp, path);
     file_buffer_on(&fp);
@@ -125,7 +125,7 @@ void ppm_write_subimg(image_t *img, const char *path, rectangle_t *r)
 {
     rectangle_t rect;
     if (!rectangle_subimg(img, r, &rect)) fs_no_intersection(NULL);
-    FIL fp;
+    mp_obj_t fp;
     file_write_open_raise(&fp, path);
 
     file_buffer_on(&fp);

@@ -93,7 +93,7 @@ int CLAHE (kz_pixel_t* pImage, unsigned int uiXRes, unsigned int uiYRes,
     if (uiNrY > uiMAX_REG_Y) return -2;   /* # of regions y-direction too large */
     if (uiXRes % uiNrX) return -3;        /* x-resolution no multiple of uiNrX */
     if (uiYRes % uiNrY) return -4;        /* y-resolution no multiple of uiNrY */
-    if (Max >= uiNR_OF_GREY) return -5;   /* maximum too large */
+    // if (Max >= uiNR_OF_GREY) return -5;   /* maximum too large */
     if (Min >= Max) return -6;            /* minimum equal or larger than maximum */
     if (uiNrX < 2 || uiNrY < 2) return -7;/* at least 4 contextual regions required */
     if (fCliplimit == 1.0) return 0;      /* is OK, immediately returns original image. */

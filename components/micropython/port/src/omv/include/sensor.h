@@ -164,7 +164,7 @@ typedef struct _sensor {
 // Resolution table
 extern const int resolution[][2];
 
-void sensor_flush(void);
+int sensor_flush(void);
 
 int binocular_sensor_reset(mp_int_t freq);
 

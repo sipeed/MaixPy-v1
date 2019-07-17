@@ -35,11 +35,10 @@ typedef struct {
 mp_obj_t vfs_internal_spiffs_open(spiffs_user_mount_t* vfs, const char* path, const char* mode_s, int* error_code)
 {
     uint32_t mode = 0;
-    mp_obj_type_t* type = &mp_type_vfs_spiffs_textio;
+    mp_obj_type_t* type = (mp_obj_type_t*)&mp_type_vfs_spiffs_textio;
     
     *error_code = 0;
-    uint16_t i = 0;
-    char* open_name = path;
+    char* open_name = (char*)path;
     if(open_name[0] == '.' && open_name[1] == '/')
     {
         memmove(open_name, open_name+1, strlen(open_name));
@@ -70,11 +69,11 @@ mp_obj_t vfs_internal_spiffs_open(spiffs_user_mount_t* vfs, const char* path, co
                 break;
 #if MICROPY_PY_IO_FILEIO
             case 'b':
-                type = &mp_type_vfs_spiffs_fileio;
+                type = (mp_obj_type_t*)&mp_type_vfs_spiffs_fileio;
                 break;
 #endif
             case 't':
-                type = &mp_type_vfs_spiffs_textio;
+                type = (mp_obj_type_t*)&mp_type_vfs_spiffs_textio;
                 break;
         }
     }
@@ -96,7 +95,7 @@ mp_obj_t vfs_internal_spiffs_open(spiffs_user_mount_t* vfs, const char* path, co
 mp_obj_t vfs_internal_fatfs_open(fs_user_mount_t* vfs, const char* path, const char* mode_s, int* error_code)
 {
     int mode = 0;
-    mp_obj_type_t* type = &mp_type_vfs_spiffs_textio;
+    mp_obj_type_t* type = (mp_obj_type_t*)&mp_type_vfs_spiffs_textio;
 
     *error_code = 0;
     // TODO: make sure only one of r, w, x, a, and b, t are specified
@@ -119,11 +118,11 @@ mp_obj_t vfs_internal_fatfs_open(fs_user_mount_t* vfs, const char* path, const c
                 break;
             #if MICROPY_PY_IO_FILEIO
             case 'b':
-                type = &mp_type_vfs_fat_fileio;
+                type = (mp_obj_type_t*)&mp_type_vfs_fat_fileio;
                 break;
             #endif
             case 't':
-                type = &mp_type_vfs_fat_textio;
+                type = (mp_obj_type_t*)&mp_type_vfs_fat_textio;
                 break;
         }
     }
@@ -164,11 +163,11 @@ mp_obj_t vfs_internal_open(const char* path, const char* mode, int* error_code)
     {
         // *error_code =  EPERM;
         // return MP_OBJ_NULL;
-        return vfs_internal_spiffs_open(fs, real_path, mode, error_code);
+        return vfs_internal_spiffs_open((spiffs_user_mount_t*)fs, real_path, mode, error_code);
     }
     else if( fs->base.type == &mp_fat_vfs_type)
     {
-        return vfs_internal_fatfs_open(fs, real_path, mode, error_code);
+        return vfs_internal_fatfs_open((fs_user_mount_t*)fs, real_path, mode, error_code);
     }
     *error_code = MP_ENOENT;
     return MP_OBJ_NULL;
@@ -177,7 +176,7 @@ mp_obj_t vfs_internal_open(const char* path, const char* mode, int* error_code)
 mp_uint_t vfs_internal_write(mp_obj_t fs, void* data, mp_uint_t length, int* error_code)
 {
     fs_info_t* fs_info = (fs_info_t*)fs;
-    mp_stream_p_t* stream = fs_info->base.type->protocol;
+    mp_stream_p_t* stream = (mp_stream_p_t*)fs_info->base.type->protocol;
     *error_code = 0;
     return stream->write(fs, data, length, error_code);
 }
@@ -185,7 +184,7 @@ mp_uint_t vfs_internal_write(mp_obj_t fs, void* data, mp_uint_t length, int* err
 mp_uint_t vfs_internal_read(mp_obj_t fs, void* data, mp_uint_t length, int* error_code)
 {
     fs_info_t* fs_info = (fs_info_t*)fs;
-    mp_stream_p_t* stream = fs_info->base.type->protocol;
+    mp_stream_p_t* stream = (mp_stream_p_t*)fs_info->base.type->protocol;
     *error_code = 0;
     return stream->read(fs, data, length, error_code);
 }
@@ -193,7 +192,7 @@ mp_uint_t vfs_internal_read(mp_obj_t fs, void* data, mp_uint_t length, int* erro
 void vfs_internal_close(mp_obj_t fs, int* error_code)
 {
     fs_info_t* fs_info = (fs_info_t*)fs;
-    mp_stream_p_t* stream = fs_info->base.type->protocol;
+    mp_stream_p_t* stream = (mp_stream_p_t*)fs_info->base.type->protocol;
     *error_code = 0;
     stream->ioctl(fs, MP_STREAM_CLOSE, 0, error_code);
     if(fs_info->base.type == &mp_type_vfs_spiffs_fileio ||
@@ -211,18 +210,18 @@ void vfs_internal_close(mp_obj_t fs, int* error_code)
 mp_uint_t vfs_internal_seek(mp_obj_t fs, mp_int_t offset, uint8_t whence, int* error_code)
 {
     fs_info_t* fs_info = (fs_info_t*)fs;
-    mp_stream_p_t* stream = fs_info->base.type->protocol;
+    mp_stream_p_t* stream = (mp_stream_p_t*)fs_info->base.type->protocol;
     *error_code = 0;
     struct mp_stream_seek_t seek;
     seek.offset = offset;
     seek.whence = whence;
-    return stream->ioctl(fs, MP_STREAM_SEEK, &seek, error_code);
+    return stream->ioctl(fs, MP_STREAM_SEEK, (uintptr_t)&seek, error_code);
 }
 
 mp_uint_t vfs_internal_size(mp_obj_t fs)
 {
     fs_info_t* fs_info = (fs_info_t*)fs;
-    mp_stream_p_t* stream = fs_info->base.type->protocol;
+    // mp_stream_p_t* stream = (mp_stream_p_t*)fs_info->base.type->protocol;
     if(fs_info->base.type == &mp_type_vfs_spiffs_fileio ||
         fs_info->base.type == &mp_type_vfs_spiffs_textio)
     {

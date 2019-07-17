@@ -37,7 +37,7 @@ DWORD get_fattime(void) {
 	uint32_t hour = 0;
 	uint32_t min = 0;
 	uint32_t sec = 0;
-	rtc_timer_get(&year,&mon,&mday,&hour,&min,&sec);
+	rtc_timer_get((int*)&year, (int*)&mon, (int*)&mday, (int*)&hour, (int*)&min, (int*)&sec);
 	return (year << 25) | (mon << 21) | (mday << 16) | (hour << 11) | (min << 5) | ( sec / 2 );
 
 }

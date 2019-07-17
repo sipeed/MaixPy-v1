@@ -166,7 +166,7 @@ array_t *imlib_detect_objects(image_t *image, cascade_t *cascade, rectangle_t *r
 int imlib_load_cascade_from_file(cascade_t *cascade, const char *path)
 {
     int i;
-    FIL fp;
+    mp_obj_t fp;
     FRESULT res=FR_OK;
 
     file_read_open_raise(&fp, path);

@@ -142,7 +142,7 @@ mp_obj_t wav_play_process(audio_t* audio,uint32_t file_size)
 		vfs_internal_close(audio->fp,&close_code);
 	}
 	uint32_t head_max_len = audio->points*(sizeof(uint32_t));
-	uint32_t read_num = vfs_internal_read(audio->fp,audio->buf, head_max_len,&err_code);//read head
+	/* uint32_t read_num = */vfs_internal_read(audio->fp,audio->buf, head_max_len,&err_code);//read head
 	if(err_code != 0)
 	{
 		mp_printf(&mp_plat_print, "[MAIXPY]: read head error close file\n");
@@ -240,8 +240,8 @@ mp_obj_t wav_play(audio_t* audio)
 			return mp_obj_new_int(0);
 		if(play_obj->numchannels == 1)//TODO: optimize mono
 		{
-			int16_t* src = play_obj->audio_buf[play_obj->read_order].buf + audio->points * sizeof(uint32_t)/2;
-			int32_t* dst = play_obj->audio_buf[play_obj->read_order].buf;
+			int16_t* src = (int16_t*)(play_obj->audio_buf[play_obj->read_order].buf + audio->points * sizeof(uint32_t)/2);
+			int32_t* dst = (int32_t*)(play_obj->audio_buf[play_obj->read_order].buf);
 			for(int i=0; i<read_num/sizeof(int16_t); ++i)
 			{
 				src[i] = (int16_t)(src[i] * audio->volume / 100);
@@ -251,7 +251,7 @@ mp_obj_t wav_play(audio_t* audio)
 		}
 		else
 		{
-			int32_t* audio_buf = play_obj->audio_buf[play_obj->read_order].buf;
+			int32_t* audio_buf = (int32_t*)play_obj->audio_buf[play_obj->read_order].buf;
 			for(int i = 0; i < read_num / sizeof(uint32_t); i++)//Currently only supports two-channel wav files
 			{
 				LSB_audio = audio_buf[i];
@@ -283,7 +283,6 @@ mp_obj_t wav_play(audio_t* audio)
 
 mp_obj_t wav_record_process(audio_t* audio,uint32_t channels)//channels = Number of channels
 {
-	uint32_t head_len = 0;
     int err_code = 0;
     int close_code = 0;
 	Maix_i2s_obj_t* i2s_dev = audio->dev;
@@ -350,9 +349,7 @@ mp_obj_t wav_record_process(audio_t* audio,uint32_t channels)//channels = Number
 mp_obj_t wav_record(audio_t* audio,dmac_channel_number_t DMA_channel)
 {
 	wav_encode_t* record_obj = audio->record_obj; //get format
-	Maix_i2s_obj_t* i2s_dev = audio->dev;//get device
-	uint32_t read_num = 0;
-	int err_code = 0;
+	// Maix_i2s_obj_t* i2s_dev = audio->dev;//get device
 	if(!record_obj->audio_buf[record_obj->write_order].empty)//empty ,altread to read
 	{
 		// mp_printf(&mp_plat_print, "[MAIXPY]: read_order = %d\n",play_obj->read_order);
@@ -375,15 +372,17 @@ int wav_process_data(audio_t* audio)//GO righit channel record, right chnanel pl
 	if(1 == wav_encode->format.numchannels){//mono audio record | Go mic right 
 
 		uint16_t* buf = (uint16_t*)malloc(audio->points * sizeof(uint32_t));//
-		int j = 0;
+		// int j = 0;
 		for(int i = 0; i < audio->points; i += 1){
 			buf[i*2] = 0;//left channel
 			buf[i*2+1] = audio->buf[i] & 0xffff;//right channle 16 bit resolution
 			// buf[i*2+1] = (audio->buf[i] >> 8) & 0xffff;//24 bit resolution
 		}
-		vfs_internal_write(audio->fp,buf,audio->points * sizeof(uint32_t),&err_code);
+		vfs_internal_write(audio->fp,buf,audio->points * sizeof(uint32_t), &err_code);
 		wav_encode->data.chunk_size +=  audio->points * sizeof(uint32_t);
 		free(buf);
+		if(err_code!=0)
+			return err_code;
 	}
 	else if(2 == wav_encode->format.numchannels){//stereo audio record
 		//TODO

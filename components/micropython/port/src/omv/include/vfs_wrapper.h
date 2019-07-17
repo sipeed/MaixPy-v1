@@ -12,6 +12,7 @@ int file_write_open(mp_obj_t* fp, const char *path);
 int file_read_open(mp_obj_t* fp, const char *path);
 int file_close(mp_obj_t fp);
 int file_seek(mp_obj_t fp, mp_int_t offset, uint8_t whence);
+bool file_eof(mp_obj_t fp);
 int file_seek_raise(mp_obj_t fp, mp_int_t offset, uint8_t whence);
 mp_uint_t file_save_data(const char* path, uint8_t* data, mp_uint_t length, int* error_code);
 mp_uint_t file_size(mp_obj_t fp);

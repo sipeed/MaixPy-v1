@@ -35,7 +35,7 @@ int nes_volume=5;  //0~8
 int nes_cycle_us=0;  //60fps,  63us per cycle
 int repeat_n = 16;
 
-mp_obj_t py_nes_init(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
+mp_obj_t py_nes_init(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
 	int cs_num, mosi_num, miso_num, clk_num;
 

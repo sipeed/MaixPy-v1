@@ -23,7 +23,6 @@ void mutex_init(mutex_t *mutex)
 
 void mutex_lock(mutex_t *mutex, uint32_t tid)
 {
-    volatile int locked = 0;
 	// Wait for mutex to be unlocked
 	while(mutex->lock != 0);
 	mutex->lock = 1;
@@ -34,9 +33,6 @@ void mutex_lock(mutex_t *mutex, uint32_t tid)
 
 int mutex_try_lock(mutex_t *mutex, uint32_t tid)
 {
-
-    volatile int locked = 1;
-
     // If mutex is already locked by the current thread then
     // release the Kraken err.. the mutex, else attempt to lock it.
     if (mutex->tid == tid) {

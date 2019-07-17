@@ -174,7 +174,6 @@ int cambus_scan()
     for (uint8_t addr=0x08; addr<=0x77; addr++) {
 		if( cambus_read_id(addr ,&manuf_id,&device_id) != 0)
             continue;
-        uint8_t temp[2];
         if(device_id!=0 && device_id!=0xffff)
         {
             return addr;
@@ -208,8 +207,6 @@ int cambus_readb(uint8_t slv_addr, uint8_t reg_addr, uint8_t *reg_data)
 
 int cambus_writeb(uint8_t slv_addr, uint8_t reg_addr, uint8_t reg_data)
 {
-
-    int ret=0;
     sccb_i2c_write_byte(i2c_device, slv_addr, reg_addr, sccb_reg_width, reg_data, 10);
     mp_hal_delay_ms(10);
 	return 0;

@@ -278,7 +278,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_settimeout_obj, socket_settimeout);
 
 // method socket.setblocking(flag)
 STATIC mp_obj_t socket_setblocking(mp_obj_t self_in, mp_obj_t blocking) {
-	mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
+	// mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
 	mp_printf(&mp_plat_print, "[MaixPy] %s | uart socket Do nothing\n",__func__);
 	return mp_const_none;
 }
@@ -437,7 +437,6 @@ STATIC mp_obj_t mod_usocket_getaddrinfo(mp_obj_t host_in, mp_obj_t port_in) {
 	mod_network_nic_type_t *nic_type = (mod_network_nic_type_t*)mp_obj_get_type(nic);
 	if(parse_ret == 0)
 	{
-		int ret = 0;
 		if (nic_type->gethostbyname != NULL)
 			if(false == nic_type->gethostbyname(nic ,host,strlen(host),out_ip))
 			{

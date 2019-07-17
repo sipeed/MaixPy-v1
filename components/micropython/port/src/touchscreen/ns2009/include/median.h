@@ -6,8 +6,12 @@ extern "C"
 {
 #endif
 
+#ifndef INT_MIN
 #define INT_MIN (-1 - 0x7fffffff)
+#endif
+#ifndef INT_MAX
 #define INT_MAX 0x7fffffff
+#endif
 
     struct median_filter_t
     {

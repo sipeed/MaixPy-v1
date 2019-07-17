@@ -372,21 +372,21 @@ static int16 getExtendOffset(uint8 i)
    switch (i)
    {
       case 0: return 0;
-      case 1: return ((-1)<<1) + 1; 
-      case 2: return ((-1)<<2) + 1; 
-      case 3: return ((-1)<<3) + 1; 
-      case 4: return ((-1)<<4) + 1; 
-      case 5: return ((-1)<<5) + 1; 
-      case 6: return ((-1)<<6) + 1; 
-      case 7: return ((-1)<<7) + 1; 
-      case 8: return ((-1)<<8) + 1; 
-      case 9: return ((-1)<<9) + 1;
-      case 10: return ((-1)<<10) + 1; 
-      case 11: return ((-1)<<11) + 1; 
-      case 12: return ((-1)<<12) + 1; 
-      case 13: return ((-1)<<13) + 1; 
-      case 14: return ((-1)<<14) + 1; 
-      case 15: return ((-1)<<15) + 1;
+      case 1: return (int16)( ((uint16)(-1)<<1) + 1 ); 
+      case 2: return (int16)( ((uint16)(-1)<<2) + 1 ); 
+      case 3: return (int16)( ((uint16)(-1)<<3) + 1 ); 
+      case 4: return (int16)( ((uint16)(-1)<<4) + 1 ); 
+      case 5: return (int16)( ((uint16)(-1)<<5) + 1 ); 
+      case 6: return (int16)( ((uint16)(-1)<<6) + 1 ); 
+      case 7: return (int16)( ((uint16)(-1)<<7) + 1 ); 
+      case 8: return (int16)( ((uint16)(-1)<<8) + 1 ); 
+      case 9: return (int16)( ((uint16)(-1)<<9) + 1 );
+      case 10: return (int16)( ((uint16)(-1)<<10) + 1 ); 
+      case 11: return (int16)( ((uint16)(-1)<<11) + 1 ); 
+      case 12: return (int16)( ((uint16)(-1)<<12) + 1 ); 
+      case 13: return (int16)( ((uint16)(-1)<<13) + 1 ); 
+      case 14: return (int16)( ((uint16)(-1)<<14) + 1 ); 
+      case 15: return (int16)( ((uint16)(-1)<<15) + 1 );
       default: return 0;
    }
 };

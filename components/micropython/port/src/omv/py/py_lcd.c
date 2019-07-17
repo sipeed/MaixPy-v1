@@ -92,7 +92,7 @@ static mp_obj_t py_lcd_deinit()
     return mp_const_none;
 }
 
-static mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
+static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
 	uint16_t color = BLACK;
     py_lcd_deinit();
@@ -140,7 +140,7 @@ static mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_
 			#ifdef CONFIG_BOARD_M5STICK
 				fpioa_set_function(21, FUNC_GPIOHS0 + RST_GPIONUM);
 				fpioa_set_function(20, FUNC_GPIOHS0 + DCX_GPIONUM);
-				fpioa_set_function(22, FUNC_SPI0_SS0+SPI_SLAVE_SELECT);
+				fpioa_set_function(22, FUNC_SPI0_SS0+LCD_SPI_SLAVE_SELECT);
 				fpioa_set_function(19, FUNC_SPI0_SCLK);
 				fpioa_set_function(18, FUNC_SPI0_D0);
 				ret = lcd_init(args[ARG_freq].u_int, false, 52, 40, true, width_curr, height_curr);
@@ -148,7 +148,7 @@ static mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_
 				// backlight_init = false;
 				fpioa_set_function(37, FUNC_GPIOHS0 + RST_GPIONUM);
 				fpioa_set_function(38, FUNC_GPIOHS0 + DCX_GPIONUM);
-				fpioa_set_function(36, FUNC_SPI0_SS0+SPI_SLAVE_SELECT);
+				fpioa_set_function(36, FUNC_SPI0_SS0+LCD_SPI_SLAVE_SELECT);
 				fpioa_set_function(39, FUNC_SPI0_SCLK);
 				ret = lcd_init(args[ARG_freq].u_int, true, 0, 0, false, width_curr, height_curr);
 			#endif
@@ -208,13 +208,13 @@ static mp_obj_t py_lcd_get_backlight()
     return mp_const_none;
 }
 
-static mp_obj_t py_lcd_display(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
+static mp_obj_t py_lcd_display(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     image_t *arg_img = py_image_cobj(args[0]);
     PY_ASSERT_TRUE_MSG(IM_IS_MUTABLE(arg_img), "Image format is not supported.");
 
     rectangle_t rect;
-    uint16_t x,y;
+    // uint16_t x,y;
     point_t oft;
 	int is_cut;
 	int l_pad = 0, r_pad = 0;
@@ -285,7 +285,7 @@ static mp_obj_t py_lcd_display(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
     return mp_const_none;
 }
 
-static mp_obj_t py_lcd_clear(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
+static mp_obj_t py_lcd_clear(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
 	uint16_t color = BLACK;
 	if(n_args >= 1)
@@ -362,7 +362,7 @@ STATIC void lcd_set_invert_helper()
 	lcd_set_direction((lcd_dir_t)screen_dir);
 }
 
-STATIC mp_obj_t py_lcd_rotation(uint n_args, const mp_obj_t *args)
+STATIC mp_obj_t py_lcd_rotation(size_t n_args, const mp_obj_t *args)
 {
 	if(n_args == 0)	
 		goto end;
@@ -396,7 +396,7 @@ end:
 	return mp_obj_new_int(rotation);
 }
 
-STATIC mp_obj_t py_lcd_invert(uint n_args, const mp_obj_t *args)
+STATIC mp_obj_t py_lcd_invert(size_t n_args, const mp_obj_t *args)
 {
 	if(n_args == 0)
 		goto end;
@@ -416,7 +416,7 @@ end:
 }
 
 //x0,y0,string,font color,bg color
-STATIC mp_obj_t py_lcd_draw_string(uint n_args, const mp_obj_t *args)
+STATIC mp_obj_t py_lcd_draw_string(size_t n_args, const mp_obj_t *args)
 {
 	uint32_t* str_buf = NULL;
 	char* str_cut = NULL;
@@ -434,12 +434,12 @@ STATIC mp_obj_t py_lcd_draw_string(uint n_args, const mp_obj_t *args)
 
     uint16_t x0 = mp_obj_get_int(args[0]);
 	uint16_t y0 = mp_obj_get_int(args[1]);
-	char* str  = mp_obj_str_get_str(args[2]);
+	const char* str  = mp_obj_str_get_str(args[2]);
 	uint16_t fontc = RED;
 	uint16_t bgc = BLACK;
 	if(str == NULL)
 		return mp_const_none;
-	if(x0 < 0 || x0 >= width_conf || y0 < 0 || y0 > height_conf-16)
+	if(x0 >= width_conf || y0 > height_conf-16)
 		return mp_const_none;
 	int len = strlen(str);
 	int width,height;
@@ -461,7 +461,7 @@ STATIC mp_obj_t py_lcd_draw_string(uint n_args, const mp_obj_t *args)
 	return mp_const_none;
 }
 
-STATIC mp_obj_t py_lcd_freq(uint n_args, const mp_obj_t *pos_args)
+STATIC mp_obj_t py_lcd_freq(size_t n_args, const mp_obj_t *pos_args)
 {
 	mp_int_t freq = lcd_get_freq();
 	if(n_args >= 1)

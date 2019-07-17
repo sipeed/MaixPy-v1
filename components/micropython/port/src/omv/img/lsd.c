@@ -7,7 +7,6 @@
 #include <limits.h>
 #include "imlib.h"
 
-#define PI                 3.14159265358979f
 
 #ifdef IMLIB_ENABLE_FIND_LINE_SEGMENTS
 #pragma GCC diagnostic push

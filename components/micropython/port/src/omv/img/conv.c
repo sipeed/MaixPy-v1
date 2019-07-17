@@ -31,13 +31,12 @@ static int kpu_done(void *ctx)
 
 void imlib_conv3(image_t *img, float *krn)
 {
-	int x,y;
 	uint8_t* r;
 	uint8_t* g;
 	uint8_t* b;
 	uint16_t* pix;
-	int index,i, j;
-	uint16_t c;
+	int i, j;
+	// uint16_t c;
 	//do conv cal
 	kpu_task_t task;
 	if(img->pix_ai == NULL || img->pixels == NULL) 
@@ -48,7 +47,7 @@ void imlib_conv3(image_t *img, float *krn)
 	r=img->pix_ai;
 	g=img->pix_ai+(img->w)*(img->h);
 	b=img->pix_ai+(img->w)*(img->h)*2;
-	pix = img->pixels;
+	pix = (uint16_t*)img->pixels;
 	//prepare conv kern
 	memset((void*)conv_data,0,9*3*3*sizeof(float));	//clear
 	for(j=0;j<9;j++)conv_data[0*27+0*9+j]=krn[j];
@@ -63,7 +62,7 @@ void imlib_conv3(image_t *img, float *krn)
 	for(j=0;j<8;j++)_P("%04x ",g[j]);_P("\n");
 	for(j=0;j<8;j++)_P("%04x ",b[j]);_P("\n");
 	#endif
-	unsigned long t0,t1;
+	// unsigned long t0,t1;
 	//t0=read_cycle();
 	sipeed_conv_init(&task, img->w, img->h, 3, 3, conv_data);
 	sipeed_conv_run(&task, img->pix_ai, img->pix_ai, kpu_done);

@@ -14,17 +14,14 @@
 * limitations under the License.
 */
 
-#include "py/nlr.h"
-#include "py/obj.h"
-#include "py/runtime.h"
-#include "py/binary.h"
 #include <stdio.h>
+#include "py/runtime.h"
 
 #include "modMaix.h"
 
 #if MICROPY_PY_MACHINE
 
-STATIC const mp_map_elem_t maix_module_globals_table[] = {
+STATIC const mp_rom_map_elem_t maix_module_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_machine) },
     { MP_ROM_QSTR(MP_QSTR_FPIOA), MP_ROM_PTR(&Maix_fpioa_type) },
     { MP_ROM_QSTR(MP_QSTR_GPIO),  MP_ROM_PTR(&Maix_gpio_type) },

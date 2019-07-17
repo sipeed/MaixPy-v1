@@ -198,8 +198,7 @@ STATIC const mp_arg_t file_open_args[] = {
 
 STATIC mp_obj_t file_open(spiffs_user_mount_t *vfs, const mp_obj_type_t *type, mp_arg_val_t *args) {
 	const char* file_name = mp_obj_str_get_str(args[0].u_obj);
-	int i = 0;
-    char* open_name = file_name;
+    char* open_name = (char*)file_name;
     if(open_name[0] == '.' && open_name[1] == '/')
     {
         memmove(open_name, open_name+1, strlen(open_name));

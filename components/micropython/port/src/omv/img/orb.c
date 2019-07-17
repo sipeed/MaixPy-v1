@@ -676,9 +676,9 @@ int orb_filter_keypoints(array_t *kpts, rectangle_t *r, point_t *c)
     return matches;
 }
 
-int orb_save_descriptor(FIL *fp, array_t *kpts)
+int orb_save_descriptor(mp_obj_t fp, array_t *kpts)
 {
-    UINT bytes;
+    mp_uint_t bytes;
     FRESULT res;
 
     int kpts_size = array_length(kpts);
@@ -734,9 +734,9 @@ error:
     return res;
 }
 
-int orb_load_descriptor(FIL *fp, array_t *kpts)
+int orb_load_descriptor(mp_obj_t fp, array_t *kpts)
 {
-    UINT bytes;
+    mp_uint_t bytes;
     FRESULT res=FR_OK;
 
     int kpts_size=0;

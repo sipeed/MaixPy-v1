@@ -82,7 +82,7 @@ STATIC const mp_obj_type_t uhashlib_sha256_type = {
     { &mp_type_type },
     .name = MP_QSTR_sha256,
     .make_new = uhashlib_sha256_make_new,
-    .locals_dict = &uhashlib_sha256_locals_dict,
+    .locals_dict = (mp_obj_dict_t*)&uhashlib_sha256_locals_dict,
 };
 #endif
 

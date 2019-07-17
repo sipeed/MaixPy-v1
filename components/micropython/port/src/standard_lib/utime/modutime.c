@@ -71,7 +71,7 @@ STATIC mp_obj_t time_localtime(size_t n_args, const mp_obj_t *args) {
     if (n_args == 0 || args[0] == mp_const_none) {
 		uint32_t year = 0;uint32_t mon = 0;uint32_t mday = 0;uint32_t hour = 0;
 		uint32_t min = 0;uint32_t sec = 0;uint32_t wday = 0;uint32_t yday = 0;
-		rtc_timer_get(&year,&mon,&mday,&hour,&min,&sec);
+		rtc_timer_get((int*)&year, (int*)&mon, (int*)&mday, (int*)&hour, (int*)&min, (int*)&sec);
 		wday = rtc_get_wday(year,mon,mday);
 		yday = rtc_get_yday(year,mon,mday);
 		tm.tm_year = (uint16_t)year;
@@ -117,11 +117,10 @@ STATIC mp_obj_t time_mktime(mp_obj_t tuple) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(time_mktime_obj, time_mktime);
 
 STATIC mp_obj_t time_time(void) {
-    timeutils_struct_time_t tm;
     mp_uint_t seconds;
 	volatile int year = 0, mon = 0, mday = 0, hour = 0;
 	volatile int min = 0, sec = 0;
-	rtc_timer_get(&year,&mon,&mday,&hour,&min,&sec);
+	rtc_timer_get((int*)&year, (int*)&mon, (int*)&mday, (int*)&hour, (int*)&min, (int*)&sec);
 	seconds = timeutils_seconds_since_1970(year,mon, mday, hour, min,sec);
     return mp_obj_new_int_from_uint(seconds); 
 }

@@ -33,7 +33,7 @@ bool bmp_read_geometry(mp_obj_t fp, image_t *img, bmp_read_settings_t *rs)
     uint32_t data_size = file_size - header_size;
     // if (data_size % 4) file_corrupted_raise(fp);
     // if (file_size % 4) file_corrupted_raise(fp);
-    unsigned long header2_size;
+    uint32_t header2_size;
     read_long_raise(fp, &header2_size);
     read_long_raise(fp, (uint32_t*) &rs->bmp_w);
     read_long_raise(fp, (uint32_t*) &rs->bmp_h);

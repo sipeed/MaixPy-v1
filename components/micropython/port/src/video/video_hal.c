@@ -17,8 +17,8 @@ int video_hal_display(image_t* img, video_display_roi_t img_roi)
 	int is_cut;
     uint16_t lcd_width  = lcd_get_width();
     uint16_t lcd_height = lcd_get_height();
-    int l_pad = 0, r_pad = 0;
-    int t_pad = 0, b_pad = 0;
+    int l_pad = 0;//, r_pad = 0;
+    int t_pad = 0;//, b_pad = 0;
 
     if (img_roi.w > lcd_width) {
         int adjust = img_roi.w - lcd_width;
@@ -27,7 +27,7 @@ int video_hal_display(image_t* img, video_display_roi_t img_roi)
     } else if (img_roi.w < lcd_width) {
         int adjust = lcd_width - img_roi.w;
         l_pad = adjust / 2;
-        r_pad = (adjust + 1) / 2;
+        // r_pad = (adjust + 1) / 2;
     }
     if (img_roi.h > lcd_height) {
         int adjust = img_roi.h - lcd_height;
@@ -36,7 +36,7 @@ int video_hal_display(image_t* img, video_display_roi_t img_roi)
     } else if (img_roi.h < lcd_height) {
         int adjust = lcd_height - img_roi.h;
         t_pad = adjust / 2;
-        b_pad = (adjust + 1) / 2;
+        // b_pad = (adjust + 1) / 2;
     }
 
 	is_cut =((img_roi.x != 0) || (img_roi.y != 0) || \
@@ -97,7 +97,7 @@ int video_hal_audio_init(avi_t* avi)
         /*TRIGGER_LEVEL_1*/TRIGGER_LEVEL_4,
         RIGHT_JUSTIFYING_MODE
         );
-    uint32_t ret = i2s_set_sample_rate(I2S_DEVICE_0, avi->audio_sample_rate);//TODO: /2 ?
+    /* uint32_t ret = */i2s_set_sample_rate(I2S_DEVICE_0, avi->audio_sample_rate);//TODO: /2 ?
 
     dmac_set_irq(DMAC_CHANNEL3, on_irq_dma3, (void*)avi, 1);
     avi->audio_buf[0].buf = (uint8_t*)malloc(avi->audio_buf_size+8);

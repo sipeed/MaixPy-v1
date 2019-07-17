@@ -20,7 +20,7 @@
 
 extern sensor_t sensor;
 
-static mp_obj_t py_binocular_sensor_reset(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
+static mp_obj_t py_binocular_sensor_reset(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_freq), MP_MAP_LOOKUP);
     mp_int_t freq = OMV_XCLK_FREQUENCY;
@@ -32,7 +32,7 @@ static mp_obj_t py_binocular_sensor_reset(uint n_args, const mp_obj_t *args, mp_
     return mp_const_none;
 }
 
-static mp_obj_t py_sensor_reset(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
+static mp_obj_t py_sensor_reset(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_freq), MP_MAP_LOOKUP);
     mp_int_t freq = OMV_XCLK_FREQUENCY;
@@ -64,7 +64,7 @@ static mp_obj_t py_sensor_flush(void) {
     return mp_const_none;
 }
 
-static mp_obj_t py_sensor_snapshot(uint n_args, const mp_obj_t *args, mp_map_t *kw_args) {
+static mp_obj_t py_sensor_snapshot(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
     // Snapshot image
     mp_obj_t image = py_image(0, 0, 0, 0);
 
@@ -83,7 +83,7 @@ static mp_obj_t py_sensor_snapshot(uint n_args, const mp_obj_t *args, mp_map_t *
     return image;
 }
 
-static mp_obj_t py_sensor_skip_frames(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
+static mp_obj_t py_sensor_skip_frames(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
    mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_time), MP_MAP_LOOKUP);
    mp_int_t time = 300; // OV Recommended.
@@ -366,7 +366,7 @@ static mp_obj_t py_sensor_set_colorbar(mp_obj_t enable) {
    return mp_const_true;
 }
 
-static mp_obj_t py_sensor_set_auto_gain(uint n_args, const mp_obj_t *args, mp_map_t *kw_args) {
+static mp_obj_t py_sensor_set_auto_gain(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
    int enable = mp_obj_get_int(args[0]);
    float gain_db = py_helper_keyword_float(n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_gain_db), NAN);
    float gain_db_ceiling = py_helper_keyword_float(n_args, args, 2, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_gain_db_ceiling), NAN);
@@ -384,7 +384,7 @@ static mp_obj_t py_sensor_get_gain_db() {
    return mp_obj_new_float(gain_db);
 }
 
-static mp_obj_t py_sensor_set_auto_exposure(uint n_args, const mp_obj_t *args, mp_map_t *kw_args) {
+static mp_obj_t py_sensor_set_auto_exposure(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
    int exposure_us = py_helper_keyword_int(n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_exposure_us), -1);
    if (sensor_set_auto_exposure(mp_obj_get_int(args[0]), exposure_us) != 0) {
        nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "Sensor control failed!"));
@@ -400,7 +400,7 @@ static mp_obj_t py_sensor_get_exposure_us() {
    return mp_obj_new_int(exposure_us);
 }
 
-static mp_obj_t py_sensor_set_auto_whitebal(uint n_args, const mp_obj_t *args, mp_map_t *kw_args) {
+static mp_obj_t py_sensor_set_auto_whitebal(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
    int enable = mp_obj_get_int(args[0]);
    float rgb_gain_db[3] = {NAN, NAN, NAN};
    py_helper_keyword_float_array(n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_rgb_gain_db), rgb_gain_db, 3);

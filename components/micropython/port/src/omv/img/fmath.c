@@ -1,9 +1,9 @@
 #include "math.h"
 #include "fmath.h"
 
-#define M_PI    3.14159265f
-#define M_PI_2  1.57079632f
-#define M_PI_4  0.78539816f
+// #define M_PI    3.14159265f
+// #define M_PI_2  1.57079632f
+// #define M_PI_4  0.78539816f
 
 /*const float __atanf_lut[4] = {
     -0.0443265554792128f,    //p7

@@ -343,7 +343,7 @@ void mp_task(
         volatile void *mp_main_stack_top = &stack_p;
 		mp_thread_init(mp_main_stack_top, MP_TASK_STACK_LEN);
 #else
-		volatile void* mp_main_stack_top = (uint32_t)get_sp();
+		volatile void* mp_main_stack_top = (void*)get_sp();
 #endif
 soft_reset:
 		// initialise the stack pointer for the main thread
@@ -481,8 +481,6 @@ void* arg_list[16];
 
 int core1_function(void *ctx)
 {
-    uint64_t core = current_coreid();
-
     while(1)
 	{
 		if(dual_func)

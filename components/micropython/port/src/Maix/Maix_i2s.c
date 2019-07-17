@@ -35,7 +35,7 @@ const mp_obj_type_t Maix_i2s_type;
 
 STATIC void Maix_i2s_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     Maix_i2s_obj_t* self = MP_OBJ_TO_PTR(self_in);
-    i2s_channle_t*  channel_iter = &self->channel[0];
+    // i2s_channle_t*  channel_iter = &self->channel[0];
     mp_printf(print, "[MAIXPY]i2s%d:(sampling rate=%u, sampling points=%u)\n",
         self->i2s_num,self->sample_rate,self->points_num);
     for(int channel_iter = 0; channel_iter < 4; channel_iter++)
@@ -186,8 +186,9 @@ STATIC mp_obj_t Maix_i2s_channel_config(size_t n_args, const mp_obj_t *pos_args,
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(Maix_i2s_channel_config_obj, 2, Maix_i2s_channel_config);
 
-STATIC mp_obj_t Maix_i2s_set_sample_rate(Maix_i2s_obj_t *self, mp_obj_t sample_rate)
+STATIC mp_obj_t Maix_i2s_set_sample_rate(void* self_, mp_obj_t sample_rate)
 {
+    Maix_i2s_obj_t* self = (Maix_i2s_obj_t*)self_;
     uint32_t smp_rate = mp_obj_get_int(sample_rate);
     if(smp_rate > MAX_SAMPLE_RATE)
     {
@@ -263,16 +264,18 @@ STATIC mp_obj_t Maix_i2s_record(size_t n_args, const mp_obj_t *pos_args, mp_map_
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(Maix_i2s_record_obj,1,Maix_i2s_record);
 
-STATIC mp_obj_t Maix_i2s_play(Maix_i2s_obj_t *self,mp_obj_t audio_obj)
+STATIC mp_obj_t Maix_i2s_play(void*self_, mp_obj_t audio_obj)
 {
+    Maix_i2s_obj_t* self = (Maix_i2s_obj_t*)self_;
     Maix_audio_obj_t *audio_p = MP_OBJ_TO_PTR(audio_obj);
     i2s_send_data_dma(self->i2s_num, audio_p->audio.buf, audio_p->audio.points, DMAC_CHANNEL4);
     return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_2(Maix_i2s_play_obj,Maix_i2s_play);
 
-STATIC mp_obj_t Maix_i2s_deinit(Maix_i2s_obj_t *self)
+STATIC mp_obj_t Maix_i2s_deinit(void*self_)
 {
+    Maix_i2s_obj_t* self = (Maix_i2s_obj_t*)self_;
     m_del(uint32_t,self->buf,self->points_num);
     m_del_obj(Maix_i2s_obj_t,self);
     return mp_const_none;

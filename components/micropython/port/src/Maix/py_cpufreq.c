@@ -63,7 +63,7 @@ mp_obj_t py_kpufreq_get_kpu()
     return mp_obj_new_int(sysctl_clock_get_freq(SYSCTL_CLOCK_AI) / (1000000));
 }
 
-mp_obj_t py_cpufreq_set_frequency(uint n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
+mp_obj_t py_cpufreq_set_frequency(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
     config_data_t config;
     enum { 

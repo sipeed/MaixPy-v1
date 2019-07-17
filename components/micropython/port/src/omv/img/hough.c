@@ -58,7 +58,7 @@ static int find_lines_565(int ps)
 	int i_start = (i_all+y_stride-1)*ps/y_stride/CORE_NUM*y_stride + roi->y + 1;	//place a little more for core0
 	int i_end = (i_all+y_stride-1)*(ps+1)/y_stride/CORE_NUM*y_stride + roi->y + 1;
 	
-	for (int y = i_start, yy = roi->y + roi->h - 1; y < i_end; y += y_stride) {
+	for (int y = i_start; y < i_end; y += y_stride) {
 		uint16_t *row_ptr = IMAGE_COMPUTE_RGB565_PIXEL_ROW_PTR(ptr, y);
 		for (int x = roi->x + (y % x_stride) + 1, xx = roi->x + roi->w - 1; x < xx; x += x_stride) {
 			int pixel; // Sobel Algorithm Below
@@ -563,13 +563,13 @@ static int find_circles(int core)
     rectangle_t *roi =         (rectangle_t*)arg_list[2];
     unsigned int x_stride =    (unsigned int)arg_list[3];
     unsigned int y_stride =    (unsigned int)arg_list[4];
-    uint32_t threshold    =    (uint32_t)arg_list[5];
-    unsigned int x_margin =    (unsigned int)arg_list[6];
-    unsigned int y_margin =    (unsigned int)arg_list[7];
-    unsigned int r_margin =    (unsigned int)arg_list[8];
-    unsigned int r_min    =    (unsigned int)arg_list[9];
-    unsigned int r_max    =    (unsigned int)arg_list[10];
-    unsigned int r_step   =    (unsigned int)arg_list[11];
+    // uint32_t threshold    =    (uint32_t)arg_list[5];
+    // unsigned int x_margin =    (unsigned int)arg_list[6];
+    // unsigned int y_margin =    (unsigned int)arg_list[7];
+    // unsigned int r_margin =    (unsigned int)arg_list[8];
+    // unsigned int r_min    =    (unsigned int)arg_list[9];
+    // unsigned int r_max    =    (unsigned int)arg_list[10];
+    // unsigned int r_step   =    (unsigned int)arg_list[11];
     image_t *ptr = (image_t*)arg_list[12];
 
     int i_start = roi->y + 1;

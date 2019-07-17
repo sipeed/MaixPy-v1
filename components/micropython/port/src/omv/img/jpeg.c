@@ -800,7 +800,7 @@ __inline static void jpg_bpp2_1x1_unit(int x, int y, image_t *src, int* DCY, int
 
 int jpg_bpp2_1x1(int ps)
 {
-	image_t *src=(jpeg_buf_t*)arg_list[0];
+	image_t *src=(image_t*)arg_list[0];
 	jpeg_buf_t* jpeg_buf0=(jpeg_buf_t*)arg_list[1];
 	jpeg_buf_t* jpeg_buf1=(jpeg_buf_t*)arg_list[2];
 	jpeg_buf_t* jpeg_buf=ps?jpeg_buf1:jpeg_buf0;
@@ -887,7 +887,7 @@ __inline static void jpg_bpp2_2x1_unit(int x, int y, image_t *src, int* DCY, int
 
 int jpg_bpp2_2x1(int ps)
 {
-	image_t *src=(jpeg_buf_t*)arg_list[0];
+	image_t *src=(image_t*)arg_list[0];
 	jpeg_buf_t* jpeg_buf0=(jpeg_buf_t*)arg_list[1];
 	jpeg_buf_t* jpeg_buf1=(jpeg_buf_t*)arg_list[2];
 	jpeg_buf_t* jpeg_buf=ps?jpeg_buf1:jpeg_buf0;
@@ -1009,7 +1009,7 @@ __inline static void jpg_bpp2_2x2_unit(int x, int y, image_t *src, int* DCY, int
 
 int jpg_bpp2_2x2(int ps)
 {
-	image_t *src=(jpeg_buf_t*)arg_list[0];
+	image_t *src=(image_t*)arg_list[0];
 	jpeg_buf_t* jpeg_buf0=(jpeg_buf_t*)arg_list[1];
 	jpeg_buf_t* jpeg_buf1=(jpeg_buf_t*)arg_list[2];
 	jpeg_buf_t* jpeg_buf=ps?jpeg_buf1:jpeg_buf0;
@@ -1040,7 +1040,7 @@ int jpg_bpp2_2x2(int ps)
  
 void jpg_bpp2_end(jpeg_buf_t*  jpeg_buf0, jpeg_buf_t*  jpeg_buf1)
 {
-	int i, bitc0, bitc1, bit_oft;
+	int i, bitc0, bitc1;//, bit_oft;
 	uint8_t bitb = (jpeg_buf0->bitb)>>16;
 	uint8_t* rest_data = jpeg_buf1->buf;
 
@@ -1609,7 +1609,6 @@ void jpeg_read(image_t *img, const char *path)
 void jpeg_write(image_t *img, const char *path, int quality)
 {
     int err;
-    mp_uint_t ret;
 
     if (IM_IS_JPEG(img)) {
         file_save_data(path, img->pixels, img->bpp, &err);
@@ -1623,7 +1622,7 @@ void jpeg_write(image_t *img, const char *path, int quality)
         // will try to realloc. MP will detect that the pointer is outside of
         // the heap and return NULL which will cause an out of memory error.
         jpeg_compress(img, &out, quality, false);
-        ret = file_save_data(path, out.pixels, out.bpp, &err);
+        /* ret = */file_save_data(path, out.pixels, out.bpp, &err);
         fb_free();
         if(err != 0)
             mp_raise_OSError(err);

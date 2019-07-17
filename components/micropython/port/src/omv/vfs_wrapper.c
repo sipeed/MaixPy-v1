@@ -51,6 +51,15 @@ int file_seek(mp_obj_t fp, mp_int_t offset, uint8_t whence)
     return err;
 }
 
+bool file_eof(mp_obj_t fp)
+{
+    //TODO: recode this function
+    int err;
+    mp_uint_t size = vfs_internal_size(fp);
+    mp_uint_t curr = vfs_internal_seek(fp, 0, VFS_SEEK_CUR, &err);
+    return curr<size;
+}
+
 int file_seek_raise(mp_obj_t fp, mp_int_t offset, uint8_t whence)
 {
     int err;
@@ -198,7 +207,6 @@ int read_byte_raise(mp_obj_t fp, uint8_t* value)
 
 int read_byte_expect(mp_obj_t fp, uint8_t value)
 {
-    int err;
     uint8_t tmp;
 	read_byte_raise(fp, &tmp);
     return (value != tmp);
@@ -253,7 +261,6 @@ int read_word_raise(mp_obj_t fp, uint16_t* value)
 
 int read_word_expect(mp_obj_t fp, uint16_t value)
 {
-    int err;
     uint16_t tmp;
 	read_word_raise(fp, &tmp);
     return (value != tmp);
@@ -308,7 +315,6 @@ int read_long_raise(mp_obj_t fp, uint32_t* value)
 
 int read_long_expect(mp_obj_t fp, uint32_t value)
 {
-    int err;
     uint32_t tmp;
 	read_long_raise(fp, &tmp);
     return (value != tmp);

@@ -221,7 +221,7 @@ ack_start:
                 else if(UART_DEVICE_MAX > uart->uart_num)
                 {
                     // uart_configure(uart->uart_num, (size_t)uart->baudrate, (size_t)uart->bitwidth, uart->stop,  uart->parity);
-                    temp_size= uart_send_data(uart->uart_num, JPEG_FB()->pixels, xfer_length);
+                    temp_size= uart_send_data(uart->uart_num, (const char*)JPEG_FB()->pixels, xfer_length);
                 }
                 cmd = USBDBG_NONE;
                 xfer_bytes = xfer_length;
@@ -262,7 +262,7 @@ ack_start:
             temp_size = uarths_send_data(ide_dbg_cmd_buf, length);
         }
         else if(UART_DEVICE_MAX > uart->uart_num)
-            temp_size= uart_send_data(uart->uart_num, ide_dbg_cmd_buf, length);
+            temp_size= uart_send_data(uart->uart_num, (const char*)ide_dbg_cmd_buf, length);
         xfer_bytes += length;
         if( xfer_bytes < xfer_length )
             goto ack_start;
@@ -283,7 +283,7 @@ ide_dbg_status_t ide_dbg_receive_data(machine_uart_obj_t* uart, uint8_t* data)
             // at least once before the script is fully uploaded xfer_bytes will be less
             // than the total length (xfer_length) and the script will Not be executed.
             if (!script_running && !gc_is_locked()) {
-                vstr_add_strn_00(&script_buf, data, 1);
+                vstr_add_strn_00(&script_buf, (const char*)data, 1);
                 if (xfer_bytes+1 == xfer_length) {
                     // Set script ready flag
                     script_ready = true;
@@ -614,7 +614,7 @@ void      ide_save_file()
     {
 
         uint8_t* file_name = p_data_temp+32;
-        int tmp = strlen(file_name)+1;
+        int tmp = strlen((const char*)file_name)+1;
         tmp = tmp + 4-((tmp%4)?(tmp%4):4);
         data = file_name + tmp;
         uint32_t file_len = ide_file_length - 32 - tmp;

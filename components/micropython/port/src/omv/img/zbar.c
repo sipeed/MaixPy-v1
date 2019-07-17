@@ -1625,7 +1625,9 @@ void _zbar_image_scanner_recycle_syms (zbar_image_scanner_t *iscn,
             }
             if(sym->syms) {
                 if(_zbar_refcnt(&sym->syms->refcnt, -1))
+                {
                     assert(0);
+                }
                 _zbar_image_scanner_recycle_syms(iscn, sym->syms->head);
                 sym->syms->head = NULL;
                 _zbar_symbol_set_free(sym->syms);
@@ -1672,7 +1674,9 @@ inline void zbar_image_scanner_recycle_image (zbar_image_scanner_t *iscn,
             iscn->syms = NULL;
         }
         else
+        {
             STAT(iscn_syms_recycle);
+        }
     }
 
     syms = img->syms;
@@ -2310,7 +2314,9 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
                         if(entry)
                             entry->cache_count--;
                         else
+                        {
                             assert(0);
+                        }
                     }
 
                     /* recycle */

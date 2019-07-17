@@ -10,7 +10,7 @@ int video_play_avi_init(const char* path, avi_t* avi)
 {
     
     int err;
-    uint32_t offset;
+    // uint32_t offset;
 
     video_play_avi_destroy(avi);
 
@@ -103,7 +103,6 @@ video_status_t video_play_avi(avi_t* avi)
         .y = 0
     };
     int status = VIDEO_STATUS_PLAYING;
-    uint8_t tmp_u8;
     uint8_t* pbuf;
 
     if(avi->status != VIDEO_STATUS_RESUME && avi->status != VIDEO_STATUS_PLAYING && avi->status != VIDEO_STATUS_PLAY_END)

@@ -38,7 +38,6 @@ volatile static uint8_t g_dvp_finish_flag = 0;
 
 static volatile int line = 0;
 uint8_t _line_buf;
-static uint8_t *dest_fb = NULL;
 
 const int resolution[][2] = {
     {0,    0   },
@@ -86,7 +85,7 @@ void _ndelay(uint32_t ns)
 
 static int sensor_irq(void *ctx)
 {
-	sensor_t *sensor = ctx;
+	// sensor_t *sensor = ctx;
 	if (dvp_get_interrupt(DVP_STS_FRAME_FINISH)) {	//frame end
 		dvp_clear_interrupt(DVP_STS_FRAME_FINISH);
 		g_dvp_finish_flag = 1;
@@ -194,7 +193,7 @@ int sensro_ov_detect(sensor_t* sensor)
 		/*lepton_init*/
     } else {
         // Read ON semi sensor ID.
-        cambus_readb(sensor->slv_addr, ON_CHIP_ID, &sensor->chip_id);
+        cambus_readb(sensor->slv_addr, ON_CHIP_ID, (uint8_t*)&sensor->chip_id);
         if (sensor->chip_id == MT9V034_ID) {
 			/*set MT9V034 xclk rate*/
 			/*mt9v034_init*/
@@ -310,8 +309,8 @@ int sensor_init_dvp(mp_int_t freq)
     if(sensor.size_set)
     {
         dvp_set_image_size(MAIN_FB()->w_max, MAIN_FB()->h_max);
-        dvp_set_ai_addr(MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h), (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h * 2));
-        dvp_set_display_addr(MAIN_FB()->pixels);
+        dvp_set_ai_addr((uint32_t)MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h), (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h * 2));
+        dvp_set_display_addr((uint32_t)MAIN_FB()->pixels);
     }
 
     return init_ret;
@@ -368,8 +367,8 @@ void sensor_deinit()
 {
     sensor_run(0);
     dvp_set_image_size(0, 0);
-    dvp_set_ai_addr(NULL, NULL, NULL);
-    dvp_set_display_addr(NULL);
+    dvp_set_ai_addr(0, 0, 0);
+    dvp_set_display_addr(0);
     if(MAIN_FB()->pixels)
         free(MAIN_FB()->pixels);
     if(MAIN_FB()->pix_ai)
@@ -448,7 +447,7 @@ int binocular_sensor_scan()
 		/*lepton_init*/
     } else {
         // Read ON semi sensor ID.
-        cambus_readb(sensor.slv_addr, ON_CHIP_ID, &sensor.chip_id);
+        cambus_readb(sensor.slv_addr, ON_CHIP_ID, (uint8_t*)&sensor.chip_id);
         if (sensor.chip_id == MT9V034_ID) {
 			/*set MT9V034 xclk rate*/
 			/*mt9v034_init*/
@@ -531,7 +530,7 @@ int binocular_sensor_reset(mp_int_t freq)
     if(sensor.size_set)
     {
         dvp_set_image_size(MAIN_FB()->w_max, MAIN_FB()->h_max);
-        dvp_set_ai_addr(MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h), (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h * 2));
+        dvp_set_ai_addr((uint32_t)MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h), (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h * 2));
         dvp_set_display_addr((uint32_t)(MAIN_FB()->pixels));
     }
     /* Some sensors have different reset polarities, and we can't know which sensor
@@ -689,8 +688,8 @@ int sensor_set_framesize(framesize_t framesize)
     if(sensor.reset_set)
     {
         dvp_set_image_size(MAIN_FB()->w_max, MAIN_FB()->h_max);
-        dvp_set_ai_addr(MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h), (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h * 2));
-        dvp_set_display_addr(MAIN_FB()->pixels);
+        dvp_set_ai_addr((uint32_t)MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h), (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h * 2));
+        dvp_set_display_addr((uint32_t)MAIN_FB()->pixels);
         sensor_run(1);
     }
     // Set MAIN FB backup width and height.
@@ -723,7 +722,7 @@ int sensor_set_windowing(int x, int y, int w, int h)
     MAIN_FB()->w = MAIN_FB()->u = w;
     MAIN_FB()->h = MAIN_FB()->v = h;
 	dvp_set_image_size(w, h);	//set QVGA default
-	dvp_set_ai_addr(MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h), (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h * 2));
+	dvp_set_ai_addr((uint32_t)MAIN_FB()->pix_ai, (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h), (uint32_t)(MAIN_FB()->pix_ai + MAIN_FB()->w * MAIN_FB()->h * 2));
     return 0;
 }
 
@@ -1025,12 +1024,12 @@ int reverse_u32pixel(uint32_t* addr,uint32_t length)
   return 0;
 }
 
-void sensor_flush(void)
+int sensor_flush(void)
 {	//flush old frame, let dvp capture new image
 	//use it when you don't snap for a while.
 	g_dvp_finish_flag = 0;
     fb_update_jpeg_buffer();
-	return ;
+	return 0;
 }
 
 int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_cb)

@@ -197,7 +197,7 @@ void lcd_set_area(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 void lcd_draw_point(uint16_t x, uint16_t y, uint16_t color)
 {
     lcd_set_area(x, y, x, y);
-    tft_write_byte(&color, 2);
+    tft_write_byte((uint8_t*)&color, 2);
 }
 
 void lcd_draw_char(uint16_t x, uint16_t y, char c, uint16_t color)
@@ -363,9 +363,8 @@ void lcd_draw_pic_roi(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t r
 	{	//draw line by line
 		p = (uint8_t *)(ptr) + w*2*(y_oft+ry) + 2*rx;
 		lcd_set_area(x, y+y_oft, x + rw - 1, y+y_oft);
-		tft_write_byte((uint32_t*)p, rw*2);//, lcd_ctl.mode ? 2 : 0);
+		tft_write_byte((uint8_t*)p, rw*2);//, lcd_ctl.mode ? 2 : 0);
 	}
-	return;
 }
 
 
@@ -379,7 +378,7 @@ void lcd_draw_pic_gray(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height
         g_lcd_display_buff[i] = gray2rgb565_swap[ptr[i+1]>>2];
         g_lcd_display_buff[i+1] = gray2rgb565_swap[ptr[i]>>2];
     }
-    tft_write_word(g_lcd_display_buff, width * height / 2);
+    tft_write_word((uint32_t*)g_lcd_display_buff, width * height / 2);
 }
 
 void lcd_draw_pic_grayroi(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t rx, uint16_t ry, uint16_t rw, uint16_t rh, uint8_t *ptr)

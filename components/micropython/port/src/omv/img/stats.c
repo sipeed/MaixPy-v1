@@ -864,7 +864,7 @@ bool imlib_get_regression(find_lines_list_lnk_data_t *out, image_t *ptr, rectang
         long long *x_delta_histogram = fb_alloc0((2 * ptr->w) * sizeof(long long)); // Not roi so we don't have to adjust, we can burn the RAM.
         long long *y_delta_histogram = fb_alloc0((2 * ptr->h) * sizeof(long long)); // Not roi so we don't have to adjust, we can burn the RAM.
 
-        uint32_t size;
+        uint64_t size;
         point_t *points = (point_t *) fb_alloc_all(&size);
         size_t points_max = size / sizeof(point_t);
         size_t points_count = 0;
