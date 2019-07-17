@@ -8,6 +8,7 @@ from fpioa_manager import fm
 from pye_mp import pye
 from Maix import FPIOA, GPIO
 
+sys.path.append('')
 sys.path.append('.')
 
 # chdir to "/sd" or "/flash"
