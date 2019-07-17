@@ -135,16 +135,16 @@ s32_t spiffs_erase_method(spiffs* fs,uint32_t addr, uint32_t size)
 
 int mp_module_spiffs_mount(spiffs* fs,spiffs_config* cfg)
 {
-	u8_t* spiffs_work_buf = (u8_t*)m_malloc(fs->cfg.log_page_size * 2 );
-	u8_t* spiffs_fds = (u8_t*)m_malloc(fs->cfg.log_block_size/fs->cfg.log_page_size*4);
-	u8_t* spiffs_cache_buf = (u8_t*)m_malloc((fs->cfg.log_page_size+fs->cfg.log_block_size/fs->cfg.log_page_size)*4);
+	u8_t* spiffs_work_buf = (u8_t*)m_malloc(cfg->log_page_size * 2 );
+	u8_t* spiffs_fds = (u8_t*)m_malloc(cfg->log_block_size/cfg->log_page_size*4);
+	u8_t* spiffs_cache_buf = (u8_t*)m_malloc((cfg->log_page_size+cfg->log_block_size/cfg->log_page_size)*4);
 	int res = SPIFFS_mount(fs,
 						   cfg,
 						   spiffs_work_buf,
 						   spiffs_fds,
-						   fs->cfg.log_block_size/fs->cfg.log_page_size*4,
+						   cfg->log_block_size/cfg->log_page_size*4,
 					       spiffs_cache_buf,
-						   (fs->cfg.log_block_size/fs->cfg.log_page_size)*4,
+						   (cfg->log_block_size/cfg->log_page_size)*4,
 						   0);
 	mp_printf(&mp_plat_print, "[MAIXPY]:Spiffs Mount %s \n", res?"failed":"successful");
 	return res;
