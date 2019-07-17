@@ -44,14 +44,14 @@ menu "SPIFFS Configuration"
 		default 0x1000
 	
 	config SPIFFS_LOGICAL_BLOCK_SIZE
-		hex "Log block size of SPIFFS(default 32*4k)"
+		hex "Logical block size of SPIFFS(default 32*4k)"
 		default 0x20000
 		help
 			logical size of a block, must be on physical block size boundary
 			and must never be less than a physical block
 
 	config SPIFFS_LOGICAL_PAGE_SIZE
-		hex "Log page size of SPIFFS(default 4k(SPIFFS_LOGICAL_BLOCK_SIZE/32))"
+		hex "Logical page size of SPIFFS(default 4k(SPIFFS_LOGICAL_BLOCK_SIZE/32))"
 		default 0x1000
 		help
 			logical size of a page, must be at least logical block size / 8
@@ -60,6 +60,36 @@ menu "SPIFFS Configuration"
         int "Set SPIFFS Maximum Name Length"
         default 128
         range 1 256
+    
+        config SPIFFS_USE_MAGIC
+        bool "Enable SPIFFS Filesystem Magic"
+        default "y"
+        help
+            Enable this to have an identifiable spiffs filesystem.
+            This will look for a magic in all sectors to determine if this
+            is a valid spiffs system or not at mount time.
+
+    config SPIFFS_USE_MAGIC_LENGTH
+        bool "Enable SPIFFS Filesystem Length Magic"
+        default "y"
+        depends on SPIFFS_USE_MAGIC
+        help
+            If this option is enabled, the magic will also be dependent
+            on the length of the filesystem. For example, a filesystem
+            configured and formatted for 4 megabytes will not be accepted
+            for mounting with a configuration defining the filesystem as 2 megabytes.
+
+    config SPIFFS_META_LENGTH
+        int "Size of per-file metadata field"
+        default 0
+        help
+            This option sets the number of extra bytes stored in the file header.
+            These bytes can be used in an application-specific manner.
+            Set this to at least 4 bytes to enable support for saving file
+            modification time.
+
+            SPIFFS_OBJ_NAME_LEN + SPIFFS_META_LENGTH should not exceed
+            SPIFFS_PAGE_SIZE - 64.
 	
 	menu "Debug Configuration"
 

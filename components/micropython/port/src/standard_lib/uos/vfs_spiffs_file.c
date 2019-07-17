@@ -249,7 +249,7 @@ STATIC mp_obj_t file_open(spiffs_user_mount_t *vfs, const mp_obj_type_t *type, m
     if(fp.fd <= 0)
     {
         m_del_obj(pyb_file_obj_t, o);
-        mp_raise_OSError(SPIFFS_ERR_NOT_FOUND);
+        mp_raise_OSError(ENOENT);
     }
     o->fp = fp;
     return MP_OBJ_FROM_PTR(o);
