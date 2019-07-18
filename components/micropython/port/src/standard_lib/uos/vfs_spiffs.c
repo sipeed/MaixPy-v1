@@ -61,14 +61,17 @@ STATIC mp_import_stat_t spiffs_vfs_import_stat(void *vfs_in,const char *path) {
     spiffs_stat  fno;
     assert(vfs != NULL);
 	int len = strlen(path);
-	char file_path[50] ;
-	//char* file_path = m_malloc_with_finaliser(len+2);
-	int i = 0;
-	for(;i < len;i++)
-	{
-		file_path[i] = path[i+1];
-	}
-	file_path[len] = '\0';
+    char* file_path = m_new(char, len+2);
+	memset(file_path, 0, len+2);
+    if(path[0] == '.' && path[1] == '/')
+    {
+        strcpy(file_path, path+1);
+    }
+    else if(path[0] != '/')
+    {
+        file_path[0] = '/';
+        strcat(file_path, path);
+    }
     int res = SPIFFS_stat(&vfs->fs,file_path,&fno);
     if (res == SPIFFS_OK) {
         if (fno.type == SPIFFS_TYPE_DIR) 

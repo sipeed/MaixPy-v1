@@ -416,6 +416,8 @@ soft_reset:
 		// run boot-up scripts
 		mp_hal_set_interrupt_char(CHAR_CTRL_C);
 		pyexec_frozen_module("_boot.py");
+		int ret = pyexec_file_if_exists("boot.py");
+		ret = pyexec_file_if_exists("boot.py");
 
 		do{
 			ide_dbg_init();

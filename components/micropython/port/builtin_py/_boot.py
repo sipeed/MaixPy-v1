@@ -69,6 +69,6 @@ import time
 time.sleep_ms(300) # wait for key interrupt to cancel boot.py run(for maixpy ide)
 
 # run boot.py
-import boot
+# import boot
 
 
