@@ -23,13 +23,14 @@ jobs:
       env: NAME="maixpy build"
       install:
         - sudo apt-get update
-        - sudo apt-get install -y sshpass
+        - sudo apt-get install -y sshpass p7zip
         - wget https://github.com/kendryte/kendryte-gnu-toolchain/releases/download/v8.2.0-20190409/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz
         - sudo tar -Jxvf kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz -C /opt
+        - rm -f kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz
       script:
         - echo "TRAVIS_BRANCH=$TRAVIS_BRANCH, BRANCH=$BRANCH"
         - cd tools/release
-        - ./release.sh
+        - chmod +x release.sh && ./release.sh
         - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then exit 0; fi
         - time_now=$(date "+%Y_%m_%d_%H_%M_%S")
         - firmware_dir=`ls bin/`

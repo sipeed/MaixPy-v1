@@ -13,23 +13,26 @@ if [[ "x$version_dev" != "x" ]]; then
 fi
 if [[ "x$dirty" == "xdirty" ]]; then
     echo -e "\033[33m [WARNING] coding is dirty!!, please commit all code firstly \033[0m"
-    version=${version}_dirty
+    git status
 fi
 echo $version_full
 echo $version
 
 release_dir=`pwd`/bin/maixpy_$version
 rm -rf $release_dir $release_dir/elf
-mkdir $release_dir
-mkdir $release_dir/elf
+mkdir -p $release_dir
+mkdir -p $release_dir/elf
 
 #
 cd ../../projects
 
 #
 cd maixpy_k210
-# python project.py distclean
-# python project.py build
+echo "-------------------"
+echo "build project maixpy_k210"
+echo "-------------------"
+python project.py distclean
+python project.py build
 cp build/maixpy.bin $release_dir/maixpy_$version.bin
 cp build/maixpy.elf $release_dir/elf/maixpy_$version.elf
 cd ..
@@ -37,16 +40,22 @@ cd ..
 
 #
 cd maixpy_k210_minimum
-# python project.py distclean
-# python project.py build
+echo "-------------------"
+echo "build project maixpy_k210_minimum"
+echo "-------------------"
+python project.py distclean
+python project.py build
 cp build/maixpy.bin $release_dir/maixpy_${version}_minimum.bin
 cp build/maixpy.elf $release_dir/elf/maixpy_${version}_minimum.elf
 cd ..
 
 #
-cd maixpy_m5stick
-# python project.py distclean
-# python project.py build
+cd maixpy_m5stickv
+echo "-------------------"
+echo "build project maixpy_m5stickv"
+echo "-------------------"
+python project.py distclean
+python project.py build
 cp build/maixpy.bin $release_dir/maixpy_${version}_m5stickv.bin
 cp build/maixpy.elf $release_dir/elf/maixpy_${version}_m5stickv.elf
 cd ..
