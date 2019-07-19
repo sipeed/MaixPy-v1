@@ -51,4 +51,7 @@ menu "Micropython configurations"
 			default n
 	endmenu
 
+	config BUILTIN_PY_DIR
+		string "builtin py directory"
+		default ""
 endmenu
