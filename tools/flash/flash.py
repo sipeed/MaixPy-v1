@@ -56,7 +56,7 @@ if __name__ == '__main__':
         if project_args.cmd == "clean_conf":
             if os.path.exists(flash_conf_path):
                 os.remove(flash_conf_path)
-                exit(0)
+            exit(0)
         if project_args.cmd != "flash":
             print("call flash.py error")
             exit(1)
