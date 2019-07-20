@@ -33,6 +33,21 @@ bool m5stick_init()
     ret = maix_i2c_recv_data(I2C_DEVICE_0, AXP192_ADDR, NULL, 0, cmd, 1, 10);
     if (ret != 0)
         goto end;
+    cmd[0] = 0x23;
+    cmd[1] = 0x08; //K210_VCore(DCDC2) set to 0.9V
+    ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2, 10);
+    if (ret != 0)
+        goto end;
+    cmd[0] = 0x33;
+    cmd[1] = 0xC0; //100mA Charging Current
+    ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2, 10);
+    if(ret!=0)
+        goto end;
+    cmd[0] = 0x36;
+    cmd[1] = 0x6C; //4s shutdown
+    ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2, 10);
+    if(ret!=0)
+        goto end;
     cmd[0] = 0x91;
     cmd[1] = 0xF0; //LCD Backlight: GPIO0 3.3V
     ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2, 10);
@@ -58,16 +73,15 @@ bool m5stick_init()
     ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2, 10);
     if(ret!=0)
         goto end;
-    // cmd[0] = 0x10;
-    // cmd[1] = 0x01;//
-    // ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2, 10);
-    // if(ret!=0)
-    //     goto end;
     cmd[0] = 0x23;
     cmd[1] = 0x08; //VDD 0.9v net: DC-DC2 0.9V
     ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2, 10);
     if(ret!=0)
         goto end;
+    
+    fpioa_set_function(23, FUNC_GPIOHS0 + 26);
+    gpiohs_set_drive_mode(26, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(26, GPIO_PV_HIGH); //Disable VBUS As Input, BAT->5V Boost->VBUS->Charing Cycle
     
 end:
     maix_i2c_deinit(I2C_DEVICE_0);
