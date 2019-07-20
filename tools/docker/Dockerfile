@@ -12,7 +12,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
         python3 \
         python3-pip \
     && pip3 install -r https://raw.githubusercontent.com/sipeed/MaixPy/master/requirements.txt \
-    && wget http://dl.cdn.sipeed.com/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz \
+    && wget https://github.com/kendryte/kendryte-gnu-toolchain/releases/download/v8.2.0-20190409/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz \
     && tar -Jxf kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz -C /opt \
     && rm -f kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz \
     && mkdir /maixpy \
