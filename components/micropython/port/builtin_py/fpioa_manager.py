@@ -6,7 +6,7 @@ class Fpioa_Manager:
         self.fpioa_dict={}
         self.fpioa = FPIOA()
         self.board_info = board_info
-    def register(self,pin = None,function = None, force = False):
+    def register(self,pin = None,function = None, force = True):
         if pin == None or function == None:
             print("Please enter Pin and function")
             return -1
