@@ -7,6 +7,8 @@
 #include "fpioa.h"
 #include "sysctl.h"
 #include "global_config.h"
+#include "fpioa.h"
+#include "gpiohs.h"
 
 #ifdef CONFIG_BOARD_M5STICK
 
