@@ -123,16 +123,22 @@ elif project_args.cmd == "clean":
     print("clean now")
     if os.path.exists("build"):
         os.chdir("build")
-        res =subprocess.call(["make", "clean"])
-        if res != 0:
-            exit(1)
+        p =subprocess.Popen(["make", "clean"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, err = p.communicate("")
+        res = p.returncode
+        if res == 0:
+            print(output.decode())
     print("clean complete")
 # distclean    
 elif project_args.cmd == "distclean":
     print("clean now")
     if os.path.exists("build"):
         os.chdir("build")
-        subprocess.call(["make", "clean"])
+        p =subprocess.Popen(["make", "clean"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, err = p.communicate("")
+        res = p.returncode
+        if res == 0:
+            print(output.decode())
         os.chdir("..")
         shutil.rmtree("build")
     print("clean complete")
