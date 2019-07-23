@@ -32,12 +32,13 @@ STATIC mp_obj_t esp32_nic_ifconfig(mp_obj_t self_in) {
 		return mp_const_none;
 	}
 
-	mp_obj_t tuple[3] = { mp_obj_new_str( inet->localIp, 4),
-						  mp_obj_new_str(inet->subnetMask, 4),
-						  mp_obj_new_str(inet->gatewayIp, 4)
+	mp_obj_t tuple[3] = {   
+        tuple[0] = netutils_format_ipv4_addr( inet->localIp, NETUTILS_BIG ),
+        tuple[1] = netutils_format_ipv4_addr( inet->subnetMask, NETUTILS_BIG ),
+        tuple[2] = netutils_format_ipv4_addr( inet->gatewayIp, NETUTILS_BIG )
 						};
 
-	return mp_obj_new_tuple(MP_ARRAY_SIZE(tuple), tuple);
+	return mp_obj_new_tuple(3, tuple);
 }
 
 STATIC mp_obj_t esp32_nic_isconnected(mp_obj_t self_in) {
