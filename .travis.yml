@@ -30,7 +30,7 @@ jobs:
       script:
         - echo "TRAVIS_BRANCH=$TRAVIS_BRANCH, BRANCH=$BRANCH"
         - cd tools/release
-        - chmod +x release.sh && ./release.sh
+        - chmod +x release.sh && ./release.sh || travis_terminate 1;
         - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then exit 0; fi
         - time_now=$(date "+%Y_%m_%d_%H_%M_%S")
         - cd bin
