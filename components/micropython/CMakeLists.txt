@@ -372,7 +372,7 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     abspath(QSTR_SRCS_FULL_PATH ${QSTR_SRCS})
     add_custom_command(OUTPUT ${mpy_build_gen_header_dir}/qstr.i.last 
             COMMAND ${CMAKE_C_COMPILER} -E ${QSTR_GEN_EXTRA_CFLAGS} ${cmd_param_cflag} ${cmd_param_cinclude} -DFFCONF_H="${mpy_core_dir}/lib/oofatfs/ffconf.h" ${QSTR_SRCS_FULL_PATH} ${QSTR_GLOBAL_DEPENDENCIES} > ${mpy_build_gen_header_dir}/qstr.i.last
-            DEPENDS gen_module_defs ${QSTR_GLOBAL_DEPENDENCIES}
+            DEPENDS gen_module_defs ${QSTR_GLOBAL_DEPENDENCIES} ${QSTR_SRCS}
             VERBATIM
         )
     add_custom_target(gen_collected_h
