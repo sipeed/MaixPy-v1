@@ -44,6 +44,7 @@ import lcd
 import image
 import time
 import uos
+import sys
 
 lcd.init()
 lcd.rotation(2) #Rotate the lcd 180deg
