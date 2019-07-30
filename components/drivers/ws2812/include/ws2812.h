@@ -22,6 +22,8 @@ ws2812_info *ws2812_init_buf(uint32_t num);
 bool ws2812_release_buf(ws2812_info *ws);
 bool ws2812_clear(ws2812_info *ws);
 
+void ws2812_i2s_enable_channel(i2s_device_number_t i2s_num, i2s_channel_num_t channel);
+
 bool ws2812_set_data(ws2812_info *ws, uint32_t num, uint8_t r, uint8_t g, uint8_t b);
 
 void ws2812_init_i2s(uint8_t pin, i2s_device_number_t i2s_num, i2s_channel_num_t channel);

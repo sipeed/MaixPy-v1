@@ -65,6 +65,21 @@ mp_obj_t modules_ws2812_make_new(const mp_obj_type_t *type, size_t n_args, size_
         mp_raise_ValueError("len num error, should > 0");
     }
 
+    if( ( args[ARG_i2s_num].u_int >=  I2S_DEVICE_MAX) )
+    {
+        mp_raise_ValueError("i2s num error, should <= 2");
+    }
+
+    if( ( args[ARG_i2s_chn].u_int >  I2S_CHANNEL_3) )
+    {
+        mp_raise_ValueError("i2s channel error, should <= 3");
+    }
+
+    if( ( args[ARG_i2s_dma_chn].u_int >=  DMAC_CHANNEL_MAX) )
+    {
+        mp_raise_ValueError("dma channel error, should <= 5");
+    }
+
     self->dat = ws2812_init_buf(args[ARG_led_num].u_int);
     if(!(self->dat))
     {
@@ -154,6 +169,8 @@ MP_DEFINE_CONST_FUN_OBJ_KW(modules_ws2812_set_led_obj, 0, modules_ws2812_set_led
 
 STATIC mp_obj_t modules_ws2812_dis(mp_obj_t self_in) {
     modules_ws2812_obj_t *self = MP_OBJ_TO_PTR(self_in);
+
+    ws2812_i2s_enable_channel(self->i2s_num, self->i2s_chn);
 
     bool ret = ws2812_send_data_i2s(self->i2s_num, self->i2s_dma_chn, self->dat);
 

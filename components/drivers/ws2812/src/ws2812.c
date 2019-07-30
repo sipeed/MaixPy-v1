@@ -79,6 +79,16 @@ void ws2812_init_i2s(uint8_t pin, i2s_device_number_t i2s_num, i2s_channel_num_t
                         );
 }
 
+void ws2812_i2s_enable_channel(i2s_device_number_t i2s_num, i2s_channel_num_t channel)
+{
+    i2s_init(i2s_num, I2S_TRANSMITTER, 0x3 << 2 *channel);
+    i2s_tx_channel_config(i2s_num, channel,
+                        RESOLUTION_32_BIT, SCLK_CYCLES_32,
+                        TRIGGER_LEVEL_4,
+                        LEFT_JUSTIFYING_MODE
+                        );
+}
+
 bool ws2812_send_data_i2s(i2s_device_number_t i2s_num, dmac_channel_number_t dmac_num, ws2812_info *ws)
 {
     uint32_t longbit;
