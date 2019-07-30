@@ -13,5 +13,11 @@ menu "Drivers configuration"
 			bool "Force SPI SD card high speed mode"
 			default y
 	endmenu
+
+	menu "WS2812"
+		config WS2812_ENABLE
+			bool "Enbale ws2812 over i2s component"
+			default n
+	endmenu
 endmenu
 
