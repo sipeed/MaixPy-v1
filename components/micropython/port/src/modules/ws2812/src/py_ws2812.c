@@ -5,14 +5,14 @@
 #include "gpiohs.h"
 #include "sysctl.h"
 
-#include "ws2812.h"
-
 #include "py/runtime.h"
 #include "py/mphal.h"
 #include "py/mperrno.h"
 #include "py/mpconfig.h"
 
 #if CONFIG_MAIXPY_WS2812_ENABLE
+
+#include "ws2812.h"
 
 const mp_obj_type_t modules_ws2812_type;
 
