@@ -365,7 +365,7 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     set(QSTR_GLOBAL_DEPENDENCIES ${mpy_core_src_dir}/mpconfig.h ${mpy_port_dir}/include/mpconfigport.h ${global_config_dir}/global_config.h)
 
     add_custom_target(gen_module_defs
-            COMMAND ${python} ${mpy_core_src_dir}/makemoduledefs.py --vpath=${mpy_core_dir}, ${mpy_dir},  ${QSTR_SRCS} > ${MODULE_DEFS}
+            COMMAND ${python} ${mpy_core_src_dir}/makemoduledefs.py --vpath=${mpy_dir}, ${mpy_dir},  ${QSTR_SRCS} > ${MODULE_DEFS}
             DEPENDS gen_version_header
             VERBATIM
         )
