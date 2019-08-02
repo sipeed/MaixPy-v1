@@ -287,7 +287,7 @@ bool startServer(esp8285_obj* nic,uint32_t port);
  */
 bool stopServer(esp8285_obj* nic);
 
-bool get_host_byname(esp8285_obj* nic, const char* host,uint32_t len,char* out_ip);
+bool get_host_byname(esp8285_obj* nic, const char* host,uint32_t len,char* out_ip, uint32_t timeout_ms);
 
 /**
  * Send data based on TCP or UDP builded already in single mode. 
@@ -395,7 +395,7 @@ bool sATCIPMUX(esp8285_obj* nic,char mode);
 bool sATCIPSERVER(esp8285_obj* nic,char mode, uint32_t port);
 bool sATCIPSTO(esp8285_obj* nic,uint32_t timeout);
 bool sATCIPMODE(esp8285_obj* nic,char mode);
-bool sATCIPDOMAIN(esp8285_obj* nic, const char* domain_name);
+bool sATCIPDOMAIN(esp8285_obj* nic, const char* domain_name, uint32_t timeout);
 bool qATCWJAP_CUR(esp8285_obj* nic);
 bool sATCIPSTA_CUR(esp8285_obj* nic, const char* ip,char* gateway,char* netmask);
 bool qATCIPSTA_CUR(esp8285_obj* nic);

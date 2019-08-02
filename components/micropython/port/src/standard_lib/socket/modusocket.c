@@ -418,21 +418,31 @@ int parse_ipv4_addr(mp_obj_t addr_in, uint8_t *out_ip, netutils_endian_t endian)
         } else if (i > 0 && s < s_top && *s == '.') {
             s++;
         } else {
-			mp_printf(&mp_plat_print, "[MaixPy] %s | It is not string IP form\n",__func__);
+			mp_printf(&mp_plat_print, "[MaixPy] %s | It is not string IP format:%s\n",__func__, addr_str);
 			return 0;
         }
     }
 	return 1;
 }
-
+#include "printf.h"
 // function usocket.getaddrinfo(host, port)
-STATIC mp_obj_t mod_usocket_getaddrinfo(mp_obj_t host_in, mp_obj_t port_in) {
+STATIC mp_obj_t mod_usocket_getaddrinfo(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+    enum {
+            ARG_timeout
+        };
+    STATIC const mp_arg_t allowed_args[] = {
+        { MP_QSTR_timeout, MP_ARG_INT,                   {.u_int = 3000} },
+    };
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 2, pos_args + 2, kw_args,
+        MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
     size_t hlen;
-    const char *host = mp_obj_str_get_data(host_in, &hlen);
-    mp_int_t port = mp_obj_get_int(port_in);
+    const char *host = mp_obj_str_get_data(pos_args[0], &hlen);
+    mp_int_t port = mp_obj_get_int(pos_args[1]);
     uint8_t out_ip[MOD_NETWORK_IPADDR_BUF_SIZE];
 	bool parse_ret = false;
-	parse_ret = parse_ipv4_addr(host_in,out_ip,NETUTILS_BIG);
+	parse_ret = parse_ipv4_addr(pos_args[0], out_ip, NETUTILS_BIG);
 	mp_obj_t nic = MP_STATE_PORT(modnetwork_nic);
 	mod_network_nic_type_t *nic_type = (mod_network_nic_type_t*)mp_obj_get_type(nic);
 	if(parse_ret == 0)
@@ -448,7 +458,7 @@ STATIC mp_obj_t mod_usocket_getaddrinfo(mp_obj_t host_in, mp_obj_t port_in) {
 		nlr_buf_t nlr;
 		if (nlr_push(&nlr) == 0)
 		{
-			netutils_parse_ipv4_addr(host_in, out_ip, NETUTILS_BIG);
+			netutils_parse_ipv4_addr(pos_args[0], out_ip, NETUTILS_BIG);
 			nlr_pop();
 		}
 	}
@@ -460,7 +470,7 @@ STATIC mp_obj_t mod_usocket_getaddrinfo(mp_obj_t host_in, mp_obj_t port_in) {
     tuple->items[4] = netutils_format_inet_addr(out_ip, port, NETUTILS_BIG);
     return mp_obj_new_list(1, (mp_obj_t*)&tuple);  
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_usocket_getaddrinfo_obj, mod_usocket_getaddrinfo);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(mod_usocket_getaddrinfo_obj, 2, mod_usocket_getaddrinfo);
 
 STATIC const mp_rom_map_elem_t mp_module_usocket_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_usocket) },
