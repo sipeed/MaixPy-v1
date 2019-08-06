@@ -13,7 +13,7 @@
 #include "w25qxx.h"
 #include "printf.h"
 
-#define print printk //comment printk's core lock
+#define print printk2 //no core lock
 
 
 
@@ -103,8 +103,10 @@ void ceSetupMMU() {
     write_csr(sptbr, (uint64_t)ceLv1PageTable >> 12);
 
     uint64_t msValue = read_csr(mstatus);
-    msValue |= MSTATUS_MPRV | ((uint64_t)VM_SV39 << 24);
-    // msValue = INSERT_FIELD(msValue, MSTATUS_MPP, PRV_S);
+    msValue |=  ((uint64_t)VM_SV39 << 24);// M S U mode, SV39
+    msValue = INSERT_FIELD(msValue, MSTATUS_MPRV, 1);
+    msValue = INSERT_FIELD(msValue, MSTATUS_MPP, PRV_U);
+    printk("set mstatus:%x\r\n", msValue);
     write_csr(mstatus, msValue);
 
     ceResetCacheState();
@@ -119,9 +121,7 @@ static void ceMapVBlockToPhysAddr(uint32_t vBlockId, uint32_t physAddr) {
     uintptr_t vaddr = 0;
     for (uint32_t i = 0 ; i < CE_BLOCK_SIZE_IN_PAGES; i++) {
         ceLv3PageTables[basePageId + i] = physAddr ? ceEncodePTE(physAddr + i * CE_PAGE_SIZE, PTE_V | PTE_R | PTE_X | PTE_G | PTE_U) : 0;
-        // ceLv3PageTables[basePageId + i] = ceEncodePTE(test2, PTE_V | PTE_R | PTE_X | PTE_G | PTE_U);
         vaddr = ceVABase + ((uintptr_t)(basePageId + i) * CE_PAGE_SIZE);
-        // print("map:%lx %x\r\n", vaddr, physAddr + i * CE_PAGE_SIZE);
         asm volatile("sfence.vm %0" : "=r"(vaddr));
     }
 }
@@ -129,15 +129,7 @@ static void ceMapVBlockToPhysAddr(uint32_t vBlockId, uint32_t physAddr) {
 int ceFileReadCallback(uint32_t fileOffset, uint64_t* buf, uint32_t len)
 {
     // memset(buf, 0x00, len);
-    // if(fileOffset == 0)
-    //     ((int*)buf)[0] = 123;
-    // else
-    //     snprintf((char*)buf, len, "hello, this str copied from xxx\r\n");
-    // memcpy(buf, test2, 32);
     w25qxx_read_data_dma(0x200000+fileOffset, (uint8_t*)buf,  len, W25QXX_QUAD_FAST);
-    // print("read from flash, %d %p %d\r\n",fileOffset, buf, len);
-    // uint32_t* p = (uint32_t*)buf;
-    // print("%x %x %x %x\r\n", p[0],p[1],p[2],p[3]);
     return 0;
 }
 
@@ -227,11 +219,33 @@ int ceHandlePageFault(uintptr_t vaddr, int isWrite) {
     ceCacheMemoryBlockAge[cacheBlockId] = 1;
     ceCacheMemoryBlockToVBlockId[cacheBlockId] = (uint16_t) vBlockId;
     ceMapVBlockToPhysAddr(vBlockId, physAddr);
-    // print("===%p %p %p\r\n", test2, (void*)physAddr, ceCacheMemory);
-    // ((void(*)(void))physAddr)();
     return 0;
 }
 
+
+static inline int supports_extension(char ext)
+{
+  return read_csr(misa) & (1 << (ext - 'A'));
+}
+
+#define SBI_GET_HARTID 0x01
+
+#define SBI_CALL(which, arg0, arg1, arg2) ({			\
+	register uintptr_t a0 asm ("a0") = (uintptr_t)(arg0);	\
+	register uintptr_t a1 asm ("a1") = (uintptr_t)(arg1);	\
+	register uintptr_t a2 asm ("a2") = (uintptr_t)(arg2);	\
+	register uintptr_t a7 asm ("a7") = (uintptr_t)(which);	\
+	asm volatile ("ecall"					\
+		      : "+r" (a0)				\
+		      : "r" (a1), "r" (a2), "r" (a7)		\
+		      : "memory");				\
+	a0;							\
+})
+
+/* Lazy implementations until SBI is finalized */
+#define SBI_CALL_0(which) SBI_CALL(which, 0, 0, 0)
+#define SBI_CALL_1(which, arg0) SBI_CALL(which, arg0, 0, 0)
+#define SBI_CALL_2(which, arg0, arg1) SBI_CALL(which, arg0, arg1, 0)
 
 
 int main()
@@ -251,44 +265,43 @@ int main()
 
 
     ceSetupMMU();
-    // int* p0 = (int*)ceVABase;
-    // char* p = ((char*)(ceVABase+2*1024*1024));
+
     int a = 5;
-    // while(a--)
+    
     uarths_putchar('1');
     uarths_putchar('1');
     uarths_putchar('1');
     uarths_putchar('1');
     uarths_putchar('\r');
     uarths_putchar('\n');    
+    int status = read_csr(mstatus);
+    print("status:0x%x\r\n", status);
+    int e = supports_extension('D');
+    int f = supports_extension('F');
+    int s = supports_extension('S');
+    print("e:%d %d %d\r\n", e, f, s);
+
     {
-        // print("hello maixpy %p %d %c %c %s\r\n", p, p0[0], p[0], p[1], (char*)p );
         print("%p\r\n", &a);
         print("--%p\r\n", test);
         print("%d %d %d %d\r\n", test_data[0], test_data[1], test_data[2], test_data[3]);
         print("%d %d %d %d\r\n", test_data2[0], test_data2[1], test_data2[2], test_data2[3]);
         test();
-        // print("%d\r\n", p0[0]);
-        // ((void (*)(void))p0)();
-
-        // print("1111\r\n");
     }
     print("test end\r\n");
     print("test2\r\n");
-    int core = current_coreid();
-    print("%d\r\n", core);
+    // int core = read_csr(mstatus); // U mode, can not read mstatus
+    int core = SBI_CALL_0(SBI_GET_HARTID);
+    print("sbi ret:%x\r\n", core);
     print("test2 end\r\n");
+
     while(1){}
 }
 
 uintptr_t handle_fault_load(uintptr_t cause, uintptr_t epc, uintptr_t regs[32], uintptr_t fregs[32]) {
     uintptr_t badAddr = read_csr(mbadaddr);
-
     if ((badAddr >= ceVABase) && (badAddr < (ceVABase + CE_CACHE_VA_SPACE_SIZE))) {
         if (ceHandlePageFault(badAddr, 0) == 0) {
-            // uint64_t msValue = read_csr(mstatus);
-            // msValue |=  MSTATUS_MPP;
-            // write_csr(mstatus, msValue);
             return epc;
         }
     }
@@ -301,9 +314,6 @@ uintptr_t handle_illegal_instruction(uintptr_t cause, uintptr_t epc, uintptr_t r
     // uintptr_t badAddr = read_csr(mbadaddr);
     if ((epc >= ceVABase) && (epc < (ceVABase + CE_CACHE_VA_SPACE_SIZE))) {
         if (ceHandlePageFault(epc, 0) == 0) {
-            // uint64_t msValue = read_csr(mstatus);
-            // msValue |=  MSTATUS_MPP;
-            // write_csr(mstatus, msValue);
             return epc;
         }
     }
@@ -311,5 +321,25 @@ uintptr_t handle_illegal_instruction(uintptr_t cause, uintptr_t epc, uintptr_t r
     sys_exit(1337);
     return epc;
 }
+
+uintptr_t handle_ecall_u(uintptr_t cause, uintptr_t epc, uintptr_t regs[32], uintptr_t fregs[32])
+{
+    register uintptr_t cmd asm ("a7");//get cmd from a7
+    switch (cmd)
+    {
+        case SBI_GET_HARTID:
+        {
+            int core = read_csr(mhartid);
+            regs[10] = core;//a0=coreid
+            break;
+        }
+        default:
+            break;
+    }
+
+    return epc+4;
+}
+
+
 
 
