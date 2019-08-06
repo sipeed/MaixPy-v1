@@ -62,10 +62,10 @@ void ceResetCacheState() {
     asm volatile ("sfence.vm");
 }
 
-CE_RODATA_FLASH int test_data[] = {1, 2, 3, 4 ,5 ,6 };
-CE_RODATA_FLASH int test_data2[] = {100, 101, 102, 103, 104, 105, 106 };
+CE_RODATA_FLASH const int test_data[] = {1, 2, 3, 4 ,5 ,6 };
+CE_RODATA_FLASH const int test_data2[] = {100, 101, 102, 103, 104, 105, 106 };
 
-CE_RODATA_FLASH char ccc[] = "123456789012345678901234567890\r\n";
+CE_RODATA_FLASH const char ccc[] = "123456789012345678901234567890\r\n";
 
 void CE_TEXT_FLASH test()
 {
