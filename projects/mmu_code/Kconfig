@@ -1,0 +1,5 @@
+
+config FIRMWARE_FLASH_ADDR
+	hex "Where firmware load from flash(section .text_flash) burn to"
+	default 0x200000
+

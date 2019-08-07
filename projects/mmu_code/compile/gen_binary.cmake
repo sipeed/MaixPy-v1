@@ -46,6 +46,10 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMENT "-- Generating .bin firmware at ${CMAKE_BINARY_DIR}/${PROJECT_NAME}_flash.bin"
         )
 
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${python} ${PROJECT_PATH}/compile/gen_kfpkg.py
+        COMMENT "-- Generating .kfpkg firmware at ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.kfpkg"
+        )
 
 
 

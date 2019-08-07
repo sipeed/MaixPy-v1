@@ -10,6 +10,7 @@ import subprocess
 from multiprocessing import cpu_count
 import json
 import serial.tools.miniterm
+from kfpkg import *
 
 
 parser = argparse.ArgumentParser(add_help=False, prog="flash.py")
@@ -104,6 +105,11 @@ if __name__ == '__main__':
     ############## Add flash command here ################
     if project_path != "":
         firmware = project_path+"/build/"+project_name+".bin"
+        prepare_path = project_path+"/tools/flash_prepare.py"
+        if os.path.exists(prepare_path):
+            with open(prepare_path) as f:
+                exec(f.read())
+            
     if not os.path.exists(firmware):
         print("[ERROR] Firmware not found:{}".format(firmware))
         exit(1)

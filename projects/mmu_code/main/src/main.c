@@ -129,7 +129,7 @@ static void ceMapVBlockToPhysAddr(uint32_t vBlockId, uint32_t physAddr) {
 int ceFileReadCallback(uint32_t fileOffset, uint64_t* buf, uint32_t len)
 {
     // memset(buf, 0x00, len);
-    w25qxx_read_data_dma(0x200000+fileOffset, (uint8_t*)buf,  len, W25QXX_QUAD_FAST);
+    w25qxx_read_data_dma(CONFIG_FIRMWARE_FLASH_ADDR+fileOffset, (uint8_t*)buf,  len, W25QXX_QUAD_FAST);
     return 0;
 }
 

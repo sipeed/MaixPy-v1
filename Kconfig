@@ -16,5 +16,9 @@ menu "Components configuration"
 	osource "${PROJECT_PATH}/*/Kconfig"
 endmenu
 
+menu "Project configuration"
+	osource "${PROJECT_PATH}/Kconfig"
+endmenu
+
 
 
