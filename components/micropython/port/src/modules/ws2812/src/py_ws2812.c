@@ -174,10 +174,10 @@ STATIC mp_obj_t modules_ws2812_dis(mp_obj_t self_in) {
 
     bool ret = ws2812_send_data_i2s(self->i2s_num, self->i2s_dma_chn, self->dat);
 
-    if(self->i2s_chn == I2S_CHANNEL_0)
-    {
+    // if(self->i2s_chn == I2S_CHANNEL_0)
+    // {
         usleep(3*1000);
-    }
+    // }
     return ret ? mp_const_true : mp_const_false;
 }
 MP_DEFINE_CONST_FUN_OBJ_1(modules_ws2812_dis_obj, modules_ws2812_dis);
