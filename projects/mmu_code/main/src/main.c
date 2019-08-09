@@ -12,6 +12,7 @@
 #include "dump.h"
 #include "w25qxx.h"
 #include "printf.h"
+#include "sysctl.h"
 
 #define print printk2 //no core lock
 
@@ -23,8 +24,8 @@
 #define CE_TEXT_FLASH  __attribute__((section(".text_flash")))
 #define CE_RODATA_FLASH  __attribute__((section(".rodata_flash")))
 
-#define CE_DEBUG_PRINT(fmt, ...) print(fmt, ##__VA_ARGS__)
-#define CE_ERROR_PRINT(fmt, ...) print(fmt, ##__VA_ARGS__)
+#define CE_DEBUG_PRINT(fmt, ...) //print(fmt, ##__VA_ARGS__)
+#define CE_ERROR_PRINT(fmt, ...) //print(fmt, ##__VA_ARGS__)
 
 #define CE_PAGE_SIZE (4096)
 #define CE_BLOCK_SIZE_IN_PAGES (4)
@@ -62,8 +63,8 @@ void ceResetCacheState() {
     asm volatile ("sfence.vm");
 }
 
-CE_RODATA_FLASH const int test_data[] = {1, 2, 3, 4 ,5 ,6 };
-CE_RODATA_FLASH const int test_data2[] = {100, 101, 102, 103, 104, 105, 106 };
+CE_RODATA_FLASH const int test_data[] = {1, 2, 3, 4 ,5 ,6 }; // will be optimized by toolchain
+CE_RODATA_FLASH const int test_data2[2048] = {100, 101, 102, 103, 104, 105, 106};
 
 CE_RODATA_FLASH const char ccc[] = "123456789012345678901234567890\r\n";
 
@@ -77,10 +78,18 @@ void CE_TEXT_FLASH test()
     uarths_putchar('\r');
     uarths_putchar('\n');    
 }
-
-void test2()
+int aaa = 0;
+int bbb = 0;
+void CE_TEXT_FLASH test2()
 {
-    print(ccc);
+    aaa = bbb;
+    // print(ccc);
+    uarths_putchar('a');
+    // uarths_putchar('a');
+    // uarths_putchar('a');
+    // uarths_putchar('a');
+    // uarths_putchar('\r');
+    // uarths_putchar('\n');    
 }
 
 
@@ -110,6 +119,7 @@ void ceSetupMMU() {
     write_csr(mstatus, msValue);
 
     ceResetCacheState();
+    asm volatile ("mret");
 }
 
 static inline uint32_t ceVAddrToVBlockId(uintptr_t vaddr) {
@@ -126,10 +136,15 @@ static void ceMapVBlockToPhysAddr(uint32_t vBlockId, uint32_t physAddr) {
     }
 }
 
+uint64_t flash_read_time = 0;
+
 int ceFileReadCallback(uint32_t fileOffset, uint64_t* buf, uint32_t len)
 {
     // memset(buf, 0x00, len);
+    uint64_t t = read_csr(mcycle)/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU)/1000000);
     w25qxx_read_data_dma(CONFIG_FIRMWARE_FLASH_ADDR+fileOffset, (uint8_t*)buf,  len, W25QXX_QUAD_FAST);
+    flash_read_time = read_csr(mcycle)/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU)/1000000) - t;
+    // CE_DEBUG_PRINT("--flash read time:%ld\r\n", t2 - t);
     return 0;
 }
 
@@ -229,6 +244,7 @@ static inline int supports_extension(char ext)
 }
 
 #define SBI_GET_HARTID 0x01
+#define SBI_GET_CYCLE  0x02
 
 #define SBI_CALL(which, arg0, arg1, arg2) ({			\
 	register uintptr_t a0 asm ("a0") = (uintptr_t)(arg0);	\
@@ -247,6 +263,12 @@ static inline int supports_extension(char ext)
 #define SBI_CALL_1(which, arg0) SBI_CALL(which, arg0, 0, 0)
 #define SBI_CALL_2(which, arg0, arg1) SBI_CALL(which, arg0, arg1, 0)
 
+uint64_t sbi_ticks_us(void)
+{
+    return SBI_CALL_0(SBI_GET_CYCLE)/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU)/1000000);
+}
+
+
 
 int main()
 {
@@ -262,7 +284,12 @@ int main()
     print("flash id:%x %x\r\n",manuf_id, device_id);
     
 
-
+    int status = read_csr(mstatus);
+    print("status:0x%x\r\n", status);
+    int e = supports_extension('D');
+    int f = supports_extension('F');
+    int s = supports_extension('S');
+    print("e:%d %d %d\r\n", e, f, s);
 
     ceSetupMMU();
 
@@ -274,19 +301,22 @@ int main()
     uarths_putchar('1');
     uarths_putchar('\r');
     uarths_putchar('\n');    
-    int status = read_csr(mstatus);
-    print("status:0x%x\r\n", status);
-    int e = supports_extension('D');
-    int f = supports_extension('F');
-    int s = supports_extension('S');
-    print("e:%d %d %d\r\n", e, f, s);
+
 
     {
         print("%p\r\n", &a);
         print("--%p\r\n", test);
+        uint64_t t = sbi_ticks_us();
+        // print("%d %d %d %d\r\n", test_data[0], test_data[1], test_data[2], test_data[3]);
+        // print("%d %d %d %d\r\n", test_data2[t%5], test_data2[1], test_data2[2], test_data2[3]);
+        uarths_putchar('a');
+        print("--putchar time:%d\r\n", sbi_ticks_us() - t);
+        bbb = (int)sbi_ticks_us();
+        t = sbi_ticks_us();
+        test2();
+        print("--time: %dus %dus %d\r\n", flash_read_time, sbi_ticks_us() - t, aaa);
         print("%d %d %d %d\r\n", test_data[0], test_data[1], test_data[2], test_data[3]);
-        print("%d %d %d %d\r\n", test_data2[0], test_data2[1], test_data2[2], test_data2[3]);
-        test();
+        print("%d %d %d %d\r\n", test_data2[t%5], test_data2[1], test_data2[2], test_data2[3]);
     }
     print("test end\r\n");
     print("test2\r\n");
@@ -299,6 +329,7 @@ int main()
 }
 
 uintptr_t handle_fault_load(uintptr_t cause, uintptr_t epc, uintptr_t regs[32], uintptr_t fregs[32]) {
+    print("fault load\r\n");
     uintptr_t badAddr = read_csr(mbadaddr);
     if ((badAddr >= ceVABase) && (badAddr < (ceVABase + CE_CACHE_VA_SPACE_SIZE))) {
         if (ceHandlePageFault(badAddr, 0) == 0) {
@@ -309,8 +340,10 @@ uintptr_t handle_fault_load(uintptr_t cause, uintptr_t epc, uintptr_t regs[32], 
     return epc;
 }
 
-uintptr_t handle_illegal_instruction(uintptr_t cause, uintptr_t epc, uintptr_t regs[32], uintptr_t fregs[32])
+uintptr_t handle_fault_fetch(uintptr_t cause, uintptr_t epc, uintptr_t regs[32], uintptr_t fregs[32])
+// uintptr_t handle_illegal_instruction(uintptr_t cause, uintptr_t epc, uintptr_t regs[32], uintptr_t fregs[32])
 {
+    print("fault fetch\r\n");
     // uintptr_t badAddr = read_csr(mbadaddr);
     if ((epc >= ceVABase) && (epc < (ceVABase + CE_CACHE_VA_SPACE_SIZE))) {
         if (ceHandlePageFault(epc, 0) == 0) {
@@ -331,6 +364,12 @@ uintptr_t handle_ecall_u(uintptr_t cause, uintptr_t epc, uintptr_t regs[32], uin
         {
             int core = read_csr(mhartid);
             regs[10] = core;//a0=coreid
+            break;
+        }
+        case SBI_GET_CYCLE:
+        {
+            int cycle = read_csr(mcycle);
+            regs[10] = cycle;//a0=cycle
             break;
         }
         default:
