@@ -1,2 +1,0 @@
-# Sources tests/sub/Kconfig_symlink_2, with an absolute path
-source "$(KCONFIG_SYMLINK_2)"

@@ -4,6 +4,7 @@
 #include "py/obj.h"
 
 extern const mp_obj_type_t modules_ultrasonic_type;
+extern const mp_obj_type_t modules_ws2812_type;
 
 #endif
 

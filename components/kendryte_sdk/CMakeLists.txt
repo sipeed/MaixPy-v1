@@ -43,12 +43,12 @@ if(CONFIG_COMPONENT_KENDRYTE_SDK_ENABLE)
                                )
     ###############################################
 
-    add_definitions(-DCONFIG_LOG_LEVEL=${CONFIG_SDK_LOG_LEVEL}
-                    -DCONFIG_LOG_ENABLE=1
-                    -DCONFIG_LOG_COLORS=1
-                    -DLOG_KERNEL=1
-                    -D__riscv64
-                    )
+    list(APPEND ADD_DEFINITIONS -DCONFIG_LOG_LEVEL=${CONFIG_SDK_LOG_LEVEL}
+                                -DCONFIG_LOG_ENABLE=1
+                                -DCONFIG_LOG_COLORS=1
+                                -DLOG_KERNEL=1
+                                -D__riscv64
+                                )
 
     register_component()
 endif()

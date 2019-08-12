@@ -1,3 +1,0 @@
-config FOO
-    bool
-    select FOO

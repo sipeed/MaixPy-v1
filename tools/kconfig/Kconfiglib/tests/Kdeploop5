@@ -1,7 +1,0 @@
-config FOO
-    bool
-    select BAR
-
-config BAR
-    bool
-    select FOO

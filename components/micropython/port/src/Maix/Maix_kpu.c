@@ -1185,7 +1185,7 @@ STATIC mp_obj_t py_kpu_forward(size_t n_args, const mp_obj_t *pos_args, mp_map_t
 		uint8_t* features;
 		size_t count;
 		kpu_model_layer_type_t layer_type;
-        ret = sipeed_kpu_model_get_layer_type(kpu_net->kmodel_ctx, mp_obj_get_int(kpu_net->max_layers)-1, &layer_type);
+        ret = sipeed_kpu_model_get_layer_type(kpu_net->kmodel_ctx,sipeed_kpu_model_get_layer_num(kpu_net->kmodel_ctx)-1, &layer_type);
         if(ret != SIPEED_KPU_ERR_NONE)
         {
             snprintf(char_temp, sizeof(char_temp), "%d", ret);
@@ -1202,10 +1202,10 @@ STATIC mp_obj_t py_kpu_forward(size_t n_args, const mp_obj_t *pos_args, mp_map_t
 		fmap_t* fmap = &(o->fmap);
 		fmap->data = features;
 		fmap->size = (uint32_t)count + 1;
-		fmap->index = mp_obj_get_int(kpu_net->max_layers)-1;
+		fmap->index = sipeed_kpu_model_get_layer_num(kpu_net->kmodel_ctx)-1;
 		if(layer_type == KL_K210_CONV)
 		{	//conv layer
-			kpu_layer_argument_t* layer = sipeed_kpu_model_get_conv_layer(kpu_net->kmodel_ctx, mp_obj_get_int(kpu_net->max_layers)-1);
+			kpu_layer_argument_t* layer = sipeed_kpu_model_get_conv_layer(kpu_net->kmodel_ctx, sipeed_kpu_model_get_layer_num(kpu_net->kmodel_ctx)-1);
             if(!layer)
             {
                 snprintf(char_temp, sizeof(char_temp), "%d", SIPEED_KPU_ERR_GET_CONV_LAYER);

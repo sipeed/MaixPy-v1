@@ -43,6 +43,11 @@ menu "Micropython configurations"
 		config MAIXPY_LVGL_ENABLE
 			bool "Enbale LittlvGL"
 			default n
+
+		config MAIXPY_WS2812_ENABLE
+			bool "Enable Ws2812"
+			default n
+			select WS2812_ENABLE
 	endmenu
 
 	menu "Debug configurations"

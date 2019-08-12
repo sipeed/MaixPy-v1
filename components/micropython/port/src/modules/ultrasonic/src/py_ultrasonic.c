@@ -15,10 +15,11 @@
 
 const mp_obj_type_t modules_ultrasonic_type;
 
-typedef struct _machine_hard_i2c_obj_t {
+typedef struct {
     mp_obj_base_t         base;
     uint8_t               gpio;
 } modules_ultrasonic_obj_t;
+
 mp_obj_t modules_ultrasonic_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
 
     modules_ultrasonic_obj_t *self = m_new_obj(modules_ultrasonic_obj_t);

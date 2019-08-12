@@ -1,5 +1,0 @@
-config FOO
-    string
-    option env="FOO"
-
-mainmenu "---$FOO---"
