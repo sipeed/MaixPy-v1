@@ -1,12 +1,4 @@
-import gc
-import uos
-import os
-import sys
-import machine
-from board import board_info
-from fpioa_manager import fm
-from pye_mp import pye
-from Maix import FPIOA, GPIO
+import os, sys, time
 
 sys.path.append('')
 sys.path.append('.')
@@ -19,6 +11,35 @@ if "sd" in devices:
 else:
     os.chdir("/flash")
 sys.path.append('/flash')
+
+print("[MaixPy] init end") # for IDE
+for i in range(200):
+    time.sleep_ms(1) # wait for key interrupt(for maixpy ide)
+
+# check IDE mode
+ide_mode_conf = "/flash/ide_mode.conf"
+ide = True
+try:
+    f = open(ide_mode_conf)
+    f.close()
+except Exception:
+    ide = False
+
+if ide:
+    os.remove(ide_mode_conf)
+    from machine import UART
+    import lcd
+    lcd.init(color=lcd.PINK)
+    repl = UART.repl_uart()
+    repl.init(1500000, 8, None, 1, read_buf_len=2048, ide=True, from_ide=False)
+    sys.exit()    
+
+import gc, uos, sys
+import machine
+from board import board_info
+from fpioa_manager import fm
+from pye_mp import pye
+from Maix import FPIOA, GPIO
 
 banner = '''
  __  __              _____  __   __  _____   __     __
@@ -35,7 +56,8 @@ Co-op by Sipeed     : https://www.sipeed.com
 flash_ls = os.listdir()
 if ("boot.py" in flash_ls) :
     print(banner)
-    import boot
+    with open("boot.py") as f:
+        exec(f.read())
     sys.exit()
 
 # detect boot.py
@@ -169,5 +191,6 @@ f.write(boot_py)
 f.close()
 
 print(banner)
-import boot
+with open("boot.py") as f:
+    exec(f.read())
 

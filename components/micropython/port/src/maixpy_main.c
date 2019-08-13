@@ -411,11 +411,12 @@ soft_reset:
     	}
 		if (mounted_sdcard) {
 		}
-		mp_printf(&mp_plat_print, "[MaixPy] init end\r\n"); // for maixpy ide
+		// mp_printf(&mp_plat_print, "[MaixPy] init end\r\n"); // for maixpy ide
 		// run boot-up scripts
 		mp_hal_set_interrupt_char(CHAR_CTRL_C);
 		pyexec_frozen_module("_boot.py");
-		pyexec_file_if_exists("boot.py");
+		// if(!is_ide_dbg_mode())
+		// 	pyexec_file_if_exists("boot.py");
 
 		do{
 			ide_dbg_init();
