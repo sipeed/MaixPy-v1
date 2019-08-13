@@ -143,6 +143,35 @@ mp_obj_t vfs_internal_fatfs_open(fs_user_mount_t* vfs, const char* path, const c
     return MP_OBJ_FROM_PTR(o);
 }
 
+
+void vfs_internal_spiffs_remove(spiffs_user_mount_t* vfs, const char* path, int* error_code)
+{
+    *error_code = 0;
+    char* open_name = (char*)path;
+    if(open_name[0] == '.' && open_name[1] == '/')
+    {
+        memmove(open_name, open_name+1, strlen(open_name));
+    }
+    else if(open_name[0] != '/')
+    {
+        open_name = m_new(char, 128);
+        memset(open_name, 0, 128);
+        open_name[0] = '/';
+        strcat(open_name, path);
+    }
+	SPIFFS_remove(&vfs->fs,open_name);
+}
+
+void vfs_internal_fatfs_remove(fs_user_mount_t* vfs, const char* path, int* error_code)
+{
+    *error_code = 0;
+
+    FRESULT res = f_unlink(&vfs->fatfs, path);
+    if (res != FR_OK) {
+        *error_code = MP_ENOENT;
+    }
+}
+
 /**
  * 
  * 
@@ -171,6 +200,29 @@ mp_obj_t vfs_internal_open(const char* path, const char* mode, int* error_code)
     }
     *error_code = MP_ENOENT;
     return MP_OBJ_NULL;
+}
+
+void vfs_internal_remove(const char* path, int* error_code)
+{
+    const char *real_path;
+    *error_code = 0;
+    mp_vfs_mount_t *vfs = mp_vfs_lookup_path(path, &real_path);
+    if (vfs == MP_VFS_NONE || vfs == MP_VFS_ROOT) {
+        *error_code = MP_EINVAL;
+        return MP_OBJ_NULL;
+    }
+    fs_info_t* fs = (fs_info_t*)vfs->obj;
+    if( fs->base.type == &mp_spiffs_vfs_type)
+    {
+        // *error_code =  EPERM;
+        // return MP_OBJ_NULL;
+        vfs_internal_spiffs_remove((spiffs_user_mount_t*)fs, real_path, error_code);
+    }
+    else if( fs->base.type == &mp_fat_vfs_type)
+    {
+        vfs_internal_fatfs_remove((fs_user_mount_t*)fs, real_path, error_code);
+    }
+    *error_code = MP_ENOENT;
 }
 
 mp_uint_t vfs_internal_write(mp_obj_t fs, void* data, mp_uint_t length, int* error_code)

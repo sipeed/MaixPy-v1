@@ -34,6 +34,7 @@
 static volatile int xfer_bytes;   // bytes sent
 static volatile int xfer_length;  // bytes need to send
 static enum usbdbg_cmd cmd;
+static volatile bool is_ide_mode = false;
 
 static volatile bool script_ready;
 static volatile bool script_running;
@@ -135,6 +136,7 @@ bool ide_debug_init0()
 
 void ide_dbg_init()
 {
+    int err;
     xfer_length = 0;
     xfer_bytes  = 0;
     is_busy_sending = false;
@@ -145,6 +147,27 @@ void ide_dbg_init()
     vstr_init_11(&script_buf, 1024*5);
     // mp_const_ide_interrupt = mp_obj_new_exception_msg(&mp_type_Exception, "IDE interrupt");
 }
+
+void ide_dbg_init2()
+{
+    int err;
+    mp_obj_t f = vfs_internal_open("/flash/ide_mode.conf", "w", &err);
+    vfs_internal_close(f, &err);
+    is_ide_mode = true;
+}
+
+void ide_dbg_init3()
+{
+    int err;
+    vfs_internal_remove("/flash/ide_mode.conf", &err);
+    is_ide_mode = true;
+}
+
+bool is_ide_dbg_mode()
+{
+    return is_ide_mode;
+}
+
 
 ide_dbg_status_t ide_dbg_ack_data(machine_uart_obj_t* uart)
 {
@@ -249,6 +272,12 @@ ack_start:
         case USBDBG_FILE_SAVE_STATUS:
         {
             *((uint32_t*)ide_dbg_cmd_buf) = ide_file_save_status;
+            cmd = USBDBG_NONE;
+            break;
+        }
+        case USBDBG_QUERY_STATUS:
+        {
+            *((uint32_t*)ide_dbg_cmd_buf) = 0xFFEEBBAA;
             cmd = USBDBG_NONE;
             break;
         }
@@ -399,10 +428,13 @@ ide_dbg_status_t ide_dbg_dispatch_cmd(machine_uart_obj_t* uart, uint8_t* data)
         cmd = ide_dbg_cmd_buf[1];
         switch (cmd) {
             case USBDBG_FW_VERSION:
+            {
+                int err;
                 xfer_bytes = 0;
                 xfer_length = length;
+                vfs_internal_remove("/flash/ide_mode.conf", &err);
                 break;
-
+            }
             case USBDBG_FRAME_SIZE:
                 xfer_bytes = 0;
                 xfer_length = length;
@@ -427,6 +459,7 @@ ide_dbg_status_t ide_dbg_dispatch_cmd(machine_uart_obj_t* uart, uint8_t* data)
                 break;
 
             case USBDBG_SCRIPT_STOP:
+            {
                 if (script_running) {
                     // Set script running flag
                     script_running = false;
@@ -444,6 +477,7 @@ ide_dbg_status_t ide_dbg_dispatch_cmd(machine_uart_obj_t* uart, uint8_t* data)
                     #endif
                 }
                 cmd = USBDBG_NONE;
+            }
                 break;
 
             case USBDBG_FILE_SAVE:
@@ -532,6 +566,10 @@ ide_dbg_status_t ide_dbg_dispatch_cmd(machine_uart_obj_t* uart, uint8_t* data)
 
             case USBDBG_TX_BUF:
             case USBDBG_TX_BUF_LEN:
+                xfer_bytes = 0;
+                xfer_length = length;
+                break;
+            case USBDBG_QUERY_STATUS:
                 xfer_bytes = 0;
                 xfer_length = length;
                 break;
@@ -646,6 +684,16 @@ bool ide_debug_init0()
 }
 
 void ide_dbg_init()
+{
+
+}
+
+void ide_dbg_init2()
+{
+
+}
+
+void ide_dbg_init3()
 {
 
 }

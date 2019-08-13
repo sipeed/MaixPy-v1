@@ -43,6 +43,7 @@ enum usbdbg_cmd {
     USBDBG_ATTR_WRITE       =0x0B,
     USBDBG_SYS_RESET        =0x0C,
     USBDBG_FB_ENABLE        =0x0D,
+    USBDBG_QUERY_STATUS     =0x8D,//0xFFEEBBAA
     USBDBG_TX_BUF_LEN       =0x8E,
     USBDBG_TX_BUF           =0x8F
 };
@@ -57,6 +58,8 @@ typedef enum{
 
 bool     ide_debug_init0();
 void     ide_dbg_init();
+void     ide_dbg_init2();
+void     ide_dbg_init3();
 ide_dbg_status_t
          ide_dbg_dispatch_cmd(machine_uart_obj_t* uart, uint8_t* data);
 ide_dbg_status_t ide_dbg_ack_data(machine_uart_obj_t* uart);
@@ -64,6 +67,7 @@ bool     ide_dbg_script_ready();
 vstr_t*  ide_dbg_get_script();
 bool      ide_dbg_need_save_file();
 void      ide_save_file(); 
+bool     is_ide_dbg_mode();
 
 #else // OMV_MINIMUM
 
@@ -73,6 +77,7 @@ bool      ide_dbg_script_ready();
 vstr_t*   ide_dbg_get_script();
 bool      ide_dbg_need_save_file();
 void      ide_save_file();      
+bool      is_ide_dbg_mode();
 #endif
 
 #endif /* __USBDBG_H__ */
