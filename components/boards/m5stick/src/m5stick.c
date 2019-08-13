@@ -71,7 +71,7 @@ bool m5stick_init()
     if(ret!=0)
         goto end;
     cmd[0] = 0x12;
-    cmd[1] = 0x1F; //open all power except EXTEN
+    cmd[1] = 0xFF; //open all power and EXTEN
     ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2, 10);
     if(ret!=0)
         goto end;

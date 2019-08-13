@@ -396,7 +396,7 @@ soft_reset:
 #else
 		MP_STATE_PORT(Maix_stdio_uart) = NULL;
 #endif
-
+		peripherals_init();
 		// initialise peripherals
 		bool mounted_sdcard = false;
 		bool mounted_flash= false;
@@ -411,7 +411,6 @@ soft_reset:
     	}
 		if (mounted_sdcard) {
 		}
-		peripherals_init();
 		// mp_printf(&mp_plat_print, "[MaixPy] init end\r\n"); // for maixpy ide
 		// run boot-up scripts
 		mp_hal_set_interrupt_char(CHAR_CTRL_C);
