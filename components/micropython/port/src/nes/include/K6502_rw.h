@@ -18,7 +18,7 @@
 #include "InfoNES_System.h"
 #include "InfoNES_pAPU.h"
 
-#if MAIXPY_NES_EMULATOR_SUPPORT
+#if CONFIG_MAIXPY_NES_ENABLE
 
 /*===================================================================*/
 /*                                                                   */
@@ -499,5 +499,5 @@ static inline WORD K6502_ReadW2( WORD wAddr )
   }
 }
 
-#endif //MAIXPY_NES_EMULATOR_SUPPORT
+#endif //CONFIG_MAIXPY_NES_ENABLE
 #endif /* !K6502_RW_H_INCLUDED */

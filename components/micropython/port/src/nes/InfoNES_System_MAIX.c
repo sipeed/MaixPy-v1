@@ -23,7 +23,7 @@
 #include "py/mpstate.h"
 #include "global_config.h"
 
-#if MAIXPY_NES_EMULATOR_SUPPORT
+#if CONFIG_MAIXPY_NES_ENABLE
 #define MAX_SAMPLES_PER_SYNC 750
 
 extern NES_DWORD * FrameBuffer;
@@ -481,4 +481,4 @@ void InfoNES_MessageBox( char *pszMsg, ... )
     return;
 }
 
-#endif //MAIXPY_NES_EMULATOR_SUPPORT
+#endif //CONFIG_MAIXPY_NES_ENABLE

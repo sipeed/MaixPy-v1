@@ -27,7 +27,7 @@
 #include "fpioa.h"
 #include "ps2.h"
 
-#if MAIXPY_NES_EMULATOR_SUPPORT
+#if CONFIG_MAIXPY_NES_ENABLE
 
 
 int nes_stick=0;
@@ -169,11 +169,11 @@ static mp_obj_t py_nes_run(mp_obj_t path_obj)
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_nes_init_obj, 1, py_nes_init);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_nes_run_obj, py_nes_run);
 
-#endif //MAIXPY_NES_EMULATOR_SUPPORT
+#endif //CONFIG_MAIXPY_NES_ENABLE
 
 static const mp_map_elem_t globals_dict_table[] = {
 
-#if MAIXPY_NES_EMULATOR_SUPPORT	
+#if CONFIG_MAIXPY_NES_ENABLE	
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_nes) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_init),   (mp_obj_t)&py_nes_init_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_run),   (mp_obj_t)&py_nes_run_obj },

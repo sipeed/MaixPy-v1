@@ -15,7 +15,7 @@
 
 #include "InfoNES_Types.h"
 
-#if MAIXPY_NES_EMULATOR_SUPPORT
+#if CONFIG_MAIXPY_NES_ENABLE
 /*-------------------------------------------------------------------*/
 /*  Constants                                                        */
 /*-------------------------------------------------------------------*/
@@ -637,5 +637,5 @@ void Map255_Write( WORD wAddr, BYTE byData );
 void Map255_Apu( WORD wAddr, BYTE byData );
 BYTE Map255_ReadApu( WORD wAddr );
 
-#endif // MAIXPY_NES_EMULATOR_SUPPORT
+#endif // CONFIG_MAIXPY_NES_ENABLE
 #endif /* !InfoNES_MAPPER_H_INCLUDED */

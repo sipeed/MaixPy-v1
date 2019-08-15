@@ -44,7 +44,7 @@
 #include "InfoNES.h"
 #include "sysctl.h"
 
-#if MAIXPY_NES_EMULATOR_SUPPORT
+#if CONFIG_MAIXPY_NES_ENABLE
 
 #define _D //mp_printf(&mp_plat_print, "%d\n",__LINE__)
 
@@ -1200,4 +1200,4 @@ void InfoNES_SetupChr()
   ChrBufUpdate = 0;
 }
 
-#endif //MAIXPY_NES_EMULATOR_SUPPORT
+#endif //CONFIG_MAIXPY_NES_ENABLE
