@@ -19,5 +19,6 @@ mp_uint_t vfs_internal_read(mp_obj_t fs, void* data, mp_uint_t length, int* erro
 void vfs_internal_close(mp_obj_t fs, int* error_code);
 mp_uint_t vfs_internal_seek(mp_obj_t fs, mp_int_t offset, uint8_t whence, int* err);
 mp_uint_t vfs_internal_size(mp_obj_t fp);
+void vfs_internal_remove(const char* path, int* error_code);
 #endif
 

@@ -402,7 +402,8 @@ STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, co
 		   ARG_timeout,
 		   ARG_timeout_char,
 		   ARG_read_buf_len,
-		   ARG_ide}; // uart communicate with IDE
+		   ARG_ide,
+		   ARG_from_ide}; // uart communicate with IDE
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_baudrate, MP_ARG_INT, {.u_int = 115200} },
         { MP_QSTR_bits, MP_ARG_INT, {.u_int = UART_BITWIDTH_8BIT} },
@@ -412,6 +413,7 @@ STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, co
         { MP_QSTR_timeout_char, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 10} },
         { MP_QSTR_read_buf_len, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = MAIX_UART_BUF} },
 		{ MP_QSTR_ide, MP_ARG_KW_ONLY | MP_ARG_BOOL, {.u_bool = false} },
+		{ MP_QSTR_from_ide, MP_ARG_KW_ONLY | MP_ARG_BOOL, {.u_bool = true} },
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -499,6 +501,15 @@ STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, co
 	{
 		self->ide_debug_mode = true;
 		ide_dbg_init();
+		if(args[ARG_from_ide].u_bool)
+		{
+			ide_dbg_init2();
+		}
+		else
+		{
+			ide_dbg_init3();
+		}
+		
 		// init ringbuffer, use read buffer, for we do not use it to read data in IDE mode
 		Buffer_Init(&g_uart_send_buf_ide, self->read_buf, self->read_buf_len);
 	}
