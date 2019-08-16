@@ -162,7 +162,14 @@ static int exchang_data_byte(uint8_t* addr,uint32_t length)
 void InfoNES_LoadFrame()
 {
     exchang_data_byte(WorkFrame, NES_DISP_WIDTH*NES_DISP_HEIGHT*2);
+#if CONFIG_LCD_DEFAULT_HEIGHT < 240
+    for(int y=0; y<CONFIG_LCD_DEFAULT_HEIGHT; y++){
+      int frame_y = (int)(8 + (NES_DISP_HEIGHT-16) * y / CONFIG_LCD_DEFAULT_HEIGHT);
+      lcd_draw_picture(0, y, NES_DISP_WIDTH-16, 1, (uint32_t *)(WorkFrame+NES_DISP_WIDTH*frame_y+8));
+    }
+#else
     lcd_draw_picture(0, 0, NES_DISP_WIDTH, CONFIG_LCD_DEFAULT_HEIGHT, (uint32_t *)WorkFrame);
+#endif
     return;
 }
 
