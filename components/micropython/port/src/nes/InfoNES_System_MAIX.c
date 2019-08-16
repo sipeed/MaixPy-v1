@@ -66,7 +66,7 @@ int InfoNES_ReadRom( const char *pszFileName )
 {
     if( !WorkFrame )
     {
-        WorkFrame = (WORD*)malloc(CONFIG_LCD_DEFAULT_WIDTH * CONFIG_LCD_DEFAULT_HEIGHT * 2);
+        WorkFrame = (WORD*)malloc(NES_DISP_WIDTH*NES_DISP_HEIGHT*2);
     }
 /*
  *  Read ROM image file
@@ -162,13 +162,13 @@ static int exchang_data_byte(uint8_t* addr,uint32_t length)
 void InfoNES_LoadFrame()
 {
     exchang_data_byte(WorkFrame, NES_DISP_WIDTH*NES_DISP_HEIGHT*2);
-    lcd_draw_picture(32, 0, NES_DISP_WIDTH, NES_DISP_HEIGHT, (uint32_t *)WorkFrame);
+    lcd_draw_picture(0, 0, NES_DISP_WIDTH, CONFIG_LCD_DEFAULT_HEIGHT, (uint32_t *)WorkFrame);
     return;
 }
 
 
 /* Get a joypad state */
-//wasd:上下左右  kl:AB nm:sel,start
+//wasd:上下左坳  kl:AB nm:sel,start
 
 #define SELECT_MASK    (1<<0)
 #define L3_MASK        (1<<1)
@@ -386,15 +386,15 @@ int InfoNES_SoundOpen( int samples_per_sync, int sample_rate )
       wavflag = 0;
 
     //speaker's dac
-    fpioa_set_function(34, FUNC_I2S0_OUT_D0);
-    fpioa_set_function(35, FUNC_I2S0_SCLK);
-    fpioa_set_function(33, FUNC_I2S0_WS);    
+    fpioa_set_function(17, FUNC_I2S0_OUT_D0);
+    fpioa_set_function(15, FUNC_I2S0_SCLK);
+    fpioa_set_function(14, FUNC_I2S0_WS);
     //dmac_init();
     i2s_init(I2S_DEVICE_0, I2S_TRANSMITTER, 0x03); //mask of ch
-    i2s_tx_channel_config(I2S_DEVICE_0, I2S_CHANNEL_0,
+    i2s_tx_channel_config(I2S_DEVICE_0, I2S_CHANNEL_1,
                           RESOLUTION_16_BIT, SCLK_CYCLES_32,
                           /*TRIGGER_LEVEL_1*/ TRIGGER_LEVEL_4,
-                          RIGHT_JUSTIFYING_MODE);
+                          STANDARD_MODE);
     mp_printf(&mp_plat_print, "samples_per_sync=%d, sample_rate=%d\r\n", samples_per_sync, sample_rate);
     if(nes_stick==0)
         mp_printf(&mp_plat_print, "key: WASD, JK, -=, \\, Enter, ESC\r\n");
