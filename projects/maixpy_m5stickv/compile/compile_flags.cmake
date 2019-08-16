@@ -38,6 +38,10 @@ set(CMAKE_C_FLAGS 	-mcmodel=medany
                     -Wno-error=restrict
                     -Wno-error=sequence-point
                     -Wno-int-to-pointer-cast
+                    -Wno-array-bounds
+                    -Wno-parentheses
+                    -Wno-implicit-function-declaration
+                    -Wno-return-type
                     )
 ################################
 
