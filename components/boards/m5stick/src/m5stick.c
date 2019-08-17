@@ -83,7 +83,7 @@ bool m5stick_init()
     
     fpioa_set_function(23, FUNC_GPIOHS0 + 26);
     gpiohs_set_drive_mode(26, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(26, GPIO_PV_HIGH); //Disable VBUS As Input, BAT->5V Boost->VBUS->Charing Cycle
+    gpiohs_set_pin(26, GPIO_PV_LOW); //Disable VBUS As Input, BAT->5V Boost->VBUS->Charing Cycle
     
 end:
     maix_i2c_deinit(I2C_DEVICE_0);
