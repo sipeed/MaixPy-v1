@@ -388,7 +388,7 @@ STATIC int esp8285_socket_connect(mod_network_socket_obj_t *socket, byte *ip, mp
 STATIC int esp8285_socket_gethostbyname(mp_obj_t nic, const char *name, mp_uint_t len, uint8_t* out_ip) {
 	if((mp_obj_type_t*)&mod_network_nic_type_esp8285 == mp_obj_get_type(nic))
 	{
-		return get_host_byname(&nic_obj.esp8285,name,len, (char*)out_ip);
+		return get_host_byname(&nic_obj.esp8285,name,len, (char*)out_ip, 3000);
 	}
     return -1;
 }

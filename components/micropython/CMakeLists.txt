@@ -392,7 +392,7 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     
     add_custom_command(OUTPUT ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h
                     COMMAND cat ${PY_QSTR_DEFS} ${QSTR_DEFS} ${QSTR_DEFS_COLLECTED} | sed '${cmd_sed0}' | ${CMAKE_C_COMPILER} -E ${cmd_param_cflag} ${cmd_param_cinclude} - | sed '${cmd_sed1}' > ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h
-                    DEPENDS gen_mpy_cross gen_version_header gen_module_defs gen_collected_h gen_qstr_i_last
+                    DEPENDS gen_mpy_cross gen_version_header gen_module_defs gen_collected_h gen_qstr_i_last ${QSTR_DEFS_COLLECTED}
                 )
     add_custom_command(OUTPUT ${qstr_header}
                     COMMAND ${python} ${mpy_core_src_dir}/makeqstrdata.py ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h > ${qstr_header}

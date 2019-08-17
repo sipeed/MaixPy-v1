@@ -259,10 +259,10 @@ bool stopServer(esp8285_obj* nic)
     return stopTCPServer(nic);
 }
 
-bool get_host_byname(esp8285_obj* nic, const char* host,uint32_t len,char* out_ip)
+bool get_host_byname(esp8285_obj* nic, const char* host,uint32_t len,char* out_ip, uint32_t timeout_ms)
 {
 	int index = 0;
-	if(false == sATCIPDOMAIN(nic,host))
+	if(false == sATCIPDOMAIN(nic,host, timeout_ms))
 	{
 		mp_printf(&mp_plat_print, "[MaixPy] %s | get_host_byname failed\n",__func__);
 		return false;
@@ -398,7 +398,7 @@ uint32_t recvPkg(esp8285_obj*nic,char* buffer, uint32_t buffer_size, uint32_t *d
     start = mp_hal_ticks_ms();
     while ((mp_hal_ticks_ms() - start < timeout) ) {
         if(uart_rx_any(nic->uart_obj) > 0) {
-			uart_stream->read(nic->uart_obj,&nic->buffer[iter++],1,&errcode); 
+			uart_stream->read(nic->uart_obj,&nic->buffer[iter++],1,&errcode);
         }
         index_PIPDcomma = data_find(nic->buffer,iter,"+IPD,");
         if (index_PIPDcomma != -1) {
@@ -892,7 +892,7 @@ bool sATCIPMODE(esp8285_obj* nic,char mode)
     return recvFind(nic,"OK",1000);
 }
 
-bool sATCIPDOMAIN(esp8285_obj* nic, const char* domain_name)
+bool sATCIPDOMAIN(esp8285_obj* nic, const char* domain_name, uint32_t timeout)
 {
 	int errcode = 0;
 	const char* cmd = "AT+CIPDOMAIN=";
@@ -903,7 +903,7 @@ bool sATCIPDOMAIN(esp8285_obj* nic, const char* domain_name)
 	uart_stream->write(nic->uart_obj,domain_name,strlen(domain_name),&errcode);
 	uart_stream->write(nic->uart_obj,"\"",strlen("\""),&errcode);
 	uart_stream->write(nic->uart_obj,"\r\n",strlen("\r\n"),&errcode);  
-    return recvFind(nic,"OK",1000);
+    return recvFind(nic,"OK",timeout);
 }
 
 bool qATCIPSTA_CUR(esp8285_obj* nic)
