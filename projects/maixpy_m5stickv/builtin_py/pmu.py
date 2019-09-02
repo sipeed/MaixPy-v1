@@ -33,7 +33,7 @@ class axp192:
         return (self.i2cDev.readfrom(self.axp192Addr, 1))[0]
     
     def setScreenBrightness(self, brightness):
-        self.__writeReg(0x28, (brightness & 0x0f) << 4)
+        self.__writeReg(0x91, (brightness & 0x0f) << 4)
     
     def enableADCs(self, enable):
         if enable == True:
