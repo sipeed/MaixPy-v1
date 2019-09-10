@@ -308,7 +308,6 @@ extern const struct _mp_obj_module_t video_module;
 
 // nes game emulator
 #ifndef CONFIG_MAIXPY_NES_ENABLE
-#define CONFIG_MAIXPY_NES_ENABLE         (0) // NES gamer emulator
 #endif //CONFIG_MAIXPY_NES_ENABLE
 #if CONFIG_MAIXPY_NES_ENABLE
 extern const struct _mp_obj_module_t nes_module;

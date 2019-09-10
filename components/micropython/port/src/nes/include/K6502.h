@@ -12,7 +12,6 @@
 
 #include "InfoNES_Types.h"
 
-#if MAIXPY_NES_EMULATOR_SUPPORT
 
 // Type definition
 #ifndef NES_DWORD
@@ -83,5 +82,4 @@ extern BYTE NMI_State;
 // The number of the clocks that it passed
 extern WORD g_wPassedClocks;
 
-#endif //MAIXPY_NES_EMULATOR_SUPPORT
 #endif /* !K6502_H_INCLUDED */

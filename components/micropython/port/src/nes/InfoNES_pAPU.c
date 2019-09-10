@@ -13,7 +13,6 @@
 #include "InfoNES_System.h"
 #include "InfoNES_pAPU.h"
 
-#if MAIXPY_NES_EMULATOR_SUPPORT
 
 /*-------------------------------------------------------------------*/
 /*   APU Event resources                                             */
@@ -1068,5 +1067,4 @@ void InfoNES_pAPUDone(void)
  * End of InfoNES_pAPU.cpp
  */
 
-#endif //MAIXPY_NES_EMULATOR_SUPPORT
 

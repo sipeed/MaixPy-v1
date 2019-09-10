@@ -6,7 +6,7 @@
 
 BYTE  Map45_Regs[7];
 NES_DWORD Map45_P[4],Map45_Prg0,Map45_Prg1,Map45_Prg2,Map45_Prg3;
-NES_DWORD Map45_C[4],Map45_Chr0, Map45_Chr1,Map45_Chr2, Map45_Chr3;
+NES_DWORD Map45_C[8],Map45_Chr0, Map45_Chr1,Map45_Chr2, Map45_Chr3;
 NES_DWORD Map45_Chr4, Map45_Chr5, Map45_Chr6, Map45_Chr7;
 
 BYTE Map45_IRQ_Enable;

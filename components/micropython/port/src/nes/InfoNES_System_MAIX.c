@@ -14,6 +14,7 @@
 #include "lcd.h"
 #include "vfs_internal.h"
 #include "ps2.h"
+#include "machine_uart.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -23,7 +24,6 @@
 #include "py/mpstate.h"
 #include "global_config.h"
 
-#if MAIXPY_NES_EMULATOR_SUPPORT
 #define MAX_SAMPLES_PER_SYNC 750
 
 extern NES_DWORD * FrameBuffer;
@@ -377,6 +377,7 @@ void InfoNES_SoundInit( void )
 static int on_irq_dma3(void *ctx)
 {
     i2s_idle = true;
+    return 0;
 }
 
 /* Sound Open */
@@ -481,4 +482,3 @@ void InfoNES_MessageBox( char *pszMsg, ... )
     return;
 }
 
-#endif //MAIXPY_NES_EMULATOR_SUPPORT

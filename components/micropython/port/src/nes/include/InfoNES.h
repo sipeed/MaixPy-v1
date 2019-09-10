@@ -15,7 +15,6 @@
 
 #include "InfoNES_Types.h"
 
-#if MAIXPY_NES_EMULATOR_SUPPORT
 /*-------------------------------------------------------------------*/
 /*  NES resources                                                    */
 /*-------------------------------------------------------------------*/
@@ -319,5 +318,4 @@ void InfoNES_GetSprHitY();
 /* Develop character data */
 void InfoNES_SetupChr();
 
-#endif
 #endif /* !InfoNES_H_INCLUDED */

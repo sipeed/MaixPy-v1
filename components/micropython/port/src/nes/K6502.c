@@ -12,7 +12,6 @@
 #include "K6502.h"
 #include "InfoNES_System.h"
 
-#if MAIXPY_NES_EMULATOR_SUPPORT
 
 /*-------------------------------------------------------------------*/
 /*  Operation Macros                                                 */
@@ -1111,5 +1110,4 @@ static inline BYTE K6502_ReadIY(){ WORD wA0, wA1; wA0 = K6502_ReadZpW( K6502_Rea
 /*===================================================================*/
 #include "K6502_rw.h"
 
-#endif //MAIXPY_NES_EMULATOR_SUPPORT
 

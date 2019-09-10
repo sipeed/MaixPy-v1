@@ -11,7 +11,6 @@
 #define InfoNES_TYPES_H_INCLUDED
 
 #include "py/mpconfig.h"
-#if MAIXPY_NES_EMULATOR_SUPPORT
 
 /*-------------------------------------------------------------------*/
 /*  Type definition                                                  */
@@ -35,5 +34,4 @@ typedef unsigned char  BYTE;
 #define NULL  0
 #endif /* !NULL */
 
-#endif //MAIXPY_NES_EMULATOR_SUPPORT
 #endif /* !InfoNES_TYPES_H_INCLUDED */
