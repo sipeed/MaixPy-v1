@@ -9,6 +9,15 @@ menu "Kendryte SDK configurations"
 		int "log level, 5:LOG_VERBOSE, 4:LOG_DEBUG, 3:LOG_INFO, 2:LOG_WARN, 1:LOG_ERROR, 0:LOG_NONE"
 		range 0 5
 		default 5
+	config FREERTOS_ENABLE
+		bool "Enable FreeRTOS"
+		default y
+	menu "FreeRTOS configurations"
+		depends on FREERTOS_ENABLE
+		config STATIC_TASK_CLEAN_UP_ENABLE
+			bool "static task clean up callback"
+			default n
+	endmenu
 endmenu
 
 

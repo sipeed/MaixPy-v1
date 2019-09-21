@@ -176,9 +176,9 @@ STATIC int Maix_gpio_isr_handler(void *arg) {
    Maix_gpio_obj_t *self = arg;
    //only gpiohs support irq,so only support gpiohs in this func
    mp_obj_t handler = self->callback;
-   mp_call_function_2(handler, MP_OBJ_FROM_PTR(self), mp_obj_new_int_from_uint(self->id));
-//    mp_sched_schedule(handler, MP_OBJ_FROM_PTR(self));
-//    mp_hal_wake_main_task_from_isr();
+//    mp_call_function_2(handler, MP_OBJ_FROM_PTR(self), mp_obj_new_int_from_uint(self->id));
+   mp_sched_schedule(handler, MP_OBJ_FROM_PTR(self));
+   mp_hal_wake_main_task_from_isr();
     return 0;
 }
 

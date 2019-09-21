@@ -12,6 +12,9 @@
 #include "sleep.h"
 #include "machine_uart.h"
 
+#if  MICROPY_PY_THREAD
+	#include "FreeRTOS.h"
+#endif 
 
 int mp_hal_stdin_rx_chr(void) {
 	int c = 0;
@@ -23,7 +26,6 @@ int mp_hal_stdin_rx_chr(void) {
 			if (c != -1) {
 				return c;
 			}
-			MICROPY_EVENT_POLL_HOOK
 		}
 		for (size_t idx = 0; idx < MICROPY_PY_OS_DUPTERM; ++idx)
 		{
@@ -36,6 +38,18 @@ int mp_hal_stdin_rx_chr(void) {
 				}
 			}
 		}
+		// MICROPY_EVENT_POLL_HOOK
+		// #if MICROPY_PY_THREAD
+		// 		ulTaskNotifyTake(pdFALSE, 1);
+		// #endif
+		extern void mp_handle_pending(void);
+        mp_handle_pending();
+        MICROPY_PY_USOCKET_EVENTS_HANDLER
+        MP_THREAD_GIL_EXIT();
+	#if MICROPY_PY_THREAD
+		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+	#endif
+        MP_THREAD_GIL_ENTER();
 	}
 
 }
@@ -82,8 +96,37 @@ mp_uint_t inline mp_hal_ticks_ms(void)
 
 void mp_hal_delay_ms(mp_uint_t ms) 
 {
-    unsigned int current_ms = (unsigned int)(mp_hal_ticks_ms());
-    while((mp_hal_ticks_ms() - current_ms) < ms){}
+	#if  MICROPY_PY_THREAD
+		if( xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED )
+		{
+			unsigned int current_ms = (unsigned int)(mp_hal_ticks_ms());
+    		while((mp_hal_ticks_ms() - current_ms) < ms){}
+		}
+		else
+		{
+			// vTaskDelay(ms);
+			mp_uint_t us = ms * 1000;
+			mp_uint_t dt;
+			mp_uint_t t0 = mp_hal_ticks_us();
+			for (;;) {
+				mp_uint_t t1 = mp_hal_ticks_us();
+				dt = t1 - t0;
+				if (dt + portTICK_PERIOD_MS * 1000 >= us) {
+					// doing a vTaskDelay would take us beyond requested delay time
+					break;
+				}
+				MICROPY_EVENT_POLL_HOOK
+				// ulTaskNotifyTake(pdFALSE, 1);
+			}
+			if (dt < us) {
+				// do the remaining delay accurately
+				mp_hal_delay_us(us - dt);
+			}
+		}
+	#else
+		unsigned int current_ms = (unsigned int)(mp_hal_ticks_ms());
+		while((mp_hal_ticks_ms() - current_ms) < ms){}
+	#endif
 }
 
 void mp_hal_delay_us(mp_uint_t us) {
@@ -100,8 +143,7 @@ void mp_hal_wake_main_task_from_isr(void) {
 		BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 		vTaskNotifyGiveFromISR(mp_main_task_handle, &xHigherPriorityTaskWoken);
 		if (xHigherPriorityTaskWoken == pdTRUE) {
-			//TODO: not implement yet
-			// portYIELD_FROM_ISR();
+			portYIELD();
 		}
 	#endif
 }

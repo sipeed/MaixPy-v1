@@ -39,7 +39,7 @@ typedef struct _mp_thread_mutex_t {
 } __attribute__((aligned(8))) mp_thread_mutex_t;
 
 void mp_thread_init(void *stack, uint32_t stack_len);
-int mp_thread_gc_others(void);
+void mp_thread_gc_others(void);
 void mp_thread_deinit(void);
 
 #endif // MICROPY_INCLUDED_k210_MPTHREADPORT_H
