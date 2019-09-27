@@ -1,9 +1,6 @@
 [submodule "tools/kconfig/Kconfiglib"]
 	path = tools/kconfig/Kconfiglib
 	url = https://github.com/ulfalizer/Kconfiglib.git
-[submodule "components/kendryte_sdk/kendryte-standalone-sdk"]
-	path = components/kendryte_sdk/kendryte-standalone-sdk
-	url = https://github.com/sipeed/kendryte-standalone-sdk
 [submodule "tools/flash/kflash_py"]
 	path = tools/flash/kflash_py
 	url = https://github.com/sipeed/kflash.py.git
@@ -20,3 +17,6 @@
 [submodule "tools/spiffs/mkspiffs"]
 	path = tools/spiffs/mkspiffs
 	url = https://github.com/igrr/mkspiffs.git
+[submodule "components/kendryte_sdk/kendryte-standalone-sdk"]
+	path = components/kendryte_sdk/kendryte-standalone-sdk
+	url = https://github.com/elect-gombe/kendryte-standalone-sdk.git
