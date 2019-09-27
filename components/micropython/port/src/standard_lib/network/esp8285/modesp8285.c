@@ -36,6 +36,7 @@
 #include "modmachine.h"
 #include "esp8285.h"
 #include "mpconfigboard.h"
+#include "buffer.h"
 
 STATIC bool nic_connected = false;
 typedef struct _nic_obj_t {
@@ -46,8 +47,6 @@ typedef struct _nic_obj_t {
 #endif 
 } nic_obj_t;
 
-STATIC nic_obj_t nic_obj;
-
 typedef struct _stream_obj_t {
 	unsigned char stream[2048];
 	int stream_cur;
@@ -56,283 +55,56 @@ typedef struct _stream_obj_t {
 
 stream_obj_t stream;
 
-/*
-#define MAX_ADDRSTRLEN      (128)
-#define MAX_RX_PACKET       (CC3000_RX_BUFFER_SIZE-CC3000_MINIMAL_RX_SIZE-1)
-#define MAX_TX_PACKET       (CC3000_TX_BUFFER_SIZE-CC3000_MINIMAL_TX_SIZE-1)
-
-#define MAKE_SOCKADDR(addr, ip, port) \
-    sockaddr addr; \
-    addr.sa_family = AF_INET; \
-    addr.sa_data[0] = port >> 8; \
-    addr.sa_data[1] = port; \
-    addr.sa_data[2] = ip[0]; \
-    addr.sa_data[3] = ip[1]; \
-    addr.sa_data[4] = ip[2]; \
-    addr.sa_data[5] = ip[3];
-
-#define UNPACK_SOCKADDR(addr, ip, port) \
-    port = (addr.sa_data[0] << 8) | addr.sa_data[1]; \
-    ip[0] = addr.sa_data[2]; \
-    ip[1] = addr.sa_data[3]; \
-    ip[2] = addr.sa_data[4]; \
-    ip[3] = addr.sa_data[5];
-
-STATIC int cc3k_socket_ioctl(mod_network_socket_obj_t *socket, mp_uint_t request, mp_uint_t arg, int *_errno);
-
-int CC3000_EXPORT(errno); // for cc3000 driver
-
-STATIC volatile uint32_t fd_closed_state = 0;
-STATIC volatile bool wlan_connected = false;
-STATIC volatile bool ip_obtained = false;
-
-STATIC int cc3k_get_fd_closed_state(int fd) {
-    return fd_closed_state & (1 << fd);
-}
-
-STATIC void cc3k_set_fd_closed_state(int fd) {
-    fd_closed_state |= 1 << fd;
-}
-
-STATIC void cc3k_reset_fd_closed_state(int fd) {
-    fd_closed_state &= ~(1 << fd);
-}
-
-STATIC void cc3k_callback(long event_type, char *data, unsigned char length) {
-    switch (event_type) {
-        case HCI_EVNT_WLAN_UNSOL_CONNECT:
-            wlan_connected = true;
-            break;
-        case HCI_EVNT_WLAN_UNSOL_DISCONNECT:
-            // link down
-            wlan_connected = false;
-            ip_obtained = false;
-            break;
-        case HCI_EVNT_WLAN_UNSOL_DHCP:
-            ip_obtained = true;
-            break;
-        case HCI_EVNT_BSD_TCP_CLOSE_WAIT:
-            // mark socket for closure
-            cc3k_set_fd_closed_state(data[0]);
-            break;
-    }
-}
-
-STATIC int cc3k_socket_bind(mod_network_socket_obj_t *socket, byte *ip, mp_uint_t port, int *_errno) {
-    MAKE_SOCKADDR(addr, ip, port)
-    int ret = CC3000_EXPORT(bind)(socket->u_state, &addr, sizeof(addr));
-    if (ret != 0) {
-        *_errno = ret;
-        return -1;
-    }
-    return 0;
-}
-
-STATIC int cc3k_socket_listen(mod_network_socket_obj_t *socket, mp_int_t backlog, int *_errno) {
-    int ret = CC3000_EXPORT(listen)(socket->u_state, backlog);
-    if (ret != 0) {
-        *_errno = ret;
-        return -1;
-    }
-    return 0;
-}
-
-STATIC int cc3k_socket_accept(mod_network_socket_obj_t *socket, mod_network_socket_obj_t *socket2, byte *ip, mp_uint_t *port, int *_errno) {
-    // accept incoming connection
-    int fd;
-    sockaddr addr;
-    socklen_t addr_len = sizeof(addr);
-    if ((fd = CC3000_EXPORT(accept)(socket->u_state, &addr, &addr_len)) < 0) {
-        if (fd == SOC_IN_PROGRESS) {
-            *_errno = MP_EAGAIN;
-        } else {
-            *_errno = -fd;
-        }
-        return -1;
-    }
-
-    // clear socket state
-    cc3k_reset_fd_closed_state(fd);
-
-    // store state in new socket object
-    socket2->u_state = fd;
-
-    // return ip and port
-    // it seems CC3000 returns little endian for accept??
-    //UNPACK_SOCKADDR(addr, ip, *port);
-    *port = (addr.sa_data[1] << 8) | addr.sa_data[0];
-    ip[3] = addr.sa_data[2];
-    ip[2] = addr.sa_data[3];
-    ip[1] = addr.sa_data[4];
-    ip[0] = addr.sa_data[5];
-
-    return 0;
-}
-
-
-STATIC mp_uint_t cc3k_socket_sendto(mod_network_socket_obj_t *socket, const byte *buf, mp_uint_t len, byte *ip, mp_uint_t port, int *_errno) {
-    MAKE_SOCKADDR(addr, ip, port)
-    int ret = CC3000_EXPORT(sendto)(socket->u_state, (byte*)buf, len, 0, (sockaddr*)&addr, sizeof(addr));
-    if (ret < 0) {
-        *_errno = CC3000_EXPORT(errno);
-        return -1;
-    }
-    return ret;
-}
-
-STATIC mp_uint_t cc3k_socket_recvfrom(mod_network_socket_obj_t *socket, byte *buf, mp_uint_t len, byte *ip, mp_uint_t *port, int *_errno) {
-    sockaddr addr;
-    socklen_t addr_len = sizeof(addr);
-    mp_int_t ret = CC3000_EXPORT(recvfrom)(socket->u_state, buf, len, 0, &addr, &addr_len);
-    if (ret < 0) {
-        *_errno = CC3000_EXPORT(errno);
-        return -1;
-    }
-    UNPACK_SOCKADDR(addr, ip, *port);
-    return ret;
-}
-
-STATIC int cc3k_socket_setsockopt(mod_network_socket_obj_t *socket, mp_uint_t level, mp_uint_t opt, const void *optval, mp_uint_t optlen, int *_errno) {
-    int ret = CC3000_EXPORT(setsockopt)(socket->u_state, level, opt, optval, optlen);
-    if (ret < 0) {
-        *_errno = CC3000_EXPORT(errno);
-        return -1;
-    }
-    return 0;
-}
-
-STATIC int cc3k_socket_settimeout(mod_network_socket_obj_t *socket, mp_uint_t timeout_ms, int *_errno) {
-    int ret;
-    if (timeout_ms == 0 || timeout_ms == -1) {
-        int optval;
-        socklen_t optlen = sizeof(optval);
-        if (timeout_ms == 0) {
-            // set non-blocking mode
-            optval = SOCK_ON;
-        } else {
-            // set blocking mode
-            optval = SOCK_OFF;
-        }
-        ret = CC3000_EXPORT(setsockopt)(socket->u_state, SOL_SOCKET, SOCKOPT_RECV_NONBLOCK, &optval, optlen);
-        if (ret == 0) {
-            ret = CC3000_EXPORT(setsockopt)(socket->u_state, SOL_SOCKET, SOCKOPT_ACCEPT_NONBLOCK, &optval, optlen);
-        }
-    } else {
-        // set timeout
-        socklen_t optlen = sizeof(timeout_ms);
-        ret = CC3000_EXPORT(setsockopt)(socket->u_state, SOL_SOCKET, SOCKOPT_RECV_TIMEOUT, &timeout_ms, optlen);
-    }
-
-    if (ret != 0) {
-        *_errno = CC3000_EXPORT(errno);
-        return -1;
-    }
-
-    return 0;
-}
-
-STATIC int cc3k_socket_ioctl(mod_network_socket_obj_t *socket, mp_uint_t request, mp_uint_t arg, int *_errno) {
-    mp_uint_t ret;
-    if (request == MP_STREAM_POLL) {
-        mp_uint_t flags = arg;
-        ret = 0;
-        int fd = socket->u_state;
-
-        // init fds
-        fd_set rfds, wfds, xfds;
-        FD_ZERO(&rfds);
-        FD_ZERO(&wfds);
-        FD_ZERO(&xfds);
-
-        // set fds if needed
-        if (flags & MP_STREAM_POLL_RD) {
-            FD_SET(fd, &rfds);
-
-            // A socked that just closed is available for reading.  A call to
-            // recv() returns 0 which is consistent with BSD.
-            if (cc3k_get_fd_closed_state(fd)) {
-                ret |= MP_STREAM_POLL_RD;
-            }
-        }
-        if (flags & MP_STREAM_POLL_WR) {
-            FD_SET(fd, &wfds);
-        }
-        if (flags & MP_STREAM_POLL_HUP) {
-            FD_SET(fd, &xfds);
-        }
-
-        // call cc3000 select with minimum timeout
-        cc3000_timeval tv;
-        tv.tv_sec = 0;
-        tv.tv_usec = 1;
-        int nfds = CC3000_EXPORT(select)(fd + 1, &rfds, &wfds, &xfds, &tv);
-
-        // check for error
-        if (nfds == -1) {
-            *_errno = CC3000_EXPORT(errno);
-            return -1;
-        }
-
-        // check return of select
-        if (FD_ISSET(fd, &rfds)) {
-            ret |= MP_STREAM_POLL_RD;
-        }
-        if (FD_ISSET(fd, &wfds)) {
-            ret |= MP_STREAM_POLL_WR;
-        }
-        if (FD_ISSET(fd, &xfds)) {
-            ret |= MP_STREAM_POLL_HUP;
-        }
-    } else {
-        *_errno = MP_EINVAL;
-        ret = -1;
-    }
-    return ret;
-}
-*/
 
 STATIC void esp8285_socket_close(mod_network_socket_obj_t *socket) {
 	if((mp_obj_type_t*)&mod_network_nic_type_esp8285 != mp_obj_get_type(MP_OBJ_TO_PTR(socket->nic)))
 	{
-		mp_printf(&mp_plat_print, "[MaixPy] %s | esp8285_socket_connect can not get nic\n",__func__);
 		return ;
 	}
 	nic_obj_t* self = MP_OBJ_TO_PTR(socket->nic);
 	releaseTCP(&self->esp8285);
 }
 
-
 STATIC mp_uint_t esp8285_socket_recv(mod_network_socket_obj_t *socket, byte *buf, mp_uint_t len, int *_errno) {
 	if((mp_obj_type_t*)&mod_network_nic_type_esp8285 != mp_obj_get_type(MP_OBJ_TO_PTR(socket->nic)))
 	{
-		mp_printf(&mp_plat_print, "[MaixPy] %s | esp8285_socket_connect can not get nic\n",__func__);
 		*_errno = MP_EPIPE;
-		return -1;
+		return MP_STREAM_ERROR;
 	}
 	nic_obj_t* self = MP_OBJ_TO_PTR(socket->nic);
 	int read_len = 0;
 	read_len = esp_recv(&self->esp8285, (char*)buf, len, (uint32_t)(socket->timeout*1000) );
-	if(-1 == read_len)
-		*_errno = MP_EIO;
-	return read_len;
+    if(read_len == -1)
+    {
+        *_errno = MP_EPIPE;
+        return MP_STREAM_ERROR;
+    }
+    else if(read_len == -2) // EOF
+    {
+        *_errno = MP_EAGAIN; // MP_EAGAIN or MP_EWOULDBLOCK according to `mp_is_nonblocking_error()`
+        return MP_STREAM_ERROR;
+    }
+    else if(read_len == -3) // timeout
+    {
+        *_errno = MP_ETIMEDOUT;
+        return MP_STREAM_ERROR;
+    }
+	return (mp_uint_t)read_len;
 }
 
 STATIC mp_uint_t esp8285_socket_send(mod_network_socket_obj_t *socket, const byte *buf, mp_uint_t len, int *_errno) {
 
 	if((mp_obj_type_t*)&mod_network_nic_type_esp8285 != mp_obj_get_type(MP_OBJ_TO_PTR(socket->nic)))
 	{
-		mp_printf(&mp_plat_print, "[MaixPy] %s | esp8285_socket_connect can not get nic\n",__func__);
 		*_errno = MP_EPIPE;
-		return -1;
+		return MP_STREAM_ERROR;
 	}
 	nic_obj_t* self = MP_OBJ_TO_PTR(socket->nic);
 	if(0 == esp_send(&self->esp8285,(const char*)buf,len, (uint32_t)(socket->timeout*1000) ) )
 	{
-		mp_printf(&mp_plat_print, "[MaixPy] %s | send data failed\n",__func__);
-		*_errno = MP_EIO;
-		return -1;
+		*_errno = MP_EPIPE;
+		return MP_STREAM_ERROR;
 	}
-	
     return len;
 }
 
@@ -346,7 +118,6 @@ STATIC int esp8285_socket_socket(mod_network_socket_obj_t *socket, int *_errno) 
 STATIC int esp8285_socket_connect(mod_network_socket_obj_t *socket, byte *ip, mp_uint_t port, int *_errno) {
 	if((mp_obj_type_t*)&mod_network_nic_type_esp8285 != mp_obj_get_type(MP_OBJ_TO_PTR(socket->nic)))
 	{
-		mp_printf(&mp_plat_print, "[MaixPy] %s | esp8285_socket_connect can not get nic\n",__func__);
 		*_errno = -1;
 		return -1;
 	}
@@ -388,7 +159,7 @@ STATIC int esp8285_socket_connect(mod_network_socket_obj_t *socket, byte *ip, mp
 STATIC int esp8285_socket_gethostbyname(mp_obj_t nic, const char *name, mp_uint_t len, uint8_t* out_ip) {
 	if((mp_obj_type_t*)&mod_network_nic_type_esp8285 == mp_obj_get_type(nic))
 	{
-		return get_host_byname(&nic_obj.esp8285,name,len, (char*)out_ip, 3000);
+		return get_host_byname(&((nic_obj_t*)nic)->esp8285,name,len, (char*)out_ip, 3000);
 	}
     return -1;
 }
@@ -402,20 +173,19 @@ STATIC mp_obj_t esp8285_make_new(const mp_obj_type_t *type, size_t n_args, size_
 	{
 		mp_raise_ValueError("invalid uart stream");
 	}
-	else
-	{
-		mp_get_stream_raise(args[0], MP_STREAM_OP_READ | MP_STREAM_OP_WRITE | MP_STREAM_OP_IOCTL);
-		nic_obj.base.type = (mp_obj_type_t*)&mod_network_nic_type_esp8285;		
-		nic_obj.esp8285.uart_obj = args[0];
-		nic_obj.uart_obj = args[0];
-		memset(nic_obj.esp8285.buffer, 0, ESP8285_BUF_SIZE);
-	}
-    if (0 == eINIT(&nic_obj.esp8285)) {
+    mp_get_stream_raise(args[0], MP_STREAM_OP_READ | MP_STREAM_OP_WRITE | MP_STREAM_OP_IOCTL);
+    nic_obj_t* nic_obj = m_new_obj(nic_obj_t);
+    uint8_t* buff = m_new(uint8_t, ESP8285_BUF_SIZE);
+    Buffer_Init(&nic_obj->esp8285.buffer, buff, ESP8285_BUF_SIZE);
+    nic_obj->base.type = (mp_obj_type_t*)&mod_network_nic_type_esp8285;		
+    nic_obj->esp8285.uart_obj = args[0];
+    nic_obj->uart_obj = args[0];
+    if (0 == eINIT(&nic_obj->esp8285)) {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_OSError, "couldn't init nic esp8285 ,try again please\n"));
     }
-	mod_network_register_nic((mp_obj_t)&nic_obj);
+	mod_network_register_nic((mp_obj_t)nic_obj);
 
-    return (mp_obj_t)&nic_obj;
+    return (mp_obj_t)nic_obj;
 #endif
 }
 
@@ -434,7 +204,6 @@ STATIC mp_obj_t esp8285_nic_connect(size_t n_args, const mp_obj_t *pos_args, mp_
 	//get nic
 	if((mp_obj_type_t*)&mod_network_nic_type_esp8285 == mp_obj_get_type(pos_args[0]))
 	{
-		mp_printf(&mp_plat_print, "[MaixPy] %s | get nic\n",__func__);
 		self = pos_args[0];
 	}
     // get ssid
@@ -452,7 +221,7 @@ STATIC mp_obj_t esp8285_nic_connect(size_t n_args, const mp_obj_t *pos_args, mp_
     // connect to AP
     
     if (0 == joinAP(&self->esp8285, ssid, key)) {
-        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_OSError, "could not connect to ssid=%s, key=%s\n", ssid, key));
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_OSError, "could not connect to ssid=%s\n", ssid));
     }
 	nic_connected = 1;
     return mp_const_none;
@@ -505,7 +274,7 @@ STATIC mp_obj_t esp8285_scan_wifi(mp_obj_t self_in)
     nic_obj_t* self = self_in;
     mp_obj_t list = mp_obj_new_list(0, NULL);
     char fail_str[30] ;
-    char* buf = (char*)self->esp8285.buffer;
+    char* buf = (char*)self->esp8285.buffer.buffer;
     bool end;
     int err_code = 0;
 

@@ -229,7 +229,7 @@ STATIC mp_obj_t socket_recv(mp_obj_t self_in, mp_obj_t len_in) {
     vstr_init_len(&vstr, len);
     int _errno;
     mp_uint_t ret = self->nic_type->recv(self, (byte*)vstr.buf, len, &_errno);
-    if (ret == -1) {
+    if (ret == MP_STREAM_ERROR) {
         mp_raise_OSError(_errno);
     }
     if (ret == 0) {
@@ -250,8 +250,10 @@ STATIC mp_obj_t socket_send(mp_obj_t self_in, mp_obj_t buf_in) {
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(buf_in, &bufinfo, MP_BUFFER_READ);
     int _errno;
+    MP_THREAD_GIL_EXIT();
     mp_uint_t ret = self->nic_type->send(self, bufinfo.buf, bufinfo.len, &_errno);
-    if (ret == -1) {
+    MP_THREAD_GIL_ENTER();
+    if (ret == MP_STREAM_ERROR) {
         mp_raise_OSError(_errno);
     }
     return mp_obj_new_int_from_uint(ret);
@@ -269,8 +271,6 @@ STATIC mp_obj_t socket_settimeout(mp_obj_t self_in, mp_obj_t timeout_in) {
 	float timeout = mp_obj_get_float(timeout_in);
     if(timeout < 0)
         mp_raise_ValueError("[MaixPy] timeout parameter error");
-    else if(timeout == 0)
-        mp_raise_NotImplementedError("[MaixPy] not support always blocked yet");
     self->timeout = timeout;
 	return mp_const_none;
 }
@@ -278,8 +278,11 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_settimeout_obj, socket_settimeout);
 
 // method socket.setblocking(flag)
 STATIC mp_obj_t socket_setblocking(mp_obj_t self_in, mp_obj_t blocking) {
-	// mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
-	mp_printf(&mp_plat_print, "[MaixPy] %s | uart socket Do nothing\n",__func__);
+	mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    if(mp_obj_is_true(blocking))
+        self->timeout = UINT64_MAX;
+    else
+        self->timeout = 0;
 	return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_setblocking_obj, socket_setblocking);
@@ -324,7 +327,10 @@ STATIC const mp_rom_map_elem_t socket_locals_dict_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_send), MP_ROM_PTR(&socket_send_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_recv), MP_ROM_PTR(&socket_recv_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_close), MP_ROM_PTR(&mp_stream_close_obj) },
-
+    { MP_ROM_QSTR(MP_QSTR_read), MP_ROM_PTR(&mp_stream_read_obj) },
+    { MP_ROM_QSTR(MP_QSTR_readinto), MP_ROM_PTR(&mp_stream_readinto_obj) },
+    { MP_ROM_QSTR(MP_QSTR_readline), MP_ROM_PTR(&mp_stream_unbuffered_readline_obj) },
+    { MP_ROM_QSTR(MP_QSTR_write), MP_ROM_PTR(&mp_stream_write_obj) },
 /*    
     { MP_ROM_QSTR(MP_QSTR_bind), MP_ROM_PTR(&socket_bind_obj) },
     { MP_ROM_QSTR(MP_QSTR_listen), MP_ROM_PTR(&socket_listen_obj) },
@@ -350,6 +356,7 @@ STATIC mp_obj_t socket_make_new(const mp_obj_type_t *type, size_t n_args, size_t
     s->u_param.type = MOD_NETWORK_SOCK_STREAM;
     s->u_param.fileno = 0;
     s->timeout = 10; // default timeout: 10s
+    s->peer_closed = false;
 	if (n_args >= 1) {
         s->u_param.domain = mp_obj_get_int(args[0]);
         if (n_args >= 2) {
@@ -361,7 +368,32 @@ STATIC mp_obj_t socket_make_new(const mp_obj_type_t *type, size_t n_args, size_t
     }
     return MP_OBJ_FROM_PTR(s);
 }
+#include "printf.h"
+STATIC mp_uint_t socket_stream_read(mp_obj_t self_in, void *buf, mp_uint_t size, int *errcode) {
+    mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    if (self->nic == MP_OBJ_NULL) {
+        // not connected
+        *errcode = MP_EPIPE;
+        return MP_STREAM_ERROR;
+    }
+    MP_THREAD_GIL_EXIT();
+    mp_uint_t ret = self->nic_type->recv(self, (byte*)buf, size, errcode);
+    MP_THREAD_GIL_ENTER();
+    return ret;
+}
 
+STATIC mp_uint_t socket_stream_write(mp_obj_t self_in, const void *buf, mp_uint_t size, int *errcode) {
+    mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    if (self->nic == MP_OBJ_NULL) {
+        // not connected
+        *errcode = MP_EPIPE;
+        return MP_STREAM_ERROR;
+    }
+    MP_THREAD_GIL_EXIT();
+    mp_uint_t ret = self->nic_type->send(self, buf, size, errcode);
+    MP_THREAD_GIL_ENTER();
+    return ret;
+}
 mp_uint_t socket_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_t arg, int *errcode) {
     mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
     if (request == MP_STREAM_CLOSE) {
@@ -379,6 +411,8 @@ mp_uint_t socket_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_t arg, int *
 
 STATIC const mp_stream_p_t socket_stream_p = {
     .ioctl = socket_ioctl,
+    .read = socket_stream_read,
+    .write = socket_stream_write,
     .is_text = false,
 };
 
@@ -424,7 +458,7 @@ int parse_ipv4_addr(mp_obj_t addr_in, uint8_t *out_ip, netutils_endian_t endian)
     }
 	return 1;
 }
-#include "printf.h"
+
 // function usocket.getaddrinfo(host, port)
 STATIC mp_obj_t mod_usocket_getaddrinfo(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum {

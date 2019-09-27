@@ -430,6 +430,7 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     # list(APPEND ADD_STATIC_LIB "lib/libtest.a")
     ###############################################
     add_definitions(-DFFCONF_H=\"${mpy_core_dir}/lib/oofatfs/ffconf.h\"
+                    -DNOT_GEN_MPY_CROSS=1
                     )
 
     register_component()

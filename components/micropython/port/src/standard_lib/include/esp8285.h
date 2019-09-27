@@ -36,6 +36,7 @@
 #include "mpconfigboard.h"
 #include "modnetwork.h"
 
+#include "buffer.h"
 
 ////////////////////////// config /////////////////////////
 
@@ -55,8 +56,7 @@ typedef struct _ipconfig_obj
 typedef struct _esp8285_obj
 {
 	mp_obj_t uart_obj;
-	char buffer[ESP8285_BUF_SIZE];
-	
+	Buffer_t buffer;
 }esp8285_obj;
 
 /*
@@ -318,7 +318,7 @@ bool esp_send_mul(esp8285_obj* nic,char mux_id, const char* buffer, uint32_t len
  * @param timeout - the time waiting data. 
  * @return the length of data received actually. 
  */
-uint32_t esp_recv(esp8285_obj* nic,char* buffer, uint32_t buffer_size, uint32_t timeout);
+int esp_recv(esp8285_obj* nic,char* buffer, uint32_t buffer_size, uint32_t timeout);
 
 /**
  * Receive data from one of TCP or UDP builded already in multiple mode. 
