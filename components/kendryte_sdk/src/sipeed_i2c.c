@@ -89,7 +89,7 @@ void maix_i2c_init_as_slave(i2c_device_number_t i2c_num, uint32_t slave_address,
     is_master_mode[i2c_num] = false;
 }
 
-#define time_ms() (unsigned long)(read_csr(mcycle)/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU)/1000))
+#define time_ms() (unsigned long)(get_cycle()/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU)/1000))
 
 /**
  * 

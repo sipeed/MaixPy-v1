@@ -316,14 +316,14 @@ void load_config_from_spiffs(config_data_t* config)
 	SPIFFS_close(&spiffs_user_mount_handle.fs, fd);
 }
 
-#if MICROPY_ENABLE_COMPILER
+#if MICROPY_ENABLE_COMPILER 
 void pyexec_str(vstr_t* str) {
     nlr_buf_t nlr;
     if (nlr_push(&nlr) == 0) {
         mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, str->buf, str->len, 0);
         qstr source_name = lex->source_name;
         mp_parse_tree_t parse_tree = mp_parse(lex, MP_PARSE_FILE_INPUT);
-        mp_obj_t module_fun = mp_compile(&parse_tree, source_name, MP_EMIT_OPT_NONE, true);
+        mp_obj_t module_fun = mp_compile(&parse_tree, source_name, true);
         mp_call_function_0(module_fun);
         nlr_pop();
     } else {
@@ -526,18 +526,17 @@ int maixpy_main()
 	sysctl_clock_enable(SYSCTL_CLOCK_AI);
 	sysctl_set_power_mode(SYSCTL_POWER_BANK6, SYSCTL_POWER_V18);
 	sysctl_set_power_mode(SYSCTL_POWER_BANK7, SYSCTL_POWER_V18);
-    sysctl_enable_irq();
+	sysctl_enable_irq();
 	rtc_init();
 	rtc_timer_set(2019,1, 1,0, 0, 0);
-	flash_init(&manuf_id, &device_id);
 	printk("[MAIXPY]Flash:0x%02x:0x%02x\r\n", manuf_id, device_id);
-    /* Init SPI IO map and function settings */
-    sysctl_set_spi0_dvp_data(1);
+	/* Init SPI IO map and function settings */
+	sysctl_set_spi0_dvp_data(1);
 	/* open core 1 */
 	printk("open second core...\r\n");
-    register_core1(core1_function, 0);
+	register_core1(core1_function, 0);
     
-#if MICROPY_PY_THREAD 
+#if MICROPY_PY_THREAD
 	xTaskCreateAtProcessor(0, // processor
 						 mp_task, // function entry
 						 "mp_task", //task name
@@ -552,13 +551,14 @@ int maixpy_main()
 #endif
 	return 0;
 }
+
 void do_str(const char *src, mp_parse_input_kind_t input_kind) {
     nlr_buf_t nlr;
     if (nlr_push(&nlr) == 0) {
         mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, src, strlen(src), 0);
         qstr source_name = lex->source_name;
         mp_parse_tree_t parse_tree = mp_parse(lex, input_kind);
-        mp_obj_t module_fun = mp_compile(&parse_tree, source_name, MP_EMIT_OPT_NONE, true);
+        mp_obj_t module_fun = mp_compile(&parse_tree, source_name, true);
         mp_call_function_0(module_fun);
         nlr_pop();
     } else {

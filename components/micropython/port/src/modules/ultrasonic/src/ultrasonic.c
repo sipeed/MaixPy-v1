@@ -6,7 +6,7 @@
 #include "sysctl.h"
 #include "printf.h"
 
-#define time_us()  (unsigned long)(read_csr(mcycle)/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU)/1000000))
+#define time_us()  (unsigned long)(get_cycle()/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU)/1000000))
 
 typedef void (*set_pin_func_t)(uint8_t gpio, gpio_pin_value_t value);
 typedef gpio_pin_value_t (*get_pin_func_t)(uint8_t gpio);
