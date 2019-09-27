@@ -62,7 +62,7 @@ int video_hal_display(image_t* img, video_display_roi_t img_roi)
 
 uint64_t inline video_hal_ticks_us(void)
 {
-    return (uint64_t)(read_csr(mcycle)/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU)/1000000));
+    return (uint64_t)(get_cycle()/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU)/1000000));
 }
 
 

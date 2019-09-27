@@ -67,17 +67,17 @@ void mp_hal_debug_tx_strn_cooked(void *env, const char *str, size_t len) {
 
 mp_uint_t inline mp_hal_ticks_cpu(void)
 {
-	return (unsigned long)(read_csr(mcycle));
+	return (unsigned long)(get_cycle());
 }
 
 mp_uint_t inline mp_hal_ticks_us(void)
 {
-	return (unsigned long)(read_csr(mcycle)/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU)/1000000));
+	return (unsigned long)(get_cycle()/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU)/1000000));
 }
 
 mp_uint_t inline mp_hal_ticks_ms(void)
 {
-    return (unsigned long)(read_csr(mcycle)/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU)/1000));
+    return (unsigned long)(get_cycle()/(sysctl_clock_get_freq(SYSCTL_CLOCK_CPU)/1000));
 }
 
 void mp_hal_delay_ms(mp_uint_t ms) 

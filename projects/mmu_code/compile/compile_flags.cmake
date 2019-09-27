@@ -38,6 +38,8 @@ set(CMAKE_C_FLAGS 	-mcmodel=medany
                     -Wno-error=restrict
                     -Wno-error=sequence-point
                     -Wno-int-to-pointer-cast
+		    -Wl,--no-relax
+		    -g3
                     )
 ################################
 
@@ -75,6 +77,8 @@ set(CMAKE_CXX_FLAGS -mcmodel=medany
                     -Wno-error=restrict
                     -Wno-error=sequence-point
                     -Wno-int-to-pointer-cast
+		    -Wl,--no-relax
+		    -g3
                     )
 ################################
 
@@ -83,6 +87,7 @@ set(LINK_FLAGS ${LINK_FLAGS}
             -Wl,-static
             -nostartfiles
             -Wl,--gc-sections
+	    -Wl,--no-relax
             -Wl,-EL
             -T ${PROJECT_SOURCE_DIR}/compile/kendryte.ld
             -Wl,--start-group

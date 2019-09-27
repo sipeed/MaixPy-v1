@@ -10,16 +10,17 @@
 #include "stdlib.h"
 #include "fpioa.h"
 #include "dump.h"
+#include "dmac.h"
 #include "w25qxx.h"
 #include "printf.h"
 #include "sysctl.h"
 
+int usermode=0;
+
+int printk2(const char *format, ...);
 #define print printk2 //no core lock
 
-
-
 #define INSERT_FIELD(val, which, fieldval) (((val) & ~(which)) | ((fieldval) * ((which) & ~((which)-1))))
-
 
 #define CE_TEXT_FLASH  __attribute__((section(".text_flash")))
 #define CE_RODATA_FLASH  __attribute__((section(".rodata_flash")))
@@ -37,7 +38,7 @@
 #define CE_CACHE_VA_SPACE_SIZE_IN_PAGES (CE_CACHE_VA_SPACE_SIZE_IN_BLOCKS * CE_BLOCK_SIZE_IN_PAGES)
 #define CE_CACHE_VA_SPACE_SIZE (CE_CACHE_VA_SPACE_SIZE_IN_PAGES * CE_PAGE_SIZE)
 
-#define CE_CACHE_SIZE_IN_BLOCKS ((3072 / 4) / CE_BLOCK_SIZE_IN_PAGES)
+#define CE_CACHE_SIZE_IN_BLOCKS ((128 / 4) / CE_BLOCK_SIZE_IN_PAGES)
 #define CE_CACHE_SIZE_IN_PAGES (CE_CACHE_SIZE_IN_BLOCKS * CE_BLOCK_SIZE_IN_PAGES)
 
 uint64_t volatile __attribute__((aligned(CE_PAGE_SIZE)))  ceLv1PageTable[(CE_PAGE_SIZE / 8) * (1)];
@@ -85,15 +86,17 @@ void CE_TEXT_FLASH test2()
     aaa = bbb;
     // print(ccc);
     uarths_putchar('a');
-    // uarths_putchar('a');
-    // uarths_putchar('a');
-    // uarths_putchar('a');
-    // uarths_putchar('\r');
-    // uarths_putchar('\n');    
+    uarths_putchar('a');
+    uarths_putchar('a');
+    uarths_putchar('a');
+    uarths_putchar('\r');
+    uarths_putchar('\n');    
 }
 
 
 void ceSetupMMU() {
+  asm volatile ("la t0,mretdist");
+    asm volatile ("csrw mepc,t0");
 
     CE_DEBUG_PRINT("setup mmu...\r\n");
     //0 - 3GiB -> mirror to phys
@@ -115,11 +118,12 @@ void ceSetupMMU() {
     msValue |=  ((uint64_t)VM_SV39 << 24);// M S U mode, SV39
     msValue = INSERT_FIELD(msValue, MSTATUS_MPRV, 1);
     msValue = INSERT_FIELD(msValue, MSTATUS_MPP, PRV_U);
-    printk("set mstatus:%x\r\n", msValue);
+    //    print("set mstatus:%x\r\n", msValue);
     write_csr(mstatus, msValue);
 
     ceResetCacheState();
     asm volatile ("mret");
+    asm volatile ("mretdist:");
 }
 
 static inline uint32_t ceVAddrToVBlockId(uintptr_t vaddr) {
@@ -243,25 +247,6 @@ static inline int supports_extension(char ext)
   return read_csr(misa) & (1 << (ext - 'A'));
 }
 
-#define SBI_GET_HARTID 0x01
-#define SBI_GET_CYCLE  0x02
-
-#define SBI_CALL(which, arg0, arg1, arg2) ({			\
-	register uintptr_t a0 asm ("a0") = (uintptr_t)(arg0);	\
-	register uintptr_t a1 asm ("a1") = (uintptr_t)(arg1);	\
-	register uintptr_t a2 asm ("a2") = (uintptr_t)(arg2);	\
-	register uintptr_t a7 asm ("a7") = (uintptr_t)(which);	\
-	asm volatile ("ecall"					\
-		      : "+r" (a0)				\
-		      : "r" (a1), "r" (a2), "r" (a7)		\
-		      : "memory");				\
-	a0;							\
-})
-
-/* Lazy implementations until SBI is finalized */
-#define SBI_CALL_0(which) SBI_CALL(which, 0, 0, 0)
-#define SBI_CALL_1(which, arg0) SBI_CALL(which, arg0, 0, 0)
-#define SBI_CALL_2(which, arg0, arg1) SBI_CALL(which, arg0, arg1, 0)
 
 uint64_t sbi_ticks_us(void)
 {
@@ -269,40 +254,25 @@ uint64_t sbi_ticks_us(void)
 }
 
 
-
+int mpymain() ;
 int main()
 {
     fpioa_set_function(4, FUNC_UARTHS_RX);
-	fpioa_set_function(5,  FUNC_UARTHS_TX);
+    fpioa_set_function(5,  FUNC_UARTHS_TX);
     uarths_init();
-	uarths_config(115200, 1);
-
-    uint8_t manuf_id, device_id;
-    w25qxx_init_dma(3, 0);
-	w25qxx_enable_quad_mode_dma();
-	w25qxx_read_id_dma(&manuf_id, &device_id);
-    print("flash id:%x %x\r\n",manuf_id, device_id);
-    
-
-    int status = read_csr(mstatus);
-    print("status:0x%x\r\n", status);
-    int e = supports_extension('D');
-    int f = supports_extension('F');
-    int s = supports_extension('S');
-    print("e:%d %d %d\r\n", e, f, s);
+    uarths_config(115200, 1);
+    print("m:%p\n",malloc(10)); //fix me. bug exist 
 
     ceSetupMMU();
+    usermode = 1;
+    
+    uint8_t manuf_id, device_id;
+    w25qxx_init_dma(3, 0);
+    w25qxx_enable_quad_mode_dma();
+    w25qxx_read_id_dma(&manuf_id, &device_id);
+    print("flash id:%x %x\r\n",manuf_id, device_id);
 
     int a = 5;
-    
-    uarths_putchar('1');
-    uarths_putchar('1');
-    uarths_putchar('1');
-    uarths_putchar('1');
-    uarths_putchar('\r');
-    uarths_putchar('\n');    
-
-
     {
         print("%p\r\n", &a);
         print("--%p\r\n", test);
@@ -313,6 +283,7 @@ int main()
         print("--putchar time:%d\r\n", sbi_ticks_us() - t);
         bbb = (int)sbi_ticks_us();
         t = sbi_ticks_us();
+	test();
         test2();
         print("--time: %dus %dus %d\r\n", flash_read_time, sbi_ticks_us() - t, aaa);
         print("%d %d %d %d\r\n", test_data[0], test_data[1], test_data[2], test_data[3]);
@@ -320,20 +291,38 @@ int main()
     }
     print("test end\r\n");
     print("test2\r\n");
-    // int core = read_csr(mstatus); // U mode, can not read mstatus
-    int core = SBI_CALL_0(SBI_GET_HARTID);
+    //    int core = read_csr(mstatus); // U mode, can not read mstatus
+    int core = get_hartid();
     print("sbi ret:%x\r\n", core);
     print("test2 end\r\n");
-
+    mpymain();
     while(1){}
+}
+
+unsigned long long sbi_call(unsigned long long which,unsigned long long arg0,unsigned long long arg1,unsigned long long arg2,const char *func,int line){
+  unsigned long long res=0;
+  //  printk2("[%20s]:%4d which:%2x(%x)==>",func,line,which,arg0);
+
+  if(usermode){
+    //    printk2("[u]");
+    res = SBI_CALL(which,arg0,arg1,arg2);
+  }else{
+    //    printk2("[m]");
+    res = handlecsr(which,arg0);
+  }
+  //  printk2("%x\n",res);
+  return res;
 }
 
 uintptr_t handle_fault_load(uintptr_t cause, uintptr_t epc, uintptr_t regs[32], uintptr_t fregs[32]) {
     print("fault load\r\n");
+    int pu = usermode;//save previous mode
+    usermode = 0;
     uintptr_t badAddr = read_csr(mbadaddr);
     if ((badAddr >= ceVABase) && (badAddr < (ceVABase + CE_CACHE_VA_SPACE_SIZE))) {
         if (ceHandlePageFault(badAddr, 0) == 0) {
-            return epc;
+	  usermode = pu;
+	  return epc;
         }
     }
     sys_exit(1337);
@@ -343,11 +332,14 @@ uintptr_t handle_fault_load(uintptr_t cause, uintptr_t epc, uintptr_t regs[32], 
 uintptr_t handle_fault_fetch(uintptr_t cause, uintptr_t epc, uintptr_t regs[32], uintptr_t fregs[32])
 // uintptr_t handle_illegal_instruction(uintptr_t cause, uintptr_t epc, uintptr_t regs[32], uintptr_t fregs[32])
 {
+    int pu = usermode;
     print("fault fetch\r\n");
+    usermode = 0;
     // uintptr_t badAddr = read_csr(mbadaddr);
     if ((epc >= ceVABase) && (epc < (ceVABase + CE_CACHE_VA_SPACE_SIZE))) {
         if (ceHandlePageFault(epc, 0) == 0) {
-            return epc;
+	  usermode = pu;
+	  return epc;
         }
     }
     dump_core("illegal instruction", cause, epc, regs, fregs);
@@ -355,30 +347,100 @@ uintptr_t handle_fault_fetch(uintptr_t cause, uintptr_t epc, uintptr_t regs[32],
     return epc;
 }
 
+unsigned long long handlecsr(unsigned long long cmd,unsigned long long arg0){
+  switch (cmd)
+    {
+    case SBI_GET_HARTID:
+      {
+	int core = read_csr(mhartid);
+	arg0 = core;//a0=coreid
+	break;
+      }
+    case SBI_GET_CYCLE:
+      {
+	int cycle = read_csr(mcycle);
+	arg0 = cycle;//a0=cycle
+	break;
+      }
+    case SBI_GET_MIE:
+      {
+	int ie = read_csr(mie);
+	arg0 = ie;//a0=cycle
+	break;
+      }
+    case SBI_SET_MIE:
+      {
+	set_csr(mie,arg0);
+	break;
+      }
+    case SBI_CLR_MIE:
+      {
+	clear_csr(mie,arg0);
+	break;
+      }
+    case SBI_WRI_MIE:
+      {
+	write_csr(mie,arg0);
+	break;
+      }
+    case SBI_GET_STATUS:
+      {
+	int status = read_csr(mstatus);
+	arg0 = status;//a0=cycle
+	break;
+      }
+    case SBI_SET_STATUS:
+      {
+	set_csr(mstatus,arg0);
+	break;
+      }
+    case SBI_CLR_STATUS:
+      {
+	clear_csr(mstatus,arg0);
+	break;
+      }
+    case SBI_GET_MIP:
+      {
+	int ip = read_csr(mip);
+	arg0 = ip;//a0=ip
+	break;
+      }
+    case SBI_SET_MIP:
+      {
+	set_csr(mip,arg0);
+	break;
+      }	
+    case SBI_CLR_MIP:
+      {
+	clear_csr(mip,arg0);
+	break;
+      }	
+    case SBI_GET_INSTRET:
+      {
+	int instret = read_csr(minstret);
+	arg0 = instret;//a0=minstret
+	break;
+      }
+    default:
+      break;
+    }
+  return arg0;
+}
+
 uintptr_t handle_ecall_u(uintptr_t cause, uintptr_t epc, uintptr_t regs[32], uintptr_t fregs[32])
 {
     register uintptr_t cmd asm ("a7");//get cmd from a7
-    switch (cmd)
-    {
-        case SBI_GET_HARTID:
-        {
-            int core = read_csr(mhartid);
-            regs[10] = core;//a0=coreid
-            break;
-        }
-        case SBI_GET_CYCLE:
-        {
-            int cycle = read_csr(mcycle);
-            regs[10] = cycle;//a0=cycle
-            break;
-        }
-        default:
-            break;
-    }
+
+    regs[10] = handlecsr(cmd,regs[10]); //regs[0]->$a0
 
     return epc+4;
 }
 
+#include "maixpy.h"
 
-
+int mpymain()
+{
+    maixpy_main();
+    return 0;
+}
 

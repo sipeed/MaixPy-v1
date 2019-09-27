@@ -14,6 +14,8 @@ extern ringbuf_t stdin_ringbuf;
 extern TaskHandle_t mp_main_task_handle;
 #endif
 
+#define mp_hal_stdio_poll(poll_flags) (0)
+
 //uint32_t mp_hal_ticks_us(void);
 //uint32_t mp_hal_ticks_ms(void);
 //uint32_t mp_hal_ticks_cpu(void);
