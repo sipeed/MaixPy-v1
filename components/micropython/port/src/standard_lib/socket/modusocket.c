@@ -280,9 +280,13 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_settimeout_obj, socket_settimeout);
 STATIC mp_obj_t socket_setblocking(mp_obj_t self_in, mp_obj_t blocking) {
 	mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
     if(mp_obj_is_true(blocking))
+    {
         self->timeout = UINT64_MAX;
+    }
     else
+    {
         self->timeout = 0;
+    }
 	return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_setblocking_obj, socket_setblocking);
@@ -461,15 +465,15 @@ int parse_ipv4_addr(mp_obj_t addr_in, uint8_t *out_ip, netutils_endian_t endian)
 
 // function usocket.getaddrinfo(host, port)
 STATIC mp_obj_t mod_usocket_getaddrinfo(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum {
-            ARG_timeout
-        };
-    STATIC const mp_arg_t allowed_args[] = {
-        { MP_QSTR_timeout, MP_ARG_INT,                   {.u_int = 3000} },
-    };
-    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
-    mp_arg_parse_all(n_args - 2, pos_args + 2, kw_args,
-        MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+    // enum {
+    //         ARG_timeout
+    //     };
+    // STATIC const mp_arg_t allowed_args[] = {
+    //     { MP_QSTR_timeout, MP_ARG_INT,                   {.u_int = 3000} },
+    // };
+    // mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    // mp_arg_parse_all(n_args - 2, pos_args + 2, kw_args,
+    //     MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
     size_t hlen;
     const char *host = mp_obj_str_get_data(pos_args[0], &hlen);
@@ -504,7 +508,7 @@ STATIC mp_obj_t mod_usocket_getaddrinfo(size_t n_args, const mp_obj_t *pos_args,
     tuple->items[4] = netutils_format_inet_addr(out_ip, port, NETUTILS_BIG);
     return mp_obj_new_list(1, (mp_obj_t*)&tuple);  
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(mod_usocket_getaddrinfo_obj, 2, mod_usocket_getaddrinfo);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_usocket_getaddrinfo_obj, 2, 6, mod_usocket_getaddrinfo);
 
 STATIC const mp_rom_map_elem_t mp_module_usocket_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_usocket) },

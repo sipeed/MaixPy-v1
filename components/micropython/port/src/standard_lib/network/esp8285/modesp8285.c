@@ -72,21 +72,28 @@ STATIC mp_uint_t esp8285_socket_recv(mod_network_socket_obj_t *socket, byte *buf
 		return MP_STREAM_ERROR;
 	}
 	nic_obj_t* self = MP_OBJ_TO_PTR(socket->nic);
-	int read_len = 0;
-	read_len = esp_recv(&self->esp8285, (char*)buf, len, (uint32_t)(socket->timeout*1000) );
-    if(read_len == -1)
+	int ret = 0;
+    uint32_t read_len = 0;
+	ret = esp_recv(&self->esp8285, (char*)buf, len, &read_len, (uint32_t)(socket->timeout*1000), &socket->peer_closed, socket->first_read_after_write);
+    socket->first_read_after_write = false;
+    if(ret == -1)
     {
         *_errno = MP_EPIPE;
         return MP_STREAM_ERROR;
     }
-    else if(read_len == -2) // EOF
+    else if(ret == -2) // EOF
     {
         *_errno = MP_EAGAIN; // MP_EAGAIN or MP_EWOULDBLOCK according to `mp_is_nonblocking_error()`
         return MP_STREAM_ERROR;
     }
-    else if(read_len == -3) // timeout
+    else if(ret == -3) // timeout
     {
         *_errno = MP_ETIMEDOUT;
+        return MP_STREAM_ERROR;
+    }
+    else if(ret == -4)//peer closed
+    {
+        *_errno = MP_ENOTCONN;
         return MP_STREAM_ERROR;
     }
 	return (mp_uint_t)read_len;
@@ -100,6 +107,13 @@ STATIC mp_uint_t esp8285_socket_send(mod_network_socket_obj_t *socket, const byt
 		return MP_STREAM_ERROR;
 	}
 	nic_obj_t* self = MP_OBJ_TO_PTR(socket->nic);
+    if(socket->peer_closed)
+    {
+        *_errno = MP_ENOTCONN;
+        return MP_STREAM_ERROR;
+    }
+    Buffer_Clear(&self->esp8285.buffer);//clear receive buffer
+    socket->first_read_after_write = true;
 	if(0 == esp_send(&self->esp8285,(const char*)buf,len, (uint32_t)(socket->timeout*1000) ) )
 	{
 		*_errno = MP_EPIPE;
@@ -121,6 +135,7 @@ STATIC int esp8285_socket_connect(mod_network_socket_obj_t *socket, byte *ip, mp
 		*_errno = -1;
 		return -1;
 	}
+    socket->peer_closed = false;
 	nic_obj_t* self = MP_OBJ_TO_PTR(socket->nic);
 	switch(socket->u_param.type)
 	{

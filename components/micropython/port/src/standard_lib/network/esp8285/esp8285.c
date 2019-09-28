@@ -350,16 +350,16 @@ bool esp_send_mul(esp8285_obj* nic,char mux_id, const char* buffer, uint32_t len
     return sATCIPSENDMultiple(nic,mux_id, buffer, len);
 }
 
-int esp_recv(esp8285_obj* nic,char* buffer, uint32_t buffer_size, uint32_t timeout)
+int esp_recv(esp8285_obj* nic,char* buffer, uint32_t buffer_size, uint32_t* read_len, uint32_t timeout, bool* peer_closed, bool first_time_recv)
 {
-    return recvPkg(nic,buffer, buffer_size, NULL, timeout, NULL);
+    return recvPkg(nic,buffer, buffer_size, read_len, timeout, NULL, peer_closed, first_time_recv);
 }
 
 uint32_t esp_recv_mul(esp8285_obj* nic,char mux_id, char* buffer, uint32_t buffer_size, uint32_t timeout)
 {
     char id;
     uint32_t ret;
-    ret = recvPkg(nic,buffer, buffer_size, NULL, timeout, &id);
+    ret = recvPkg(nic,buffer, buffer_size, NULL, timeout, &id, NULL, false);
     if (ret > 0 && id == mux_id) {
         return ret;
     }
@@ -368,27 +368,28 @@ uint32_t esp_recv_mul(esp8285_obj* nic,char mux_id, char* buffer, uint32_t buffe
 
 uint32_t esp_recv_mul_id(esp8285_obj* nic,char* coming_mux_id, char* buffer, uint32_t buffer_size, uint32_t timeout)
 {
-    return recvPkg(nic,buffer, buffer_size, NULL, timeout, coming_mux_id);
+    return recvPkg(nic,buffer, buffer_size, NULL, timeout, coming_mux_id, NULL, false);
 }
-
+#include "printf.h"
 /*----------------------------------------------------------------------------*/
 /* +IPD,<id>,<len>:<data> */
 /* +IPD,<len>:<data> */
 /**
  * 
- * @return -1: parameters error, -2: EOF, -3: timeout
+ * @return -1: parameters error, -2: EOF, -3: timeout, -4:peer closed and no data in buffer
  */
-uint32_t recvPkg(esp8285_obj*nic,char* out_buff, uint32_t out_buff_len, uint32_t *data_len, uint32_t timeout, char* coming_mux_id)
+uint32_t recvPkg(esp8285_obj*nic,char* out_buff, uint32_t out_buff_len, uint32_t *data_len, uint32_t timeout, char* coming_mux_id, bool* peer_closed, bool first_time_recv)
 {
 	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
 
     uint8_t temp_buff[16];
+    uint8_t temp_buff2[16];
     uint8_t temp_buff_len = 0;
+    uint8_t temp_buff2_len = 0;
     uint8_t find_frame_flag_index = 0;
     static int8_t mux_id = -1;
     static int16_t frame_len = 0;
     static int32_t frame_len_sum = 0;//only for single socket TODO:
-    // static bool last_reach_eof = false;
     // bool    overflow = false;
     int ret = 0;
     uint32_t size = 0;
@@ -396,6 +397,8 @@ uint32_t recvPkg(esp8285_obj*nic,char* out_buff, uint32_t out_buff_len, uint32_t
     mp_uint_t start = 0, start2 = 0;
     bool no_frame_flag = false;
     bool new_frame = false;
+    mp_uint_t data_len_in_uart_buff = 0;
+    bool peer_just_closed = false;
     
     // parameters check
     if (out_buff == NULL) {
@@ -403,6 +406,12 @@ uint32_t recvPkg(esp8285_obj*nic,char* out_buff, uint32_t out_buff_len, uint32_t
     }
     // init vars
     memset(temp_buff, 0, sizeof(temp_buff));
+    memset(temp_buff, 0, sizeof(temp_buff2));
+    if(first_time_recv)
+    {
+        frame_len = 0;
+        frame_len_sum = 0;
+    }
 
     // required data already in buf, just return data
     uint32_t buff_size = Buffer_Size(&nic->buffer);
@@ -416,6 +425,11 @@ uint32_t recvPkg(esp8285_obj*nic,char* out_buff, uint32_t out_buff_len, uint32_t
         {
             frame_len = 0;
             frame_len_sum = 0;
+            Buffer_Clear(&nic->buffer);
+            if(*peer_closed)//buffer empty, return EOF
+            {
+                return -2;
+            }
         }
         return out_buff_len;
     }
@@ -424,8 +438,9 @@ uint32_t recvPkg(esp8285_obj*nic,char* out_buff, uint32_t out_buff_len, uint32_t
     // and need wait for full frame flag in 200ms(can be fewer), frame format: '+IPD,id,len:data' or '+IPD,len:data'
     // wait data from uart buffer if not timeout
     start2 = mp_hal_ticks_ms();
+    data_len_in_uart_buff = uart_rx_any(nic->uart_obj);
     do{
-        if(uart_rx_any(nic->uart_obj) > 0)
+        if(data_len_in_uart_buff > 0)
         {
             uart_stream->read(nic->uart_obj,temp_buff + temp_buff_len,1,&errcode);
             if(find_frame_flag_index == 0 && temp_buff[temp_buff_len] == '+'){
@@ -461,6 +476,7 @@ uint32_t recvPkg(esp8285_obj*nic,char* out_buff, uint32_t out_buff_len, uint32_t
                                 no_frame_flag = true;
                             }else{// find frame start flag, although it may also data
                                 new_frame = true;
+                                // printk("new frame:%d\r\n", frame_len);
                             }
                         }
                     }
@@ -482,12 +498,26 @@ uint32_t recvPkg(esp8285_obj*nic,char* out_buff, uint32_t out_buff_len, uint32_t
                             // break;//TODO:
                         }
                     }
+                    else{
+                        if(temp_buff[0]=='C'){
+                            memset(temp_buff2, 0, sizeof(temp_buff2));
+                        }
+                        temp_buff2[temp_buff2_len++] = temp_buff[0];
+                        // printk("%c", temp_buff[0]); //TODO: optimize uart overflow, if uart overflow, uncomment this will print some data
+                        // printk("-%d:%s\r\n", temp_buff2_len, temp_buff2);
+                        if(strstr(temp_buff2, "CLOSED\r\n") != NULL){
+                            // printk("pear closed\r\n");
+                            *peer_closed = true;
+                            peer_just_closed = true;
+                            break;
+                        }
+                    }
                 }else{
                     frame_len_sum += frame_len;
                 }
                 find_frame_flag_index = 0;
                 temp_buff_len = 0;
-                new_frame = 0;
+                new_frame = false;
                 no_frame_flag = false;
                 // enough data as required
                 size = Buffer_Size(&nic->buffer);
@@ -495,33 +525,39 @@ uint32_t recvPkg(esp8285_obj*nic,char* out_buff, uint32_t out_buff_len, uint32_t
                     break;
                 if(frame_len_sum!=0 && frame_len_sum <= size) // read at least one frame ok
                 {
-                    // last_reach_eof = true; // add this to exit from read()
                     break;
                 }
                 continue;
             }
             ++temp_buff_len;
         }
-        // else if(frame_len_sum==0 && last_reach_eof)
-        // {
-        //     last_reach_eof = false;
-            // return -2;
-        // }
-        if(timeout!=0 && (mp_hal_ticks_ms() - start2 > timeout) )
+        if(timeout!=0 && (mp_hal_ticks_ms() - start2 > timeout) && !find_frame_flag_index )
         {
             return -3;
         }
-    }while(timeout || find_frame_flag_index);
+        data_len_in_uart_buff = uart_rx_any(nic->uart_obj);
+    }while( (timeout || find_frame_flag_index) && (!*peer_closed || data_len_in_uart_buff > 0) );
     size = Buffer_Size(&nic->buffer);
+    if( size == 0 && !peer_just_closed && *peer_closed)//peer closed and no data in buffer
+    {
+        frame_len = 0;
+        frame_len_sum = 0;
+        return -4;
+    }
     size = size > out_buff_len ? out_buff_len : size;
     Buffer_Gets(&nic->buffer, (uint8_t*)out_buff, size);
     if(data_len)
         *data_len = size;
     frame_len_sum -= size;
-    if(frame_len_sum <= 0)
+    if(frame_len_sum <= 0 || peer_just_closed)
     {
         frame_len = 0;
         frame_len_sum = 0;
+        Buffer_Clear(&nic->buffer);
+        if(peer_just_closed)
+        {
+            return -2;
+        }
     }
     return size;
 }
@@ -892,12 +928,18 @@ bool sATCIPCLOSEMulitple(esp8285_obj* nic,char mux_id)
 bool eATCIPCLOSESingle(esp8285_obj* nic)
 {
 
+    int8_t find;
 	int errcode = 0;
 	const char* cmd = "AT+CIPCLOSE\r\n";
 	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);	
     rx_empty(nic);
 	uart_stream->write(nic->uart_obj,cmd,strlen(cmd),&errcode);
-    return recvFind(nic,"OK", 5000);
+    if (recvString_2(nic, "OK", "ERROR", 5000, &find) != NULL)
+    {
+        if( find == 0)
+            return true;
+    }
+    return false;
 }
 bool eATCIFSR(esp8285_obj* nic,char** list)
 {

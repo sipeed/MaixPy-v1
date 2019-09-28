@@ -89,6 +89,7 @@ typedef struct _mod_network_socket_obj_t {
     };
     float timeout;
     bool peer_closed;
+    bool first_read_after_write;
 } mod_network_socket_obj_t;
 
 extern const mod_network_nic_type_t mod_network_nic_type_esp8285;
