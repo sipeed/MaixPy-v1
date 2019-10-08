@@ -230,7 +230,11 @@ STATIC mp_obj_t socket_recv(mp_obj_t self_in, mp_obj_t len_in) {
     int _errno;
     mp_uint_t ret = self->nic_type->recv(self, (byte*)vstr.buf, len, &_errno);
     if (ret == MP_STREAM_ERROR) {
-        mp_raise_OSError(_errno);
+        if(!mp_is_nonblocking_error(_errno))
+        {
+            mp_raise_OSError(_errno);
+        }
+        ret = 0;
     }
     if (ret == 0) {
         return mp_const_empty_bytes;
