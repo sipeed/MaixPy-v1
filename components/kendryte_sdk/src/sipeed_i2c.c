@@ -110,6 +110,8 @@ int maix_i2c_send_data(i2c_device_number_t i2c_num, uint32_t slave_address, cons
         if(time_ms() - time_start > timeout_ms)
         {
             i2c_adapter->clr_tx_abrt;
+            i2c_adapter->enable = 0;
+            i2c_adapter->enable = 1;
             usleep(10);
             return -3;
         }
@@ -120,6 +122,8 @@ int maix_i2c_send_data(i2c_device_number_t i2c_num, uint32_t slave_address, cons
         if (i2c_adapter->tx_abrt_source != 0)
         {
             i2c_adapter->clr_tx_abrt;
+            i2c_adapter->enable = 0;
+            i2c_adapter->enable = 1;
             usleep(10);
             return -1;
         }
@@ -131,14 +135,18 @@ int maix_i2c_send_data(i2c_device_number_t i2c_num, uint32_t slave_address, cons
         if(time_ms() - time_start > timeout_ms)
         {
             i2c_adapter->clr_tx_abrt;
+            i2c_adapter->enable = 0;
+            i2c_adapter->enable = 1;
             usleep(10);
             return -3;
         }
         if (i2c_adapter->tx_abrt_source != 0)
         {
             i2c_adapter->clr_tx_abrt;
+            i2c_adapter->enable = 0;
+            i2c_adapter->enable = 1;
             usleep(10);
-            return -1;
+            return -2;
         }
     }
 
@@ -173,6 +181,8 @@ int maix_i2c_recv_data(i2c_device_number_t i2c_num, uint32_t slave_address, cons
         if(time_ms() - time_start > timeout_ms)
         {
             i2c_adapter->clr_tx_abrt;
+            i2c_adapter->enable = 0;
+            i2c_adapter->enable = 1;
             usleep(10);
             return -3;
         }
@@ -183,6 +193,8 @@ int maix_i2c_recv_data(i2c_device_number_t i2c_num, uint32_t slave_address, cons
         if (i2c_adapter->tx_abrt_source != 0)
         {
             i2c_adapter->clr_tx_abrt;
+            i2c_adapter->enable = 0;
+            i2c_adapter->enable = 1;
             usleep(10);
             return -1;
         }
@@ -194,6 +206,8 @@ int maix_i2c_recv_data(i2c_device_number_t i2c_num, uint32_t slave_address, cons
         if(time_ms() - time_start > timeout_ms)
         {
             i2c_adapter->clr_tx_abrt;
+            i2c_adapter->enable = 0;
+            i2c_adapter->enable = 1;
             usleep(10);
             return -3;
         }
@@ -209,6 +223,8 @@ int maix_i2c_recv_data(i2c_device_number_t i2c_num, uint32_t slave_address, cons
         if (i2c_adapter->tx_abrt_source != 0)
         {
             i2c_adapter->clr_tx_abrt;
+            i2c_adapter->enable = 0;
+            i2c_adapter->enable = 1;
             usleep(10);
             // if(receive_buf_len == buf_len)
                 return -2;
