@@ -101,8 +101,11 @@ int sccb_i2c_read_byte(int8_t i2c, uint8_t addr, uint16_t reg, uint8_t reg_len, 
         {
             tmp[0] = (reg>>8) & 0xFF;
             tmp[1] = reg&0xFF;
-            maix_i2c_send_data((i2c_device_number_t)i2c, addr, tmp, 2, 10);
-            return maix_i2c_recv_data((i2c_device_number_t)i2c, addr, NULL, 0, data, 1, 10);
+            int ret = maix_i2c_send_data((i2c_device_number_t)i2c, addr, tmp, 2, 10);
+            if(ret != 0)
+                return ret;
+            ret = maix_i2c_recv_data((i2c_device_number_t)i2c, addr, NULL, 0, data, 1, 10);
+            return ret;
         }
     }
     return 0;
@@ -166,13 +169,41 @@ int cambus_read_id(uint8_t addr,uint16_t *manuf_id, uint16_t *device_id)
 	return ret;
 }
 
+int cambus_read16_id(uint8_t addr,uint16_t *manuf_id, uint16_t *device_id)
+{
+    *manuf_id = 0;
+    *device_id = 0;
+    uint8_t tmp = 0;
+    int ret = 0;
+    //TODO: 0x300A 0x300B maybe just for OV3660
+    // sccb_i2c_write_byte(i2c_device, addr, 0xFF, sccb_reg_width, 0x01, 10);
+    ret |= sccb_i2c_read_byte(i2c_device, addr, 0x300A, sccb_reg_width, &tmp, 100);
+    if(ret != 0)
+        return ret;
+    *device_id = tmp << 8;
+    ret |= sccb_i2c_read_byte(i2c_device, addr, 0x300B, sccb_reg_width, &tmp, 100);
+    *device_id |= tmp;
+    // printk("ret:%d %04x %04x\r\n",ret, *manuf_id, *device_id);
+	return ret;
+}
+
 int cambus_scan()
 {
 
 	uint16_t manuf_id = 0;
 	uint16_t device_id = 0;
+    sccb_reg_width = 8;
     for (uint8_t addr=0x08; addr<=0x77; addr++) {
 		if( cambus_read_id(addr ,&manuf_id,&device_id) != 0)
+            continue;
+        if(device_id!=0 && device_id!=0xffff)
+        {
+            return addr;
+        }
+    }
+    sccb_reg_width = 16;
+    for (uint8_t addr=0x08; addr<=0x77; addr++) {
+		if( cambus_read16_id(addr ,&manuf_id,&device_id) != 0)
             continue;
         if(device_id!=0 && device_id!=0xffff)
         {
@@ -193,7 +224,7 @@ int cambus_scan_gc0328(void)
     }
     return id;
 }
-int cambus_readb(uint8_t slv_addr, uint8_t reg_addr, uint8_t *reg_data)
+int cambus_readb(uint8_t slv_addr, uint16_t reg_addr, uint8_t *reg_data)
 {
 
     int ret = 0;
@@ -205,19 +236,19 @@ int cambus_readb(uint8_t slv_addr, uint8_t reg_addr, uint8_t *reg_data)
 
 }
 
-int cambus_writeb(uint8_t slv_addr, uint8_t reg_addr, uint8_t reg_data)
+int cambus_writeb(uint8_t slv_addr, uint16_t reg_addr, uint8_t reg_data)
 {
     sccb_i2c_write_byte(i2c_device, slv_addr, reg_addr, sccb_reg_width, reg_data, 10);
     mp_hal_delay_ms(10);
 	return 0;
 }
 
-int cambus_readw(uint8_t slv_addr, uint8_t reg_addr, uint16_t *reg_data)
+int cambus_readw(uint8_t slv_addr, uint16_t reg_addr, uint16_t *reg_data)
 {
     return 0;
 }
 
-int cambus_writew(uint8_t slv_addr, uint8_t reg_addr, uint16_t reg_data)
+int cambus_writew(uint8_t slv_addr, uint16_t reg_addr, uint16_t reg_data)
 {
     return 0;
 }
@@ -231,3 +262,9 @@ int cambus_writew2(uint8_t slv_addr, uint16_t reg_addr, uint16_t reg_data)
 {
     return 0;
 }
+
+uint8_t cambus_reg_width()
+{
+    return sccb_reg_width;
+}
+

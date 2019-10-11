@@ -23,12 +23,15 @@
 #include "gc0328.h"
 #include "ov7740.h"
 #include "mphalport.h"
+#include "ov3660.h"
 
 extern volatile dvp_t* const dvp;
 
 #define OV_CHIP_ID      (0x0A)
 #define OV_CHIP_ID2     (0x0B)
 #define ON_CHIP_ID      (0x00)
+#define OV_CHIP_ID_16BIT      (0x300A)
+#define OV_CHIP_ID2_16BIT     (0x300B)
 #define MAX_XFER_SIZE   (0xFFFC*4)
 #define systick_sleep mp_hal_delay_ms
 
@@ -142,9 +145,8 @@ int sensro_ov_detect(sensor_t* sensor)
     /* Reset the sensor */
     DCMI_RESET_HIGH();
     mp_hal_delay_ms(10);
-
     DCMI_RESET_LOW();
-    mp_hal_delay_ms(10);
+    mp_hal_delay_ms(30);
 
     /* Probe the ov sensor */
     sensor->slv_addr = cambus_scan();
@@ -154,23 +156,37 @@ int sensro_ov_detect(sensor_t* sensor)
         sensor->reset_pol = ACTIVE_LOW;
 
         /* Pull the sensor out of the reset state,systick_sleep() */
-        DCMI_RESET_HIGH();
+        /* Need set PWDN and RST again for some sensor*/
+        DCMI_PWDN_HIGH();
         mp_hal_delay_ms(10);
+        DCMI_PWDN_LOW();
+        mp_hal_delay_ms(10);
+        DCMI_RESET_HIGH();
+        mp_hal_delay_ms(30);
 
         /* Probe again to set the slave addr */
         sensor->slv_addr = cambus_scan();
         if (sensor->slv_addr == 0) {
             sensor->pwdn_pol = ACTIVE_LOW;
-
+            /* Need set PWDN and RST again for some sensor*/
             DCMI_PWDN_HIGH();
             mp_hal_delay_ms(10);
+            DCMI_RESET_LOW();
+            mp_hal_delay_ms(10);
+            DCMI_RESET_HIGH();
+            mp_hal_delay_ms(30);
 
             sensor->slv_addr = cambus_scan();
             if (sensor->slv_addr == 0) {
                 sensor->reset_pol = ACTIVE_HIGH;
 
-                DCMI_RESET_LOW();
+                /* Need set PWDN and RST again for some sensor*/
+                DCMI_PWDN_LOW();
                 mp_hal_delay_ms(10);
+                DCMI_PWDN_HIGH();
+                mp_hal_delay_ms(10);
+                DCMI_RESET_LOW();
+                mp_hal_delay_ms(30);
 
                 sensor->slv_addr = cambus_scan();
                 if(sensor->slv_addr == 0) {
@@ -199,9 +215,18 @@ int sensro_ov_detect(sensor_t* sensor)
 			/*mt9v034_init*/
         } else { // Read OV sensor ID.
             uint8_t tmp;
-            cambus_readb(sensor->slv_addr, OV_CHIP_ID, &tmp);
+            uint8_t reg_width = cambus_reg_width();
+            uint16_t reg_addr, reg_addr2;
+            if(reg_width == 8){
+                reg_addr = OV_CHIP_ID;
+                reg_addr2 = OV_CHIP_ID2;
+            }else{
+                reg_addr = OV_CHIP_ID_16BIT;
+                reg_addr2 = OV_CHIP_ID2_16BIT;
+            }
+            cambus_readb(sensor->slv_addr, reg_addr, &tmp);
             sensor->chip_id = tmp<<8;
-            cambus_readb(sensor->slv_addr, OV_CHIP_ID2, &tmp);
+            cambus_readb(sensor->slv_addr, reg_addr2, &tmp);
             sensor->chip_id |= tmp;
             // Initialize sensor struct.
             switch (sensor->chip_id) {
@@ -220,6 +245,10 @@ int sensro_ov_detect(sensor_t* sensor)
                 case OV7740_ID:
                     mp_printf(&mp_plat_print, "[MAIXPY]: find ov7740\n");
                     init_ret = ov7740_init(sensor);
+                    break;
+                case OV3660_ID:
+                    mp_printf(&mp_plat_print, "[MAIXPY]: find ov3660\n");
+                    init_ret = ov3660_init(sensor);
                     break;
                 default:
                     // Sensor is not supported.
@@ -270,13 +299,6 @@ int sensor_init_dvp(mp_int_t freq)
 	// fpioa_set_function(41, FUNC_SCCB_SCLK);
 	// fpioa_set_function(40, FUNC_SCCB_SDA);
 
-    /* Do a power cycle */
-    DCMI_PWDN_HIGH();
-    mp_hal_delay_ms(10);
-
-    DCMI_PWDN_LOW();
-    mp_hal_delay_ms(10);
-
     // Initialize the camera bus, 8bit reg
     // cambus_init(8, -2, 41, 40, 0, 0);
     cambus_init(8, 2, 41, 40, 0, 0);
@@ -289,6 +311,10 @@ int sensor_init_dvp(mp_int_t freq)
     sensor with both polarities to determine line state. */
     sensor.pwdn_pol = ACTIVE_HIGH;
     sensor.reset_pol = ACTIVE_HIGH;
+    DCMI_PWDN_HIGH();
+    mp_hal_delay_ms(10);
+    DCMI_PWDN_LOW();
+    mp_hal_delay_ms(10);
 
     if(0 == sensro_ov_detect(&sensor)){//find ov sensor
         // mp_printf(&mp_plat_print, "[MAIXPY]: find ov sensor\n");
