@@ -41,24 +41,6 @@ from fpioa_manager import fm
 from pye_mp import pye
 from Maix import FPIOA, GPIO
 
-#dirty patch of Software Shutdown & Reset Support 
-from machine import I2C
-import time
-from machine import Timer
-
-axp = I2C(I2C.I2C2, freq=400000, scl=28, sda=29)
-
-def chkForIRQ(timer):
-    axp.writeto(52, b'\x46')
-    ret = axp.readfrom(52, 1))[0] #Check for IRQs
-    if ret & 2 ** 0 == 2 ** 0:
-        axp.writeto_mem(52, 0x12, 0x00, mem_size=8) #Turn off all the power for Long-press
-    if ret & 2 ** 1 == 2 ** 1:
-        machine.reset() #Reset for Short Press
-
-tim = Timer(Timer.TIMER2, Timer.CHANNEL0, mode=Timer.MODE_PERIODIC, period=100, unit=Timer.UNIT_MS, callback=chkForIRQ, arg=chkForIRQ, start=True, priority=1, div=0)
-
-
 banner = '''
  __  __              _____  __   __  _____   __     __
 |  \/  |     /\     |_   _| \ \ / / |  __ \  \ \   / /
@@ -71,12 +53,20 @@ M5StickV by M5Stack : https://m5stack.com/
 M5StickV Wiki       : https://docs.m5stack.com
 Co-op by Sipeed     : https://www.sipeed.com
 '''
-flash_ls = os.listdir()
-if ("boot.py" in flash_ls) :
+
+dirList = os.listdir()
+
+if "boot.py" in dirList:
     print(banner)
     with open("boot.py") as f:
         exec(f.read())
     sys.exit()
+else:
+    if "boot.py" in os.listdir("/flash"):
+        print(banner)
+        with open("/flash/boot.py") as f:
+            exec(f.read())
+        sys.exit()
 
 # detect boot.py
 boot_py = '''
@@ -85,6 +75,10 @@ import image
 import time
 import uos
 import sys
+from pmu import axp192
+
+pmu = axp192()
+pmu.enablePMICSleepMode(True)
 
 lcd.init()
 lcd.rotation(2) #Rotate the lcd 180deg
@@ -99,12 +93,6 @@ from Maix import I2S, GPIO
 import audio
 from Maix import GPIO
 from fpioa_manager import *
-
-fm.register(board_info.BUTTON_A, fm.fpioa.GPIO1)
-but_a=GPIO(GPIO.GPIO1, GPIO.IN, GPIO.PULL_UP) #PULL_UP is required here!
-
-if but_a.value() == 0: #If dont want to run the demo
-    sys.exit()
 
 fm.register(board_info.SPK_SD, fm.fpioa.GPIO0)
 spk_sd=GPIO(GPIO.GPIO0, GPIO.OUT)
@@ -130,7 +118,13 @@ try:
             break
     player.finish()
 except:
-    pass 
+    pass
+
+fm.register(board_info.BUTTON_A, fm.fpioa.GPIO1)
+but_a=GPIO(GPIO.GPIO1, GPIO.IN, GPIO.PULL_UP) #PULL_UP is required here!
+
+if but_a.value() == 0: #If dont want to run the demo
+    sys.exit() 
 
 fm.register(board_info.BUTTON_B, fm.fpioa.GPIO2)
 but_b = GPIO(GPIO.GPIO2, GPIO.IN, GPIO.PULL_UP) #PULL_UP is required here!
@@ -205,10 +199,11 @@ except KeyboardInterrupt:
     sys.exit()
 '''
 
-f = open("boot.py", "wb")
+f = open("/flash/boot.py", "wb")
 f.write(boot_py)
 f.close()
 
 print(banner)
-with open("boot.py") as f:
+with open("/flash/boot.py") as f:
     exec(f.read())
+
