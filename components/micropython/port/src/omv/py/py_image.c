@@ -5543,27 +5543,87 @@ static mp_obj_t py_image_resize(mp_obj_t img_obj, mp_obj_t w_obj, mp_obj_t h_obj
 	}
 	case IMAGE_BPP_RGB565: 
 	{
-		if(w0 <= w || h0 <= h)
-		{
-			mp_printf(&mp_plat_print, "only support 565 zoom out now\r\n");
-			return mp_const_none;
-		}
 		uint16_t* out = xalloc(w*h*2);
 		uint16_t* in = (uint16_t*)img->pixels;
 		float sx=(float)(w0)/w;
 		float sy=(float)(h0)/h;
-		int x,y, x0,y0;//,x1,y1;
-		// float xf,yf;
-		mp_obj_t image = py_image(w, h, img->bpp, out); //TODO: here have bug
-		for(y=0;y<h;y++)
-		{
-			y0 = y*sy;
-			for(x=0;x<w;x++)
-			{
-				x0 = x*sx;
-				out[y*w+x] = in[y0*w0+x0];
-			}
-		}
+		int x,y, x0,y0;
+		uint16_t x1, x2, y1, y2;
+
+		mp_obj_t image = py_image(w, h, img->bpp, out); //TODO: zepan says here maybe have bug ... ?
+        if(w0 == w && h0 == h)
+        {
+            for(y=0, y0=0; y<h; y++,y0++)
+            {
+                for(x=0, x0=0; x<w; x++,x0++)
+                {
+                    out[y*w+x] = in[y0*w0+x0];
+                }
+            }
+        }
+        else if(w0 >= w || h0 > h)
+        {
+            for(y=0;y<h;y++)
+            {
+                y0 = y*sy;
+                for(x=0;x<w;x++)
+                {
+                    x0 = x*sx;
+                    out[y*w+x] = in[y0*w0+x0];
+                }
+            }
+        }
+        else
+        {
+            float x_src, y_src;
+            float temp1, temp2;
+            uint8_t temp_r, temp_g, temp_b;
+            for(y=0;y<h;y++)
+            {
+                for(x=0;x<w;x++)
+                {
+                    x_src = (x + 0.5f) * sx - 0.5f;
+                    y_src = (y + 0.5f) * sy - 0.5f;
+                    x1 = (uint16_t)x_src;
+                    x2 = x1 + 1;
+                    y1 = (uint16_t)y_src;
+                    y2 = y1 + 1;
+                    if (x2 >= w0 || y2 >= h0)
+                    {
+                        out[ x + y * w] = in[x1 + y1 * w0];
+                        continue;
+                    }
+                    // if( (x2 - x_src) > (x_src - x1) )
+                    // {
+                    //     x_src = x1;
+                    // }
+                    // else
+                    // {
+                    //     x_src = x2;
+                    // }
+                    // if( (y2 - y_src) > (y_src - y2) )
+                    // {
+                    //     y_src = y2;
+                    // }
+                    // else
+                    // {
+                    //     y_src = y1;
+                    // }
+                    // out[x + y * w] = in[(uint16_t)x_src + (uint16_t)y_src*w0];
+
+                    temp1 = (x2 - x_src) * COLOR_RGB565_TO_R5(in[ x1 + y1 * w0]) + (x_src - x1) * COLOR_RGB565_TO_R5(in[x2 + y1 * w0]);
+                    temp2 = (x2 - x_src) * COLOR_RGB565_TO_R5(in[ x1 + y2 * w0]) + (x_src - x1) * COLOR_RGB565_TO_R5(in[x2 + y2 * w0]);
+                    temp_r = (uint8_t)((y2 - y_src) * temp1 + (y_src - y1) * temp2);
+                    temp1 = (x2 - x_src) * COLOR_RGB565_TO_G6(in[ x1 + y1 * w0]) + (x_src - x1) * COLOR_RGB565_TO_G6(in[x2 + y1 * w0]);
+                    temp2 = (x2 - x_src) * COLOR_RGB565_TO_G6(in[ x1 + y2 * w0]) + (x_src - x1) * COLOR_RGB565_TO_G6(in[x2 + y2 * w0]);
+                    temp_g = (uint8_t)((y2 - y_src) * temp1 + (y_src - y1) * temp2);
+                    temp1 = (x2 - x_src) * COLOR_RGB565_TO_B5(in[ x1 + y1 * w0]) + (x_src - x1) * COLOR_RGB565_TO_B5(in[x2 + y1 * w0]);
+                    temp2 = (x2 - x_src) * COLOR_RGB565_TO_B5(in[ x1 + y2 * w0]) + (x_src - x1) * COLOR_RGB565_TO_B5(in[x2 + y2 * w0]);
+                    temp_b = (uint8_t)((y2 - y_src) * temp1 + (y_src - y1) * temp2);
+                    out[x + y * w] = COLOR_R5_G6_B5_TO_RGB565(temp_r, temp_g, temp_b);
+                }
+            }
+        }
 		return image;
 		break;
 	}

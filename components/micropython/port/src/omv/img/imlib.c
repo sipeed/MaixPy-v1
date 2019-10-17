@@ -16,6 +16,7 @@
 #include "omv_boardconfig.h"
 #include "sipeed_conv.h"
 #include "picojpeg_util.h"
+#include "framebuffer.h"
 
 /////////////////
 // Point Stuff //
@@ -631,7 +632,7 @@ void imlib_load_image(image_t *img, const char *path, mp_obj_t file)
         bmp_read(img, path);
     } else if ((magic[0]==0xFF) && (magic[1]==0xD8)) { // JPEG
         // jpeg_read(img, path);
-        int err = picojpeg_util_read(img, file, NULL, 0);
+        int err = picojpeg_util_read(img, file, NULL, 0, MAIN_FB()->w_max, MAIN_FB()->h_max);
         int tmp;
         if(!is_file_obj)
             vfs_internal_close(file, &tmp);

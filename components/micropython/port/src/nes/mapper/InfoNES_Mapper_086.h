@@ -68,7 +68,7 @@ void Map86_Sram( WORD wAddr, BYTE byData )
   switch ( wAddr )
   {
     case 0x6000:
-      byChrBank = byData & 0x03 | ( byData & 0x40 ) >> 4;
+      byChrBank = ( byData & 0x03 )| ( byData & 0x40 ) >> 4;
       byPrgBank = ( byData & 0x30 ) >> 4;
 
       byPrgBank = ( byPrgBank << 2 ) % ( NesHeader.byRomSize << 1 );

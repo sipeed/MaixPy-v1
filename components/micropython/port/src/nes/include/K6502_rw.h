@@ -18,7 +18,6 @@
 #include "InfoNES_System.h"
 #include "InfoNES_pAPU.h"
 
-#if MAIXPY_NES_EMULATOR_SUPPORT
 
 /*===================================================================*/
 /*                                                                   */
@@ -131,7 +130,7 @@ static inline BYTE K6502_Read( WORD wAddr )
       if ( wAddr == 0x4015 )
       {
         // APU control
-        byRet = APU_Reg[ 0x4015 ];
+        byRet = APU_Reg[ 0x19 ];
 	if ( ApuC1Atl > 0 ) byRet |= (1<<0);
 	if ( ApuC2Atl > 0 ) byRet |= (1<<1);
 	if (  !ApuC3Holdnote ) {
@@ -142,7 +141,7 @@ static inline BYTE K6502_Read( WORD wAddr )
 	if ( ApuC4Atl > 0 ) byRet |= (1<<3);
 
 	// FrameIRQ
-        APU_Reg[ 0x4015 ] &= ~0x40;
+        APU_Reg[ 0x19 ] &= ~0x40;
         return byRet;
       }
       else
@@ -450,7 +449,7 @@ static inline void K6502_Write( WORD wAddr, BYTE byData )
           }
           break;
       }
-
+//TODO:
       if ( wAddr <= 0x4017 )
       {
         /* Write to APU Register */
@@ -499,5 +498,4 @@ static inline WORD K6502_ReadW2( WORD wAddr )
   }
 }
 
-#endif //MAIXPY_NES_EMULATOR_SUPPORT
 #endif /* !K6502_RW_H_INCLUDED */

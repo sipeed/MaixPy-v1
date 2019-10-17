@@ -111,7 +111,7 @@ unsigned char pjpeg_need_bytes_callback(unsigned char* pBuf, unsigned char buf_s
 // If reduce is non-zero, the image will be more quickly decoded at approximately
 // 1/8 resolution (the actual returned resolution will depend on the JPEG 
 // subsampling factor).
-uint8 *pjpeg_load_from_file(mp_obj_t file, uint8_t* buf, uint32_t buf_len, int *x, int *y, int *comps, pjpeg_scan_type_t *pScan_type, int reduce, bool rgb565, uint8_t* pixels, int* err)
+uint8 *pjpeg_load_from_file(mp_obj_t file, uint8_t* buf, uint32_t buf_len, int *x, int *y, int *comps, pjpeg_scan_type_t *pScan_type, int reduce, bool rgb565, uint8_t* pixels, int max_width, int max_height, int* err)
 {
    pjpeg_image_info_t image_info;
    int mcu_x = 0;
@@ -175,7 +175,7 @@ uint8 *pjpeg_load_from_file(mp_obj_t file, uint8_t* buf, uint32_t buf_len, int *
    }
    else
    {
-      if( (row_pitch * decoded_height) > (MAIN_FB()->w_max * MAIN_FB()->h_max * OMV_INIT_BPP) )
+      if( (row_pitch * decoded_height) > (max_width * max_height * OMV_INIT_BPP) )
       {
          mp_printf(&mp_plat_print, "[MaixPy] image: max supported size: %dx%x\n", MAIN_FB()->w_max, MAIN_FB()->h_max);
          *err = MP_EINVAL;
@@ -428,7 +428,7 @@ static void image_compare(image_compare_results *pResults, int width, int height
       pResults->peak_snr = log10(255.0f / pResults->root_mean_squared) * 20.0f;
 }
 //------------------------------------------------------------------------------
-int picojpeg_util_read(image_t* img, mp_obj_t file, uint8_t* buf, uint32_t buf_len)
+int picojpeg_util_read(image_t* img, mp_obj_t file, uint8_t* buf, uint32_t buf_len, int max_width, int max_height)
 {
    int width, height, comps;
    pjpeg_scan_type_t scan_type;
@@ -438,22 +438,22 @@ int picojpeg_util_read(image_t* img, mp_obj_t file, uint8_t* buf, uint32_t buf_l
    {
       if( img->data)
       {
-         img->data = pjpeg_load_from_file(file, NULL, 0, &width, &height, &comps, &scan_type, 0, true, img->data, &err);
+         img->data = pjpeg_load_from_file(file, NULL, 0, &width, &height, &comps, &scan_type, 0, true, img->data, max_width, max_height, &err);
       }
       else
       {
-         img->data = pjpeg_load_from_file(file, NULL, 0, &width, &height, &comps, &scan_type, 0, true, NULL, &err);
+         img->data = pjpeg_load_from_file(file, NULL, 0, &width, &height, &comps, &scan_type, 0, true, NULL, max_width, max_height,&err);
       }
    }
    else if(buf)
    {
       if( img->data)
       {
-         img->data = pjpeg_load_from_file(MP_OBJ_NULL, buf, buf_len, &width, &height, &comps, &scan_type, 0, true, img->data, &err);
+         img->data = pjpeg_load_from_file(MP_OBJ_NULL, buf, buf_len, &width, &height, &comps, &scan_type, 0, true, img->data, max_width, max_height,&err);
       }
       else
       {
-         img->data = pjpeg_load_from_file(MP_OBJ_NULL, buf, buf_len, &width, &height, &comps, &scan_type, 0, true, NULL, &err);
+         img->data = pjpeg_load_from_file(MP_OBJ_NULL, buf, buf_len, &width, &height, &comps, &scan_type, 0, true, NULL, max_width, max_height,&err);
       }
    }
    else

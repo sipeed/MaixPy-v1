@@ -44,7 +44,6 @@
 #include "InfoNES.h"
 #include "sysctl.h"
 
-#if MAIXPY_NES_EMULATOR_SUPPORT
 
 #define _D //mp_printf(&mp_plat_print, "%d\n",__LINE__)
 
@@ -196,7 +195,7 @@ BYTE PPU_MirrorTable[][ 4 ] =
 /*-------------------------------------------------------------------*/
 
 /* APU Register */
-BYTE APU_Reg[ 0x18 ];
+BYTE APU_Reg[ 0x20 ];
 
 /* APU Mute ( 0:OFF, 1:ON ) */
 int APU_Mute = 0;
@@ -642,7 +641,7 @@ void InfoNES_Cycle()
     {
       FrameStep %= STEP_PER_FRAME;
       IRQ_REQ;
-      APU_Reg[ 0x4015 ] |= 0x40;
+      APU_Reg[ 0x19 ] |= 0x40;
     }
 
     // A mapper function in H-Sync
@@ -1200,4 +1199,3 @@ void InfoNES_SetupChr()
   ChrBufUpdate = 0;
 }
 
-#endif //MAIXPY_NES_EMULATOR_SUPPORT

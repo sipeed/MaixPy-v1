@@ -87,7 +87,7 @@ void video_play_avi_destroy(avi_t* avi)
         avi->img_buf = NULL;
     }
 }
-
+#include "printf.h"
 video_status_t video_play_avi(avi_t* avi)
 {
     int err = 0;
@@ -120,7 +120,7 @@ video_status_t video_play_avi(avi_t* avi)
             return err;
         }
         img.data = avi->img_buf;
-        err = picojpeg_util_read(&img, MP_OBJ_NULL, avi->video_buf, avi->stream_size);
+        err = picojpeg_util_read(&img, MP_OBJ_NULL, avi->video_buf, avi->stream_size, avi->width, avi->height);
         if( err != 0)
         {
             video_stop_play(avi);

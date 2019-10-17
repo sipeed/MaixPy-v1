@@ -69,7 +69,6 @@ void Map19_Init()
   /* Initialize State Register */
   Map19_Regs[ 0 ] = 0x00;
   Map19_Regs[ 1 ] = 0x00;
-  Map19_Regs[ 2 ] = 0x00;
 
   /* Set up wiring of the interrupt pin */
   K6502_Set_Int_Wiring( 1, 1 ); 

@@ -181,9 +181,8 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_PY_USELECT                  (0)
 #define MICROPY_PY_UTIME_MP_HAL             (1)
 
-//thread todo
-#define MICROPY_PY_THREAD                   (0)
-#define MICROPY_PY_THREAD_GIL               (0)
+#define MICROPY_PY_THREAD                   (1)
+#define MICROPY_PY_THREAD_GIL               (1)
 #define MICROPY_PY_THREAD_GIL_VM_DIVISOR    (32)
 
 #define MICROPY_FATFS_ENABLE_LFN            (1)
@@ -308,7 +307,6 @@ extern const struct _mp_obj_module_t video_module;
 
 // nes game emulator
 #ifndef CONFIG_MAIXPY_NES_ENABLE
-#define CONFIG_MAIXPY_NES_ENABLE         (0) // NES gamer emulator
 #endif //CONFIG_MAIXPY_NES_ENABLE
 #if CONFIG_MAIXPY_NES_ENABLE
 extern const struct _mp_obj_module_t nes_module;
@@ -421,6 +419,7 @@ extern const struct _mp_obj_module_t mp_module_touchscreen;
     do { \
         extern void mp_handle_pending(void); \
         mp_handle_pending(); \
+        MICROPY_PY_USOCKET_EVENTS_HANDLER \
         MP_THREAD_GIL_EXIT(); \
         MP_THREAD_GIL_ENTER(); \
     } while (0);

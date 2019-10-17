@@ -148,7 +148,7 @@ STATIC bool init_sdcard_fs(void) {
                 // subsequent partitions are numbered by their index in the partition table
                 if (part_num == 2) {
                     vfs->str = "/sd2";
-                } else if (part_num == 2) {
+                } else if (part_num == 3) {
                     vfs->str = "/sd3";
                 } else {
                     vfs->str = "/sd4";
@@ -333,6 +333,15 @@ void pyexec_str(vstr_t* str) {
 }
 #endif
 
+// void mp_task(void* arg)
+// {
+//     while(1)
+//     {
+//         printk("---1---\r\n");
+//         vTaskDelay(pdMS_TO_TICKS(1000));
+//     }
+// }
+
 void mp_task(
 	#if MICROPY_PY_THREAD 
 	void *pvParameter
@@ -480,9 +489,10 @@ corelock_t  lock;
 volatile dual_func_t dual_func=0;
 void* arg_list[16];
 
-int core1_function(void *ctx)
+
+void core2_task(void* arg)
 {
-    while(1)
+	while(1)
 	{
 		if(dual_func)
 		{//corelock_lock(&lock);
@@ -494,7 +504,12 @@ int core1_function(void *ctx)
 		//usleep(1);
 	}
 }
-
+int core1_function(void *ctx)
+{
+    // vTaskStartScheduler();
+	core2_task(NULL);
+	return 0;
+}
 
 int maixpy_main()
 {	
@@ -545,6 +560,7 @@ int maixpy_main()
 						 NULL, //function arg
 						 MP_TASK_PRIORITY, //task priority
 						 &mp_main_task_handle);//task handl
+	// xTaskCreateAtProcessor(1, core2_task, "core2_task", 256, NULL, tskIDLE_PRIORITY+1, NULL );
 	vTaskStartScheduler();
 	for(;;);
 #else

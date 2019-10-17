@@ -15,7 +15,6 @@
 
 #include "InfoNES_Types.h"
 
-#if MAIXPY_NES_EMULATOR_SUPPORT
 
 /*-------------------------------------------------------------------*/
 /*  Palette data                                                     */
@@ -68,6 +67,5 @@ void InfoNES_SoundOutput(int samples, BYTE *wave1, BYTE *wave2, BYTE *wave3, BYT
 /* Print system message */
 void InfoNES_MessageBox( char *pszMsg, ... );
 
-#endif // MAIXPY_NES_EMULATOR_SUPPORT
 #endif /* !InfoNES_SYSTEM_H_INCLUDED */
 

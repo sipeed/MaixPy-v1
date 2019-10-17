@@ -136,7 +136,6 @@ bool ide_debug_init0()
 
 void ide_dbg_init()
 {
-    int err;
     xfer_length = 0;
     xfer_bytes  = 0;
     is_busy_sending = false;

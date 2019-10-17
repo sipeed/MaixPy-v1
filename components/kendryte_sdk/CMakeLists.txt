@@ -5,7 +5,6 @@ if(CONFIG_COMPONENT_KENDRYTE_SDK_ENABLE)
                             "kendryte-standalone-sdk/lib/bsp/include"
                             "kendryte-standalone-sdk/lib/drivers/include"
                             "kendryte-standalone-sdk/lib/freertos/include"
-                            "kendryte-standalone-sdk/lib/freertos/conf"
                             "kendryte-standalone-sdk/lib/freertos/portable"
                             "kendryte-standalone-sdk/lib/utils/include"
         )

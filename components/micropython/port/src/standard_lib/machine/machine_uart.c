@@ -53,6 +53,7 @@
 #include "ide_dbg.h"
 #include "buffer.h"
 #include "imlib_config.h"
+#include "mphalport.h"
 
 extern int uart_channel_getc(uart_device_number_t channel);
 
@@ -216,6 +217,9 @@ int uart_rx_irq(void *ctx)
 			}while(read_ret!=EOF);
 		}
 	}
+#if MICROPY_PY_THREAD
+	mp_hal_wake_main_task_from_isr();
+#endif
 	return 0;
 }
 
