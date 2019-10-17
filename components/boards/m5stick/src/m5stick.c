@@ -1,6 +1,3 @@
-
-
-
 #include "sipeed_i2c.h"
 #include "stdint.h"
 #include "stdbool.h"
@@ -9,6 +6,7 @@
 #include "global_config.h"
 #include "fpioa.h"
 #include "gpiohs.h"
+#include "sleep.h"
 
 #ifdef CONFIG_BOARD_M5STICK
 
@@ -41,7 +39,7 @@ bool m5stick_init()
     if (ret != 0)
         goto end;
     cmd[0] = 0x33;
-    cmd[1] = 0xC0; //100mA Charging Current
+    cmd[1] = 0xC1; //190mA Charging Current
     ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2, 10);
     if(ret!=0)
         goto end;
@@ -81,25 +79,20 @@ bool m5stick_init()
     if(ret!=0)
         goto end;
     cmd[0] = 0x31;
-    cmd[1] = 0x0B; //Turn on sleep mode
+    cmd[1] = 0x03; //Cutoff voltage 3.2V
     ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2, 10);
     if(ret!=0)
         goto end;
-    cmd[0] = 0x36;
-    cmd[1] = 0x5C; //Change Pek Long-press time for better UE
+    cmd[0] = 0x39;
+    cmd[1] = 0xFC; //Turnoff Temp Protect (Sensor not exist!)
     ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2, 10);
     if(ret!=0)
         goto end;
-    cmd[0] = 0x46;
-    cmd[1] = 0xFF; //Clear all the interrupts
-    ret = maix_i2c_send_data(I2C_DEVICE_0, AXP192_ADDR, cmd, 2, 10);
-    if(ret!=0)
-        goto end;
-    
     fpioa_set_function(23, FUNC_GPIOHS0 + 26);
     gpiohs_set_drive_mode(26, GPIO_DM_OUTPUT);
     gpiohs_set_pin(26, GPIO_PV_HIGH); //Disable VBUS As Input, BAT->5V Boost->VBUS->Charing Cycle
-    
+
+    msleep(20);
 end:
     maix_i2c_deinit(I2C_DEVICE_0);
     return ret==0;
