@@ -58,7 +58,7 @@ class axp192:
     def __readReg(self, regAddr):
         self.i2cDev.writeto(self.axp192Addr, bytes([regAddr]))
         return (self.i2cDev.readfrom(self.axp192Addr, 1))[0]
-    
+
     def enableADCs(self, enable):
         if enable == True:
             self.__writeReg(0x82, 0xFF)
@@ -133,13 +133,13 @@ class axp192:
         Ichg_LSB = self.__readReg(0x7A)
         Ichg_MSB = self.__readReg(0x7B)
 
-        return ((Ichg_LSB << 4) + Ichg_MSB) * 0.5 #AXP192-DS PG27 0.5mA/div
+        return ((Ichg_LSB << 5) + Ichg_MSB) * 0.5 #AXP192-DS PG27 0.5mA/div
 
     def getBatteryDischargeCurrent(self):
         Idcg_LSB = self.__readReg(0x7C)
         Idcg_MSB = self.__readReg(0x7D)
 
-        return ((Idcg_LSB << 4) + Idcg_MSB) * 0.5 #AXP192-DS PG27 0.5mA/div
+        return ((Idcg_LSB << 5) + Idcg_MSB) * 0.5 #AXP192-DS PG27 0.5mA/div
 
     def getBatteryInstantWatts(self):
         Iinswat_LSB = self.__readReg(0x70)
