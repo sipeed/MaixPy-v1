@@ -174,9 +174,12 @@ STATIC int esp8285_socket_connect(mod_network_socket_obj_t *socket, byte *ip, mp
 STATIC int esp8285_socket_gethostbyname(mp_obj_t nic, const char *name, mp_uint_t len, uint8_t* out_ip) {
 	if((mp_obj_type_t*)&mod_network_nic_type_esp8285 == mp_obj_get_type(nic))
 	{
-		return get_host_byname(&((nic_obj_t*)nic)->esp8285,name,len, (char*)out_ip, 3000);
+		if( get_host_byname(&((nic_obj_t*)nic)->esp8285,name,len, (char*)out_ip, 3000) )
+            return 0;
+        else
+            return MP_EINVAL;
 	}
-    return -1;
+    return MP_EPERM;
 }
 
 STATIC mp_obj_t esp8285_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {

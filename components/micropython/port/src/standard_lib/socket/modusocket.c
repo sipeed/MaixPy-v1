@@ -363,6 +363,7 @@ STATIC mp_obj_t socket_make_new(const mp_obj_type_t *type, size_t n_args, size_t
     s->u_param.domain = MOD_NETWORK_AF_INET;
     s->u_param.type = MOD_NETWORK_SOCK_STREAM;
     s->u_param.fileno = 0;
+    s->fd = 0; //TODO: auto increase
     s->timeout = 10; // default timeout: 10s
     s->peer_closed = false;
 	if (n_args >= 1) {
@@ -490,10 +491,13 @@ STATIC mp_obj_t mod_usocket_getaddrinfo(size_t n_args, const mp_obj_t *pos_args,
 	if(parse_ret == 0)
 	{
 		if (nic_type->gethostbyname != NULL)
-			if(false == nic_type->gethostbyname(nic ,host,strlen(host),out_ip))
+        {
+            int ret = nic_type->gethostbyname(nic ,host,strlen(host),out_ip);
+			if( ret != 0)
 			{
-				return mp_const_none;
+				mp_raise_OSError(ret);
 			}
+        }
 	}
 	else
 	{

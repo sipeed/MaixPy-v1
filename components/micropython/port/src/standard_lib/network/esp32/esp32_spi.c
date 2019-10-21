@@ -6,13 +6,14 @@
 #include "sleep.h"
 #include "sysctl.h"
 #include "fpioa.h"
+#include "printf.h"
+#include "errno.h"
 
 #define ESP32_SPI_DEBUG 1
 
 // Cached values of retrieved data
 char ssid[32] = {0};
 uint8_t mac[32] = {0};
-char fwVersion[32] = {0};
 esp32_spi_net_t net_dat;
 
 static void esp32_spi_reset(void);
@@ -470,7 +471,7 @@ int8_t esp32_spi_status(void)
 #if ESP32_SPI_DEBUG
         printf("%s: get resp error!\r\n", __func__);
 #endif
-        return -1;
+        return -2;
     }
     int8_t ret = (int8_t)resp->params[0]->param[0];
 
@@ -485,7 +486,7 @@ int8_t esp32_spi_status(void)
 /// A string of the firmware version on the ESP32
 //NULL error
 //other ok
-char *esp32_spi_firmware_version(void)
+char *esp32_spi_firmware_version(char* fw_version)
 {
 #if ESP32_SPI_DEBUG
     printf("Firmware version\r\n");
@@ -502,10 +503,11 @@ char *esp32_spi_firmware_version(void)
     }
 
     uint8_t ret_len = resp->params[0]->param_len;
-    memcpy(fwVersion, resp->params[0]->param, ret_len);
+    memcpy(fw_version, resp->params[0]->param, ret_len);
+    fw_version[ret_len] = 0;
 
     resp->del(resp);
-    return fwVersion;
+    return fw_version;
 }
 
 // make params struct with one param
@@ -903,18 +905,18 @@ uint8_t esp32_spi_is_connected(void)
 {
     int8_t stat = esp32_spi_status();
 
-    if (stat == -1)
+    if (stat == -2)
     {
 #if ESP32_SPI_DEBUG
         printf("%s get status error \r\n", __func__);
 #endif
         esp32_spi_reset();
-        return 0;
+        return 2;
     }
     else if (stat == WL_CONNECTED)
-        return 1;
+        return 0;
 
-    return 0;
+    return 1;
 }
 
 //Connect to an access point using a secrets dictionary
@@ -956,6 +958,8 @@ int8_t esp32_spi_connect_AP(uint8_t *ssid, uint8_t *password, uint8_t retry_time
         }
         else if (stat == WL_CONNECTED)
             return 0;
+        else if (stat == WL_CONNECT_FAILED)
+            return -2;
         sleep(1);
     }
     stat = esp32_spi_status();
@@ -966,7 +970,7 @@ int8_t esp32_spi_connect_AP(uint8_t *ssid, uint8_t *password, uint8_t retry_time
         printf("Failed to connect to ssid: %s\r\n", ssid);
 #endif
 
-        return -1;
+        return -3;
     }
 
     if (stat == WL_NO_SSID_AVAIL)
@@ -975,14 +979,26 @@ int8_t esp32_spi_connect_AP(uint8_t *ssid, uint8_t *password, uint8_t retry_time
         printf("No such ssid: %s\r\n", ssid);
 #endif
 
-        return -1;
+        return -4;
     }
 
 #if ESP32_SPI_DEBUG
     printf("Unknown error 0x%02X", stat);
 #endif
 
-    return -1;
+    return -5;
+}
+
+int8_t esp32_spi_disconnect_from_AP(void)
+{
+    esp32_spi_params_t *resp = esp32_spi_send_command_get_response(DISCONNECT_CMD, NULL, NULL, 0, 0);
+    if (resp == NULL)
+    {
+        return -1;
+    }
+    int8_t ret = (int8_t)resp->params[0]->param[0];
+    resp->del(resp);
+    return ret;
 }
 
 //Converts a bytearray IP address to a dotted-quad string for printing
@@ -1001,7 +1017,7 @@ void esp32_spi_unpretty_ip(uint8_t *ip)
 //Convert a hostname to a packed 4-byte IP address. Returns a 4 bytearray
 //-1 error
 //0 ok
-int8_t esp32_spi_get_host_by_name(uint8_t *hostname, uint8_t *ip)
+int esp32_spi_get_host_by_name(uint8_t *hostname, uint8_t *ip)
 {
 #if ESP32_SPI_DEBUG
     printf("*** Get host by name\r\n");
@@ -1016,7 +1032,7 @@ int8_t esp32_spi_get_host_by_name(uint8_t *hostname, uint8_t *ip)
 #if ESP32_SPI_DEBUG
         printf("%s: get resp error!\r\n", __func__);
 #endif
-        return -1;
+        return EIO;
     }
 
     if (resp->params[0]->param[0] != 1)
@@ -1025,7 +1041,7 @@ int8_t esp32_spi_get_host_by_name(uint8_t *hostname, uint8_t *ip)
         printf("Failed to request hostname\r\n");
 #endif
         resp->del(resp);
-        return -1;
+        return EINVAL;
     }
     resp->del(resp);
 
@@ -1036,7 +1052,7 @@ int8_t esp32_spi_get_host_by_name(uint8_t *hostname, uint8_t *ip)
 #if ESP32_SPI_DEBUG
         printf("%s: get resp error!\r\n", __func__);
 #endif
-        return -1;
+        return EIO;
     }
 
 #if (ESP32_SPI_DEBUG >= 2)
@@ -1066,7 +1082,7 @@ int8_t esp32_spi_get_host_by_name(uint8_t *hostname, uint8_t *ip)
 //          1 hostname
 //-1 error
 //time
-uint16_t esp32_spi_ping(uint8_t *dest, uint8_t dest_type, uint8_t ttl)
+int32_t esp32_spi_ping(uint8_t *dest, uint8_t dest_type, uint8_t ttl)
 {
     uint8_t sttl = 0;
     sttl = MAX(0, MIN(ttl, 255));
@@ -1083,7 +1099,7 @@ uint16_t esp32_spi_ping(uint8_t *dest, uint8_t dest_type, uint8_t ttl)
 #if ESP32_SPI_DEBUG
             printf("get host by name error\r\n");
 #endif
-            return -1;
+            return -2;
         }
     }
     else
@@ -1286,7 +1302,7 @@ esp32_socket_enum_t esp32_spi_socket_status(uint8_t socket_num)
 #if ESP32_SPI_DEBUG
         printf("%s: get resp error!\r\n", __func__);
 #endif
-        return -1;
+        return -2;
     }
     esp32_socket_enum_t ret;
 
@@ -1362,7 +1378,7 @@ uint32_t esp32_spi_socket_write(uint8_t socket_num, uint8_t *buffer, uint32_t le
 }
 
 //Determine how many bytes are waiting to be read on the socket
-uint16_t esp32_spi_socket_available(uint8_t socket_num)
+int esp32_spi_socket_available(uint8_t socket_num)
 {
     esp32_spi_params_t *send = esp32_spi_params_alloc_1param(1, &socket_num);
     esp32_spi_params_t *resp = esp32_spi_send_command_get_response(AVAIL_DATA_TCP_CMD, send, NULL, 0, 0);
@@ -1373,15 +1389,16 @@ uint16_t esp32_spi_socket_available(uint8_t socket_num)
 #if ESP32_SPI_DEBUG
         printf("%s: get resp error!\r\n", __func__);
 #endif
-        return 0xffff;
+        return -1;
     }
 
-    uint16_t reply = 0;
+    int reply = 0;
 
-    reply = (uint16_t)(resp->params[0]->param[1] << 8) | (uint16_t)(resp->params[0]->param[0]);
+    reply = (int)((uint16_t)(resp->params[0]->param[1] << 8) | (uint16_t)(resp->params[0]->param[0]));
 
 #if ESP32_SPI_DEBUG
-    printf("ESPSocket: %d bytes available\r\n", reply);
+    if(reply > 0)
+        printf("ESPSocket: %d bytes available\r\n", reply);
 #endif
 
     resp->del(resp);
@@ -1389,9 +1406,7 @@ uint16_t esp32_spi_socket_available(uint8_t socket_num)
 }
 
 //Read up to 'size' bytes from the socket number. Returns a bytearray
-//0 error
-//len ok
-uint16_t esp32_spi_socket_read(uint8_t socket_num, uint8_t *buff, uint16_t size)
+int esp32_spi_socket_read(uint8_t socket_num, uint8_t *buff, uint16_t size)
 {
 #if ESP32_SPI_DEBUG
     printf("Reading %d bytes from ESP socket with status %s\r\n", size, socket_enum_to_str(esp32_spi_socket_status(socket_num)));
@@ -1415,7 +1430,7 @@ uint16_t esp32_spi_socket_read(uint8_t socket_num, uint8_t *buff, uint16_t size)
 #if ESP32_SPI_DEBUG
         printf("%s: get resp error!\r\n", __func__);
 #endif
-        return 0;
+        return -1;
     }
 
 #if 0
@@ -1453,12 +1468,13 @@ int8_t esp32_spi_socket_connect(uint8_t socket_num, uint8_t *dest, uint8_t dest_
 #if ESP32_SPI_DEBUG
     printf("*** Socket connect mode:%d\r\n", conn_mod);
 #endif
-
-    if (esp32_spi_socket_open(socket_num, dest, dest_type, port, conn_mod) != 0)
+    int8_t ret = esp32_spi_socket_open(socket_num, dest, dest_type, port, conn_mod);
+    if ( ret == -2 )
     {
-#if ESP32_SPI_DEBUG
-        printf("socket open failed!\r\n");
-#endif
+        return -2;
+    }
+    if(ret == -1)
+    {
         return -1;
     }
 
@@ -1466,20 +1482,16 @@ int8_t esp32_spi_socket_connect(uint8_t socket_num, uint8_t *dest, uint8_t dest_
 
     while ((sysctl_get_time_us() - tm) < 3 * 1000 * 1000) //3s
     {
-        if (esp32_spi_is_connected())
+        uint8_t ret = esp32_spi_socket_status(socket_num);
+        if (ret == SOCKET_ESTABLISHED)
             return 0;
+        else if(ret == -2) // EIO
+        {
+            return -2;
+        }
         // msleep(100);
     }
-
-    if ((sysctl_get_time_us() - tm) > 3 * 1000 * 1000)
-    {
-#if ESP32_SPI_DEBUG
-        printf("Failed to establish connection\r\n");
-#endif
-        return -1;
-    }
-
-    return -1;
+    return -3;
 }
 
 // Close a socket using the ESP32's internal reference number

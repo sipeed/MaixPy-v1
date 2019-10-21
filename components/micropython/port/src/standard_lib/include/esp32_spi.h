@@ -7,6 +7,7 @@
 #define ESP32_SPI_DEBUG                 (0)
 
 #define ESP32_ADC_CH_NUM                (5)
+#define SPI_MAX_DMA_LEN 4000 //(4096-4)
 
 #if 1
 #define _DEBUG()
@@ -140,7 +141,7 @@ typedef struct
 
 void esp32_spi_init(void);
 int8_t esp32_spi_status(void);
-char *esp32_spi_firmware_version(void);
+char *esp32_spi_firmware_version(char* fw_version);
 uint8_t *esp32_spi_MAC_address(void);
 
 int8_t esp32_spi_start_scan_networks(void);
@@ -155,17 +156,18 @@ int8_t esp32_spi_ip_address(uint8_t *net_data);
 uint8_t esp32_spi_is_connected(void);
 void esp32_spi_connect(uint8_t *secrets);
 int8_t esp32_spi_connect_AP(uint8_t *ssid, uint8_t *password, uint8_t retry_times);
+int8_t esp32_spi_disconnect_from_AP(void);
 void esp32_spi_pretty_ip(uint8_t *ip, uint8_t *str_ip);
-int8_t esp32_spi_get_host_by_name(uint8_t *hostname, uint8_t *ip);
-uint16_t esp32_spi_ping(uint8_t *dest, uint8_t dest_type, uint8_t ttl);
+int esp32_spi_get_host_by_name(uint8_t *hostname, uint8_t *ip);
+int32_t esp32_spi_ping(uint8_t *dest, uint8_t dest_type, uint8_t ttl);
 
 uint8_t esp32_spi_get_socket(void);
 int8_t esp32_spi_socket_open(uint8_t sock_num, uint8_t *dest, uint8_t dest_type, uint16_t port, esp32_socket_mode_enum_t conn_mode);
 esp32_socket_enum_t esp32_spi_socket_status(uint8_t socket_num);
 uint8_t esp32_spi_socket_connected(uint8_t socket_num);
 uint32_t esp32_spi_socket_write(uint8_t socket_num, uint8_t *buffer, uint32_t len);
-uint16_t esp32_spi_socket_available(uint8_t socket_num);
-uint16_t esp32_spi_socket_read(uint8_t socket_num, uint8_t *buff, uint16_t size);
+int esp32_spi_socket_available(uint8_t socket_num);
+int esp32_spi_socket_read(uint8_t socket_num, uint8_t *buff, uint16_t size);
 int8_t esp32_spi_socket_connect(uint8_t socket_num, uint8_t *dest, uint8_t dest_type, uint16_t port, esp32_socket_mode_enum_t conn_mod);
 int8_t esp32_spi_socket_close(uint8_t socket_num);
 

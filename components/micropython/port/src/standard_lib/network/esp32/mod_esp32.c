@@ -21,8 +21,9 @@ typedef struct _esp32_nic_obj_t
 {
     mp_obj_base_t base;
 
+    int8_t sock_id;
+    bool to_be_closed;
 } esp32_nic_obj_t;
-STATIC bool nic_connected = false;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 STATIC mp_obj_t esp32_nic_ifconfig(mp_obj_t self_in) {
@@ -42,11 +43,12 @@ STATIC mp_obj_t esp32_nic_ifconfig(mp_obj_t self_in) {
 }
 
 STATIC mp_obj_t esp32_nic_isconnected(mp_obj_t self_in) {
-    return mp_obj_new_bool(nic_connected);
+    uint8_t is_connected = esp32_spi_is_connected();
+    return mp_obj_new_bool(is_connected == 0);
 }
 
 STATIC mp_obj_t esp32_nic_disconnect(mp_obj_t self_in) {
-    printf("%s not Supported!\r\n", __func__);
+    esp32_spi_disconnect_from_AP();
     return mp_const_none;
 }
 
@@ -86,8 +88,15 @@ STATIC mp_obj_t esp32_nic_ping(size_t n_args, const mp_obj_t *pos_args, mp_map_t
 	if (args[ARG_host_type].u_int != mp_const_none) {
         host_type = args[ARG_host_type].u_int;
     }
-    uint16_t time = esp32_spi_ping((uint8_t*)host, host_type, 100);
-
+    int32_t time = esp32_spi_ping((uint8_t*)host, host_type, 100);
+    if(time == -2)
+    {
+        mp_raise_msg(&mp_type_OSError, "get host name fail");
+    }
+    else if(time < 0)
+    {
+        mp_raise_msg(&mp_type_OSError, "get response fail");
+    }
     return mp_obj_new_int(time);
 }
 
@@ -124,9 +133,17 @@ STATIC mp_obj_t esp32_nic_connect( size_t n_args, const mp_obj_t *pos_args, mp_m
     }
     // connect to AP
     
-    int8_t err = esp32_spi_connect_AP((uint8_t*)ssid, (uint8_t*)key, 10);
-    if(err == 0)
-    	nic_connected = 1;
+    int8_t err = esp32_spi_connect_AP((uint8_t*)ssid, (uint8_t*)key, 20);
+    if(err != 0)
+    {
+        char* msg = m_new(char, 30);
+        snprintf(msg, 20, "Connect fail:");
+        if(err == -2)
+            snprintf(msg+strlen(msg), 30-strlen(msg), "FAILED");
+        else
+            snprintf(msg+strlen(msg), 30-strlen(msg), "TIMEOUT %d", err);
+    	mp_raise_msg(&mp_type_OSError, msg);
+    }
 
     return mp_const_none;
 }
@@ -134,23 +151,27 @@ STATIC mp_obj_t esp32_nic_connect( size_t n_args, const mp_obj_t *pos_args, mp_m
 STATIC mp_obj_t esp32_scan_wifi( mp_obj_t self_in )
 {
     mp_obj_t list = mp_obj_new_list(0, NULL);
-    char fail_str[30] ;
     bool end;
-    int err_code = 0;
-
+    char* fail_str = m_new(char, 30);
+    
     esp32_spi_aps_list_t* aps_list = esp32_spi_scan_networks();
-    uint32_t count = aps_list->aps_num;
     if(aps_list == NULL)
         goto err;
+    uint32_t count = aps_list->aps_num;
     for(int i=0; i<count; i++)
     {
         esp32_spi_ap_t* ap = aps_list->aps[i];
-        mp_obj_list_append(list, mp_obj_new_str((char*)ap->ssid, strlen(ap->ssid)));
+        mp_obj_t info[3];
+        info[0] = mp_obj_new_str((char*)ap->ssid, strlen(ap->ssid));
+        info[1] = mp_obj_new_int(ap->encr);
+        info[2] = mp_obj_new_int(ap->rssi);
+        mp_obj_t t = mp_obj_new_tuple(3, info);
+        mp_obj_list_append(list, t);
     }
     aps_list->del(aps_list);
     return list;
 err:
-    snprintf(fail_str, sizeof(fail_str), "wifi scan fail:%d", err_code);
+    snprintf(fail_str, 30, "wifi scan fail");
     mp_raise_msg(&mp_type_OSError, fail_str);
 }
 
@@ -228,7 +249,15 @@ STATIC void esp32_make_new_helper(esp32_nic_obj_t *self, size_t n_args, const mp
     esp32_spi_config_io(cs - FUNC_GPIOHS0, rst, rdy - FUNC_GPIOHS0,
                         mosi - FUNC_GPIOHS0, miso - FUNC_GPIOHS0, sclk - FUNC_GPIOHS0);
     esp32_spi_init();
-    mp_printf(&mp_plat_print, "ESP32_SPI init over\r\n");
+    char* version = m_new(char, 32);
+    char* ret = esp32_spi_firmware_version(version);
+    if(ret == NULL)
+    {
+        mp_raise_msg(&mp_type_OSError, "Get version fail");
+    }
+    char* msg = m_new(char, 80);
+    snprintf(msg, 80, "ESP32_SPI init ok\r\nVersion:%s\r\n", version);
+    mp_printf(&mp_plat_print, msg);
 }
 
 //network.ESP32_SPI(cs=1,rst=2,rdy=3,mosi=4,miso=5,sclk=6)
@@ -241,6 +270,7 @@ STATIC mp_obj_t esp32_make_new(const mp_obj_type_t *type, size_t n_args, size_t 
     }
     esp32_nic_obj_t *self = m_new_obj(esp32_nic_obj_t);
     self->base.type = (mp_obj_type_t *)&mod_network_nic_type_esp32;
+    self->sock_id = -1;
     mp_map_t kw_args;
     mp_map_init_fixed_table(&kw_args, n_kw, args + n_args);
     esp32_make_new_helper(self, n_args, args, &kw_args);
@@ -305,7 +335,6 @@ STATIC const mp_rom_map_elem_t esp32_locals_dict_table[] = {
 
 STATIC MP_DEFINE_CONST_DICT(esp32_locals_dict, esp32_locals_dict_table);
 
-STATIC uint8_t sock = 0;
 
 STATIC int esp32_socket_socket(mod_network_socket_obj_t *socket, int *_errno) {
     return 0;
@@ -318,37 +347,50 @@ STATIC int esp32_socket_connect(mod_network_socket_obj_t *socket, byte *ip, mp_u
 		*_errno = -1;
 		return -1;
 	}
+    esp32_nic_obj_t* nic = (esp32_nic_obj_t*)socket->nic;
 
 	switch(socket->u_param.type)
 	{
 		case MOD_NETWORK_SOCK_STREAM:
 		{
-            sock = esp32_spi_get_socket();
-            int8_t conn = esp32_spi_socket_connect(sock, ip, 0, port, TCP_MODE);
-			if(-1 == conn)
+            uint8_t ret = esp32_spi_get_socket();
+            if(ret == 0xff)
+            {
+                *_errno = MP_EIO;
+                return -1;
+            }
+            nic->sock_id = (int8_t)ret;
+            nic->to_be_closed = false;
+            int8_t conn = esp32_spi_socket_connect((uint8_t)nic->sock_id, ip, 0, port, TCP_MODE);
+			if(-2 == conn)
 			{
-				*_errno = -1;
+				*_errno = MP_EIO;
 				return -1;
 			}
+            else if(conn == -1)
+            {
+                *_errno = MP_ECONNREFUSED;
+				return -1;
+            }
+            else if(conn == -3)
+            {
+                *_errno = MP_ETIMEDOUT;
+				return -1;
+            }
 			break;
 		}
 		case MOD_NETWORK_SOCK_DGRAM:
 		{
             mp_printf(&mp_plat_print, "[MaixPy] %s | esp32_socket_connect UDP NOT implemented yet\n",__func__);
-            *_errno = -1;
+            *_errno = MP_EPERM;
             return -1;
 			// break;
 		}
 		default:
 		{
-            sock = esp32_spi_get_socket();
-            int8_t conn = esp32_spi_socket_connect(sock, ip, 0, port, TCP_MODE);
-			if(-1 == conn)
-			{
-				*_errno = -1;
-				return -1;
-			}
-			break;
+            mp_printf(&mp_plat_print, "[MaixPy] %s | esp32_socket_connect param error\n",__func__);
+            *_errno = MP_EPERM;
+            return -1;
 		}
 	}
     return 0;
@@ -359,20 +401,52 @@ STATIC mp_uint_t esp32_socket_recv(mod_network_socket_obj_t *socket, byte *buf, 
 	{
 		mp_printf(&mp_plat_print, "[MaixPy] %s | esp32_socket_connect can not get nic\n",__func__);
 		*_errno = MP_EPIPE;
-		return -1;
+		return MP_STREAM_ERROR;
 	}
-
-	uint16_t read_len = 0;
-    uint16_t len1 = esp32_spi_socket_available(sock);
-    if(len1 == 0)
-    {
-		*_errno = MP_EIO;
-        return read_len;
-    }
-
-	read_len = esp32_spi_socket_read(sock, (uint8_t*)buf, len1>len?len:len1);
-	if(0 == read_len)
-		*_errno = MP_EIO;
+    esp32_nic_obj_t* self = (esp32_nic_obj_t*)socket->nic;
+    int read_len = 0;
+    uint16_t once_read_len = 0;
+    int ret = -1;
+    mp_uint_t start_time = mp_hal_ticks_ms();
+    do{
+        int len_avail = esp32_spi_socket_available(self->sock_id);
+        if(len_avail == -1)
+        {
+            *_errno = MP_EIO;
+            return MP_STREAM_ERROR;
+        }
+        if(len_avail > 0)
+        {
+            once_read_len = len_avail>(len-read_len) ? (len-read_len) : len_avail;
+            once_read_len = once_read_len>SPI_MAX_DMA_LEN ? SPI_MAX_DMA_LEN : once_read_len;
+            ret = esp32_spi_socket_read(self->sock_id, (uint8_t*)buf+read_len, once_read_len);
+            if(ret == -1)
+            {
+                *_errno = MP_EIO;
+                return MP_STREAM_ERROR;
+            }
+            read_len += ret;
+        }
+        if(read_len >= len)
+            break;
+        if(socket->timeout == 0)
+            break;
+        if( mp_hal_ticks_ms() - start_time > ((uint32_t)socket->timeout*1000) )
+        {
+            *_errno = MP_ETIMEDOUT;
+            return MP_STREAM_ERROR;
+        }
+        if(esp32_spi_socket_status(self->sock_id) == SOCKET_CLOSED)
+        {
+            if(!self->to_be_closed)
+            {
+                self->to_be_closed = true;
+                break;
+            }
+            *_errno = MP_EAGAIN; // MP_EAGAIN or MP_EWOULDBLOCK according to `mp_is_nonblocking_error()`
+            return MP_STREAM_ERROR;
+        }
+    }while(1);
 	return read_len;
 }
 
@@ -384,10 +458,11 @@ STATIC mp_uint_t esp32_socket_send(mod_network_socket_obj_t *socket, const byte 
 		*_errno = MP_EPIPE;
 		return -1;
 	}
-    int status = esp32_spi_socket_status(sock);
+    esp32_nic_obj_t* self = (esp32_nic_obj_t*)socket->nic;
+    int status = esp32_spi_socket_status(self->sock_id);
     if(status == SOCKET_ESTABLISHED)
 
-	if(esp32_spi_socket_write(sock, (uint8_t*)buf, len ) == 0)
+	if(esp32_spi_socket_write(self->sock_id, (uint8_t*)buf, len ) == 0)
 	{
 		mp_printf(&mp_plat_print, "[MaixPy] %s | send data failed\n",__func__);
 
@@ -404,22 +479,22 @@ STATIC void esp32_socket_close(mod_network_socket_obj_t *socket) {
 		mp_printf(&mp_plat_print, "[MaixPy] %s | esp32_socket_connect can not get nic\n",__func__);
 		return ;
 	}
-
-    int8_t status = esp32_spi_socket_close(sock);
+    esp32_nic_obj_t* self = (esp32_nic_obj_t*)socket->nic;
+    int8_t status = esp32_spi_socket_close(self->sock_id);
 }
 
 STATIC int esp32_socket_gethostbyname(mp_obj_t nic, const char *name, mp_uint_t len, uint8_t* out_ip) {
 	if((mp_obj_type_t*)&mod_network_nic_type_esp32 != mp_obj_get_type(nic))
 	{
-        return -1;
+        return MP_EPERM;
     }
 
     uint8_t tmp_ip[6];
-    if(esp32_spi_get_host_by_name((uint8_t*)name, tmp_ip) == -1)
-        return -1;
-
+    int ret = esp32_spi_get_host_by_name((uint8_t*)name, tmp_ip);
+    if( ret != 0)
+        return ret;
     memcpy(out_ip, tmp_ip, 4);
-    return true;
+    return 0;
 }
 
 const mod_network_nic_type_t mod_network_nic_type_esp32 = {

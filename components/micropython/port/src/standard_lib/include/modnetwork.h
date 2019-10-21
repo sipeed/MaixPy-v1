@@ -87,6 +87,7 @@ typedef struct _mod_network_socket_obj_t {
         } u_param;
         mp_uint_t u_state;
     };
+    int8_t fd;
     float timeout;
     bool peer_closed;
     bool first_read_after_write;
