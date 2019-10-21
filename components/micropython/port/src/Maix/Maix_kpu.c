@@ -389,9 +389,7 @@ STATIC mp_obj_t py_kpu_class_load(size_t n_args, const mp_obj_t *pos_args, mp_ma
 
 error:
 {
-    char msg[50];
-    sprintf(msg,"[MAIXPY]kpu: load error:%d", err);
-    mp_raise_ValueError(msg);
+    nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "[MAIXPY]kpu: load error:%d", err));
 }
 }
 
