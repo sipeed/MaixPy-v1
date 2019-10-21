@@ -600,52 +600,80 @@ void imlib_image_operation(image_t *img, const char *path, image_t *other, int s
     }
 }
 
-void imlib_load_image(image_t *img, const char *path, mp_obj_t file)
+void imlib_load_image(image_t *img, const char *path, mp_obj_t file, uint8_t* buf, uint32_t buf_len)
 {
     int err = 0;
     char magic[2];
-    bool is_file_obj = true;
+    uint8_t data_type = 0; // 0: file path, 1: file obj, 2: buffer(bytes)
 
-    if( !file )
+    if(path)
+        data_type = 0;
+    else if(file)
+        data_type = 1;
+    else if(buf)
+        data_type = 2;
+    else
+        mp_raise_OSError(EINVAL);
+    if(data_type == 0)
     {
         file = vfs_internal_open(path,"rb", &err);
-        is_file_obj = false;
+        if(err != 0)
+            mp_raise_OSError(err);
     }
-    if(file == MP_OBJ_NULL || err != 0)
-        mp_raise_OSError(err);
-    vfs_internal_read(file, magic, 2, &err);
-    if( err != 0)
-        mp_raise_OSError(err);
-    vfs_internal_seek(file,-2, SEEK_CUR, &err);
-    if( err != 0)
+    if(data_type == 2)
+        memcpy(magic, buf, 2);
+    else
     {
-        int tmp = err;
-        vfs_internal_close(file, &err);
-        mp_raise_OSError(tmp);
+        vfs_internal_read(file, magic, 2, &err);
+        if( err != 0)
+            mp_raise_OSError(err);
+        vfs_internal_seek(file,-2, SEEK_CUR, &err);
+        if( err != 0)
+        {
+            int tmp = err;
+            vfs_internal_close(file, &err);
+            mp_raise_OSError(tmp);
+        }
     }
-
     /*if ((magic[0]=='P')
     && ((magic[1]=='2') || (magic[1]=='3')
     ||  (magic[1]=='5') || (magic[1]=='6'))) { // PPM
         ppm_read(img, path);
     } else*/ if ((magic[0]=='B') && (magic[1]=='M')) { // BMP
+        if(data_type != 0)
+        {
+            mp_raise_msg(&mp_type_OSError, "Not support");
+        }
         bmp_read(img, path);
     } else if ((magic[0]==0xFF) && (magic[1]==0xD8)) { // JPEG
         // jpeg_read(img, path);
-        int err = picojpeg_util_read(img, file, NULL, 0, MAIN_FB()->w_max, MAIN_FB()->h_max);
-        int tmp;
-        if(!is_file_obj)
-            vfs_internal_close(file, &tmp);
-        if( err != 0)
+        if(data_type == 2)
         {
-            if(is_file_obj)
+            err = picojpeg_util_read(img, NULL, buf, buf_len, MAIN_FB()->w_max, MAIN_FB()->h_max);
+        }
+        else
+        {
+            err = picojpeg_util_read(img, file, NULL, 0, MAIN_FB()->w_max, MAIN_FB()->h_max);
+        }
+        if(data_type != 2)
+        {
+            int tmp;
+            if(data_type == 0)
                 vfs_internal_close(file, &tmp);
-            mp_raise_OSError(err);
+            if( err != 0)
+            {
+                if(data_type == 1)
+                    vfs_internal_close(file, &tmp);
+                mp_raise_OSError(err);
+            }
         }
     } else {
+        int tmp;
+        if(data_type == 0)
+            vfs_internal_close(file, &tmp);
         mp_raise_ValueError("format not supported");
     }
-    if(!is_file_obj)
+    if(data_type == 0)
     {
         imblib_parse_extension(img, path); // Enforce extension!
     }

@@ -1200,7 +1200,7 @@ void jpeg_read(image_t *img, const char *path);
 void jpeg_write(image_t *img, const char *path, int quality);
 bool imlib_read_geometry(mp_obj_t fp, image_t *img, const char *path, img_read_settings_t *rs);
 void imlib_image_operation(image_t *img, const char *path, image_t *other, int scalar, line_op_t op, void *data);
-void imlib_load_image(image_t *img, const char *path, mp_obj_t file);
+void imlib_load_image(image_t *img, const char *path, mp_obj_t file, uint8_t* buff, uint32_t buff_len);
 void imlib_save_image(image_t *img, const char *path, rectangle_t *roi, int quality);
 
 /* GIF functions */

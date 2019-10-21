@@ -22,6 +22,7 @@
 #include "omv_boardconfig.h"
 #include "py/runtime0.h"
 #include "py/runtime.h"
+#include "py/objstr.h"
 //#include "sipeed_sys.h"
 
 static const mp_obj_type_t py_image_type;
@@ -6396,10 +6397,10 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_image_grayscale_to_rgb_obj, py_image_graysca
 mp_obj_t py_image_load_image(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     point_t xy = {0, 0};
-    bool copy_to_fb = py_helper_keyword_int(n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_copy_to_fb), false);
+    bool copy_to_fb = py_helper_keyword_int(n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_copy_to_fb), 0) > 0 ? true : false;
+    bool from_bytes = py_helper_keyword_int(n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_from_bytes), 0) > 0 ? true : false;
 	py_helper_keyword_xy(NULL, n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_size), &xy);
     if (copy_to_fb) fb_update_jpeg_buffer();
-
     // image_t image = {0};
 
     // if (copy_to_fb) {
@@ -6432,13 +6433,21 @@ mp_obj_t py_image_load_image(size_t n_args, const mp_obj_t *args, mp_map_t *kw_a
         {
             image.data = MAIN_FB()->pixels;
         }
-        if( MP_OBJ_IS_STR(args[0]) )
+        if( mp_obj_is_str_or_bytes(args[0]) )
         {
-            imlib_load_image(&image, mp_obj_str_get_str(args[0]), NULL);
+            if(from_bytes)
+            {
+                GET_STR_LEN(args[0], bytes_len);
+                imlib_load_image(&image, NULL, NULL, mp_obj_str_get_str(args[0]), (uint32_t)bytes_len);
+            }
+            else
+            {
+                imlib_load_image(&image, mp_obj_str_get_str(args[0]), NULL, NULL, 0);
+            }
         }
         else
         {
-            imlib_load_image(&image, NULL, args[0]);
+            imlib_load_image(&image, NULL, args[0], NULL, 0);
         }
     }
     else
