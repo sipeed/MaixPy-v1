@@ -9,7 +9,7 @@
 #include "printf.h"
 #include "errno.h"
 
-#define ESP32_SPI_DEBUG 1
+#define ESP32_SPI_DEBUG 0
 
 // Cached values of retrieved data
 char ssid[32] = {0};
@@ -49,7 +49,7 @@ void esp32_spi_init(void)
 static void esp32_spi_reset(void)
 {
 #if ESP32_SPI_DEBUG
-    printf("Reset ESP32\r\n");
+    printk("Reset ESP32\r\n");
 #endif
 
 #if ESP32_HAVE_IO0
@@ -85,7 +85,7 @@ static void esp32_spi_reset(void)
 int8_t esp32_spi_wait_for_ready(void)
 {
 #if (ESP32_SPI_DEBUG >= 3)
-    printf("Wait for ESP32 ready\r\n");
+    printk("Wait for ESP32 ready\r\n");
 #endif
 
     uint64_t tm = sysctl_get_time_us();
@@ -95,13 +95,13 @@ int8_t esp32_spi_wait_for_ready(void)
             return 0;
 
 #if (ESP32_SPI_DEBUG >= 3)
-        printf(".");
+        printk(".");
 #endif
         msleep(1); //FIXME
     }
 
 #if (ESP32_SPI_DEBUG >= 3)
-    printf("esp32 not responding\r\n");
+    printk("esp32 not responding\r\n");
 #endif
 
     return -1;
@@ -141,7 +141,7 @@ static int8_t esp32_spi_send_command(uint8_t cmd, esp32_spi_params_t *params, ui
         if (!sendbuf)
         {
 #if (ESP32_SPI_DEBUG)
-            printf("%s: malloc error\r\n", __func__);
+            printk("%s: malloc error\r\n", __func__);
 #endif
             return -1;
         }
@@ -167,7 +167,7 @@ static int8_t esp32_spi_send_command(uint8_t cmd, esp32_spi_params_t *params, ui
         for (uint32_t i = 0; i < params->params_num; i++)
         {
 #if (ESP32_SPI_DEBUG >= 2)
-            printf("\tSending param #%d is %d bytes long\r\n", i, params->params[i]->param_len);
+            printk("\tSending param #%d is %d bytes long\r\n", i, params->params[i]->param_len);
 #endif
 
             if (param_len_16)
@@ -197,7 +197,7 @@ static int8_t esp32_spi_send_command(uint8_t cmd, esp32_spi_params_t *params, ui
     if ((sysctl_get_time_us() - tm) > 1000 * 1000)
     {
 #if (ESP32_SPI_DEBUG)
-        printf("ESP32 timed out on SPI select\r\n");
+        printk("ESP32 timed out on SPI select\r\n");
 #endif
         gpiohs_set_pin(cs_num, 1);
         if (lc_buf_flag == 0)
@@ -218,10 +218,10 @@ static int8_t esp32_spi_send_command(uint8_t cmd, esp32_spi_params_t *params, ui
 #if (ESP32_SPI_DEBUG >= 3)
     if (packet_len < 100)
     {
-        printf("Wrote buf packet_len --> %d: ", packet_len);
+        printk("Wrote buf packet_len --> %d: ", packet_len);
         for (uint32_t i = 0; i < packet_len; i++)
-            printf("%02x ", sendbuf[i]);
-        printf("\r\n");
+            printk("%02x ", sendbuf[i]);
+        printk("\r\n");
     }
 #endif
     if (lc_buf_flag == 0)
@@ -244,7 +244,7 @@ uint8_t esp32_spi_read_byte(void)
     read = soft_spi_rw(0xff);
 
 #if (ESP32_SPI_DEBUG >= 3)
-    printf("\t\tRead:%02x\r\n", read);
+    printk("\t\tRead:%02x\r\n", read);
 #endif
 
     return read;
@@ -258,10 +258,10 @@ void esp32_spi_read_bytes(uint8_t *buffer, uint32_t len)
 #if (ESP32_SPI_DEBUG >= 3)
     if (len < 100)
     {
-        printf("\t\tRead:");
+        printk("\t\tRead:");
         for (uint32_t i = 0; i < len; i++)
-            printf("%02x ", *(buffer + i));
-        printf("\r\n");
+            printk("%02x ", *(buffer + i));
+        printk("\r\n");
     }
 #endif
 }
@@ -281,7 +281,7 @@ int8_t esp32_spi_wait_spi_char(uint8_t want)
         if (read == ERR_CMD)
         {
 #if ESP32_SPI_DEBUG
-            printf("Error response to command\r\n");
+            printk("Error response to command\r\n");
 #endif
             return -1;
         }
@@ -293,7 +293,7 @@ int8_t esp32_spi_wait_spi_char(uint8_t want)
     if ((sysctl_get_time_us() - tm) > 100 * 1000)
     {
 #if ESP32_SPI_DEBUG
-        printf("Timed out waiting for SPI char\r\n");
+        printk("Timed out waiting for SPI char\r\n");
 #endif
         return -1;
     }
@@ -312,7 +312,7 @@ uint8_t esp32_spi_check_data(uint8_t want)
     if (read != want)
     {
 #if ESP32_SPI_DEBUG
-        printf("Expected %02X but got %02X\r\n", want, read);
+        printk("Expected %02X but got %02X\r\n", want, read);
 #endif
         return -1;
     }
@@ -340,7 +340,7 @@ esp32_spi_params_t *esp32_spi_wait_response_cmd(uint8_t cmd, uint32_t *num_respo
     if ((sysctl_get_time_us() - tm) > 1000 * 1000)
     {
 #if ESP32_SPI_DEBUG
-        printf("ESP32 timed out on SPI select\r\n");
+        printk("ESP32 timed out on SPI select\r\n");
 #endif
         gpiohs_set_pin(cs_num, 1);
         return NULL;
@@ -349,7 +349,7 @@ esp32_spi_params_t *esp32_spi_wait_response_cmd(uint8_t cmd, uint32_t *num_respo
     if (esp32_spi_wait_spi_char(START_CMD) != 0)
     {
 #if ESP32_SPI_DEBUG
-        printf("esp32_spi_wait_spi_char START_CMD error\r\n");
+        printk("esp32_spi_wait_spi_char START_CMD error\r\n");
 #endif
         gpiohs_set_pin(cs_num, 1);
         return NULL;
@@ -358,7 +358,7 @@ esp32_spi_params_t *esp32_spi_wait_response_cmd(uint8_t cmd, uint32_t *num_respo
     if (esp32_spi_check_data(cmd | REPLY_FLAG) != 0)
     {
 #if ESP32_SPI_DEBUG
-        printf("esp32_spi_check_data cmd | REPLY_FLAG error\r\n");
+        printk("esp32_spi_check_data cmd | REPLY_FLAG error\r\n");
 #endif
         gpiohs_set_pin(cs_num, 1);
         return NULL;
@@ -369,7 +369,7 @@ esp32_spi_params_t *esp32_spi_wait_response_cmd(uint8_t cmd, uint32_t *num_respo
         if (esp32_spi_check_data(*num_responses) != 0)
         {
 #if ESP32_SPI_DEBUG
-            printf("esp32_spi_check_data num_responses error\r\n");
+            printk("esp32_spi_check_data num_responses error\r\n");
 #endif
             gpiohs_set_pin(cs_num, 1);
             return NULL;
@@ -399,7 +399,7 @@ esp32_spi_params_t *esp32_spi_wait_response_cmd(uint8_t cmd, uint32_t *num_respo
         }
 
 #if (ESP32_SPI_DEBUG >= 2)
-        printf("\tParameter #%d length is %d\r\n", i, params_ret->params[i]->param_len);
+        printk("\tParameter #%d length is %d\r\n", i, params_ret->params[i]->param_len);
 #endif
 
         params_ret->params[i]->param = (uint8_t *)malloc(sizeof(uint8_t) * params_ret->params[i]->param_len);
@@ -409,7 +409,7 @@ esp32_spi_params_t *esp32_spi_wait_response_cmd(uint8_t cmd, uint32_t *num_respo
     if (esp32_spi_check_data(END_CMD) != 0)
     {
 #if ESP32_SPI_DEBUG
-        printf("esp32_spi_check_data END_CMD error\r\n");
+        printk("esp32_spi_check_data END_CMD error\r\n");
 #endif
         gpiohs_set_pin(cs_num, 1);
         return NULL;
@@ -461,7 +461,7 @@ other stat
 int8_t esp32_spi_status(void)
 {
 #if (ESP32_SPI_DEBUG > 1)
-    printf("Connection status\r\n");
+    printk("Connection status\r\n");
 #endif
 
     esp32_spi_params_t *resp = esp32_spi_send_command_get_response(GET_CONN_STATUS_CMD, NULL, NULL, 0, 0);
@@ -469,14 +469,14 @@ int8_t esp32_spi_status(void)
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return -2;
     }
     int8_t ret = (int8_t)resp->params[0]->param[0];
 
 #if ESP32_SPI_DEBUG
-    printf("Conn Connection: %s\r\n", wlan_enum_to_str(ret));
+    printk("Conn Connection: %s\r\n", wlan_enum_to_str(ret));
 #endif
 
     resp->del(resp);
@@ -489,7 +489,7 @@ int8_t esp32_spi_status(void)
 char *esp32_spi_firmware_version(char* fw_version)
 {
 #if ESP32_SPI_DEBUG
-    printf("Firmware version\r\n");
+    printk("Firmware version\r\n");
 #endif
 
     esp32_spi_params_t *resp = esp32_spi_send_command_get_response(GET_FW_VERSION_CMD, NULL, NULL, 0, 0);
@@ -497,7 +497,7 @@ char *esp32_spi_firmware_version(char* fw_version)
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return NULL;
     }
@@ -556,7 +556,7 @@ static esp32_spi_params_t *esp32_spi_params_alloc_2param(uint32_t len_0, uint8_t
 uint8_t *esp32_spi_MAC_address(void)
 {
 #if ESP32_SPI_DEBUG
-    printf("MAC address\r\n");
+    printk("MAC address\r\n");
 #endif
 
     uint8_t data = 0xff;
@@ -568,7 +568,7 @@ uint8_t *esp32_spi_MAC_address(void)
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return NULL;
     }
@@ -589,21 +589,21 @@ Begin a scan of visible access points. Follow up with a call
 int8_t esp32_spi_start_scan_networks(void)
 {
 #if ESP32_SPI_DEBUG
-    printf("Start scan\r\n");
+    printk("Start scan\r\n");
 #endif
 
     esp32_spi_params_t *resp = esp32_spi_send_command_get_response(START_SCAN_NETWORKS, NULL, NULL, 0, 0);
 
     if (resp == NULL)
     {
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
         return -1;
     }
 
     if (resp->params[0]->param[0] != 1)
     {
 #if ESP32_SPI_DEBUG
-        printf("Failed to start AP scan\r\n");
+        printk("Failed to start AP scan\r\n");
 #endif
         resp->del(resp);
         return -1;
@@ -640,7 +640,7 @@ esp32_spi_aps_list_t *esp32_spi_get_scan_networks(void)
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return NULL;
     }
@@ -664,8 +664,8 @@ esp32_spi_aps_list_t *esp32_spi_get_scan_networks(void)
 
         aps->aps[i]->rssi = (int8_t)(rssi->params[0]->param[0]);
 #if ESP32_SPI_DEBUG
-	printf("\tSSID:%s", aps->aps[i]->ssid);
-        printf("\t\t\trssi:%02x\r\n", rssi->params[0]->param[0]);
+	printk("\tSSID:%s", aps->aps[i]->ssid);
+        printk("\t\t\trssi:%02x\r\n", rssi->params[0]->param[0]);
 #endif
         rssi->del(rssi);
 
@@ -690,7 +690,7 @@ esp32_spi_aps_list_t *esp32_spi_scan_networks(void)
     if (esp32_spi_start_scan_networks() != 0)
     {
 #if ESP32_SPI_DEBUG
-        printf("esp32_spi_start_scan_networks failed \r\n");
+        printk("esp32_spi_start_scan_networks failed \r\n");
 #endif
         return NULL;
     }
@@ -700,7 +700,7 @@ esp32_spi_aps_list_t *esp32_spi_scan_networks(void)
     if (retaps == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get retaps error!\r\n", __func__);
+        printk("%s: get retaps error!\r\n", __func__);
 #endif
         return NULL;
     }
@@ -708,7 +708,7 @@ esp32_spi_aps_list_t *esp32_spi_scan_networks(void)
 #if (ESP32_SPI_DEBUG >= 2)
     for (uint32_t i = 0; i < retaps->aps_num; i++)
     {
-        printf("\t#%d %s RSSI: %d ENCR:%d\r\n", i, retaps->aps[i]->ssid, retaps->aps[i]->rssi, retaps->aps[i]->encr);
+        printk("\t#%d %s RSSI: %d ENCR:%d\r\n", i, retaps->aps[i]->ssid, retaps->aps[i]->rssi, retaps->aps[i]->encr);
     }
 #endif
     //need free in call
@@ -729,7 +729,7 @@ int8_t esp32_spi_wifi_set_network(uint8_t *ssid)
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return -1;
     }
@@ -737,7 +737,7 @@ int8_t esp32_spi_wifi_set_network(uint8_t *ssid)
     if (resp->params[0]->param[0] != 1)
     {
 #if ESP32_SPI_DEBUG
-        printf("Failed to set network\r\n");
+        printk("Failed to set network\r\n");
 #endif
         resp->del(resp);
         return -1;
@@ -762,7 +762,7 @@ int8_t esp32_spi_wifi_wifi_set_passphrase(uint8_t *ssid, uint8_t *passphrase)
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return -1;
     }
@@ -770,7 +770,7 @@ int8_t esp32_spi_wifi_wifi_set_passphrase(uint8_t *ssid, uint8_t *passphrase)
     if (resp->params[0]->param[0] != 1)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: Failed to set passphrase\r\n", __func__);
+        printk("%s: Failed to set passphrase\r\n", __func__);
 #endif
         resp->del(resp);
         return -1;
@@ -799,13 +799,13 @@ char *esp32_spi_get_ssid(void)
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return NULL;
     }
 
 #if (ESP32_SPI_DEBUG >= 2)
-    printf("connect ssid:%s\r\n", resp->params[0]->param);
+    printk("connect ssid:%s\r\n", resp->params[0]->param);
 #endif
 
     int8_t ret_len = resp->params[0]->param_len;
@@ -832,7 +832,7 @@ int8_t esp32_spi_get_rssi(void)
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return -1;
     }
@@ -841,7 +841,7 @@ int8_t esp32_spi_get_rssi(void)
     resp->del(resp);
 
 #if ESP32_SPI_DEBUG
-    printf("connect rssi:%d\r\n", r);
+    printk("connect rssi:%d\r\n", r);
 #endif
 
     return r;
@@ -868,7 +868,7 @@ esp32_spi_net_t *esp32_spi_get_network_data(void)
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return NULL;
     }
@@ -876,7 +876,7 @@ esp32_spi_net_t *esp32_spi_get_network_data(void)
     if (resp->params_num != 3)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: resp->params_num  error!\r\n", __func__);
+        printk("%s: resp->params_num  error!\r\n", __func__);
 #endif
         resp->del(resp);
         return NULL;
@@ -908,7 +908,7 @@ uint8_t esp32_spi_is_connected(void)
     if (stat == -2)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s get status error \r\n", __func__);
+        printk("%s get status error \r\n", __func__);
 #endif
         esp32_spi_reset();
         return 2;
@@ -923,7 +923,7 @@ uint8_t esp32_spi_is_connected(void)
 //  that contains a 'ssid' and 'password' entry
 void esp32_spi_connect(uint8_t *secrets)
 {
-    printf("%s not Support Yet!\r\n", __func__);
+    printk("%s not Support Yet!\r\n", __func__);
     return;
 }
 
@@ -935,7 +935,7 @@ void esp32_spi_connect(uint8_t *secrets)
 int8_t esp32_spi_connect_AP(uint8_t *ssid, uint8_t *password, uint8_t retry_times)
 {
 #if ESP32_SPI_DEBUG
-    printf("Connect to AP--> ssid: %s password:%s\r\n", ssid, password);
+    printk("Connect to AP--> ssid: %s password:%s\r\n", ssid, password);
 #endif
     if (password)
         esp32_spi_wifi_wifi_set_passphrase(ssid, password);
@@ -951,7 +951,7 @@ int8_t esp32_spi_connect_AP(uint8_t *ssid, uint8_t *password, uint8_t retry_time
         if (stat == -1)
         {
 #if ESP32_SPI_DEBUG
-            printf("%s get status error \r\n", __func__);
+            printk("%s get status error \r\n", __func__);
 #endif
             esp32_spi_reset();
             return -1;
@@ -967,7 +967,7 @@ int8_t esp32_spi_connect_AP(uint8_t *ssid, uint8_t *password, uint8_t retry_time
     if (stat == WL_CONNECT_FAILED || stat == WL_CONNECTION_LOST || stat == WL_DISCONNECTED)
     {
 #if ESP32_SPI_DEBUG
-        printf("Failed to connect to ssid: %s\r\n", ssid);
+        printk("Failed to connect to ssid: %s\r\n", ssid);
 #endif
 
         return -3;
@@ -976,14 +976,14 @@ int8_t esp32_spi_connect_AP(uint8_t *ssid, uint8_t *password, uint8_t retry_time
     if (stat == WL_NO_SSID_AVAIL)
     {
 #if ESP32_SPI_DEBUG
-        printf("No such ssid: %s\r\n", ssid);
+        printk("No such ssid: %s\r\n", ssid);
 #endif
 
         return -4;
     }
 
 #if ESP32_SPI_DEBUG
-    printf("Unknown error 0x%02X", stat);
+    printk("Unknown error 0x%02X", stat);
 #endif
 
     return -5;
@@ -1010,7 +1010,7 @@ void esp32_spi_pretty_ip(uint8_t *ip, uint8_t *str_ip)
 
 void esp32_spi_unpretty_ip(uint8_t *ip)
 {
-    printf("%s: Not Support Yet!\r\n", __func__);
+    printk("%s: Not Support Yet!\r\n", __func__);
     return;
 }
 
@@ -1020,7 +1020,7 @@ void esp32_spi_unpretty_ip(uint8_t *ip)
 int esp32_spi_get_host_by_name(uint8_t *hostname, uint8_t *ip)
 {
 #if ESP32_SPI_DEBUG
-    printf("*** Get host by name\r\n");
+    printk("*** Get host by name\r\n");
 #endif
 
     esp32_spi_params_t *send = esp32_spi_params_alloc_1param(strlen(hostname), hostname);
@@ -1030,7 +1030,7 @@ int esp32_spi_get_host_by_name(uint8_t *hostname, uint8_t *ip)
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return EIO;
     }
@@ -1038,7 +1038,7 @@ int esp32_spi_get_host_by_name(uint8_t *hostname, uint8_t *ip)
     if (resp->params[0]->param[0] != 1)
     {
 #if ESP32_SPI_DEBUG
-        printf("Failed to request hostname\r\n");
+        printk("Failed to request hostname\r\n");
 #endif
         resp->del(resp);
         return EINVAL;
@@ -1050,20 +1050,20 @@ int esp32_spi_get_host_by_name(uint8_t *hostname, uint8_t *ip)
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return EIO;
     }
 
 #if (ESP32_SPI_DEBUG >= 2)
-    printf("get_host_by_name:%s-->", hostname);
+    printk("get_host_by_name:%s-->", hostname);
     for (uint8_t i = 0; i < resp->params[0]->param_len; i++)
     {
-        printf("%d", resp->params[0]->param[i]);
+        printk("%d", resp->params[0]->param[i]);
         if (i < resp->params[0]->param_len - 1)
-            printf(".");
+            printk(".");
     }
-    printf("\r\n");
+    printk("\r\n");
 #endif
 
     memcpy(ip, resp->params[0]->param, resp->params[0]->param_len);
@@ -1088,7 +1088,7 @@ int32_t esp32_spi_ping(uint8_t *dest, uint8_t dest_type, uint8_t ttl)
     sttl = MAX(0, MIN(ttl, 255));
 
 #if ESP32_SPI_DEBUG
-    printf("sttl:%d\r\n", sttl);
+    printk("sttl:%d\r\n", sttl);
 #endif
 
     uint8_t dest_array[6];
@@ -1097,7 +1097,7 @@ int32_t esp32_spi_ping(uint8_t *dest, uint8_t dest_type, uint8_t ttl)
         if (esp32_spi_get_host_by_name(dest, dest_array) != 0)
         {
 #if ESP32_SPI_DEBUG
-            printf("get host by name error\r\n");
+            printk("get host by name error\r\n");
 #endif
             return -2;
         }
@@ -1114,7 +1114,7 @@ int32_t esp32_spi_ping(uint8_t *dest, uint8_t dest_type, uint8_t ttl)
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return -1;
     }
@@ -1122,7 +1122,7 @@ int32_t esp32_spi_ping(uint8_t *dest, uint8_t dest_type, uint8_t ttl)
     uint16_t time = resp->params[0]->param[1] << 8 | resp->params[0]->param[0];
 
 #if ESP32_SPI_DEBUG
-    printf("time:%dms\r\n", time);
+    printk("time:%dms\r\n", time);
 #endif
 
     resp->del(resp);
@@ -1136,14 +1136,14 @@ int32_t esp32_spi_ping(uint8_t *dest, uint8_t dest_type, uint8_t ttl)
 uint8_t esp32_spi_get_socket(void)
 {
 #if ESP32_SPI_DEBUG
-    printf("*** Get socket\r\n");
+    printk("*** Get socket\r\n");
 #endif
     esp32_spi_params_t *resp = esp32_spi_send_command_get_response(GET_SOCKET_CMD, NULL, NULL, 0, 0);
 
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return 0xff;
     }
@@ -1153,14 +1153,14 @@ uint8_t esp32_spi_get_socket(void)
     if (socket == 255)
     {
 #if ESP32_SPI_DEBUG
-        printf("No sockets available\r\n");
+        printk("No sockets available\r\n");
 #endif
         resp->del(resp);
         return 0xff;
     }
 
 #if ESP32_SPI_DEBUG
-    printf("Allocated socket #%d\r\n", socket);
+    printk("Allocated socket #%d\r\n", socket);
 #endif
 
     resp->del(resp);
@@ -1187,7 +1187,7 @@ int8_t esp32_spi_socket_open(uint8_t sock_num, uint8_t *dest, uint8_t dest_type,
     port_arr[1] = (uint8_t)(port);
 
 #if (ESP32_SPI_DEBUG > 1)
-    printf("port: 0x%02x 0x%02x\r\n", port_arr[0], port_arr[1]);
+    printk("port: 0x%02x 0x%02x\r\n", port_arr[0], port_arr[1]);
 #endif
 
     esp32_spi_params_t *send = (esp32_spi_params_t *)malloc(sizeof(esp32_spi_params_t));
@@ -1267,7 +1267,7 @@ int8_t esp32_spi_socket_open(uint8_t sock_num, uint8_t *dest, uint8_t dest_type,
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return -1;
     }
@@ -1275,7 +1275,7 @@ int8_t esp32_spi_socket_open(uint8_t sock_num, uint8_t *dest, uint8_t dest_type,
     if (resp->params[0]->param[0] != 1)
     {
 #if ESP32_SPI_DEBUG
-        printf("Could not connect to remote server\r\n");
+        printk("Could not connect to remote server\r\n");
 #endif
         resp->del(resp);
 
@@ -1300,7 +1300,7 @@ esp32_socket_enum_t esp32_spi_socket_status(uint8_t socket_num)
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return -2;
     }
@@ -1311,7 +1311,7 @@ esp32_socket_enum_t esp32_spi_socket_status(uint8_t socket_num)
     resp->del(resp);
 
 #if (ESP32_SPI_DEBUG > 1)
-    printf("sock stat :%d\r\n", ret);
+    printk("sock stat :%d\r\n", ret);
 #endif
     return ret;
 }
@@ -1334,7 +1334,7 @@ uint32_t esp32_spi_socket_write(uint8_t socket_num, uint8_t *buffer, uint32_t le
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return 0;
     }
@@ -1344,7 +1344,7 @@ uint32_t esp32_spi_socket_write(uint8_t socket_num, uint8_t *buffer, uint32_t le
     if (sent != len)
     {
 #if ESP32_SPI_DEBUG
-        printf("Failed to send %d bytes (sent %d)", len, sent);
+        printk("Failed to send %d bytes (sent %d)", len, sent);
 #endif
         resp->del(resp);
         return 0;
@@ -1359,7 +1359,7 @@ uint32_t esp32_spi_socket_write(uint8_t socket_num, uint8_t *buffer, uint32_t le
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return 0;
     }
@@ -1367,7 +1367,7 @@ uint32_t esp32_spi_socket_write(uint8_t socket_num, uint8_t *buffer, uint32_t le
     if (resp->params[0]->param[0] != 1)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: Failed to verify data sent\r\n", __func__);
+        printk("%s: Failed to verify data sent\r\n", __func__);
 #endif
         resp->del(resp);
         return 0;
@@ -1387,7 +1387,7 @@ int esp32_spi_socket_available(uint8_t socket_num)
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return -1;
     }
@@ -1398,7 +1398,7 @@ int esp32_spi_socket_available(uint8_t socket_num)
 
 #if ESP32_SPI_DEBUG
     if(reply > 0)
-        printf("ESPSocket: %d bytes available\r\n", reply);
+        printk("ESPSocket: %d bytes available\r\n", reply);
 #endif
 
     resp->del(resp);
@@ -1409,7 +1409,7 @@ int esp32_spi_socket_available(uint8_t socket_num)
 int esp32_spi_socket_read(uint8_t socket_num, uint8_t *buff, uint16_t size)
 {
 #if ESP32_SPI_DEBUG
-    printf("Reading %d bytes from ESP socket with status %s\r\n", size, socket_enum_to_str(esp32_spi_socket_status(socket_num)));
+    printk("Reading %d bytes from ESP socket with status %s\r\n", size, socket_enum_to_str(esp32_spi_socket_status(socket_num)));
 #endif
 
     uint8_t len[2];
@@ -1418,7 +1418,7 @@ int esp32_spi_socket_read(uint8_t socket_num, uint8_t *buff, uint16_t size)
     len[1] = (uint8_t)((size >> 8) & 0xff);
 
 #if (ESP32_SPI_DEBUG > 2)
-    printf("len_0:%02x\tlen_1:%02x\r\n", len[0], len[1]);
+    printk("len_0:%02x\tlen_1:%02x\r\n", len[0], len[1]);
 #endif
 
     esp32_spi_params_t *send = esp32_spi_params_alloc_2param(1, &socket_num, 2, len);
@@ -1428,7 +1428,7 @@ int esp32_spi_socket_read(uint8_t socket_num, uint8_t *buff, uint16_t size)
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return -1;
     }
@@ -1437,7 +1437,7 @@ int esp32_spi_socket_read(uint8_t socket_num, uint8_t *buff, uint16_t size)
     if (resp->params[0]->param_len != size)
     {
 #if ESP32_SPI_DEBUG
-        printf("read error len\r\n");
+        printk("read error len\r\n");
 #endif
         resp->del(resp);
         return -1;
@@ -1466,7 +1466,7 @@ int esp32_spi_socket_read(uint8_t socket_num, uint8_t *buff, uint16_t size)
 int8_t esp32_spi_socket_connect(uint8_t socket_num, uint8_t *dest, uint8_t dest_type, uint16_t port, esp32_socket_mode_enum_t conn_mod)
 {
 #if ESP32_SPI_DEBUG
-    printf("*** Socket connect mode:%d\r\n", conn_mod);
+    printk("*** Socket connect mode:%d\r\n", conn_mod);
 #endif
     int8_t ret = esp32_spi_socket_open(socket_num, dest, dest_type, port, conn_mod);
     if ( ret == -2 )
@@ -1506,7 +1506,7 @@ int8_t esp32_spi_socket_close(uint8_t socket_num)
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return -1;
     }
@@ -1515,7 +1515,7 @@ int8_t esp32_spi_socket_close(uint8_t socket_num)
     {
 
 #if ESP32_SPI_DEBUG
-        printf("Failed to close socket\r\n");
+        printk("Failed to close socket\r\n");
 #endif
         resp->del(resp);
         return -1;
@@ -1534,7 +1534,7 @@ static uint8_t esp32_spi_sample_adc(void)
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return 1;
     }
@@ -1542,7 +1542,7 @@ static uint8_t esp32_spi_sample_adc(void)
     if (resp->params[0]->param[0] != 1)
     {
 #if ESP32_SPI_DEBUG
-        printf("Failed to sample adc\r\n");
+        printk("Failed to sample adc\r\n");
 #endif
         resp->del(resp);
         return 1;
@@ -1567,7 +1567,7 @@ int8_t esp32_spi_get_adc_val(uint16_t *val)
         if (esp32_spi_sample_adc() != 0)
         {
 #if ESP32_SPI_DEBUG
-            printf("%s: esp32_spi_sample_adc error!\r\n", __func__);
+            printk("%s: esp32_spi_sample_adc error!\r\n", __func__);
 #endif
             memset(val, 0, ESP32_ADC_CH_NUM);
             return -1;
@@ -1580,7 +1580,7 @@ int8_t esp32_spi_get_adc_val(uint16_t *val)
     if (resp == NULL)
     {
 #if ESP32_SPI_DEBUG
-        printf("%s: get resp error!\r\n", __func__);
+        printk("%s: get resp error!\r\n", __func__);
 #endif
         return -1;
     }
@@ -1588,7 +1588,7 @@ int8_t esp32_spi_get_adc_val(uint16_t *val)
     if (resp->params_num != ESP32_ADC_CH_NUM)
     {
 #if ESP32_SPI_DEBUG
-        printf("Failed to sample adc\r\n");
+        printk("Failed to sample adc\r\n");
 #endif
         resp->del(resp);
         return -1;
@@ -1599,7 +1599,7 @@ int8_t esp32_spi_get_adc_val(uint16_t *val)
         if (resp->params[i]->param_len != 2)
         {
 #if ESP32_SPI_DEBUG
-            printf("adc val len error\r\n");
+            printk("adc val len error\r\n");
 #endif
             resp->del(resp);
             return -1;
