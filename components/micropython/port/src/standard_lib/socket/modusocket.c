@@ -118,33 +118,6 @@ STATIC mp_obj_t socket_accept(mp_obj_t self_in) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(socket_accept_obj, socket_accept);
 
 
-// method socket.recvfrom(bufsize)
-STATIC mp_obj_t socket_recvfrom(mp_obj_t self_in, mp_obj_t len_in) {
-    mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    if (self->nic == MP_OBJ_NULL) {
-        // not connected
-        mp_raise_OSError(MP_ENOTCONN);
-    }
-    vstr_t vstr;
-    vstr_init_len(&vstr, mp_obj_get_int(len_in));
-    byte ip[4];
-    mp_uint_t port;
-    int _errno;
-    mp_int_t ret = self->nic_type->recvfrom(self, (byte*)vstr.buf, vstr.len, ip, &port, &_errno);
-    if (ret == -1) {
-        mp_raise_OSError(_errno);
-    }
-    mp_obj_t tuple[2];
-    if (ret == 0) {
-        tuple[0] = mp_const_empty_bytes;
-    } else {
-        vstr.len = ret;
-        tuple[0] = mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
-    }
-    tuple[1] = netutils_format_inet_addr(ip, port, NETUTILS_BIG);
-    return mp_obj_new_tuple(2, tuple);
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_recvfrom_obj, socket_recvfrom);
 
 // method socket.setsockopt(level, optname, value)
 STATIC mp_obj_t socket_setsockopt(size_t n_args, const mp_obj_t *args) {
@@ -209,7 +182,7 @@ STATIC mp_obj_t socket_sendto(mp_obj_t self_in, mp_obj_t data_in, mp_obj_t addr_
 
     // call the NIC to sendto
     int _errno;
-    mp_int_t ret = self->nic_type->sendto(self, bufinfo.buf, bufinfo.len, ip, port, &_errno);
+    mp_int_t ret = self->nic_type->sendto(self, (byte*)bufinfo.buf, bufinfo.len, ip, port, &_errno);
     if (ret == -1) {
         mp_raise_OSError(_errno);
     }
@@ -217,6 +190,34 @@ STATIC mp_obj_t socket_sendto(mp_obj_t self_in, mp_obj_t data_in, mp_obj_t addr_
     return mp_obj_new_int(ret);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_3(socket_sendto_obj, socket_sendto);
+
+// method socket.recvfrom(bufsize)
+STATIC mp_obj_t socket_recvfrom(mp_obj_t self_in, mp_obj_t len_in) {
+    mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    if (self->nic == MP_OBJ_NULL) {
+        // not connected
+        mp_raise_OSError(MP_ENOTCONN);
+    }
+    vstr_t vstr;
+    vstr_init_len(&vstr, mp_obj_get_int(len_in));
+    byte ip[4];
+    mp_uint_t port;
+    int _errno;
+    mp_int_t ret = self->nic_type->recvfrom(self, (byte*)vstr.buf, vstr.len, ip, &port, &_errno);
+    if (ret == -1) {
+        mp_raise_OSError(_errno);
+    }
+    mp_obj_t tuple[2];
+    if (ret == 0) {
+        tuple[0] = mp_const_empty_bytes;
+    } else {
+        vstr.len = ret;
+        tuple[0] = mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
+    }
+    tuple[1] = netutils_format_inet_addr(ip, port, NETUTILS_BIG);
+    return mp_obj_new_tuple(2, tuple);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_recvfrom_obj, socket_recvfrom);
 
 // method socket.recv(bufsize)
 #include "esp8285.h"
@@ -342,11 +343,11 @@ STATIC const mp_rom_map_elem_t socket_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_readline), MP_ROM_PTR(&mp_stream_unbuffered_readline_obj) },
     { MP_ROM_QSTR(MP_QSTR_write), MP_ROM_PTR(&mp_stream_write_obj) },
     { MP_ROM_QSTR(MP_QSTR_sendto), MP_ROM_PTR(&socket_sendto_obj) },
+    { MP_ROM_QSTR(MP_QSTR_recvfrom), MP_ROM_PTR(&socket_recvfrom_obj) },
 /*    
     { MP_ROM_QSTR(MP_QSTR_bind), MP_ROM_PTR(&socket_bind_obj) },
     { MP_ROM_QSTR(MP_QSTR_listen), MP_ROM_PTR(&socket_listen_obj) },
     { MP_ROM_QSTR(MP_QSTR_accept), MP_ROM_PTR(&socket_accept_obj) },  
-    { MP_ROM_QSTR(MP_QSTR_recvfrom), MP_ROM_PTR(&socket_recvfrom_obj) },
     { MP_ROM_QSTR(MP_QSTR_setsockopt), MP_ROM_PTR(&socket_setsockopt_obj) },
 */
 };

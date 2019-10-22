@@ -444,15 +444,30 @@ STATIC mp_uint_t esp32_socket_recv(mod_network_socket_obj_t *socket, byte *buf, 
             *_errno = MP_ETIMEDOUT;
             return MP_STREAM_ERROR;
         }
-        if(esp32_spi_socket_status(self->sock_id) == SOCKET_CLOSED)
+        if(socket->u_param.type == MOD_NETWORK_SOCK_STREAM)
         {
-            if(!self->to_be_closed)
+            if(esp32_spi_socket_status(self->sock_id) == SOCKET_CLOSED)
             {
-                self->to_be_closed = true;
-                break;
+                if(!self->to_be_closed)
+                {
+                    self->to_be_closed = true;
+                    break;
+                }
+                *_errno = MP_EAGAIN; // MP_EAGAIN or MP_EWOULDBLOCK according to `mp_is_nonblocking_error()`
+                return MP_STREAM_ERROR;
             }
-            *_errno = MP_EAGAIN; // MP_EAGAIN or MP_EWOULDBLOCK according to `mp_is_nonblocking_error()`
-            return MP_STREAM_ERROR;
+        }else{
+            if(read_len > 0)
+            {
+                if(!self->to_be_closed)
+                {
+                    self->to_be_closed = true;
+                    break;
+                }
+                self->to_be_closed = false;
+                *_errno = MP_EAGAIN; // MP_EAGAIN or MP_EWOULDBLOCK according to `mp_is_nonblocking_error()`
+                return MP_STREAM_ERROR;
+            }
         }
     }while(1);
 	return read_len;
@@ -481,7 +496,7 @@ STATIC mp_uint_t esp32_socket_send(mod_network_socket_obj_t *socket, const byte 
     return len;
 }
 
-STATIC mp_uint_t esp32_socket_sendto(mod_network_socket_obj_t *socket, const byte *buf, mp_uint_t len,  uint8_t* ip, mp_uint_t port, int *_errno) 
+STATIC mp_int_t esp32_socket_sendto(mod_network_socket_obj_t *socket, const byte *buf, mp_uint_t len,  uint8_t* ip, mp_uint_t port, int *_errno) 
 {
     int8_t ret;
 	if((mp_obj_type_t*)&mod_network_nic_type_esp32 != mp_obj_get_type(MP_OBJ_TO_PTR(socket->nic)))
@@ -489,7 +504,7 @@ STATIC mp_uint_t esp32_socket_sendto(mod_network_socket_obj_t *socket, const byt
 		*_errno = MP_EPIPE;
 		return -1;
 	}
-    if(socket->sock_base.u_param.type != MOD_NETWORK_SOCK_DGRAM){
+    if(socket->u_param.type != MOD_NETWORK_SOCK_DGRAM){
         *_errno = MP_EPERM;
         return -1;
     }
@@ -536,6 +551,83 @@ STATIC mp_uint_t esp32_socket_sendto(mod_network_socket_obj_t *socket, const byt
     return len;
 }
 
+STATIC mp_int_t esp32_socket_recvfrom(mod_network_socket_obj_t *socket, const byte *buf, mp_uint_t len,  uint8_t* ip, mp_uint_t* port, int *_errno)
+{
+   if((mp_obj_type_t*)&mod_network_nic_type_esp32 != mp_obj_get_type(MP_OBJ_TO_PTR(socket->nic)))
+	{
+		*_errno = MP_EPIPE;
+		return MP_STREAM_ERROR;
+	}
+    esp32_nic_obj_t* self = (esp32_nic_obj_t*)socket->nic;
+    int read_len = 0;
+    uint16_t once_read_len = 0;
+    int ret = -1;
+    mp_uint_t start_time = mp_hal_ticks_ms();
+    do{
+        int len_avail = esp32_spi_socket_available(self->sock_id);
+        if(len_avail == -1)
+        {
+            *_errno = MP_EIO;
+            return MP_STREAM_ERROR;
+        }
+        if(len_avail > 0)
+        {
+            once_read_len = len_avail>(len-read_len) ? (len-read_len) : len_avail;
+            once_read_len = once_read_len>SPI_MAX_DMA_LEN ? SPI_MAX_DMA_LEN : once_read_len;
+            ret = esp32_spi_socket_read(self->sock_id, (uint8_t*)buf+read_len, once_read_len);
+            if(ret == -1)
+            {
+                *_errno = MP_EIO;
+                return MP_STREAM_ERROR;
+            }
+            read_len += ret;
+        }
+        if(read_len >= len)
+            break;
+        if(socket->timeout == 0)
+            break;
+        if( mp_hal_ticks_ms() - start_time > ((uint32_t)socket->timeout*1000) )
+        {
+            *_errno = MP_ETIMEDOUT;
+            return MP_STREAM_ERROR;
+        }
+        if(socket->u_param.type == MOD_NETWORK_SOCK_STREAM)
+        {
+            if(esp32_spi_socket_status(self->sock_id) == SOCKET_CLOSED)
+            {
+                if(!self->to_be_closed)
+                {
+                    self->to_be_closed = true;
+                    break;
+                }
+                *_errno = MP_EAGAIN; // MP_EAGAIN or MP_EWOULDBLOCK according to `mp_is_nonblocking_error()`
+                return MP_STREAM_ERROR;
+            }
+        }else{
+            if(read_len > 0)
+            {
+                if(!self->to_be_closed)
+                {
+                    self->to_be_closed = true;
+                    break;
+                }
+                self->to_be_closed = false;
+                *_errno = MP_EAGAIN; // MP_EAGAIN or MP_EWOULDBLOCK according to `mp_is_nonblocking_error()`
+                return MP_STREAM_ERROR;
+            }
+        }
+    }while(1);
+    uint16_t port_16;
+    int8_t res = esp32_spi_get_remote_info(self->sock_id, ip, &port_16);
+    if(res !=0)
+    {
+        *_errno = MP_EIO;
+        return MP_STREAM_ERROR;
+    }
+    *port = port_16;
+	return read_len;
+}
+
 STATIC void esp32_socket_close(mod_network_socket_obj_t *socket) {
 	if((mp_obj_type_t*)&mod_network_nic_type_esp32 != mp_obj_get_type(MP_OBJ_TO_PTR(socket->nic)))
 	{
@@ -574,11 +666,11 @@ const mod_network_nic_type_t mod_network_nic_type_esp32 = {
     .recv = esp32_socket_recv,
     .close = esp32_socket_close,
     .sendto = esp32_socket_sendto,
+    .recvfrom = esp32_socket_recvfrom,
     /*
     .bind = cc3k_socket_bind,
     .listen = cc3k_socket_listen,
     .accept = cc3k_socket_accept,
-    .recvfrom = cc3k_socket_recvfrom,
     .setsockopt = cc3k_socket_setsockopt,
     .settimeout = cc3k_socket_settimeout,
     .ioctl = cc3k_socket_ioctl,

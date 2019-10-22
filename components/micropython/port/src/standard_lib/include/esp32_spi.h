@@ -46,6 +46,7 @@ typedef enum
     START_SCAN_NETWORKS         = (0x36),
     GET_FW_VERSION_CMD          = (0x37),
     SEND_UDP_DATA_CMD           = (0x39), // START_CLIENT_TCP_CMD set ip,port, then ADD_UDP_DATA_CMD to add data then SEND_UDP_DATA_CMD to call sendto
+    GET_REMOTE_INFO_CMD         = (0x3A),
     PING_CMD                    = (0x3E),
     SEND_DATA_TCP_CMD           = (0x44),
     GET_DATABUF_TCP_CMD         = (0x45),
@@ -180,6 +181,7 @@ char *wlan_enum_to_str(esp32_wlan_enum_t x);
 
 int8_t esp32_spi_add_udp_data(uint8_t sock_num, uint8_t* data, uint16_t data_len);
 int8_t esp32_spi_send_udp_data(uint8_t sock_num);
+int8_t esp32_spi_get_remote_info(uint8_t socket_num, uint8_t* ip, uint16_t* port);
 
 uint8_t connect_server_port(char *host, uint16_t port);
 #endif

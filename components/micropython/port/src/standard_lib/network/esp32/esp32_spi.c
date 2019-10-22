@@ -1407,7 +1407,7 @@ int8_t esp32_spi_add_udp_data(uint8_t socket_num, uint8_t* data, uint16_t data_l
 
 int8_t esp32_spi_send_udp_data(uint8_t socket_num)
 {
-    esp32_spi_params_t *send = esp32_spi_params_alloc_2param(1, &socket_num, 0, NULL);
+    esp32_spi_params_t *send = esp32_spi_params_alloc_1param(1, &socket_num);
     esp32_spi_params_t *resp = esp32_spi_send_command_get_response(SEND_UDP_DATA_CMD, send, NULL, 0, 0);
     send->del(send);
 
@@ -1508,6 +1508,28 @@ int esp32_spi_socket_read(uint8_t socket_num, uint8_t *buff, uint16_t size)
     resp->del(resp);
 
     return real_read_size;
+}
+
+int8_t esp32_spi_get_remote_info(uint8_t socket_num, uint8_t* ip, uint16_t* port)
+{
+    uint32_t recv_num = 2;
+    esp32_spi_params_t *send = esp32_spi_params_alloc_1param(1, &socket_num);
+    esp32_spi_params_t *resp = esp32_spi_send_command_get_response(GET_REMOTE_INFO_CMD, send, &recv_num, 0, 0);
+    send->del(send);
+
+    if (resp == NULL)
+    {
+        return -1;
+    }
+    if(resp->params_num!=2 || resp->params[0]->param_len != 4 || resp->params[1]->param_len != 2)
+    {
+        resp->del(resp);
+        return -1;
+    }
+    memcpy(ip, resp->params[0]->param, 4);
+    *port = ( ((uint16_t)resp->params[1]->param[0])<<8 | resp->params[1]->param[1]);
+    resp->del(resp);
+    return 0;
 }
 
 // Open and verify we connected a socket to a destination IP address or hostname
