@@ -45,9 +45,11 @@ typedef enum
     GET_HOST_BY_NAME_CMD        = (0x35),
     START_SCAN_NETWORKS         = (0x36),
     GET_FW_VERSION_CMD          = (0x37),
+    SEND_UDP_DATA_CMD           = (0x39), // START_CLIENT_TCP_CMD set ip,port, then ADD_UDP_DATA_CMD to add data then SEND_UDP_DATA_CMD to call sendto
     PING_CMD                    = (0x3E),
     SEND_DATA_TCP_CMD           = (0x44),
     GET_DATABUF_TCP_CMD         = (0x45),
+    ADD_UDP_DATA_CMD            = (0x46),
     GET_ADC_VAL_CMD             = (0x53),
     SAMPLE_ADC_CMD              = (0x54),
     SOFT_RESET_CMD              = (0x55),
@@ -175,6 +177,9 @@ int8_t esp32_spi_get_adc_val(uint16_t *val);
 
 char *socket_enum_to_str(esp32_socket_enum_t x);
 char *wlan_enum_to_str(esp32_wlan_enum_t x);
+
+int8_t esp32_spi_add_udp_data(uint8_t sock_num, uint8_t* data, uint16_t data_len);
+int8_t esp32_spi_send_udp_data(uint8_t sock_num);
 
 uint8_t connect_server_port(char *host, uint16_t port);
 #endif

@@ -481,6 +481,61 @@ STATIC mp_uint_t esp32_socket_send(mod_network_socket_obj_t *socket, const byte 
     return len;
 }
 
+STATIC mp_uint_t esp32_socket_sendto(mod_network_socket_obj_t *socket, const byte *buf, mp_uint_t len,  uint8_t* ip, mp_uint_t port, int *_errno) 
+{
+    int8_t ret;
+	if((mp_obj_type_t*)&mod_network_nic_type_esp32 != mp_obj_get_type(MP_OBJ_TO_PTR(socket->nic)))
+	{
+		*_errno = MP_EPIPE;
+		return -1;
+	}
+    if(socket->sock_base.u_param.type != MOD_NETWORK_SOCK_DGRAM){
+        *_errno = MP_EPERM;
+        return -1;
+    }
+    esp32_nic_obj_t* self = (esp32_nic_obj_t*)socket->nic;
+    if(self->sock_id < 0)
+    {
+        uint8_t ret = esp32_spi_get_socket();
+        if(ret == 0xff)
+        {
+            *_errno = MP_EIO;
+            return -1;
+        }
+        self->sock_id = (int8_t)ret;
+    }
+    self->to_be_closed = false;
+    ret = esp32_spi_socket_connect((uint8_t)self->sock_id, ip, 0, port, UDP_MODE);
+    if(-2 == ret)
+    {
+        *_errno = MP_EIO;
+        return -1;
+    }
+    else if(ret == -1)
+    {
+        *_errno = MP_ECONNREFUSED;
+        return -1;
+    }
+    else if(ret == -3)
+    {
+        *_errno = MP_ETIMEDOUT;
+        return -1;
+    }
+    ret = esp32_spi_add_udp_data((uint8_t)self->sock_id, buf, (uint16_t)len);
+    if(ret != 0)
+    {
+        *_errno = MP_EIO;
+        return -1;
+    }
+    ret = esp32_spi_send_udp_data((uint8_t)self->sock_id);
+    if(ret !=0 )
+    {
+        *_errno = MP_EIO;
+        return -1;
+    }
+    return len;
+}
+
 STATIC void esp32_socket_close(mod_network_socket_obj_t *socket) {
 	if((mp_obj_type_t*)&mod_network_nic_type_esp32 != mp_obj_get_type(MP_OBJ_TO_PTR(socket->nic)))
 	{
@@ -488,6 +543,7 @@ STATIC void esp32_socket_close(mod_network_socket_obj_t *socket) {
 	}
     esp32_nic_obj_t* self = (esp32_nic_obj_t*)socket->nic;
     /*int8_t status = */esp32_spi_socket_close(self->sock_id);
+    self->sock_id = -1;
 }
 
 STATIC int esp32_socket_gethostbyname(mp_obj_t nic, const char *name, mp_uint_t len, uint8_t* out_ip) {
@@ -517,11 +573,11 @@ const mod_network_nic_type_t mod_network_nic_type_esp32 = {
     .send = esp32_socket_send,
     .recv = esp32_socket_recv,
     .close = esp32_socket_close,
+    .sendto = esp32_socket_sendto,
     /*
     .bind = cc3k_socket_bind,
     .listen = cc3k_socket_listen,
     .accept = cc3k_socket_accept,
-    .sendto = cc3k_socket_sendto,
     .recvfrom = cc3k_socket_recvfrom,
     .setsockopt = cc3k_socket_setsockopt,
     .settimeout = cc3k_socket_settimeout,

@@ -118,32 +118,6 @@ STATIC mp_obj_t socket_accept(mp_obj_t self_in) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(socket_accept_obj, socket_accept);
 
 
-// method socket.sendto(bytes, address)
-STATIC mp_obj_t socket_sendto(mp_obj_t self_in, mp_obj_t data_in, mp_obj_t addr_in) {
-    mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
-
-    // get the data
-    mp_buffer_info_t bufinfo;
-    mp_get_buffer_raise(data_in, &bufinfo, MP_BUFFER_READ);
-
-    // get address
-    uint8_t ip[MOD_NETWORK_IPADDR_BUF_SIZE];
-    mp_uint_t port = netutils_parse_inet_addr(addr_in, ip, NETUTILS_BIG);
-
-    // check if we need to select a NIC
-    socket_select_nic(self, ip);
-
-    // call the NIC to sendto
-    int _errno;
-    mp_int_t ret = self->nic_type->sendto(self, bufinfo.buf, bufinfo.len, ip, port, &_errno);
-    if (ret == -1) {
-        mp_raise_OSError(_errno);
-    }
-
-    return mp_obj_new_int(ret);
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_3(socket_sendto_obj, socket_sendto);
-
 // method socket.recvfrom(bufsize)
 STATIC mp_obj_t socket_recvfrom(mp_obj_t self_in, mp_obj_t len_in) {
     mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
@@ -215,6 +189,34 @@ mp_uint_t socket_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_t arg, int *
 }
 
 */
+
+STATIC void socket_select_nic(mod_network_socket_obj_t *self, const byte *ip);
+
+// method socket.sendto(bytes, address)
+STATIC mp_obj_t socket_sendto(mp_obj_t self_in, mp_obj_t data_in, mp_obj_t addr_in) {
+    mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
+
+    // get the data
+    mp_buffer_info_t bufinfo;
+    mp_get_buffer_raise(data_in, &bufinfo, MP_BUFFER_READ);
+
+    // get address
+    uint8_t ip[MOD_NETWORK_IPADDR_BUF_SIZE];
+    mp_uint_t port = netutils_parse_inet_addr(addr_in, ip, NETUTILS_BIG);
+
+    // check if we need to select a NIC
+    socket_select_nic(self, ( const byte)ip);
+
+    // call the NIC to sendto
+    int _errno;
+    mp_int_t ret = self->nic_type->sendto(self, bufinfo.buf, bufinfo.len, ip, port, &_errno);
+    if (ret == -1) {
+        mp_raise_OSError(_errno);
+    }
+
+    return mp_obj_new_int(ret);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(socket_sendto_obj, socket_sendto);
 
 // method socket.recv(bufsize)
 #include "esp8285.h"
@@ -339,11 +341,11 @@ STATIC const mp_rom_map_elem_t socket_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_readinto), MP_ROM_PTR(&mp_stream_readinto_obj) },
     { MP_ROM_QSTR(MP_QSTR_readline), MP_ROM_PTR(&mp_stream_unbuffered_readline_obj) },
     { MP_ROM_QSTR(MP_QSTR_write), MP_ROM_PTR(&mp_stream_write_obj) },
+    { MP_ROM_QSTR(MP_QSTR_sendto), MP_ROM_PTR(&socket_sendto_obj) },
 /*    
     { MP_ROM_QSTR(MP_QSTR_bind), MP_ROM_PTR(&socket_bind_obj) },
     { MP_ROM_QSTR(MP_QSTR_listen), MP_ROM_PTR(&socket_listen_obj) },
     { MP_ROM_QSTR(MP_QSTR_accept), MP_ROM_PTR(&socket_accept_obj) },  
-    { MP_ROM_QSTR(MP_QSTR_sendto), MP_ROM_PTR(&socket_sendto_obj) },
     { MP_ROM_QSTR(MP_QSTR_recvfrom), MP_ROM_PTR(&socket_recvfrom_obj) },
     { MP_ROM_QSTR(MP_QSTR_setsockopt), MP_ROM_PTR(&socket_setsockopt_obj) },
 */
@@ -377,7 +379,7 @@ STATIC mp_obj_t socket_make_new(const mp_obj_type_t *type, size_t n_args, size_t
     }
     return MP_OBJ_FROM_PTR(s);
 }
-#include "printf.h"
+
 STATIC mp_uint_t socket_stream_read(mp_obj_t self_in, void *buf, mp_uint_t size, int *errcode) {
     mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
     if (self->nic == MP_OBJ_NULL) {
@@ -461,7 +463,7 @@ int parse_ipv4_addr(mp_obj_t addr_in, uint8_t *out_ip, netutils_endian_t endian)
         } else if (i > 0 && s < s_top && *s == '.') {
             s++;
         } else {
-			mp_printf(&mp_plat_print, "[MaixPy] %s | It is not string IP format:%s\n",__func__, addr_str);
+			// mp_printf(&mp_plat_print, "[MaixPy] %s | It is not string IP format:%s\n",__func__, addr_str);
 			return 0;
         }
     }

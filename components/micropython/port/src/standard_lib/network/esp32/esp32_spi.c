@@ -1376,6 +1376,63 @@ uint32_t esp32_spi_socket_write(uint8_t socket_num, uint8_t *buffer, uint32_t le
     resp->del(resp);
     return sent;
 }
+int8_t esp32_spi_add_udp_data(uint8_t socket_num, uint8_t* data, uint16_t data_len)
+{
+    esp32_spi_params_t *send = esp32_spi_params_alloc_2param(1, &socket_num, data_len, data );
+    esp32_spi_params_t *resp = esp32_spi_send_command_get_response(ADD_UDP_DATA_CMD, send, NULL, 1, 0);
+    send->del(send);
+
+    if (resp == NULL)
+    {
+#if ESP32_SPI_DEBUG
+        printk("Failed  get response\r\n");
+#endif
+        return -2;
+    }
+
+    uint8_t ok = resp->params[0]->param[0];
+
+    if (ok != 1)
+    {
+#if ESP32_SPI_DEBUG
+        printk("Failed to sendto\r\n");
+#endif
+        resp->del(resp);
+        return -1;
+    }
+
+    resp->del(resp);
+    return 0;
+}
+
+int8_t esp32_spi_send_udp_data(uint8_t socket_num)
+{
+    esp32_spi_params_t *send = esp32_spi_params_alloc_2param(1, &socket_num, 0, NULL);
+    esp32_spi_params_t *resp = esp32_spi_send_command_get_response(SEND_UDP_DATA_CMD, send, NULL, 0, 0);
+    send->del(send);
+
+    if (resp == NULL)
+    {
+#if ESP32_SPI_DEBUG
+        printk("Failed  get response\r\n");
+#endif
+        return -2;
+    }
+
+    uint8_t ok = resp->params[0]->param[0];
+
+    if (ok != 1)
+    {
+#if ESP32_SPI_DEBUG
+        printk("Failed to send udp data\r\n");
+#endif
+        resp->del(resp);
+        return -1;
+    }
+
+    resp->del(resp);
+    return 0;
+}
 
 //Determine how many bytes are waiting to be read on the socket
 int esp32_spi_socket_available(uint8_t socket_num)
@@ -1477,7 +1534,8 @@ int8_t esp32_spi_socket_connect(uint8_t socket_num, uint8_t *dest, uint8_t dest_
     {
         return -1;
     }
-
+    if(conn_mod == UDP_MODE)
+        return 0;
     uint64_t tm = sysctl_get_time_us();
 
     while ((sysctl_get_time_us() - tm) < 3 * 1000 * 1000) //3s
