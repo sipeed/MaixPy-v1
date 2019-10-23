@@ -182,7 +182,9 @@ STATIC mp_obj_t socket_sendto(mp_obj_t self_in, mp_obj_t data_in, mp_obj_t addr_
 
     // call the NIC to sendto
     int _errno;
+    MP_THREAD_GIL_EXIT();
     mp_int_t ret = self->nic_type->sendto(self, (byte*)bufinfo.buf, bufinfo.len, ip, port, &_errno);
+    MP_THREAD_GIL_ENTER();
     if (ret == -1) {
         mp_raise_OSError(_errno);
     }
@@ -203,7 +205,9 @@ STATIC mp_obj_t socket_recvfrom(mp_obj_t self_in, mp_obj_t len_in) {
     byte ip[4];
     mp_uint_t port;
     int _errno;
+    MP_THREAD_GIL_EXIT();
     mp_int_t ret = self->nic_type->recvfrom(self, (byte*)vstr.buf, vstr.len, ip, &port, &_errno);
+    MP_THREAD_GIL_ENTER();
     if (ret == -1) {
         mp_raise_OSError(_errno);
     }
@@ -220,7 +224,6 @@ STATIC mp_obj_t socket_recvfrom(mp_obj_t self_in, mp_obj_t len_in) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_recvfrom_obj, socket_recvfrom);
 
 // method socket.recv(bufsize)
-#include "esp8285.h"
 STATIC mp_obj_t socket_recv(mp_obj_t self_in, mp_obj_t len_in) {
     mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
     if (self->nic == MP_OBJ_NULL) {
@@ -231,7 +234,9 @@ STATIC mp_obj_t socket_recv(mp_obj_t self_in, mp_obj_t len_in) {
     vstr_t vstr;
     vstr_init_len(&vstr, len);
     int _errno;
+    MP_THREAD_GIL_EXIT();
     mp_uint_t ret = self->nic_type->recv(self, (byte*)vstr.buf, len, &_errno);
+    MP_THREAD_GIL_ENTER();
     if (ret == MP_STREAM_ERROR) {
         if(!mp_is_nonblocking_error(_errno))
         {
