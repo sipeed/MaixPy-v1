@@ -291,35 +291,53 @@ STATIC mp_obj_t esp32_firmware_version(mp_obj_t self_in)
         return mp_const_empty_bytes;
 }
 
-STATIC mp_obj_t esp32_adc(mp_obj_t self_in)
-{
-    #define ESP32_ADC_CH_NUM_TEMP  (ESP32_ADC_CH_NUM+1)
-    uint16_t adc[ESP32_ADC_CH_NUM_TEMP] = {0};//TODO: 6 channel support!!!
 
-    if (esp32_spi_get_adc_val(adc) == 0)
+STATIC mp_obj_t esp32_adc(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+    //A0 -> ch5, A1->ch4, A2->ch7, A3->ch6, A4->ch3, A5->ch0
+    uint16_t adc[ESP32_ADC_CH_NUM] = {0};
+    static const uint8_t channels_remap[ESP32_ADC_CH_NUM] = {5, 4, 7, 6, 3, 0};
+    uint8_t channels[ESP32_ADC_CH_NUM] = {5, 4, 7, 6, 3, 0};
+    uint8_t len = sizeof(channels);
+    mp_int_t temp;
+    if(n_args > 1){
+        size_t t_len = 0;
+        mp_obj_t* t = NULL;
+        if(mp_obj_is_type(pos_args[1], &mp_type_tuple)){
+            mp_obj_tuple_get(pos_args[1], &t_len, &t);   
+        }else if(mp_obj_is_type(pos_args[1], &mp_type_list)){
+            mp_obj_list_get(pos_args[1], &t_len, &t);
+        }
+        len = (uint8_t)t_len;
+        for(uint8_t i=0; i< len; ++i){
+            temp = mp_obj_get_int(t[i]);
+            if(temp >= ESP32_ADC_CH_NUM || temp < 0){
+                mp_raise_OSError(MP_EINVAL);
+            }
+            channels[i] =channels_remap[temp];
+        }
+    }
+
+    if (esp32_spi_get_adc_val(channels, len, adc) == 0)
     {
         mp_obj_t *tuple, *tmp;
 
-        tmp = (mp_obj_t *)malloc(ESP32_ADC_CH_NUM_TEMP * sizeof(mp_obj_t));
+        tmp = m_new(mp_obj_t, len);
 
-        for (uint8_t index = 0; index < ESP32_ADC_CH_NUM_TEMP; index++)
+        for (uint8_t index = 0; index < len; index++)
             tmp[index] = mp_obj_new_int(adc[index]);
 
-        tuple = mp_obj_new_tuple(ESP32_ADC_CH_NUM_TEMP, tmp);
+        tuple = mp_obj_new_tuple(len, tmp);
 
-        free(tmp);
+        m_del(mp_obj_t, tmp, len);
         return tuple;
     }
     else
     {
         mp_raise_ValueError("[MaixPy]: esp32 read adc failed!\r\n");
-        return mp_const_false;
     }
-
-    return mp_const_false;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(esp32_adc_obj, esp32_adc);
+MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(esp32_adc_obj, 1, 2, esp32_adc);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(esp32_version_obj, esp32_firmware_version);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(esp32_scan_wifi_obj, esp32_scan_wifi);
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(esp32_nic_connect_obj, 1, esp32_nic_connect);

@@ -6,7 +6,7 @@
 /* clang-format off */
 #define ESP32_SPI_DEBUG                 (0)
 
-#define ESP32_ADC_CH_NUM                (5)
+#define ESP32_ADC_CH_NUM                (6)
 #define SPI_MAX_DMA_LEN 4000 //(4096-4)
 
 #if 1
@@ -52,8 +52,7 @@ typedef enum
     GET_DATABUF_TCP_CMD         = (0x45),
     ADD_UDP_DATA_CMD            = (0x46),
     GET_ADC_VAL_CMD             = (0x53),
-    SAMPLE_ADC_CMD              = (0x54),
-    SOFT_RESET_CMD              = (0x55),
+    SOFT_RESET_CMD              = (0x54),
     START_CMD                   = (0xE0),
     END_CMD                     = (0xEE),
     ERR_CMD                     = (0xEF)
@@ -174,7 +173,7 @@ int esp32_spi_socket_read(uint8_t socket_num, uint8_t *buff, uint16_t size);
 int8_t esp32_spi_socket_connect(uint8_t socket_num, uint8_t *dest, uint8_t dest_type, uint16_t port, esp32_socket_mode_enum_t conn_mod);
 int8_t esp32_spi_socket_close(uint8_t socket_num);
 
-int8_t esp32_spi_get_adc_val(uint16_t *val);
+int8_t esp32_spi_get_adc_val(uint8_t* channels, uint8_t len, uint16_t *val);
 
 char *socket_enum_to_str(esp32_socket_enum_t x);
 char *wlan_enum_to_str(esp32_wlan_enum_t x);

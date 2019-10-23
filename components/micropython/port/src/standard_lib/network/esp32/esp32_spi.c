@@ -1604,58 +1604,22 @@ int8_t esp32_spi_socket_close(uint8_t socket_num)
     return 0;
 }
 
-// 0 ok
-// 1 error
-// before get adc val, should exec sample 10 times
-static uint8_t esp32_spi_sample_adc(void)
-{
-    esp32_spi_params_t *resp = esp32_spi_send_command_get_response(SAMPLE_ADC_CMD, NULL, NULL, 0, 0);
-
-    if (resp == NULL)
-    {
-#if ESP32_SPI_DEBUG
-        printk("%s: get resp error!\r\n", __func__);
-#endif
-        return 1;
-    }
-
-    if (resp->params[0]->param[0] != 1)
-    {
-#if ESP32_SPI_DEBUG
-        printk("Failed to sample adc\r\n");
-#endif
-        resp->del(resp);
-        return 1;
-    }
-    resp->del(resp);
-    return 0;
-}
 
 //PIN36 PIN39 PIN34 PIN35 PIN32
 //get esp32 adc val
 //0 ok
 //-1 error
-int8_t esp32_spi_get_adc_val(uint16_t *val)
+int8_t esp32_spi_get_adc_val(uint8_t* channels, uint8_t len, uint16_t *val)
 {
-    if (val == NULL)
+    if (val == NULL || len == 0)
     {
         return -1;
     }
 
-    for (uint8_t i = 0; i < ESP32_ADC_CH_NUM*2; i++)
-    {
-        if (esp32_spi_sample_adc() != 0)
-        {
-#if ESP32_SPI_DEBUG
-            printk("%s: esp32_spi_sample_adc error!\r\n", __func__);
-#endif
-            memset(val, 0, ESP32_ADC_CH_NUM);
-            return -1;
-        }
-    }
-
-    uint32_t num = ESP32_ADC_CH_NUM;
-    esp32_spi_params_t *resp = esp32_spi_send_command_get_response(GET_ADC_VAL_CMD, NULL, &num, 0, 0);
+    uint32_t num = len;
+    esp32_spi_params_t *send = esp32_spi_params_alloc_1param(len, channels);
+    esp32_spi_params_t *resp = esp32_spi_send_command_get_response(GET_ADC_VAL_CMD, send, &num, 0, 0);
+    send->del(send);
 
     if (resp == NULL)
     {
@@ -1664,8 +1628,7 @@ int8_t esp32_spi_get_adc_val(uint16_t *val)
 #endif
         return -1;
     }
-
-    if (resp->params_num != ESP32_ADC_CH_NUM)
+    if (resp->params_num != len)
     {
 #if ESP32_SPI_DEBUG
         printk("Failed to sample adc\r\n");
@@ -1674,9 +1637,9 @@ int8_t esp32_spi_get_adc_val(uint16_t *val)
         return -1;
     }
 
-    for (uint8_t i = 0, j=5; i < ESP32_ADC_CH_NUM; i++, --j)
+    for (uint8_t i = 0; i < len; i++)
     {
-        if (resp->params[i]->param_len != 2)
+        if (resp->params[i]->param_len != 3)
         {
 #if ESP32_SPI_DEBUG
             printk("adc val len error\r\n");
@@ -1684,7 +1647,7 @@ int8_t esp32_spi_get_adc_val(uint16_t *val)
             resp->del(resp);
             return -1;
         }
-        *(val + j) = resp->params[i]->param[0] << 8 | resp->params[i]->param[1];
+        *(val + i) = resp->params[i]->param[1] << 8 | resp->params[i]->param[2];
     }
     resp->del(resp);
     return 0;
