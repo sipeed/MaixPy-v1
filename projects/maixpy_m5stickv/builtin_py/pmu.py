@@ -1,4 +1,5 @@
-from machine import I2C
+from machine import I2C, Timer
+import machine
 
 class PMUError(Exception):
     pass
@@ -9,9 +10,31 @@ class NotFoundError(PMUError):
 class OutOfRange(PMUError):
     pass
 
+def __chkPwrKeyWaitForSleep__(timer):
+    global __pmuI2CDEV__, __preButPressed__ #<- Do not do this :(
+
+    __pmuI2CDEV__.writeto(52, bytes([0x46]))
+    pek_stu = (__pmuI2CDEV__.readfrom(52, 1))[0]
+    __pmuI2CDEV__.writeto_mem(52, 0x46, 0xFF, mem_size=8) #Clear IRQ
+
+    #Prevent loop in restart, wait for release
+    if __preButPressed__ == -1 and ((pek_stu & (0x01 << 1)) or (pek_stu & 0x01)):
+        return
+    
+    if __preButPressed__ == -1 and  ((pek_stu & (0x01 << 1)) == False and (pek_stu & 0x01) == False):
+        __preButPressed__ = 0
+
+    if (pek_stu & 0x01):
+        __pmuI2CDEV__.writeto_mem(52, 0x31, 0x0F, mem_size=8)  #Enable Sleep Mode
+        __pmuI2CDEV__.writeto_mem(52, 0x91, 0x00, mem_size=8)  #Turn off GPIO0/LDO0
+        __pmuI2CDEV__.writeto_mem(52, 0x12, 0x00, mem_size=8)  #Turn off other power source
+    
+    if (pek_stu & (0x01 << 1)):
+        machine.reset()
+
 class axp192:
-    def __init__(self, i2cDev=-1):
-        if i2cDev == -1:
+    def __init__(self, i2cDev=None):
+        if i2cDev == None:
             try:
                 self.i2cDev = I2C(I2C.I2C0, freq=400000, scl=28, sda=29)
             except:
@@ -20,6 +43,10 @@ class axp192:
             self.i2cDev = i2cDev
         
         self.axp192Addr = 52
+
+        global __pmuI2CDEV__, __preButPressed__
+        __pmuI2CDEV__ = self.i2cDev
+        __preButPressed__ = -1
         
         scanList = self.i2cDev.scan()
         if self.axp192Addr not in scanList:
@@ -31,10 +58,7 @@ class axp192:
     def __readReg(self, regAddr):
         self.i2cDev.writeto(self.axp192Addr, bytes([regAddr]))
         return (self.i2cDev.readfrom(self.axp192Addr, 1))[0]
-    
-    def setScreenBrightness(self, brightness):
-        self.__writeReg(0x28, (brightness & 0x0f) << 4)
-    
+
     def enableADCs(self, enable):
         if enable == True:
             self.__writeReg(0x82, 0xFF)
@@ -109,13 +133,13 @@ class axp192:
         Ichg_LSB = self.__readReg(0x7A)
         Ichg_MSB = self.__readReg(0x7B)
 
-        return ((Ichg_LSB << 4) + Ichg_MSB) * 0.5 #AXP192-DS PG27 0.5mA/div
+        return ((Ichg_LSB << 5) + Ichg_MSB) * 0.5 #AXP192-DS PG27 0.5mA/div
 
     def getBatteryDischargeCurrent(self):
         Idcg_LSB = self.__readReg(0x7C)
         Idcg_MSB = self.__readReg(0x7D)
 
-        return ((Idcg_LSB << 4) + Idcg_MSB) * 0.5 #AXP192-DS PG27 0.5mA/div
+        return ((Idcg_LSB << 5) + Idcg_MSB) * 0.5 #AXP192-DS PG27 0.5mA/div
 
     def getBatteryInstantWatts(self):
         Iinswat_LSB = self.__readReg(0x70)
@@ -135,12 +159,40 @@ class axp192:
     def setK210Vcore(self, vol):
         if vol > 1.05 or vol < 0.8:
             raise OutOfRange("Voltage is invaild for K210")
-        
         DCDC2Steps = int((vol - 0.7) * 1000 / 25)
-
         self.__writeReg(0x23, DCDC2Steps)
+    
+    def setScreenBrightness(self, brightness):
+        if brightness > 15 or brightness < 0:
+            raise OutOfRange("Range for brightness is from 0 to 15")
+        self.__writeReg(0x91, (int(brightness) & 0x0f) << 4)
 
+    def getKeyStuatus(self): # -1: NoPress, 1: ShortPress, 2:LongPress
+        but_stu = self.__readReg(0x46)
+        if (but_stu & (0x1 << 1)):
+            return 1
+        else:
+            if (but_stu & (0x1 << 0)):
+                return 2
+            else:
+                return -1
+    
+    def setEnterSleepMode(self):
+        self.__writeReg(0x31, 0x0F)  #Enable Sleep Mode
+        self.__writeReg(0x91, 0x00)  #Turn off GPIO0/LDO0
+        self.__writeReg(0x12, 0x00)  #Turn off other power source
 
+    def enablePMICSleepMode(self, enable):
+        if enable == True:
+            self.__writeReg(0x36, 0x27) #Turnoff PEK Overtime Shutdown
+            self.__writeReg(0x46, 0xFF) #Clear the interrupts
 
-
-
+            self.butChkTimer = Timer(Timer.TIMER2, Timer.CHANNEL0, mode=Timer.MODE_PERIODIC, period=500, callback=__chkPwrKeyWaitForSleep__)
+        else:
+            self.__writeReg(0x36, 0x6C) #Set to default
+            try:
+                self.butChkTimer.stop()
+                del self.butChkTimer
+            except:
+                pass
+            

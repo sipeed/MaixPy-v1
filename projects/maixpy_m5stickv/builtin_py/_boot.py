@@ -53,12 +53,20 @@ M5StickV by M5Stack : https://m5stack.com/
 M5StickV Wiki       : https://docs.m5stack.com
 Co-op by Sipeed     : https://www.sipeed.com
 '''
-flash_ls = os.listdir()
-if ("boot.py" in flash_ls) :
+
+dirList = os.listdir()
+
+if "boot.py" in dirList:
     print(banner)
     with open("boot.py") as f:
         exec(f.read())
     sys.exit()
+else:
+    if "boot.py" in os.listdir("/flash"):
+        print(banner)
+        with open("/flash/boot.py") as f:
+            exec(f.read())
+        sys.exit()
 
 # detect boot.py
 boot_py = '''
@@ -66,6 +74,11 @@ import lcd
 import image
 import time
 import uos
+import sys
+from pmu import axp192
+
+pmu = axp192()
+pmu.enablePMICSleepMode(True)
 
 lcd.init()
 lcd.rotation(2) #Rotate the lcd 180deg
@@ -186,11 +199,11 @@ except KeyboardInterrupt:
     sys.exit()
 '''
 
-f = open("boot.py", "wb")
+f = open("/flash/boot.py", "wb")
 f.write(boot_py)
 f.close()
 
 print(banner)
-with open("boot.py") as f:
+with open("/flash/boot.py") as f:
     exec(f.read())
 
