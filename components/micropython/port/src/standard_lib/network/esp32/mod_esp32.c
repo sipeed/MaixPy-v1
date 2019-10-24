@@ -21,7 +21,8 @@ typedef struct _esp32_nic_obj_t
 {
     mp_obj_base_t base;
 
-    int8_t sock_id;
+    int8_t sock_id;    // sock id generate by esp32, user can't see this id
+    int8_t socket_fd;  // sock id generate by micropython, set these two var for gc collect to avoid close using connection
     bool to_be_closed;
     char* firmware_ver;
 } esp32_nic_obj_t;
@@ -367,6 +368,8 @@ STATIC MP_DEFINE_CONST_DICT(esp32_locals_dict, esp32_locals_dict_table);
 
 
 STATIC int esp32_socket_socket(mod_network_socket_obj_t *socket, int *_errno) {
+    esp32_nic_obj_t* nic = (esp32_nic_obj_t*)socket->nic;
+    nic->socket_fd = socket->fd;
     return 0;
 }
 
@@ -466,6 +469,7 @@ STATIC mp_uint_t esp32_socket_recv(mod_network_socket_obj_t *socket, byte *buf, 
         {
             if(esp32_spi_socket_status(self->sock_id) == SOCKET_CLOSED)
             {
+                self->sock_id = -1;
                 if(!self->to_be_closed)
                 {
                     self->to_be_closed = true;
@@ -502,14 +506,26 @@ STATIC mp_uint_t esp32_socket_send(mod_network_socket_obj_t *socket, const byte 
     int status = esp32_spi_socket_status(self->sock_id);
     if(status == SOCKET_CLOSED)
     {
-        return 0;//TODO: should return 0 here? In CPython return len
+        self->sock_id = -1;   
+        // return 0;//TODO: should return 0 here? In CPython return len
+        *_errno = MP_ENOTCONN;
+        return -1;
     }
-
-	if(esp32_spi_socket_write(self->sock_id, (uint8_t*)buf, len ) == 0)
-	{
-		*_errno = MP_EIO;
-		return -1;
-	}
+    mp_uint_t sent_len = 0;
+    uint16_t len_send;
+    while(1)
+    {
+        len_send = len > SPI_MAX_DMA_LEN ? SPI_MAX_DMA_LEN : len;
+        //TODO: esp32_spi_socket_write is nonblock in esp32 firmware
+        if(esp32_spi_socket_write(self->sock_id, (uint8_t*)buf, len_send ) == 0)
+        {
+            *_errno = MP_EIO;
+            return -1;
+        }
+        sent_len += len_send;
+        if(sent_len >= len)
+            break;
+    }
 	
     return len;
 }
@@ -613,6 +629,7 @@ STATIC mp_int_t esp32_socket_recvfrom(mod_network_socket_obj_t *socket, const by
         {
             if(esp32_spi_socket_status(self->sock_id) == SOCKET_CLOSED)
             {
+                self->sock_id = -1;
                 if(!self->to_be_closed)
                 {
                     self->to_be_closed = true;
@@ -652,8 +669,14 @@ STATIC void esp32_socket_close(mod_network_socket_obj_t *socket) {
 		return ;
 	}
     esp32_nic_obj_t* self = (esp32_nic_obj_t*)socket->nic;
-    /*int8_t status = */esp32_spi_socket_close(self->sock_id);
-    self->sock_id = -1;
+    if(self->socket_fd == socket->fd)
+    {
+        if(self->sock_id >= 0)
+        {
+            /*int8_t status = */esp32_spi_socket_close((uint8_t)self->sock_id);
+            self->sock_id = -1;
+        }
+    }
 }
 
 STATIC int esp32_socket_gethostbyname(mp_obj_t nic, const char *name, mp_uint_t len, uint8_t* out_ip) {

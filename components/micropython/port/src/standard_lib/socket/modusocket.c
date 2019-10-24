@@ -163,6 +163,34 @@ mp_uint_t socket_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_t arg, int *
 
 */
 
+
+
+int8_t g_fds[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; // max fd: 20*8 = 160
+int8_t require_new_fd(){
+    int8_t i=0, j;
+    for(; i<sizeof(g_fds); ++i){
+        for(j=0; j<8; ++j){
+            if( ((g_fds[i]>>j) & 0x01) == 0){
+		g_fds[i] = (0x01<<j) | g_fds[i];
+                return 8*i + j;
+            }    
+        }
+    }
+    return -1;
+}
+
+void del_fd(int8_t fd){
+    if(fd < 0)
+        return;
+    g_fds[fd/8] = g_fds[fd/8] & (~( 0x01<<(fd%8) ));
+}
+
+
+STATIC void socket_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind){
+    mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_printf(print, "<usocket.socket fd=%d, family=%d, type=%d>", self->fd, self->u_param.domain, self->u_param.type);
+}
+
 STATIC void socket_select_nic(mod_network_socket_obj_t *self, const byte *ip);
 
 // method socket.sendto(bytes, address)
@@ -371,7 +399,11 @@ STATIC mp_obj_t socket_make_new(const mp_obj_type_t *type, size_t n_args, size_t
     s->u_param.domain = MOD_NETWORK_AF_INET;
     s->u_param.type = MOD_NETWORK_SOCK_STREAM;
     s->u_param.fileno = 0;
-    s->fd = 0; //TODO: auto increase
+    s->fd = require_new_fd();
+    if(s->fd < 0)
+    {
+        mp_raise_OSError(MP_ENOMEM);
+    }
     s->timeout = 10; // default timeout: 10s
     s->peer_closed = false;
 	if (n_args >= 1) {
@@ -417,6 +449,8 @@ mp_uint_t socket_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_t arg, int *
         if (self->nic != MP_OBJ_NULL) {
             self->nic_type->close(self);
             self->nic = MP_OBJ_NULL;
+            del_fd(self->fd);
+            self->fd = -1;
         }
         return 0;
     }
@@ -438,6 +472,7 @@ STATIC const mp_obj_type_t socket_type = {
 	{ &mp_type_type },
 	.name = MP_QSTR_socket,
 	.make_new = socket_make_new,
+    .print = socket_print,
 	.protocol = &socket_stream_p,
 	.locals_dict = (mp_obj_dict_t*)&socket_locals_dict,
 };

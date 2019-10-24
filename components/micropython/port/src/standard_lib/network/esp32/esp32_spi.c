@@ -1325,7 +1325,7 @@ uint8_t esp32_spi_socket_connected(uint8_t socket_num)
 //Write the bytearray buffer to a socket
 //0 error
 //len ok
-uint32_t esp32_spi_socket_write(uint8_t socket_num, uint8_t *buffer, uint32_t len)
+uint32_t esp32_spi_socket_write(uint8_t socket_num, uint8_t *buffer, uint16_t len)
 {
     esp32_spi_params_t *send = esp32_spi_params_alloc_2param(1, &socket_num, len, buffer);
     esp32_spi_params_t *resp = esp32_spi_send_command_get_response(SEND_DATA_TCP_CMD, send, NULL, 1, 0);
@@ -1338,10 +1338,9 @@ uint32_t esp32_spi_socket_write(uint8_t socket_num, uint8_t *buffer, uint32_t le
 #endif
         return 0;
     }
-
-    uint32_t sent = resp->params[0]->param[0];
-
-    if (sent != len)
+    uint16_t sent = ( ((uint16_t)(resp->params[0]->param[1]) << 8) & 0xff00 ) | (uint16_t)(resp->params[0]->param[0]);
+    // if (sent != len) //TODO: the firmware is nonblock, so return value maybe < len
+    if (sent == 0)
     {
 #if ESP32_SPI_DEBUG
         printk("Failed to send %d bytes (sent %d)", len, sent);
@@ -1350,28 +1349,28 @@ uint32_t esp32_spi_socket_write(uint8_t socket_num, uint8_t *buffer, uint32_t le
         return 0;
     }
 
-    resp->del(resp);
+//     resp->del(resp);
 
-    send = esp32_spi_params_alloc_1param(1, &socket_num);
-    resp = esp32_spi_send_command_get_response(DATA_SENT_TCP_CMD, send, NULL, 0, 0);
-    send->del(send);
+//     send = esp32_spi_params_alloc_1param(1, &socket_num);
+//     resp = esp32_spi_send_command_get_response(DATA_SENT_TCP_CMD, send, NULL, 0, 0);
+//     send->del(send);
 
-    if (resp == NULL)
-    {
-#if ESP32_SPI_DEBUG
-        printk("%s: get resp error!\r\n", __func__);
-#endif
-        return 0;
-    }
+//     if (resp == NULL)
+//     {
+//  #if ESP32_SPI_DEBUG
+//         printk("%s: get resp error!\r\n", __func__);
+//  #endif
+//         return 0;
+//     }
 
-    if (resp->params[0]->param[0] != 1)
-    {
-#if ESP32_SPI_DEBUG
-        printk("%s: Failed to verify data sent\r\n", __func__);
-#endif
-        resp->del(resp);
-        return 0;
-    }
+//     if (resp->params[0]->param[0] != 1)
+//     {
+//  #if ESP32_SPI_DEBUG
+//         printk("%s: Failed to verify data sent\r\n", __func__);
+//  #endif
+//         resp->del(resp);
+//         return 0;
+//     }
 
     resp->del(resp);
     return sent;
