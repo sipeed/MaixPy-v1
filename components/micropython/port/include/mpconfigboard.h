@@ -42,6 +42,7 @@ typedef struct{
 	uint32_t freq_cpu;
     uint32_t freq_pll1;
     uint8_t  kpu_div;
+    uint32_t gc_heap_size;
 } config_data_t;
 
 void load_config_from_spiffs(config_data_t* config);

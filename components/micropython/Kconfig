@@ -10,6 +10,9 @@ config COMPONENT_MICROPYTHON_ENABLE
 
 menu "Micropython configurations"
 	depends on COMPONENT_MICROPYTHON_ENABLE
+	config MAIXPY_GC_HEAP_SIZE
+		hex "GC heap size, hex format, MUST be aligned 8 Bytes, default 512kB(0x80000)"
+		default 0x80000
 	menu "Modules configurations"
 	
 		config MAIXPY_NES_ENABLE

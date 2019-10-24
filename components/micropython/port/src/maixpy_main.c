@@ -89,10 +89,6 @@
 
 #define UART_BUF_LENGTH_MAX 269
 
-// #define MPY_HEAP_SIZE  2* 1024 * 1024
-
-#define MPY_HEAP_SIZE  512* 1024 
-
 uint8_t CPU_freq = 0;
 uint8_t PLL0_freq = 0;
 uint8_t PLL1_freq = 0;
@@ -101,9 +97,6 @@ uint8_t PLL2_freq = 0;
 uint8_t* _fb_base;
 uint8_t* _jpeg_buf;
 
-#if MICROPY_ENABLE_GC
-static char heap[MPY_HEAP_SIZE] __attribute__((aligned(8))); 
-#endif
 
 #if MICROPY_PY_THREAD 
 #define MP_TASK_PRIORITY        4
@@ -293,12 +286,14 @@ void load_config_from_spiffs(config_data_t* config)
 		config->freq_cpu  =  FREQ_CPU_DEFAULT;
 		config->freq_pll1 = FREQ_PLL1_DEFAULT;
 		config->kpu_div   = 1;
+		config->gc_heap_size = CONFIG_MAIXPY_GC_HEAP_SIZE;
 		if(!save_config_to_spiffs(config))
 			printk("save config fail\r\n");
 		return;
 	}
 	else
 	{
+		memset(config, 0, sizeof(config_data_t));
 		ret = SPIFFS_read(&spiffs_user_mount_handle.fs, fd, config, sizeof(config_data_t));
 		if(ret<=0)
 		{
@@ -310,7 +305,12 @@ void load_config_from_spiffs(config_data_t* config)
 			config->freq_cpu = config->freq_cpu<FREQ_CPU_MIN ? FREQ_CPU_MIN : config->freq_cpu;
 			config->freq_pll1 = config->freq_pll1>FREQ_PLL1_MAX ? FREQ_PLL1_MAX : config->freq_pll1;
 			config->freq_pll1 = config->freq_pll1<FREQ_PLL1_MIN ? FREQ_PLL1_MIN : config->freq_pll1;
-			if(config->kpu_div==0) config->kpu_div = 1;
+			if(config->kpu_div==0)
+				config->kpu_div = 1;
+			if(config->gc_heap_size == 0)
+			{
+				config->gc_heap_size = CONFIG_MAIXPY_GC_HEAP_SIZE;
+			}
 		}
 	}
 	SPIFFS_close(&spiffs_user_mount_handle.fs, fd);
@@ -354,13 +354,22 @@ void mp_task(
 #else
 		volatile void* mp_main_stack_top = (void*)get_sp();
 #endif
+		config_data_t* config = (config_data_t*)pvParameter;
+#if MICROPY_ENABLE_GC
+		void* gc_heap = malloc(config->gc_heap_size);
+		if(!gc_heap){
+			printk("GC heap size too large\r\n");
+			while(1);
+		}
+#endif
+
 soft_reset:
 		// initialise the stack pointer for the main thread
 		mp_stack_set_top((void *)(uint64_t)mp_main_stack_top);
 		//mp_stack_set_limit(MP_TASK_STACK_SIZE - 1024);//Not open MICROPY_STACK_CHECK
 #if MICROPY_ENABLE_GC
-		gc_init(heap, heap + sizeof(heap));
-		printk("gc heap=%p-%p\r\n",heap, heap+sizeof(heap));
+		gc_init(gc_heap, gc_heap + config->gc_heap_size);
+		printk("gc heap=%p-%p(%d)\r\n",gc_heap, gc_heap + config->gc_heap_size, config->gc_heap_size);
 #endif
 		mp_init();
 		mp_obj_list_init(mp_sys_path, 0);
@@ -557,7 +566,7 @@ int maixpy_main()
 						 mp_task, // function entry
 						 "mp_task", //task name
 						 MP_TASK_STACK_LEN, //stack_deepth
-						 NULL, //function arg
+						 &config, //function arg
 						 MP_TASK_PRIORITY, //task priority
 						 &mp_main_task_handle);//task handl
 	// xTaskCreateAtProcessor(1, core2_task, "core2_task", 256, NULL, tskIDLE_PRIORITY+1, NULL );
