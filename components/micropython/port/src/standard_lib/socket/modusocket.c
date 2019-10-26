@@ -165,7 +165,7 @@ mp_uint_t socket_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_t arg, int *
 
 
 
-int8_t g_fds[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; // max fd: 20*8 = 160
+int8_t g_fds[20] = {0,0,0,0,0,0,0,0}; // max fd: 8*8 = 64
 int8_t require_new_fd(){
     int8_t i=0, j;
     for(; i<sizeof(g_fds); ++i){

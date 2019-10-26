@@ -436,38 +436,42 @@ STATIC mp_uint_t esp32_socket_recv(mod_network_socket_obj_t *socket, byte *buf, 
     int read_len = 0;
     uint16_t once_read_len = 0;
     int ret = -1;
+    int len_avail = 0;
     mp_uint_t start_time = mp_hal_ticks_ms();
     do{
-        int len_avail = esp32_spi_socket_available(self->sock_id);
-        if(len_avail == -1)
+        if(self->sock_id >= 0)
         {
-            *_errno = MP_EIO;
-            return MP_STREAM_ERROR;
-        }
-        if(len_avail > 0)
-        {
-            once_read_len = len_avail>(len-read_len) ? (len-read_len) : len_avail;
-            once_read_len = once_read_len>SPI_MAX_DMA_LEN ? SPI_MAX_DMA_LEN : once_read_len;
-            ret = esp32_spi_socket_read(self->sock_id, (uint8_t*)buf+read_len, once_read_len);
-            if(ret == -1)
+            len_avail = esp32_spi_socket_available(self->sock_id);
+            if(len_avail == -1)
             {
                 *_errno = MP_EIO;
                 return MP_STREAM_ERROR;
             }
-            read_len += ret;
-        }
-        if(read_len >= len)
-            break;
-        if(socket->timeout == 0)
-            break;
-        if( mp_hal_ticks_ms() - start_time > ((uint32_t)socket->timeout*1000) )
-        {
-            *_errno = MP_ETIMEDOUT;
-            return MP_STREAM_ERROR;
+            if(len_avail > 0)
+            {
+                once_read_len = len_avail>(len-read_len) ? (len-read_len) : len_avail;
+                once_read_len = once_read_len>SPI_MAX_DMA_LEN ? SPI_MAX_DMA_LEN : once_read_len;
+                ret = esp32_spi_socket_read(self->sock_id, (uint8_t*)buf+read_len, once_read_len);
+                if(ret == -1)
+                {
+                    *_errno = MP_EIO;
+                    return MP_STREAM_ERROR;
+                }
+                read_len += ret;
+            }
+            if(read_len >= len)
+                break;
+            if(socket->timeout == 0)
+                break;
+            if( mp_hal_ticks_ms() - start_time > ((uint32_t)socket->timeout*1000) )
+            {
+                *_errno = MP_ETIMEDOUT;
+                return MP_STREAM_ERROR;
+            }
         }
         if(socket->u_param.type == MOD_NETWORK_SOCK_STREAM)
         {
-            if(esp32_spi_socket_status(self->sock_id) == SOCKET_CLOSED)
+            if((self->sock_id < 0) || (esp32_spi_socket_status(self->sock_id) == SOCKET_CLOSED))
             {
                 self->sock_id = -1;
                 if(!self->to_be_closed)
@@ -502,8 +506,10 @@ STATIC mp_uint_t esp32_socket_send(mod_network_socket_obj_t *socket, const byte 
 		*_errno = MP_EPIPE;
 		return -1;
 	}
+    int status = SOCKET_CLOSED;
     esp32_nic_obj_t* self = (esp32_nic_obj_t*)socket->nic;
-    int status = esp32_spi_socket_status(self->sock_id);
+    if(self->sock_id >= 0)
+        status = esp32_spi_socket_status(self->sock_id);
     if(status == SOCKET_CLOSED)
     {
         self->sock_id = -1;   
@@ -596,38 +602,42 @@ STATIC mp_int_t esp32_socket_recvfrom(mod_network_socket_obj_t *socket, const by
     int read_len = 0;
     uint16_t once_read_len = 0;
     int ret = -1;
+    int len_avail = 0;
     mp_uint_t start_time = mp_hal_ticks_ms();
     do{
-        int len_avail = esp32_spi_socket_available(self->sock_id);
-        if(len_avail == -1)
+        if(self->sock_id >= 0)
         {
-            *_errno = MP_EIO;
-            return MP_STREAM_ERROR;
-        }
-        if(len_avail > 0)
-        {
-            once_read_len = len_avail>(len-read_len) ? (len-read_len) : len_avail;
-            once_read_len = once_read_len>SPI_MAX_DMA_LEN ? SPI_MAX_DMA_LEN : once_read_len;
-            ret = esp32_spi_socket_read(self->sock_id, (uint8_t*)buf+read_len, once_read_len);
-            if(ret == -1)
+            len_avail = esp32_spi_socket_available(self->sock_id);
+            if(len_avail == -1)
             {
                 *_errno = MP_EIO;
                 return MP_STREAM_ERROR;
             }
-            read_len += ret;
-        }
-        if(read_len >= len)
-            break;
-        if(socket->timeout == 0)
-            break;
-        if( mp_hal_ticks_ms() - start_time > ((uint32_t)socket->timeout*1000) )
-        {
-            *_errno = MP_ETIMEDOUT;
-            return MP_STREAM_ERROR;
+            if(len_avail > 0)
+            {
+                once_read_len = len_avail>(len-read_len) ? (len-read_len) : len_avail;
+                once_read_len = once_read_len>SPI_MAX_DMA_LEN ? SPI_MAX_DMA_LEN : once_read_len;
+                ret = esp32_spi_socket_read(self->sock_id, (uint8_t*)buf+read_len, once_read_len);
+                if(ret == -1)
+                {
+                    *_errno = MP_EIO;
+                    return MP_STREAM_ERROR;
+                }
+                read_len += ret;
+            }
+            if(read_len >= len)
+                break;
+            if(socket->timeout == 0)
+                break;
+            if( mp_hal_ticks_ms() - start_time > ((uint32_t)socket->timeout*1000) )
+            {
+                *_errno = MP_ETIMEDOUT;
+                return MP_STREAM_ERROR;
+            }
         }
         if(socket->u_param.type == MOD_NETWORK_SOCK_STREAM)
         {
-            if(esp32_spi_socket_status(self->sock_id) == SOCKET_CLOSED)
+            if((self->sock_id < 0 ) || (esp32_spi_socket_status(self->sock_id) == SOCKET_CLOSED))
             {
                 self->sock_id = -1;
                 if(!self->to_be_closed)
@@ -653,7 +663,9 @@ STATIC mp_int_t esp32_socket_recvfrom(mod_network_socket_obj_t *socket, const by
         }
     }while(1);
     uint16_t port_16;
-    int8_t res = esp32_spi_get_remote_info(self->sock_id, ip, &port_16);
+    int8_t res = -1;
+    if( self->sock_id >= 0)
+        res = esp32_spi_get_remote_info(self->sock_id, ip, &port_16);
     if(res !=0)
     {
         *_errno = MP_EIO;
