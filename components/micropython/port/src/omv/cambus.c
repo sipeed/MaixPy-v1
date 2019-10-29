@@ -215,6 +215,7 @@ int cambus_scan()
 int cambus_scan_gc0328(void)
 {
     uint8_t id;
+    sccb_reg_width = 8;
     sccb_i2c_write_byte(i2c_device, GC0328_ADDR, 0xFE, sccb_reg_width, 0x00, 10);
     sccb_i2c_read_byte(i2c_device, GC0328_ADDR, 0xF0, sccb_reg_width, &id, 10);
     if (id != 0x9d)

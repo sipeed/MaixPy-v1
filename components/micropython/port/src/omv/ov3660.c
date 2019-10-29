@@ -481,22 +481,6 @@ static int set_pixformat(sensor_t *sensor, pixformat_t pixformat)
     //     cambus_writeb(sensor->slv_addr, regs[i][0], regs[i][1]);
     //     i++;
     // }
-    switch (pixformat) {
-        case PIXFORMAT_RGB565:
-	// 		dvp_set_image_format(DVP_CFG_RGB_FORMAT);
-    //         break;
-        case PIXFORMAT_YUV422:
-            dvp_set_image_format(DVP_CFG_YUV_FORMAT);
-            break;
-        case PIXFORMAT_GRAYSCALE:
-			dvp_set_image_format(DVP_CFG_Y_FORMAT);
-            break;
-    //     case PIXFORMAT_JPEG:
-	// 		dvp_set_image_format(DVP_CFG_RGB_FORMAT);
-    //         break;
-        default:
-            return -1;
-    }
     /* delay n ms */
     mp_hal_delay_ms(30);
     return 0;

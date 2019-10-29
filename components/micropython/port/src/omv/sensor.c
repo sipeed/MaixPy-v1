@@ -266,7 +266,7 @@ int sensro_ov_detect(sensor_t* sensor)
 
 int sensro_gc_detect(sensor_t* sensor)
 {
-    DCMI_PWDN_HIGH();//enable gc0328 要恢复 normal 工作模式，需将 PWDN pin 接入低电平即可，同时写入初始化寄存器即可
+    DCMI_PWDN_LOW();//enable gc0328 要恢复 normal 工作模式，需将 PWDN pin 接入低电平即可，同时写入初始化寄存器即可
     DCMI_RESET_LOW();//reset gc3028
     mp_hal_delay_ms(10);
     DCMI_RESET_HIGH();
@@ -278,9 +278,11 @@ int sensro_gc_detect(sensor_t* sensor)
     }
     else
     {
-        mp_printf(&mp_plat_print, "[MAIXPY]: gc0328 id = %x\n",id); 
+        // mp_printf(&mp_plat_print, "[MAIXPY]: gc0328 id = %x\n",id); 
         sensor->slv_addr = GC0328_ADDR;
         sensor->chip_id = id;
+        sensor->snapshot = sensor_snapshot;
+	    sensor->flush = sensor_flush;
         gc0328_init(sensor);
     }
     return 0;
@@ -320,7 +322,7 @@ int sensor_init_dvp(mp_int_t freq)
         // mp_printf(&mp_plat_print, "[MAIXPY]: find ov sensor\n");
     }
     else if(0 == sensro_gc_detect(&sensor)){//find gc0328 sensor
-        // mp_printf(&mp_plat_print, "[MAIXPY]: find gc3028\n");
+        mp_printf(&mp_plat_print, "[MAIXPY]: find gc3028\n");
     }
     else
     {
@@ -657,6 +659,24 @@ int sensor_write_reg(uint8_t reg_addr, uint16_t reg_data)
 
 int sensor_set_pixformat(pixformat_t pixformat)
 {
+    switch (pixformat) {
+        case PIXFORMAT_RGB565:
+	// 		dvp_set_image_format(DVP_CFG_RGB_FORMAT);
+    //         break;
+        case PIXFORMAT_YUV422:
+            dvp_set_image_format(DVP_CFG_YUV_FORMAT);
+            break;
+        case PIXFORMAT_GRAYSCALE:
+			dvp_set_image_format(DVP_CFG_Y_FORMAT);
+            break;
+    //     case PIXFORMAT_JPEG:
+	// 		dvp_set_image_format(DVP_CFG_RGB_FORMAT);
+    //         break;
+    //     case PIXFORMAT_BAYER:
+    //         break;
+        default:
+            return -1;
+    }
     if (sensor.set_pixformat == NULL
         || sensor.set_pixformat(&sensor, pixformat) != 0) {
         // Operation not supported
@@ -1115,7 +1135,7 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
 			mp_printf(&mp_plat_print, "[MAIXPY]: %s | bpp error\n",__func__);
 			return -1;
 		}
-		
+
 		//wait for new frame
 		g_dvp_finish_flag = 0;
         uint32_t start =  systick_current_millis();

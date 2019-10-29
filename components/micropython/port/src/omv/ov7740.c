@@ -170,21 +170,6 @@ static int write_reg(sensor_t *sensor, uint8_t reg_addr, uint16_t reg_data)
 
 static int set_pixformat(sensor_t *sensor, pixformat_t pixformat)
 {
-    switch (pixformat) {
-        case PIXFORMAT_RGB565:
-        case PIXFORMAT_YUV422:
-            dvp_set_image_format(DVP_CFG_YUV_FORMAT);
-            break;
-        case PIXFORMAT_GRAYSCALE:
-            dvp_set_image_format(DVP_CFG_Y_FORMAT);
-            break;
-        case PIXFORMAT_BAYER:
-            // sensor support but we not support for DVP of k210 not support RAW format(just support YUV442 and RGB565)
-            return -1;
-        default:
-            return -1;
-    }
-
     return 0; 
 }
 

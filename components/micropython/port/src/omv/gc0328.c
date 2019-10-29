@@ -1083,14 +1083,14 @@ static int gc0328_set_vflip(sensor_t *sensor, int enable)
 int gc0328_reset(sensor_t* sensor)
 {
     uint16_t index = 0;
-
+    
     for (index = 0; sensor_default_regs[index][0]; index++)
     {
         // mp_printf(&mp_plat_print, "0x12,0x%02x,0x%02x,\r\n", sensor_default_regs[index][0], sensor_default_regs[index][1]);//debug
-        dvp_sccb_send_data(GC0328_ADDR, sensor_default_regs[index][0], sensor_default_regs[index][1]);
+        cambus_writeb(GC0328_ADDR, sensor_default_regs[index][0], sensor_default_regs[index][1]);
         // mp_hal_delay_ms(1);
     }
-    dvp_sccb_send_data(GC0328_ADDR,0xfe, 0x01);
+    cambus_writeb(GC0328_ADDR, 0xfe, 0x01);
     return 0;
 }
 
