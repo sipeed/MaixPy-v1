@@ -63,13 +63,15 @@ typedef struct _lcd_ctl
     uint16_t height;
     uint16_t start_offset_w0;
     uint16_t start_offset_h0;
+    uint16_t start_offset_w1;
+    uint16_t start_offset_h1;
     uint16_t start_offset_w;
     uint16_t start_offset_h;
 } lcd_ctl_t;
 
 void lcd_polling_enable(void);
 void lcd_interrupt_enable(void);
-int lcd_init(uint32_t freq, bool oct, uint16_t offset_w, uint16_t offset_h, bool invert_color, uint16_t width, uint16_t height);
+int lcd_init(uint32_t freq, bool oct, uint16_t offset_w, uint16_t offset_h, uint16_t offset_w1, uint16_t offset_h1, bool invert_color, uint16_t width, uint16_t height);
 void lcd_destroy();
 void lcd_clear(uint16_t color);
 void lcd_set_freq(uint32_t freq);
@@ -86,6 +88,7 @@ void lcd_fill_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint
 void lcd_draw_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t width, uint16_t color);
 void lcd_ram_draw_string(char *str, uint32_t *ptr, uint16_t font_color, uint16_t bg_color);
 void lcd_ram_cpyimg(char* lcd, int lcdw, char* img, int imgw, int imgh, int x, int y);
+void lcd_set_offset(uint16_t offset_w, uint16_t offset_h);
 
 uint16_t lcd_get_width();
 uint16_t lcd_get_height();

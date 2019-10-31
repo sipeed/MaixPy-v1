@@ -64,7 +64,8 @@ const int resolution[][2] = {
     {64,   32  },    /* 64x32     */
     {64,   64  },    /* 64x64     */
     {128,  64  },    /* 128x64    */
-    {128,  128 },    /* 128x64    */
+    {128,  128 },    /* 128x128    */
+    {240,  240 },    /* 240x240    */
     // Other
     {128,  160 },    /* LCD       */
     {128,  160 },    /* QQVGA2    */
@@ -90,7 +91,7 @@ static int sensor_irq(void *ctx)
 {
 	// sensor_t *sensor = ctx;
 	if (dvp_get_interrupt(DVP_STS_FRAME_FINISH)) {	//frame end
-		dvp_clear_interrupt(DVP_STS_FRAME_FINISH);
+		dvp_clear_interrupt(DVP_STS_FRAME_START | DVP_STS_FRAME_FINISH);
 		g_dvp_finish_flag = 1;
 	} else {	//frame start
         if(g_dvp_finish_flag == 0)  //only we finish the convert, do transmit again
@@ -346,7 +347,7 @@ int sensor_init_dvp(mp_int_t freq)
 int sensor_init_irq()
 {
 	dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 0);
-	plic_set_priority(IRQN_DVP_INTERRUPT, 2);
+	plic_set_priority(IRQN_DVP_INTERRUPT, 1);
     /* set irq handle */
 	plic_irq_register(IRQN_DVP_INTERRUPT, sensor_irq, (void*)&sensor);
 
