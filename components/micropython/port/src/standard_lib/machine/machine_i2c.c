@@ -198,7 +198,7 @@ STATIC void machine_hard_i2c_print(const mp_print_t *print, mp_obj_t self_in, mp
 STATIC int machine_hard_i2c_readfrom(mp_obj_base_t *self_in, uint16_t addr, uint8_t *dest, size_t len, bool stop) {
     machine_hard_i2c_obj_t *self = MP_OBJ_TO_PTR(self_in);
     //TODO: stop not implement
-    int ret = maix_i2c_recv_data(self->i2c, addr, NULL, 0, dest, len, 20);
+    int ret = maix_i2c_recv_data(self->i2c, addr, NULL, 0, dest, len, 100);
     if(ret < 0)
         ret = -EIO;
     else if( ret == 0)
@@ -433,20 +433,24 @@ STATIC mp_obj_t machine_i2c_readfrom_into(size_t n_args, const mp_obj_t *args) {
 }
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_i2c_readfrom_into_obj, 3, 4, machine_i2c_readfrom_into);
 
-
 STATIC int read_mem(mp_obj_t self_in, uint16_t addr, uint32_t memaddr, uint8_t mem_size, uint8_t *buf, size_t len) {
     machine_hard_i2c_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    uint8_t send[4];
     // mp_machine_i2c_p_t *i2c_p = (mp_machine_i2c_p_t*)self->base.type->protocol;
-    uint8_t memaddr_buf[4];
-    size_t memaddr_len = 0;
-    for (int16_t i = mem_size - 8; i >= 0; i -= 8) {
-        memaddr_buf[memaddr_len++] = memaddr >> i;
-    }
     if(len == 0)
     {
         mp_raise_ValueError("[MAIXPY]I2C: not support receive 0 byte data yet");
     }
-    int ret = i2c_recv_data(self->i2c, memaddr_buf, memaddr_len, buf, len);
+    mem_size = mem_size/8;
+    if(mem_size > 4 || mem_size==0)
+    {
+        mp_raise_ValueError("mem_size error");
+    }
+    for(uint8_t i=0; i<mem_size; ++i)
+    {
+        send[i] = (memaddr >> ((mem_size-1)*8 - i*8)) & 0xFF;
+    }
+    int ret = maix_i2c_recv_data(self->i2c, addr, send, mem_size, buf, len, 100);
     if(ret != 0)
         ret = -EIO;
     else
@@ -583,7 +587,7 @@ STATIC mp_obj_t machine_i2c_scan(mp_obj_t self_in) {
     // 7-bit addresses 0b0000xxx and 0b1111xxx are reserved
     for (int addr = 0x08; addr < 0x78; ++addr) {
         // int ret = i2c_p->writeto(self, addr, NULL, 0, true);
-        int ret = maix_i2c_recv_data(self->i2c, addr, NULL, 0, &temp, 1, 10);
+        int ret = maix_i2c_recv_data(self->i2c, addr, NULL, 0, &temp, 1, 100);
         if (ret == 0) {
             mp_obj_list_append(list, MP_OBJ_NEW_SMALL_INT(addr));
         }

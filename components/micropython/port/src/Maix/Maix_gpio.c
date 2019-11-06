@@ -57,6 +57,7 @@ typedef struct _Maix_gpio_obj_t {
     gpio_type_t gpio_type;
     gpio_num_t id;
     mp_obj_t   callback;
+    gpio_drive_mode_t mode;
     
 } Maix_gpio_obj_t;
 
@@ -197,7 +198,7 @@ STATIC void Maix_gpio_print(const mp_print_t *print, mp_obj_t self_in, mp_print_
 }
 
 // pin.init(mode, pull=None, *, value)
-STATIC mp_obj_t Maix_gpio_obj_init_helper(const Maix_gpio_obj_t *self, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+STATIC mp_obj_t Maix_gpio_obj_init_helper(Maix_gpio_obj_t *self, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_mode, ARG_pull, ARG_value };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_mode, MP_ARG_OBJ, {.u_obj = mp_const_none}},
@@ -229,6 +230,7 @@ STATIC mp_obj_t Maix_gpio_obj_init_helper(const Maix_gpio_obj_t *self, size_t n_
                 }else{
                     gpiohs_set_drive_mode(self->id, pin_io_mode);
                 }
+                self->mode = pin_io_mode;
             }
 
             //set initial value (dont this before configuring mode/pull)
@@ -363,12 +365,51 @@ STATIC mp_obj_t Maix_gpio_disirq(size_t n_args, const mp_obj_t *pos_args, mp_map
 
 STATIC  MP_DEFINE_CONST_FUN_OBJ_KW(Maix_gpio_disirq_obj,1,Maix_gpio_disirq);
 
+
+STATIC mp_obj_t Maix_gpio_mode(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+    if(!mp_obj_is_type(pos_args[0], &Maix_gpio_type))
+        mp_raise_ValueError("only for object");
+    Maix_gpio_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+
+    enum { ARG_mode};
+    static const mp_arg_t allowed_args[] = {
+        { MP_QSTR_mode, MP_ARG_INT, {.u_int = -1} },
+    };
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    if(args[ARG_mode].u_int == -1)
+    {
+        return mp_obj_new_int(self->mode);
+    }
+    else if(args[ARG_mode].u_int != GPIO_DM_INPUT && 
+            args[ARG_mode].u_int != GPIO_DM_OUTPUT && 
+            args[ARG_mode].u_int != GPIO_DM_PULL_NONE && 
+            args[ARG_mode].u_int != GPIO_DM_INPUT_PULL_UP && 
+            args[ARG_mode].u_int != GPIO_DM_INPUT_PULL_DOWN
+            )
+    {
+        mp_raise_ValueError("arg error");
+    }
+    if (self->gpio_type == GPIO) {
+        gpio_set_drive_mode(self->id, (gpio_drive_mode_t)args[ARG_mode].u_int);
+    }else{
+        gpiohs_set_drive_mode(self->id, (gpio_drive_mode_t)args[ARG_mode].u_int);
+    }
+    self->mode = (gpio_drive_mode_t)args[ARG_mode].u_int;
+    return mp_const_none;
+}
+
+STATIC  MP_DEFINE_CONST_FUN_OBJ_KW(Maix_gpio_mode_obj,1,Maix_gpio_mode);
+
+
 STATIC const mp_rom_map_elem_t Maix_gpio_locals_dict_table[] = {
     // instance methods
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&Maix_gpio_init_obj) },
     { MP_ROM_QSTR(MP_QSTR_value), MP_ROM_PTR(&Maix_gpio_value_obj) },
     { MP_ROM_QSTR(MP_QSTR_irq), MP_ROM_PTR(&Maix_gpio_irq_obj) },
     { MP_ROM_QSTR(MP_QSTR_disirq), MP_ROM_PTR(&Maix_gpio_disirq_obj) },
+    { MP_ROM_QSTR(MP_QSTR_mode), MP_ROM_PTR(&Maix_gpio_mode_obj) },
     // class constants
     { MP_ROM_QSTR(MP_QSTR_IN), MP_ROM_INT(GPIO_DM_INPUT) },
     { MP_ROM_QSTR(MP_QSTR_OUT), MP_ROM_INT(GPIO_DM_OUTPUT) },
