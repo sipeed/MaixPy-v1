@@ -347,7 +347,7 @@ int sensor_init_dvp(mp_int_t freq)
 int sensor_init_irq()
 {
 	dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 0);
-	plic_set_priority(IRQN_DVP_INTERRUPT, 1);
+	plic_set_priority(IRQN_DVP_INTERRUPT, 2);
     /* set irq handle */
 	plic_irq_register(IRQN_DVP_INTERRUPT, sensor_irq, (void*)&sensor);
 
