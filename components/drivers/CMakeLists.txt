@@ -15,6 +15,11 @@ if(CONFIG_COMPONENT_DRIVERS_ENABLE)
         aux_source_directory("ws2812/src"  WS2812_SRCS)
         list(APPEND ADD_SRCS ${WS2812_SRCS})
     endif()
+    if(CONFIG_HTPA_ENABLE)
+        list(APPEND ADD_INCLUDE "htpa/include")
+        aux_source_directory("htpa/src"  HTPA_SRCS)
+        list(APPEND ADD_SRCS ${HTPA_SRCS})
+    endif()
     
     list(APPEND ADD_SRCS ${FLASH_SRCS}
                         ${JOYSTICK_SRCS}

@@ -1,0 +1,11 @@
+#ifndef _HTPA_32X32D_H
+#define _HTPA_32X32D_H
+
+
+#define HTPA_32X32D_WIDTH 32
+#define HTPA_32X32D_HEIGHT 32
+#define HTPA_32X32D_ADDR         0x1A
+#define HTPA_32X32D_ADDR_EEPROM  0x50
+
+
+#endif

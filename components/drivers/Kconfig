@@ -19,5 +19,10 @@ menu "Drivers configuration"
 			bool "Enbale ws2812 over i2s component"
 			default n
 	endmenu
+	menu "HTPA thermal sensor"
+		config HTPA_ENABLE
+			bool "Enbale HTPA thermal sensor"
+			default n
+	endmenu
 endmenu
 

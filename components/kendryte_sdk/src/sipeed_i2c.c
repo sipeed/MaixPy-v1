@@ -186,7 +186,6 @@ int maix_i2c_recv_data(i2c_device_number_t i2c_num, uint32_t slave_address, cons
         i2c_adapter->enable = 1;
     }
 
-    *receive_buf = (uint8_t)i2c_adapter->data_cmd;
     while (send_buf_len)
     {
         if(time_ms() - time_start > timeout_ms)

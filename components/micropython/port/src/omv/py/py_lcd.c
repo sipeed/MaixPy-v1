@@ -477,6 +477,7 @@ STATIC mp_obj_t py_lcd_invert(size_t n_args, const mp_obj_t *args)
 		if( invert )
 		{
 			lcd_set_invert_helper();
+			update_offset(type, rotation);
 		}
 	}
 end:

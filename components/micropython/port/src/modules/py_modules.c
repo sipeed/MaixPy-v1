@@ -16,6 +16,9 @@ STATIC const mp_map_elem_t modules_globals_table[] = {
 #if CONFIG_MAIXPY_WS2812_ENABLE
     { MP_ROM_QSTR(MP_QSTR_ws2812),  MP_ROM_PTR(&modules_ws2812_type) },
 #endif
+#if CONFIG_MAIXPY_HTPA_ENABLE
+    { MP_ROM_QSTR(MP_QSTR_htpa),  MP_ROM_PTR(&modules_htpa_type) },
+#endif
 };
 
 STATIC MP_DEFINE_CONST_DICT (
