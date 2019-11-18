@@ -99,6 +99,7 @@ typedef struct{
     htpa_eeprom_param_t   eeprom;
 
     bool                 is_init;
+    bool                 is_get_elec_off;
 }htpa_t;
 
 

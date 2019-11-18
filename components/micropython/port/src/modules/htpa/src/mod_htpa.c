@@ -21,7 +21,7 @@ const mp_obj_type_t modules_htpa_type;
 typedef struct {
     mp_obj_base_t         base;
     htpa_t                htpa_obj;
-    // image_t               img;
+    image_t               img;
     mp_obj_list_t*        pixels; // int list
     
 } modules_htpa_obj_t;
@@ -58,10 +58,10 @@ mp_obj_t modules_htpa_make_new(const mp_obj_type_t *type, size_t n_args, size_t 
        m_del_obj(modules_htpa_obj_t, self);
        mp_raise_OSError(ret);
    }   
-//    self->img.bpp = IMAGE_BPP_GRAYSCALE;
-//    self->img.data = NULL;
-//    self->img.w = self->htpa_obj.width;
-//    self->img.h = self->htpa_obj.height;
+   self->img.bpp = IMAGE_BPP_GRAYSCALE;
+   self->img.data = (uint8_t*)self->htpa_obj.v;
+   self->img.w = self->htpa_obj.width;
+   self->img.h = self->htpa_obj.height;
     self->pixels = (mp_obj_list_t*)mp_obj_new_list(self->htpa_obj.width*self->htpa_obj.height, NULL);
     return MP_OBJ_FROM_PTR(self);
 }
@@ -102,6 +102,56 @@ STATIC mp_obj_t modules_htpa_get_data(mp_obj_t self_in) {
     return (mp_obj_t)self->pixels;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(modules_htpa_temperature_obj, modules_htpa_get_data);
+
+STATIC mp_obj_t modules_htpa_get_min_max(mp_obj_t self_in)
+{
+    modules_htpa_obj_t* self = MP_OBJ_TO_PTR(self_in);
+    int32_t max = self->htpa_obj.v[0], min = self->htpa_obj.v[1];
+    int max_pos = 0, min_pos = 0;
+    for(int i=1; i<self->htpa_obj.width*self->htpa_obj.height; ++i)
+    {
+        if(self->htpa_obj.v[i] > max)
+        {
+            max = self->htpa_obj.v[i];
+            max_pos = i;
+        }
+        if(self->htpa_obj.v[i] < min)
+        {
+            min = self->htpa_obj.v[i];
+            min_pos = i;
+        }
+    }
+    mp_obj_t res[4];
+    res[0] = mp_obj_new_int(min);
+    res[1] = mp_obj_new_int(max);
+    res[2] = mp_obj_new_int(min_pos);
+    res[3] = mp_obj_new_int(max_pos);
+
+    return mp_obj_new_tuple(4, res);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(modules_htpa_get_min_max_obj, modules_htpa_get_min_max);
+
+
+STATIC mp_obj_t modules_htpa_get_to_image(mp_obj_t self_in, mp_obj_t min_in, mp_obj_t max_in)
+{
+    modules_htpa_obj_t* self = MP_OBJ_TO_PTR(self_in);
+    mp_int_t min = mp_obj_get_int(min_in);
+    mp_int_t max = mp_obj_get_int(max_in);
+    mp_int_t range = max - min;
+    uint8_t* p = (uint8_t*)self->htpa_obj.v;
+    *p = (self->htpa_obj.v[0] - min)/range*255;
+    for(int i=1; i<self->htpa_obj.width*self->htpa_obj.height; ++i)
+    {
+        *p = (self->htpa_obj.v[i] - min)/(float)range*255;
+        ++p;
+    }        
+
+    return py_image_from_struct(&self->img);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(modules_htpa_to_image_obj, modules_htpa_get_to_image);
+
 
 STATIC mp_obj_t modules_htpa_width(mp_obj_t self_in){
     modules_htpa_obj_t *self = MP_OBJ_TO_PTR(self_in);
@@ -144,6 +194,8 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(py_htpa_read_reg_obj,  py_htpa_read_reg);
 STATIC const mp_rom_map_elem_t mp_modules_htpa_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&modules_htpa_del_obj) },
     { MP_ROM_QSTR(MP_QSTR_temperature), MP_ROM_PTR(&modules_htpa_temperature_obj) },
+    { MP_ROM_QSTR(MP_QSTR_min_max), MP_ROM_PTR(&modules_htpa_get_min_max_obj) },
+    { MP_ROM_QSTR(MP_QSTR_to_image), MP_ROM_PTR(&modules_htpa_to_image_obj) },
     { MP_ROM_QSTR(MP_QSTR_width), MP_ROM_PTR(&modules_htpa_width_obj) },
     { MP_ROM_QSTR(MP_QSTR_height), MP_ROM_PTR(&modules_htpa_height_obj) },
     { MP_OBJ_NEW_QSTR(MP_QSTR___write_reg),         (mp_obj_t)&py_htpa_write_reg_obj },

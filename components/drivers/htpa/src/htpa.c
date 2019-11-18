@@ -777,9 +777,13 @@ int htpa_snapshot(htpa_t* obj, int32_t** pixels)
     #endif
 
     // 1. get electrical offsets
-    ret = htpa_get_electrical_offsets(obj);  // 31ms
-    if(ret != 0)
-        return ret;
+    obj->is_get_elec_off = !obj->is_get_elec_off; //...
+    if(obj->is_get_elec_off)
+    {
+        ret = htpa_get_electrical_offsets(obj);  // 31ms
+        if(ret != 0)
+            return ret;
+    }
     
     #if HTPA_DEBUG_TIME
         printk("elec_off t:%ld\r\n", mp_hal_ticks_ms() - t);
