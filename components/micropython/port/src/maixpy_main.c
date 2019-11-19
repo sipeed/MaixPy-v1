@@ -343,9 +343,7 @@ void pyexec_str(vstr_t* str) {
 // }
 
 void mp_task(
-	#if MICROPY_PY_THREAD 
 	void *pvParameter
-	#endif
 	) {
 #if MICROPY_PY_THREAD
 		volatile void *stack_p = 0;
@@ -573,7 +571,7 @@ int maixpy_main()
 	vTaskStartScheduler();
 	for(;;);
 #else
-	mp_task();
+	mp_task(&config);
 #endif
 	return 0;
 }
