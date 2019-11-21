@@ -319,11 +319,13 @@ int sensor_init_dvp(mp_int_t freq)
     DCMI_PWDN_LOW();
     mp_hal_delay_ms(10);
 
+    cambus_set_writeb_delay(10);
     if(0 == sensro_ov_detect(&sensor)){//find ov sensor
         // mp_printf(&mp_plat_print, "[MAIXPY]: find ov sensor\n");
     }
     else if(0 == sensro_gc_detect(&sensor)){//find gc0328 sensor
         mp_printf(&mp_plat_print, "[MAIXPY]: find gc3028\n");
+        cambus_set_writeb_delay(2);
     }
     else
     {

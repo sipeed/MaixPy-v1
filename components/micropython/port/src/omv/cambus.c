@@ -17,6 +17,12 @@
 #include "sipeed_i2c.h"
 #include "mphalport.h"
 
+static uint32_t write_bus_delay = 10; //ms
+
+void cambus_set_writeb_delay(uint32_t delay)
+{
+    write_bus_delay = delay;
+}
 
 /**
  * @i2c -2: hardware sccb i2c, -1: soft, [0,2]: hardware i2c
@@ -240,7 +246,7 @@ int cambus_readb(uint8_t slv_addr, uint16_t reg_addr, uint8_t *reg_data)
 int cambus_writeb(uint8_t slv_addr, uint16_t reg_addr, uint8_t reg_data)
 {
     sccb_i2c_write_byte(i2c_device, slv_addr, reg_addr, sccb_reg_width, reg_data, 10);
-    mp_hal_delay_ms(10);
+    mp_hal_delay_ms(write_bus_delay);
 	return 0;
 }
 

@@ -91,7 +91,7 @@ uint8_t sensor_default_regs[][2] = {
 	{0x05 , 0x00},//hb
 	{0x06 , 0x6a},//
 	{0x07 , 0x00},//vb
-	{0x08 , 0x0a},//
+	{0x08 , 0x0c},//
 	{0xfe , 0x01},//
 	{0x29 , 0x00},//anti-flicker step [11:8]
 	{0x2a , 0x96},//anti-flicker step [7:0]
@@ -482,7 +482,7 @@ uint8_t sensor_default_regs[][2] = {
 
     //Exp level
     {0xfe, 0x01},
-    {0x2b , 0x02},//exp level 0  14.28fps
+    {0x2b , 0x02},//exp level 0  30fps => 16fps
 	{0x2c , 0x00},//			 
 	{0x2d , 0x02},//exp level 1  12.50fps
 	{0x2e , 0x00},//			 
@@ -501,26 +501,75 @@ uint8_t sensor_default_regs[][2] = {
 };
 
 static const uint8_t qvga_config[][2] = { //k210 
-	// {0x09, 0x00},
-    // {0x0a, 0x78},
-    // {0x0b, 0x00},
-    // {0x0c, 0xa0},
-    // {0x0d, 0x00},
-    // {0x0e, 0xf8},
-    // {0x0f, 0x01},
-    // {0x10, 0x48},
+    {0xfe , 0x00},
+    // window
+        //windowing mode
+	// {0x09 , 0x00},
+    // {0x0a , 0x78},
+	// {0x0b , 0x00},
+	// {0x0c , 0xa0},
+    // {0x0d , 0x00},
+	// {0x0e , 0xf8},
+	// {0x0f , 0x01},
+	// {0x10 , 0x48},
+        //crop mode 
+    {0x50 , 0x01},
+    // {0x51, 0x00},
+    // {0x52, 0x78},
+    // {0x53, 0x00},
+    // {0x54, 0xa0},
+    // {0x55, 0x00},
+    // {0x56, 0xf0},
+    // {0x57, 0x01},
+    // {0x58, 0x40},
+    //subsample 1/2
+    {0x59, 0x22},
+    {0x5a, 0x00},
+    {0x5b, 0x00},
+    {0x5c, 0x00},
+    {0x5d, 0x00},
+    {0x5e, 0x00},
+    {0x5f, 0x00},
+    {0x60, 0x00},
+    {0x61, 0x00},
+    {0x62, 0x00},
+
     {0x00, 0x00}
 };
 
 static const uint8_t vga_config[][2] = { //k210 
-	// {0x09, 0x00},
-    // {0x0a, 0x00},
-    // {0x0b, 0x00},
-    // {0x0c, 0x00},
-    // {0x0d, 0x01},
-    // {0x0e, 0xe8},
-    // {0x0f, 0x02},
-    // {0x10, 0x88},
+    {0xfe , 0x00},
+    // window
+        //windowing mode
+	// {0x09 , 0x00},
+    // {0x0a , 0x78},
+	// {0x0b , 0x00},
+	// {0x0c , 0xa0},
+    // {0x0d , 0x00},
+	// {0x0e , 0xf8},
+	// {0x0f , 0x01},
+	// {0x10 , 0x48},
+        //crop mode 
+    {0x50 , 0x00},
+    // {0x51, 0x00},
+    // {0x52, 0x78},
+    // {0x53, 0x00},
+    // {0x54, 0xa0},
+    // {0x55, 0x00},
+    // {0x56, 0xf0},
+    // {0x57, 0x01},
+    // {0x58, 0x40},
+    //subsample 1/2
+    // {0x59, 0x00},
+    // {0x5a, 0x00},
+    // {0x5b, 0x00},
+    // {0x5c, 0x00},
+    // {0x5d, 0x00},
+    // {0x5e, 0x00},
+    // {0x5f, 0x00},
+    // {0x60, 0x00},
+    // {0x61, 0x00},
+    // {0x62, 0x00},
     {0x00, 0x00}
 };
 
@@ -574,10 +623,26 @@ static int gc0328_set_framerate(sensor_t *sensor, framerate_t framerate)
     return 0;
 }
 
+#define NUM_CONTRAST_LEVELS (5)
+static uint8_t contrast_regs[NUM_CONTRAST_LEVELS][2]={
+	{0x80, 0x00},
+	{0x80, 0x20},
+	{0x80, 0x40},
+	{0x80, 0x60},
+	{0x80, 0x80}
+};
+
 static int gc0328_set_contrast(sensor_t *sensor, int level)
 {
-    int ret = 0;
+    int ret=0;
 
+    level += (NUM_CONTRAST_LEVELS / 2);
+    if (level < 0 || level > NUM_CONTRAST_LEVELS) {
+        return -1;
+    }
+	cambus_writeb(sensor->slv_addr, 0xfe, 0x00);
+	cambus_writeb(sensor->slv_addr, 0xd4, contrast_regs[level][0]);
+	cambus_writeb(sensor->slv_addr, 0xd3, contrast_regs[level][1]);
     return ret;
 }
 
@@ -587,10 +652,25 @@ static int gc0328_set_brightness(sensor_t *sensor, int level)
     return ret;
 }
 
+#define NUM_SATURATION_LEVELS (5)
+static uint8_t saturation_regs[NUM_SATURATION_LEVELS][3]={
+	{0x00, 0x00, 0x00},
+	{0x10, 0x10, 0x10},
+	{0x20, 0x20, 0x20},
+	{0x30, 0x30, 0x30},
+	{0x40, 0x40, 0x40},
+};
 static int gc0328_set_saturation(sensor_t *sensor, int level)
 {
     int ret = 0;
-
+    level += (NUM_CONTRAST_LEVELS / 2);
+    if (level < 0 || level > NUM_CONTRAST_LEVELS) {
+        return -1;
+    }
+	cambus_writeb(sensor->slv_addr, 0xfe, 0x00);
+	cambus_writeb(sensor->slv_addr, 0xd0, saturation_regs[level][0]);
+	cambus_writeb(sensor->slv_addr, 0xd1, saturation_regs[level][1]);
+	cambus_writeb(sensor->slv_addr, 0xd2, saturation_regs[level][2]);
     return ret;
 }
 
@@ -629,6 +709,29 @@ static int gc0328_get_gain_db(sensor_t *sensor, float *gain_db)
 static int gc0328_set_auto_exposure(sensor_t *sensor, int enable, int exposure_us)
 {
     int ret = 0;
+	uint8_t temp;
+	cambus_writeb(sensor->slv_addr, 0xfe, 0x00);
+	cambus_readb(sensor->slv_addr, 0x4f, &temp);
+	if(enable != 0)
+	{
+		cambus_writeb(sensor->slv_addr,0x4f, temp|0x01); // enable
+		if(exposure_us != -1)
+		{
+			cambus_writeb(sensor->slv_addr, 0xfe, 0x01);
+			cambus_writeb(sensor->slv_addr,0x2b, (uint8_t)(((uint16_t)exposure_us)>>8));
+			cambus_writeb(sensor->slv_addr,0x2c, (uint8_t)(((uint16_t)exposure_us)));
+		}
+	}
+	else
+	{
+		cambus_writeb(sensor->slv_addr,0x4f, temp&0xfe); // disable
+		if(exposure_us != -1)
+		{
+			cambus_writeb(sensor->slv_addr, 0xfe, 0x01);
+			cambus_writeb(sensor->slv_addr,0x2b, (uint8_t)(((uint16_t)exposure_us)>>8));
+			cambus_writeb(sensor->slv_addr,0x2c, (uint8_t)(((uint16_t)exposure_us)));
+		}
+	}
     return ret;
 }
 
@@ -641,6 +744,29 @@ static int gc0328_get_exposure_us(sensor_t *sensor, int *exposure_us)
 static int gc0328_set_auto_whitebal(sensor_t *sensor, int enable, float r_gain_db, float g_gain_db, float b_gain_db)
 {
     int ret = 0;
+	uint8_t temp;
+	cambus_writeb(sensor->slv_addr, 0xfe, 0x00);
+	cambus_readb(sensor->slv_addr, 0x42, &temp);
+	if(enable != 0)
+	{
+		cambus_writeb(sensor->slv_addr,0x42, temp|0x02); // enable
+		if(!isnanf(r_gain_db))
+			cambus_writeb(sensor->slv_addr,0x80, (uint8_t)r_gain_db); //limit
+		if(!isnanf(g_gain_db))
+			cambus_writeb(sensor->slv_addr,0x81, (uint8_t)g_gain_db);
+		if(!isnanf(b_gain_db))
+			cambus_writeb(sensor->slv_addr,0x82, (uint8_t)b_gain_db);
+	}
+	else
+	{
+		cambus_writeb(sensor->slv_addr,0x42, temp&0xfd); // disable
+		if(!isnanf(r_gain_db))
+			cambus_writeb(sensor->slv_addr,0x77, (uint8_t)r_gain_db);
+		if(!isnanf(g_gain_db))
+			cambus_writeb(sensor->slv_addr,0x78, (uint8_t)g_gain_db);
+		if(!isnanf(b_gain_db))
+			cambus_writeb(sensor->slv_addr,0x79, (uint8_t)b_gain_db);
+	}
     return ret;
 }
 
