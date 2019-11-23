@@ -265,9 +265,10 @@ int sensro_ov_detect(sensor_t* sensor)
     return 0;
 }
 
-int sensro_gc_detect(sensor_t* sensor)
+int sensro_gc_detect(sensor_t* sensor, bool pwnd)
 {
-    DCMI_PWDN_LOW();//enable gc0328 要恢复 normal 工作模式，需将 PWDN pin 接入低电平即可，同时写入初始化寄存器即可
+    if(pwnd)
+        DCMI_PWDN_LOW();//enable gc0328 要恢复 normal 工作模式，需将 PWDN pin 接入低电平即可，同时写入初始化寄存器即可
     DCMI_RESET_LOW();//reset gc3028
     mp_hal_delay_ms(10);
     DCMI_RESET_HIGH();
@@ -323,7 +324,7 @@ int sensor_init_dvp(mp_int_t freq)
     if(0 == sensro_ov_detect(&sensor)){//find ov sensor
         // mp_printf(&mp_plat_print, "[MAIXPY]: find ov sensor\n");
     }
-    else if(0 == sensro_gc_detect(&sensor)){//find gc0328 sensor
+    else if(0 == sensro_gc_detect(&sensor, true)){//find gc0328 sensor
         mp_printf(&mp_plat_print, "[MAIXPY]: find gc3028\n");
         cambus_set_writeb_delay(2);
     }
@@ -424,8 +425,8 @@ int binocular_sensor_scan()
 {
     int init_ret = 0;
     //reset both sensor
-    DCMI_PWDN_HIGH();
     mp_hal_delay_ms(10);
+    DCMI_PWDN_HIGH();
     DCMI_RESET_LOW();
     mp_hal_delay_ms(10);
     DCMI_RESET_HIGH();
@@ -453,7 +454,7 @@ int binocular_sensor_scan()
         /* Probe again to set the slave addr */
         sensor.slv_addr = cambus_scan();
         if (sensor.slv_addr == 0) {
-            mp_printf(&mp_plat_print, "[MAIXPY]: Don't detect sensor\n");
+            mp_printf(&mp_plat_print, "[MAIXPY]: No sensor\n");
             return -1;
         }
     }
@@ -535,24 +536,34 @@ int binocular_sensor_reset(mp_int_t freq)
     mp_hal_delay_ms(10);
 
     // Initialize the camera bus, 8bit reg
-    cambus_init(8, -2, 41, 40, 0, 0);
+    cambus_init(8, 2, 41, 40, 0, 0);
 	 // Initialize dvp interface
 	dvp_set_xclk_rate(freq);
-	dvp->cmos_cfg |= DVP_CMOS_CLK_DIV(3) | DVP_CMOS_CLK_ENABLE;
 
-    if(0 != binocular_sensor_scan())//scan I2C, do ov2640 init
-    {
-        mp_printf(&mp_plat_print, "[MAIXPY]: scan sensor error\n");
-        return -1;
+    if(0 == binocular_sensor_scan()){//scan I2C, do ov2640 init
     }
-    if(sensor.chip_id == OV7740_ID)
-    {
-        dvp_set_image_format(DVP_CFG_YUV_FORMAT);
+    else{
+        DCMI_PWDN_HIGH();
+        if(0 == sensro_gc_detect(&sensor, false)){//find gc0328 sensor
+            mp_printf(&mp_plat_print, "[MAIXPY]: sensor1 find gc3028\n");
+            cambus_set_writeb_delay(2);
+        }
+        else{
+            mp_printf(&mp_plat_print, "[MAIXPY]: scan sensor1 error\n");
+            return -1;
+        }
+        DCMI_PWDN_LOW();
+        if(0 == sensro_gc_detect(&sensor, false)){//find gc0328 sensor
+            mp_printf(&mp_plat_print, "[MAIXPY]: sensor2 find gc3028\n");
+            cambus_set_writeb_delay(2);
+        }
+        else{
+            mp_printf(&mp_plat_print, "[MAIXPY]: scan sensor2 error\n");
+            return -1;
+        }
     }
-    else
-    {
-        dvp_set_image_format(DVP_CFG_RGB_FORMAT);
-    }
+    
+    dvp_set_image_format(DVP_CFG_YUV_FORMAT);
 
 	dvp_enable_burst();
 	dvp_disable_auto();
@@ -607,7 +618,7 @@ int binocular_sensor_reset(mp_int_t freq)
 
     // Disable dvp  IRQ before all cfg done 
     sensor_init_irq();
-
+    sensor.reset_set = true;
 	// mp_printf(&mp_plat_print, "[MAIXPY]: exit sensor_reset\n");
     return 0;
 }
