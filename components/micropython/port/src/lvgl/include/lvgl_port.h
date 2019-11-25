@@ -3,15 +3,8 @@
 #define __LVGL_H_
 
 #include "lv_gc.h"
+#include "py/mpstate.h"
 
-typedef struct{
-    LV_ROOTS
-} lvgl_state_gc_t;
-
-//TODO: should not be here, should be GC collect root
-extern lvgl_state_gc_t g_lvgl_state_gc;
-
-#define LVGL_STATE_GC(x) g_lvgl_state_gc.x
 
 #endif
 

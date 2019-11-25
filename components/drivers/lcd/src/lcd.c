@@ -329,12 +329,13 @@ typedef int (*dual_func_t)(int);
 extern volatile dual_func_t dual_func;
 static uint16_t* g_pixs_draw_pic = NULL;
 static uint32_t g_pixs_draw_pic_size = 0;
+static uint32_t g_pixs_draw_pic_half_size = 0;
 
 static int swap_pixs_half(int core)
 {
     uint32_t i;
     uint16_t* p = g_pixs_draw_pic;
-    for(i=g_pixs_draw_pic_size/2; i<g_pixs_draw_pic_size ; i+=2)
+    for(i=g_pixs_draw_pic_half_size; i<g_pixs_draw_pic_size ; i+=2)
     {
         g_lcd_display_buff[i] = SWAP_16(*(p+1));
         g_lcd_display_buff[i+1] = SWAP_16(*(p));
@@ -347,18 +348,45 @@ void lcd_draw_picture(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height,
 {
     uint32_t i;
     uint16_t* p = (uint16_t*)ptr;
-    g_pixs_draw_pic_size = width*height;
+    bool odd = false;
+
     lcd_set_area(x1, y1, x1 + width - 1, y1 + height - 1);
-    g_pixs_draw_pic = p+g_pixs_draw_pic_size/2;
-    dual_func = swap_pixs_half;
-    for(i=0; i< g_pixs_draw_pic_size/2; i+=2)
+    g_pixs_draw_pic_size = width*height;
+    // printk("\t%d %d %d %d, %d %d %d\r\n", x1, y1, x1 + width - 1, y1 + height - 1, width, height, g_pixs_draw_pic_size);
+    /*
+    for(i=0; i<g_pixs_draw_pic_size; ++i )
     {
-        g_lcd_display_buff[i] = SWAP_16(*(p+1));
-        g_lcd_display_buff[i+1] = SWAP_16(*(p));
-        p+=2;
+        g_lcd_display_buff[i] = SWAP_16(*p);
+        ++p;
     }
-    while(dual_func){}
-    tft_write_word((uint32_t*)g_lcd_display_buff, width * height / 2);
+    tft_write_half(g_lcd_display_buff, g_pixs_draw_pic_size);
+    */
+    if(g_pixs_draw_pic_size % 2)
+    {
+        odd = true;
+        g_pixs_draw_pic_size -= 1;
+    }
+    if( g_pixs_draw_pic_size > 0)
+    {
+        g_pixs_draw_pic_half_size = g_pixs_draw_pic_size/2;
+        g_pixs_draw_pic_half_size = (g_pixs_draw_pic_half_size%2) ? (g_pixs_draw_pic_half_size+1) : g_pixs_draw_pic_half_size;
+        g_pixs_draw_pic = p+g_pixs_draw_pic_half_size;
+        dual_func = swap_pixs_half;
+        for(i=0; i< g_pixs_draw_pic_half_size; i+=2)
+        {
+            g_lcd_display_buff[i] = SWAP_16(*(p+1));
+            g_lcd_display_buff[i+1] = SWAP_16(*(p));
+            p+=2;
+        }
+        while(dual_func){}
+        tft_write_word((uint32_t*)g_lcd_display_buff, g_pixs_draw_pic_size / 2);
+    }
+    if( odd )
+    {
+        g_lcd_display_buff[0] = SWAP_16( ((uint16_t*)ptr)[g_pixs_draw_pic_size]);
+        lcd_set_area(x1 + width - 1, y1 + height - 1, x1 + width - 1, y1 + height - 1);
+        tft_write_half(g_lcd_display_buff, 1);
+    }
 }
 
 //draw pic's roi on (x,y)

@@ -322,19 +322,19 @@ extern const struct _mp_obj_module_t nes_module;
 #endif
 
 // lvgl GUI lib
-#ifndef CONFIG_MAIXPY_LVGL_ENABLE
-#define CONFIG_MAIXPY_LVGL_ENABLE           (0) // lvgl GUI lib
-#endif
+
 #if CONFIG_MAIXPY_LVGL_ENABLE
-#undef CONFIG_MAIXPY_LVGL_ENABLE
-#define CONFIG_MAIXPY_LVGL_ENABLE           (1) // lvgl GUI lib
+#include "lv_gc.h"
 extern const struct _mp_obj_module_t mp_module_lvgl;
 extern const struct _mp_obj_module_t mp_module_lvgl_helper;
 #define MAIXPY_PY_LVGL_DEF \
     { MP_OBJ_NEW_QSTR(MP_QSTR_lvgl), (mp_obj_t)&mp_module_lvgl }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_lvgl_helper), (mp_obj_t)&mp_module_lvgl_helper },
+#define MAIXPY_LVGL_ROOTS LV_ROOTS \
+                          void* mp_lv_user_data;
 #else
 #define MAIXPY_PY_LVGL_DEF
+#define MAIXPY_LVGL_ROOTS
 #endif // CONFIG_MAIXPY_LVGL_ENABLE
 
 // touchscreen
@@ -445,6 +445,7 @@ extern const struct _mp_obj_module_t mp_module_touchscreen;
     const char *readline_hist[16];  \
     struct _machine_uart_obj_t *Maix_stdio_uart; \
 	struct _nic_obj_t *modnetwork_nic; \
+    MAIXPY_LVGL_ROOTS \
 
 
 

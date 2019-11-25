@@ -287,6 +287,7 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
         append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl/lv_bindings/lvgl/src/lv_misc")
         append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl/lv_bindings/lvgl/src/lv_objx")
         append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl/lv_bindings/lvgl/src/lv_themes")
+        append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl")
         set(LVGL_MPY_GEN_SRC "${lvgl_build_dir}/lv_mpy.c")
         # add relative path for  ${mpy_build_gen_header_dir}/qstr.i.last need
         file(RELATIVE_PATH LVGL_MPY_GEN_SRC_REL ${CMAKE_CURRENT_LIST_DIR} ${LVGL_MPY_GEN_SRC})
@@ -321,13 +322,14 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
         separate_arguments(cmd_param_lvgl_fake_libc_inc NATIVE_COMMAND ${mpy_port_dir}/src/lvgl/lv_bindings/pycparser/utils/fake_libc_include)
         set(lvgl_core_header ${mpy_port_dir}/src/lvgl/lv_bindings/lvgl/lvgl.h)
         set(LVGL_MPY_GEN_SRC_PP ${lvgl_build_dir}/lvgl.pp.c)
+        set(LVGL_MPY_METADATA ${lvgl_build_dir}/lv_mpy.json)
         add_custom_command(OUTPUT ${LVGL_MPY_GEN_SRC_PP}
                     COMMAND mkdir -p ${lvgl_build_dir}
                     COMMAND ${CMAKE_C_COMPILER} -E ${cmd_param_cflag} ${cmd_param_cinclude} -I${cmd_param_lvgl_fake_libc_inc} ${lvgl_core_header} > ${LVGL_MPY_GEN_SRC_PP}
                     DEPENDS ${lvgl_core_header}
                     )
         add_custom_command(OUTPUT ${LVGL_MPY_GEN_SRC}
-                    COMMAND ${python} ${lvgl_gen_py_tool} ${cmd_param_cinclude} -M maixpy -MP maix -E ${LVGL_MPY_GEN_SRC_PP} ${lvgl_core_header} > ${LVGL_MPY_GEN_SRC}
+                    COMMAND ${python} ${lvgl_gen_py_tool} ${cmd_param_cinclude} -M lvgl -MP lv -MD ${LVGL_MPY_METADATA} -E ${LVGL_MPY_GEN_SRC_PP} ${lvgl_core_header} > ${LVGL_MPY_GEN_SRC}
                     DEPENDS ${LVGL_MPY_GEN_SRC_PP}
                 )
     endif()

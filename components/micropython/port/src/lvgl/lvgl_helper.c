@@ -4,9 +4,16 @@
 
 #include "binary.h"
 #include "lvgl.h"
+#include "lv_color.h"
 #include "lcd.h"
 #include "mperrno.h"
-#include "touchscreen.h"
+#include "py/runtime.h"
+#include LV_MEM_CUSTOM_INCLUDE
+
+#include "global_config.h"
+#if CONFIG_MAIXPY_TOUCH_SCREEN_ENABLE
+	#include "touchscreen.h"
+#endif
 
 
 typedef struct mp_ptr_t
@@ -46,45 +53,46 @@ STATIC const mp_ptr_t PTR_OBJ(ptr_global) = {\
 }
 
 
-STATIC void lcd_fill(int32_t x1, int32_t y1, int32_t x2, int32_t y2, lv_color_t color)
-{
-	lcd_fill_rectangle(x1, y1, x2, y2, color.full);
-}
+// STATIC void lcd_fill(int32_t x1, int32_t y1, int32_t x2, int32_t y2, lv_color_t color)
+// {
+// 	lcd_fill_rectangle(x1, y1, x2, y2, color.full);
+// }
 
-
-STATIC void lcd_flush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const lv_color_t * color_map)
+#include "printf.h"
+STATIC void lcd_flush(struct _disp_drv_t * disp_drv, const lv_area_t * area, lv_color_t * color_map)
 {
-	int32_t w = x2-x1+1;
-	int32_t h = y2-y1+1;
+	int32_t w = area->x2-area->x1+1;
+	int32_t h = area->y2-area->y1+1;
 	int32_t x,y;
 	int32_t i=0;
-	uint16_t* data = malloc( w*h*2 );
+	uint16_t* data = LV_MEM_CUSTOM_ALLOC( w*h*2 );
 	uint16_t* pixels = data;
 	if(!data)
 		mp_raise_OSError(MP_ENOMEM);
-	for(y=y1; y<=y2; ++y)
+	for(y=area->y1; y<=area->y2; ++y)
 	{
-		for(x=x1; x<=x2; ++x)
+		for(x=area->x1; x<=area->x2; ++x)
 		{
-			pixels[i++]= (color_map->red<<3) | (color_map->blue<<8) | (color_map->green>>3&0x07 | color_map->green<<13);
+			pixels[i++]= (color_map->ch.red<<3) | (color_map->ch.blue<<8) | ( ((color_map->ch.green>>3)&0x07) | (color_map->ch.green<<13));
 			// or LV_COLOR_16_SWAP = 1
 			 ++color_map;
 		}
 	}
-	lcd_draw_picture(x1, y1, w, h, (uint32_t*)data);
-	free(data);
-	lv_flush_ready();
+	lcd_draw_picture(area->x1, area->y1, w, h, (uint32_t*)data);
+	LV_MEM_CUSTOM_FREE(data);
+	lv_disp_flush_ready(disp_drv);
 }
 
-
+#if CONFIG_MAIXPY_TOUCH_SCREEN_ENABLE
 /**
  * Get the current position and state of the mouse
  * @param data store the mouse data here
  * @return false: because the points are not buffered, so no more data to be read
  */
-bool mouse_read(lv_indev_data_t * data)
+bool mouse_read(struct _lv_indev_drv_t * indev_drv, lv_indev_data_t * data)
 {
 	int ret, status, x, y;
+
 	if(!touchscreen_is_init())
 	{
 		touchscreen_config_t config;
@@ -120,18 +128,36 @@ bool mouse_read(lv_indev_data_t * data)
     data->point.y = y;
     return false;
 }
+#endif // CONFIG_MAIXPY_TOUCH_SCREEN_ENABLE
+
+#if LV_USE_LOG
+static void lv_helper_log(lv_log_level_t level, const char * file, uint32_t line, const char * msg)
+{
+	mp_printf(&mp_plat_print, "[lvgl]:[%d] %s:%d %s\r\n", level, file, line, msg);
+}
+#endif
 
 
-DEFINE_PTR_OBJ(lcd_fill);
+// DEFINE_PTR_OBJ(lcd_fill);
 DEFINE_PTR_OBJ(lcd_flush);
+#if CONFIG_MAIXPY_TOUCH_SCREEN_ENABLE
 DEFINE_PTR_OBJ(mouse_read);
+#endif
+#if LV_USE_LOG
+DEFINE_PTR_OBJ(lv_helper_log);
+#endif
 
 
 STATIC const mp_rom_map_elem_t lvgl_helper_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_lvgl_helper) },
-	{ MP_OBJ_NEW_QSTR(MP_QSTR_fill), MP_ROM_PTR(&PTR_OBJ(lcd_fill)) },
+	// { MP_OBJ_NEW_QSTR(MP_QSTR_fill), MP_ROM_PTR(&PTR_OBJ(lcd_fill)) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_flush), MP_ROM_PTR(&PTR_OBJ(lcd_flush)) },
+#if CONFIG_MAIXPY_TOUCH_SCREEN_ENABLE
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_read), MP_ROM_PTR(&PTR_OBJ(mouse_read))},
+#endif
+#if LV_USE_LOG
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_log), MP_ROM_PTR(&PTR_OBJ(lv_helper_log))}
+#endif
 };
 
 

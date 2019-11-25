@@ -89,16 +89,12 @@ typedef int16_t lv_coord_t;
 
 /* Garbage Collector settings
  * Used if lvgl is binded to higher level language and the memory is managed by that language */
-#define LV_ENABLE_GC 0 /* Enable GC for Micropython */
+#define LV_ENABLE_GC 1 /* Enable GC for Micropython */
 #if LV_ENABLE_GC != 0
-// #  define LV_GC_INCLUDE "py/mpstate.h"
-// #  define LV_MEM_CUSTOM_REALLOC   m_realloc      /*Wrapper to realloc*/
-// #  define LV_MEM_CUSTOM_GET_SIZE  gc_nbytes      /*Wrapper to lv_mem_get_size*/
-// #  define LV_GC_ROOT(x) MP_STATE_PORT(x)
-#   define LV_MEM_CUSTOM_REALLOC(p, size)   m_realloc(p, gc_nbytes(p), size) /*Wrapper to realloc*/
-#   define LV_MEM_CUSTOM_GET_SIZE  gc_nbytes                                 /*Wrapper to lv_mem_get_size*/
-#   define LV_GC_INCLUDE "lvgl_port.h"
-#   define LV_GC_ROOT(x) LVGL_STATE_GC(x)
+#  define LV_GC_INCLUDE "lvgl_port.h"
+#  define LV_MEM_CUSTOM_REALLOC(p, size)   m_realloc(p, gc_nbytes(p), size)      /*Wrapper to realloc*/
+#  define LV_MEM_CUSTOM_GET_SIZE  gc_nbytes      /*Wrapper to lv_mem_get_size*/
+#  define LV_GC_ROOT(x) MP_STATE_PORT(x)
 #endif /* LV_ENABLE_GC */
 
 /*=======================
@@ -275,7 +271,7 @@ typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the i
  * #define LV_FONT_CUSTOM_DECLARE LV_FONT_DECLARE(my_font_1) \
  *                                LV_FONT_DECLARE(my_font_2)
  */
-#define LV_FONT_CUSTOM_DECLARE
+#define LV_FONT_CUSTOM_DECLARE // LV_FONT_DECLARE(lv_font_heb_16)
 
 /*Always set a default font from the built-in fonts*/
 #define LV_FONT_DEFAULT        &lv_font_roboto_16
