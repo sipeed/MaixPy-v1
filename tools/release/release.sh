@@ -36,7 +36,17 @@ python project.py build
 cp build/maixpy.bin $release_dir/maixpy_$version.bin
 cp build/maixpy.elf $release_dir/elf/maixpy_$version.elf
 cd ..
-# 
+
+# maixpy_k210 with lvgl
+cd maixpy_k210
+echo "-------------------"
+echo "build project maixpy_k210_with_lvgl"
+echo "-------------------"
+python project.py distclean
+python project.py build --config_file "config_with_lvgl.mk"
+cp build/maixpy.bin $release_dir/maixpy_with_lvgl_$version.bin
+cp build/maixpy.elf $release_dir/elf/maixpy_with_lvgl_$version.elf
+cd ..
 
 #
 cd maixpy_k210_minimum

@@ -46,6 +46,10 @@ project_parser.add_argument('--toolchain-prefix',
                         help='toolchain prefix(e.g. mips-elf-',
                         metavar='PREFIX',
                         default="")
+project_parser.add_argument('--config_file',
+                        help='config file path, e.g. config_defaultd.mk',
+                        metavar='PATH',
+                        default="{}/config_defaults.mk".format(project_path))
 project_parser.add_argument('--verbose',
                         help='for build command, execute `make VERBOSE=1` to compile',
                         action="store_true",
@@ -104,7 +108,13 @@ elif project_args.cmd == "build" or project_args.cmd == "rebuild":
         os.mkdir("build")
     os.chdir("build")
     if not os.path.exists("Makefile") or project_args.cmd == "rebuild":
-        res = subprocess.call(["cmake", "-G", gen_project_type, ".."])
+        if not os.path.isabs(project_args.config_file):
+            project_args.config_file = os.path.join(project_path, project_args.config_file)
+        config_path = os.path.abspath(project_args.config_file)
+        if not os.path.exists(config_path):
+            print("config file path error:{}".format(config_path))
+            exit(1)
+        res = subprocess.call(["cmake", "-G", gen_project_type, "-DDEFAULT_CONFIG_FILE={}".format(config_path),  ".."])
         if res != 0:
             exit(1)
     if project_args.verbose:
@@ -149,7 +159,13 @@ elif project_args.cmd == "menuconfig":
         os.mkdir("build")
     os.chdir("build")
     if not os.path.exists("build/Makefile"):
-        res = subprocess.call(["cmake", "-G", gen_project_type, ".."])
+        if not os.path.isabs(project_args.config_file):
+            project_args.config_file = os.path.join(project_path, project_args.config_file)
+        config_path = os.path.abspath(project_args.config_file)
+        if not os.path.exists(config_path):
+            print("config file path error:{}".format(config_path))
+            exit(1)
+        res = subprocess.call(["cmake", "-G", gen_project_type, "-DDEFAULT_CONFIG_FILE={}".format(config_path),  ".."])
         if res != 0:
             exit(1)
     res = subprocess.call(["make", "menuconfig"])

@@ -9,6 +9,7 @@
 /* clang-format off */
 
 #include <stdint.h>
+#include "global_config.h"
 
 #define LV_MEM_ENV64
 
@@ -215,7 +216,10 @@ typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the i
  *===============*/
 
 /*1: Enable the log module*/
-#define LV_USE_LOG      1
+#if CONFIG_MAIXPY_LVGL_DEBUG
+  #define LV_USE_LOG      1
+#endif
+
 #if LV_USE_LOG
 /* How important log should be added:
  * LV_LOG_LEVEL_TRACE       A lot of logs to give detailed information
@@ -223,7 +227,7 @@ typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the i
  * LV_LOG_LEVEL_WARN        Log if something unwanted happened but didn't cause a problem
  * LV_LOG_LEVEL_ERROR       Only critical issue, when the system may fail
  */
-#  define LV_LOG_LEVEL    LV_LOG_LEVEL_WARN
+#  define LV_LOG_LEVEL    CONFIG_MAIXPY_LVGL_DEBUG_LEVEL
 
 /* 1: Print the log with 'printf';
  * 0: user need to register a callback with `lv_log_register_print`*/
