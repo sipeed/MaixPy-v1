@@ -423,6 +423,9 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
 
     ################################
 
+    if(CONFIG_COMPONENT_LIB_SIPEED_KPU_SRC_ENABLE)
+        include("lib_sipeed_kpu/compile.cmake")
+    endif()
 
 
     ###### Add required/dependent components ######

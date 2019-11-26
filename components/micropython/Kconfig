@@ -83,3 +83,11 @@ menu "Micropython configurations"
 		string "builtin py directory"
 		default ""
 endmenu
+
+menu "Others"
+	depends on COMPONENT_MICROPYTHON_ENABLE
+	config COMPONENT_LIB_SIPEED_KPU_SRC_ENABLE
+		bool "Compile lib_sipeed_kpu source code"
+		default n
+endmenu
+

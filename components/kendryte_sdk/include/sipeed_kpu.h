@@ -35,6 +35,8 @@ int sipeed_kpu_model_get_layer_size(void* ctx, uint32_t index);
 char sipeed_kpu_model_getdtype_from_type(kpu_model_layer_type_t type);
 char* sipeed_kpu_model_getname_from_type(kpu_model_layer_type_t type);
 
+void sipeed_kpu_face_encode(float* feature, int8_t* compress_feature, uint32_t len);
+float sipeed_kpu_face_compare(int8_t* feature0, int8_t* feature1, uint32_t len);
 
 
 /**
