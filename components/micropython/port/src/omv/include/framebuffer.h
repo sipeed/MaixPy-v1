@@ -35,9 +35,9 @@ extern framebuffer_t *fb_framebuffer;
 // Use these macros to get a pointer to main or JPEG framebuffer.
 #define MAIN_FB()           (fb_framebuffer)
 
-#ifndef OMV_MINIMUM
-extern jpegbuffer_t *jpeg_fb_framebuffer;
-#define JPEG_FB()           (jpeg_fb_framebuffer)
+#if  !defined(OMV_MINIMUM)|| CONFIG_MAIXPY_IDE_SUPPORT
+    extern jpegbuffer_t *jpeg_fb_framebuffer;
+    #define JPEG_FB()           (jpeg_fb_framebuffer)
 #endif
 
 // Use this macro to get a pointer to the free SRAM area located after the framebuffer.

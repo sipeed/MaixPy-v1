@@ -430,10 +430,17 @@ soft_reset:
 		// mp_printf(&mp_plat_print, "[MaixPy] init end\r\n"); // for maixpy ide
 		// run boot-up scripts
 		mp_hal_set_interrupt_char(CHAR_CTRL_C);
-		pyexec_frozen_module("_boot.py");
-		// if(!is_ide_dbg_mode())
-		// 	pyexec_file_if_exists("boot.py");
-
+		int ret = pyexec_frozen_module("_boot.py");
+		printk("ret1:%d\r\n", ret);
+		if(ret != 0 && !is_ide_dbg_mode())
+		{
+			ret = pyexec_file_if_exists("boot.py");
+			printk("ret2:%d\r\n", ret);
+			if (pyexec_mode_kind == PYEXEC_MODE_FRIENDLY_REPL) {
+				ret = pyexec_file_if_exists("main.py");
+				printk("ret3:%d\r\n", ret);
+			}
+		}
 		do{
 			ide_dbg_init();
 			while( (!ide_dbg_script_ready()) && (!ide_dbg_need_save_file()))

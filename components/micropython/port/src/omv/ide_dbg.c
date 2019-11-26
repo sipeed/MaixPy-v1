@@ -29,7 +29,7 @@
 #include "objstr.h"
 #include "sipeed_sys.h"
 
-#ifndef OMV_MINIMUM
+#if CONFIG_MAIXPY_IDE_SUPPORT
 
 static volatile int xfer_bytes;   // bytes sent
 static volatile int xfer_length;  // bytes need to send
@@ -675,7 +675,7 @@ void      ide_save_file()
     p_data_temp = NULL;
 }
 
-#else // OMV_MINIMUM /////////////////////////////////////
+#else // CONFIG_MAIXPY_IDE_SUPPORT /////////////////////////////////////
 
 bool ide_debug_init0()
 {
@@ -716,6 +716,10 @@ void      ide_save_file()
 
 }
 
+bool is_ide_dbg_mode()
+{
+    return false;
+}
 
 #endif
 

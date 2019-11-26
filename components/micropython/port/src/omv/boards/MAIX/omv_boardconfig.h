@@ -19,9 +19,11 @@
 #define IDE_DBG_MAX_PACKET  64
 #define IDE_DBG_CMD_START_FLAG 0x30
 
-#ifndef OMV_MINIMUM
+#if !defined(OMV_MINIMUM) || CONFIG_MAIXPY_IDE_SUPPORT
+  #define OMV_JPEG_BUF_SIZE 23 * 1024 // IDE JPEG buffer (header + data).
+#endif
 
-#define OMV_JPEG_BUF_SIZE 23 * 1024 // IDE JPEG buffer (header + data).
+#ifndef OMV_MINIMUM
 #define OMV_FB_ALLOC_SIZE 700 * 1024 // minimum fb alloc size
 #define FB_MAX_ALLOC_TIMES    100
 

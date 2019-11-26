@@ -15,6 +15,7 @@ sys.path.append('/flash')
 print("[MaixPy] init end") # for IDE
 for i in range(200):
     time.sleep_ms(1) # wait for key interrupt(for maixpy ide)
+del i
 
 # check IDE mode
 ide_mode_conf = "/flash/ide_mode.conf"
@@ -43,14 +44,13 @@ from Maix import FPIOA, GPIO
 
 
 # detect boot.py
-boot_py = '''
+main_py = '''
 from fpioa_manager import *
 import os, Maix, lcd, image
 from Maix import FPIOA, GPIO
 
 test_pin=16
-fpioa = FPIOA()
-fpioa.set_function(test_pin,FPIOA.GPIO7)
+fm.fpioa.set_function(test_pin,FPIOA.GPIO7)
 test_gpio=GPIO(GPIO.GPIO7,GPIO.IN)
 lcd.init(color=(255,0,0))
 lcd.draw_string(lcd.width()//2-68,lcd.height()//2-4, "Welcome to MaixPy", lcd.WHITE, lcd.RED)
@@ -69,10 +69,12 @@ if test_gpio.value() == 0:
 '''
 
 flash_ls = os.listdir()
-if (not "boot.py" in flash_ls) :
-    f = open("boot.py", "wb")
-    f.write(boot_py)
+if not "main.py" in flash_ls:
+    f = open("main.py", "wb")
+    f.write(main_py)
     f.close()
+del flash_ls
+del main_py
 
 banner = '''
  __  __              _____  __   __  _____   __     __
@@ -86,8 +88,5 @@ Official Site : https://www.sipeed.com
 Wiki          : https://maixpy.sipeed.com
 '''
 print(banner)
-
-# run boot.py
-with open("boot.py") as f:
-    exec(f.read())
+del banner
 

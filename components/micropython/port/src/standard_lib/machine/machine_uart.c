@@ -130,7 +130,7 @@ int uart_rx_irq(void *ctx)
 	if (ctx_self->read_buf_len != 0) {
 		if(ctx_self->attached_to_repl)
 		{
-#ifndef OMV_MINIMUM
+#if  !defined(OMV_MINIMUM)|| CONFIG_MAIXPY_IDE_SUPPORT
 			if(ctx_self->ide_debug_mode)
 			{
 				int read_ret = 0; 
@@ -146,7 +146,7 @@ int uart_rx_irq(void *ctx)
 				}while(1);
 			}
 			else
-#endif // OMV_MINIMUM
+#endif // #if  defined(OMV_MINIMUM)|| CONFIG_MAIXPY_IDE_SUPPORT
 			{
 				int read_ret = 0;
 				do{

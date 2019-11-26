@@ -14,16 +14,18 @@ menu "Micropython configurations"
 		hex "GC heap size, hex format, MUST be aligned 8 Bytes, default 512kB(0x80000)"
 		default 0x80000
 	menu "Modules configurations"
-	
+
+		config MAIXPY_IDE_SUPPORT
+			bool "Enable MaixPy IDE protocol support"
+			default y
+
 		config MAIXPY_THREAD_ENABLE
 			bool "Enable _thread module"
 			default y
-			depends on COMPONENT_MICROPYTHON_ENABLE
 
 		config MAIXPY_NES_ENABLE
 			bool "Enable NES emulator"
 			default y
-			depends on COMPONENT_MICROPYTHON_ENABLE
 		
 		config MAIXPY_VIDEO_ENABLE
 			bool "Enable video module"
@@ -66,6 +68,15 @@ menu "Micropython configurations"
 		config MAIXPY_K210_UARTHS_DEBUG
 			bool "Use UARTHS to debug(pin9, pin10), UART2 to REPL(pin4, pin5)"
 			default n
+		config MAIXPY_LVGL_DEBUG
+			depends on MAIXPY_LVGL_ENABLE
+			bool "Enable LVGL debug info logging"
+			default y
+
+		config MAIXPY_LVGL_DEBUG_LEVEL
+			depends on MAIXPY_LVGL_DEBUG
+			int "LVGL debug level:[0,3]( [TRACE, INFO, WARN, ERROR])"
+			default 2
 	endmenu
 
 	config BUILTIN_PY_DIR

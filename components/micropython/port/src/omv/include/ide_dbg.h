@@ -12,8 +12,9 @@
 
 #include "stdint.h"
 #include "stdbool.h"
+#include "global_config.h"
 
-#ifndef OMV_MINIMUM
+#if CONFIG_MAIXPY_IDE_SUPPORT
 
 #include "machine_uart.h"
 #include "lcd.h"
@@ -69,10 +70,15 @@ bool      ide_dbg_need_save_file();
 void      ide_save_file(); 
 bool     is_ide_dbg_mode();
 
-#else // OMV_MINIMUM
+#else // CONFIG_MAIXPY_IDE_SUPPORT
+
+#include "py/mpconfig.h"
+#include "py/misc.h"
 
 bool      ide_debug_init0();
 void      ide_dbg_init();
+void     ide_dbg_init2();
+void     ide_dbg_init3();
 bool      ide_dbg_script_ready();
 vstr_t*   ide_dbg_get_script();
 bool      ide_dbg_need_save_file();

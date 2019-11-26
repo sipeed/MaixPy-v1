@@ -44,8 +44,8 @@ echo "build project maixpy_k210_with_lvgl"
 echo "-------------------"
 python project.py distclean
 python project.py build --config_file "config_with_lvgl.mk"
-cp build/maixpy.bin $release_dir/maixpy_with_lvgl_$version.bin
-cp build/maixpy.elf $release_dir/elf/maixpy_with_lvgl_$version.elf
+cp build/maixpy.bin $release_dir/maixpy_${version}_with_lvgl.bin
+cp build/maixpy.elf $release_dir/elf/maixpy_${version}_with_lvgl.elf
 cd ..
 
 #

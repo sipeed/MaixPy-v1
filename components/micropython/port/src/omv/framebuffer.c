@@ -15,10 +15,10 @@ static framebuffer_t _fb_framebuffer0={0,0,0,0,0,0,0,0,0,NULL,NULL};
 // static framebuffer_t _fb_framebuffer1={0,0,0,0,0,0,0,NULL,g_ai_buf_out};
 framebuffer_t *fb_framebuffer = &_fb_framebuffer0;
 
-#ifndef OMV_MINIMUM
-uint8_t g_jpg_buf[OMV_JPEG_BUF_SIZE] __attribute__((aligned(64)));
-static jpegbuffer_t _jpeg_fb_framebuffer={0,0,0,0,0,{},g_jpg_buf};
-jpegbuffer_t* jpeg_fb_framebuffer = &_jpeg_fb_framebuffer;
+#if !defined(OMV_MINIMUM)|| CONFIG_MAIXPY_IDE_SUPPORT
+    uint8_t g_jpg_buf[OMV_JPEG_BUF_SIZE] __attribute__((aligned(64)));
+    static jpegbuffer_t _jpeg_fb_framebuffer={0,0,0,0,0,{},g_jpg_buf};
+    jpegbuffer_t* jpeg_fb_framebuffer = &_jpeg_fb_framebuffer;
 #endif
 
 
@@ -47,7 +47,7 @@ uint32_t fb_buffer_size()
 }
 void fb_update_jpeg_buffer()
 {
-#ifndef OMV_MINIMUM    
+#if !defined(OMV_MINIMUM)|| CONFIG_MAIXPY_IDE_SUPPORT
     static int overflow_count = 0;
 
     if ((MAIN_FB()->bpp > 3) && JPEG_FB()->enabled) {
