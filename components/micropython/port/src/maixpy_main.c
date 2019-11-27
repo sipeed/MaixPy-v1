@@ -63,8 +63,10 @@
 #include "sdcard.h"
 #include "lcd.h"
 /*****freeRTOS****/
+#if MICROPY_PY_THREAD
 #include "FreeRTOS.h"
 #include "task.h"
+#endif
 /*******storage********/
 #include "vfs_spiffs.h"
 #include "spiffs_config.h"

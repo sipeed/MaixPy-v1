@@ -9,9 +9,11 @@
 #ifndef __MUTEX_H__
 #define __MUTEX_H__
 #include <stdint.h>
-#include "FreeRTOS.h"
-#include "task.h"
-#include "semphr.h"
+// #if MICROPY_PY_THREAD
+// #include "FreeRTOS.h"
+// #include "task.h"
+// #include "semphr.h"
+// #endif
 
 #define MUTEX_TID_IDE (1<<0)
 #define MUTEX_TID_OMV (1<<1)

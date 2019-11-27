@@ -7,8 +7,6 @@
  *
  */
 #include "mutex.h"
-#include "task.h"
-#include "semphr.h"
 
 // This is a standard implementation of mutexs on ARM processors following the ARM guide.
 // http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dai0321a/BIHEJCHB.html

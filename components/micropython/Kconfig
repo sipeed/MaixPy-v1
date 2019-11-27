@@ -22,6 +22,7 @@ menu "Micropython configurations"
 		config MAIXPY_THREAD_ENABLE
 			bool "Enable _thread module"
 			default y
+			select FREERTOS_ENABLE
 
 		config MAIXPY_NES_ENABLE
 			bool "Enable NES emulator"

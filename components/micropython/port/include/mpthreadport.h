@@ -28,6 +28,10 @@
 #ifndef MICROPY_INCLUDED_k210_MPTHREADPORT_H
 #define MICROPY_INCLUDED_k210_MPTHREADPORT_H
 
+#include "mpconfigport.h"
+
+#if MICROPY_PY_THREAD
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
@@ -41,5 +45,7 @@ typedef struct _mp_thread_mutex_t {
 void mp_thread_init(void *stack, uint32_t stack_len);
 void mp_thread_gc_others(void);
 void mp_thread_deinit(void);
+
+#endif // MICROPY_PY_THREAD
 
 #endif // MICROPY_INCLUDED_k210_MPTHREADPORT_H

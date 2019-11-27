@@ -9,7 +9,6 @@
 #include "printf.h"
 #include "errno.h"
 
-#define ESP32_SPI_DEBUG 0
 
 // Cached values of retrieved data
 char ssid[32] = {0};

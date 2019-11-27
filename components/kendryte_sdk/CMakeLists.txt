@@ -4,29 +4,34 @@ if(CONFIG_COMPONENT_KENDRYTE_SDK_ENABLE)
     list(APPEND ADD_INCLUDE "include"
                             "kendryte-standalone-sdk/lib/bsp/include"
                             "kendryte-standalone-sdk/lib/drivers/include"
-                            "kendryte-standalone-sdk/lib/freertos/include"
-                            "kendryte-standalone-sdk/lib/freertos/portable"
                             "kendryte-standalone-sdk/lib/utils/include"
         )
+    if(CONFIG_FREERTOS_ENABLE)
+        list(APPEND ADD_INCLUDE "kendryte-standalone-sdk/lib/freertos/include"
+                                "kendryte-standalone-sdk/lib/freertos/portable"
+        )
+    endif()
     # list(APPEND ADD_PRIVATE_INCLUDE "include_private")
     ###############################################
 
     ############## Add source files ###############
-    aux_source_directory("kendryte-standalone-sdk/lib/bsp"    ADD_SRCS_BSP)
-    aux_source_directory("kendryte-standalone-sdk/lib/drivers" ADD_SRCS_DRIVER)
-    aux_source_directory("kendryte-standalone-sdk/lib/freertos" ADD_SRCS_FREERTOS)
-    aux_source_directory("kendryte-standalone-sdk/lib/freertos/portable" ADD_SRCS_FREERTOS2)
-    aux_source_directory("src" ADD_SRCS_API)
-    set(ADD_ASM_SRCS "kendryte-standalone-sdk/lib/bsp/crt.S"
-                    "kendryte-standalone-sdk/lib/freertos/portable/portasm.S"
-                        )
-    list(APPEND ADD_SRCS  ${ADD_SRCS_BSP}
-                        ${ADD_SRCS_DRIVER}
-                        ${ADD_SRCS_FREERTOS}
-                        ${ADD_SRCS_FREERTOS2}
-                        ${ADD_SRCS_API}
-                        ${ADD_ASM_SRCS}
-                            )
+    append_srcs_dir(ADD_SRCS "kendryte-standalone-sdk/lib/bsp")
+    append_srcs_dir(ADD_SRCS "kendryte-standalone-sdk/lib/drivers")
+    append_srcs_dir(ADD_SRCS "src")
+    if(CONFIG_FREERTOS_ENABLE)
+        append_srcs_dir(ADD_SRCS "kendryte-standalone-sdk/lib/freertos")
+        append_srcs_dir(ADD_SRCS "kendryte-standalone-sdk/lib/freertos/portable")
+        # asm with freerots support
+        set(ADD_ASM_SRCS "kendryte-standalone-sdk/lib/bsp/crt.S"
+                         "kendryte-standalone-sdk/lib/freertos/portable/portasm.S"
+           )
+    else()
+        # asm with no freerots support
+        set(ADD_ASM_SRCS "src2/crt.S")
+        list(APPEND ADD_SRCS "src2/locks.c")
+        list(APPEND ADD_SRCS "src2/bsp2.c")
+    endif()
+    list(APPEND ADD_SRCS ${ADD_ASM_SRCS})
     # list(REMOVE_ITEM COMPONENT_SRCS "src/test.c")
     SET_PROPERTY(SOURCE ${ADD_ASM_SRCS} PROPERTY LANGUAGE C)
     SET_SOURCE_FILES_PROPERTIES(${ADD_ASM_SRCS} PROPERTIES COMPILE_FLAGS "-x assembler-with-cpp -D __riscv64")

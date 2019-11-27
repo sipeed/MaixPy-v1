@@ -17,9 +17,6 @@
 #include "py_image.h"
 #include "lcd.h"
 #include "sleep.h"
-/*****freeRTOS****/
-#include "FreeRTOS.h"
-#include "task.h"
 
 #include "sysctl.h"
 #include "global_config.h"

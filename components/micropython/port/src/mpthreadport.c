@@ -34,9 +34,11 @@
 #include "py/mpthread.h"
 #include "mpthreadport.h"
 
-#include "task.h"
 
 #if MICROPY_PY_THREAD
+
+#include "task.h"
+
 
 // this structure forms a linked list, one node per active thread
 typedef struct _thread_t {
