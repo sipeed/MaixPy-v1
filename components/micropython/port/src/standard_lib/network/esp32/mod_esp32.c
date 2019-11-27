@@ -59,7 +59,7 @@ STATIC mp_obj_t esp32_nic_ping(size_t n_args, const mp_obj_t *pos_args, mp_map_t
 	esp32_nic_obj_t* self = NULL;
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_host, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
-        { MP_QSTR_host_type, MP_ARG_INT, {.u_obj = mp_const_none} },
+        { MP_QSTR_host_type, MP_ARG_INT, {.u_int = -1} },
         // { MP_QSTR_host_type, MP_ARG_INT, {.u_obj = mp_const_none} },
     };
 
@@ -74,7 +74,7 @@ STATIC mp_obj_t esp32_nic_ping(size_t n_args, const mp_obj_t *pos_args, mp_map_t
 	}
     // get host
     size_t host_len =0;
-    const uint8_t *host = NULL;
+    const char* host = NULL;
 	if (args[ARG_host].u_obj != MP_OBJ_NULL) {
         if(mp_obj_get_type(args[ARG_host].u_obj) == &mp_type_str)
             host = mp_obj_str_get_data(args[ARG_host].u_obj, &host_len);
@@ -86,7 +86,7 @@ STATIC mp_obj_t esp32_nic_ping(size_t n_args, const mp_obj_t *pos_args, mp_map_t
     
     // get host type (host name or address)
     int host_type = 1;
-	if (args[ARG_host_type].u_int != mp_const_none) {
+	if (args[ARG_host_type].u_int != -1) {
         host_type = args[ARG_host_type].u_int;
     }
     int32_t time = esp32_spi_ping((uint8_t*)host, host_type, 100);
@@ -151,7 +151,6 @@ STATIC mp_obj_t esp32_nic_connect( size_t n_args, const mp_obj_t *pos_args, mp_m
 STATIC mp_obj_t esp32_scan_wifi( mp_obj_t self_in )
 {
     mp_obj_t list = mp_obj_new_list(0, NULL);
-    bool end;
     char* fail_str = m_new(char, 30);
     
     esp32_spi_aps_list_t* aps_list = esp32_spi_scan_networks();
@@ -162,7 +161,7 @@ STATIC mp_obj_t esp32_scan_wifi( mp_obj_t self_in )
     {
         esp32_spi_ap_t* ap = aps_list->aps[i];
         mp_obj_t info[3];
-        info[0] = mp_obj_new_str((char*)ap->ssid, strlen(ap->ssid));
+        info[0] = mp_obj_new_str((char*)ap->ssid, strlen((const char*)ap->ssid));
         info[1] = mp_obj_new_int(ap->encr);
         info[2] = mp_obj_new_int(ap->rssi);
         mp_obj_t t = mp_obj_new_tuple(3, info);
@@ -293,7 +292,7 @@ STATIC mp_obj_t esp32_firmware_version(mp_obj_t self_in)
 }
 
 
-STATIC mp_obj_t esp32_adc(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+STATIC mp_obj_t esp32_adc(size_t n_args, const mp_obj_t *pos_args) {
     //A0 -> ch5, A1->ch4, A2->ch7, A3->ch6, A4->ch3, A5->ch0
     uint16_t adc[ESP32_ADC_CH_NUM] = {0};
     static const uint8_t channels_remap[ESP32_ADC_CH_NUM] = {5, 4, 7, 6, 3, 0};
@@ -338,7 +337,7 @@ STATIC mp_obj_t esp32_adc(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_
     }
 }
 
-MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(esp32_adc_obj, 1, 2, esp32_adc);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(esp32_adc_obj, 1, 2, esp32_adc);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(esp32_version_obj, esp32_firmware_version);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(esp32_scan_wifi_obj, esp32_scan_wifi);
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(esp32_nic_connect_obj, 1, esp32_nic_connect);
@@ -536,7 +535,7 @@ STATIC mp_uint_t esp32_socket_send(mod_network_socket_obj_t *socket, const byte 
     return len;
 }
 
-STATIC mp_int_t esp32_socket_sendto(mod_network_socket_obj_t *socket, const byte *buf, mp_uint_t len,  uint8_t* ip, mp_uint_t port, int *_errno) 
+STATIC mp_uint_t esp32_socket_sendto(mod_network_socket_obj_t *socket, const byte *buf, mp_uint_t len,  uint8_t* ip, mp_uint_t port, int *_errno) 
 {
     int8_t ret;
 	if((mp_obj_type_t*)&mod_network_nic_type_esp32 != mp_obj_get_type(MP_OBJ_TO_PTR(socket->nic)))
@@ -576,7 +575,7 @@ STATIC mp_int_t esp32_socket_sendto(mod_network_socket_obj_t *socket, const byte
         *_errno = MP_ETIMEDOUT;
         return -1;
     }
-    ret = esp32_spi_add_udp_data((uint8_t)self->sock_id, buf, (uint16_t)len);
+    ret = esp32_spi_add_udp_data((uint8_t)self->sock_id, (uint8_t*)buf, (uint16_t)len);
     if(ret != 0)
     {
         *_errno = MP_EIO;
@@ -591,7 +590,7 @@ STATIC mp_int_t esp32_socket_sendto(mod_network_socket_obj_t *socket, const byte
     return len;
 }
 
-STATIC mp_int_t esp32_socket_recvfrom(mod_network_socket_obj_t *socket, const byte *buf, mp_uint_t len,  uint8_t* ip, mp_uint_t* port, int *_errno)
+STATIC mp_uint_t esp32_socket_recvfrom(mod_network_socket_obj_t *socket, byte *buf, mp_uint_t len,  byte* ip, mp_uint_t* port, int *_errno)
 {
    if((mp_obj_type_t*)&mod_network_nic_type_esp32 != mp_obj_get_type(MP_OBJ_TO_PTR(socket->nic)))
 	{
@@ -665,7 +664,7 @@ STATIC mp_int_t esp32_socket_recvfrom(mod_network_socket_obj_t *socket, const by
     uint16_t port_16;
     int8_t res = -1;
     if( self->sock_id >= 0)
-        res = esp32_spi_get_remote_info(self->sock_id, ip, &port_16);
+        res = esp32_spi_get_remote_info(self->sock_id, (uint8_t*)ip, &port_16);
     if(res !=0)
     {
         *_errno = MP_EIO;

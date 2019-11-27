@@ -206,7 +206,7 @@ STATIC mp_obj_t socket_sendto(mp_obj_t self_in, mp_obj_t data_in, mp_obj_t addr_
     mp_uint_t port = netutils_parse_inet_addr(addr_in, ip, NETUTILS_BIG);
 
     // check if we need to select a NIC
-    socket_select_nic(self, ( const byte)ip);
+    socket_select_nic(self, ( const byte*)ip);
 
     // call the NIC to sendto
     int _errno;
@@ -512,7 +512,7 @@ int parse_ipv4_addr(mp_obj_t addr_in, uint8_t *out_ip, netutils_endian_t endian)
 }
 
 // function usocket.getaddrinfo(host, port)
-STATIC mp_obj_t mod_usocket_getaddrinfo(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+STATIC mp_obj_t mod_usocket_getaddrinfo(size_t n_args, const mp_obj_t *pos_args) {
     // enum {
     //         ARG_timeout
     //     };

@@ -6,6 +6,8 @@
 #include "modmachine.h"
 #include "sysctl.h"
 #include "sipeed_sys.h"
+#include "sipeed_uid.h"
+#include "py/mperrno.h"
 
 #if MICROPY_PY_MACHINE
 
@@ -24,6 +26,20 @@ STATIC mp_obj_t machine_reset_cause()
 }
 MP_DEFINE_CONST_FUN_OBJ_0(machine_reset_cause_obj, machine_reset_cause);
 
+
+
+STATIC mp_obj_t machine_unique_id()
+{
+    bool ret;
+    byte* uid_bytes = m_new(byte, 32);
+    ret = sipeed_uid_get(uid_bytes);
+    if(!ret)
+        mp_raise_OSError(MP_EINTR);
+    mp_obj_t uid = mp_obj_new_bytes(uid_bytes, 32);
+    return uid;
+}
+MP_DEFINE_CONST_FUN_OBJ_0(machine_unique_id_obj, machine_unique_id);
+
 STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_machine) },
     { MP_ROM_QSTR(MP_QSTR_UART), MP_ROM_PTR(&machine_uart_type) },
@@ -33,6 +49,7 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_SPI),  MP_ROM_PTR(&machine_hw_spi_type) },
     { MP_ROM_QSTR(MP_QSTR_reset),  MP_ROM_PTR(&machine_reset_obj) },
     { MP_ROM_QSTR(MP_QSTR_reset_cause),  MP_ROM_PTR(&machine_reset_cause_obj) },
+    { MP_ROM_QSTR(MP_QSTR_unique_id),  MP_ROM_PTR(&machine_unique_id_obj) },
     { MP_ROM_QSTR(MP_QSTR_PWRON_RESET),  MP_ROM_INT(SYSCTL_RESET_STATUS_HARD) },
     { MP_ROM_QSTR(MP_QSTR_HARD_RESET),  MP_ROM_INT(SYSCTL_RESET_STATUS_HARD) },
     { MP_ROM_QSTR(MP_QSTR_WDT_RESET),  MP_ROM_INT(SYSCTL_RESET_STATUS_WDT0) },

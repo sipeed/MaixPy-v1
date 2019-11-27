@@ -209,7 +209,7 @@ void vfs_internal_remove(const char* path, int* error_code)
     mp_vfs_mount_t *vfs = mp_vfs_lookup_path(path, &real_path);
     if (vfs == MP_VFS_NONE || vfs == MP_VFS_ROOT) {
         *error_code = MP_EINVAL;
-        return MP_OBJ_NULL;
+        return;
     }
     fs_info_t* fs = (fs_info_t*)vfs->obj;
     if( fs->base.type == &mp_spiffs_vfs_type)

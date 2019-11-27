@@ -2105,7 +2105,7 @@ void pix_fill_yuv(uint32_t idx, int8_t* y, int8_t* u, int8_t* v)
 
 void pix_fill_8y(uint16_t* pixels, uint32_t ofs, int8_t* y)
 {
-	int8_t* ptr;
+	// int8_t* ptr;
 	uint32_t idx;
 	uint64_t data[2];
 	data[0] = *((uint64_t*)(pixels+ofs));

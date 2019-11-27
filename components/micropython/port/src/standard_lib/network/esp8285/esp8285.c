@@ -505,7 +505,7 @@ uint32_t recvPkg(esp8285_obj*nic,char* out_buff, uint32_t out_buff_len, uint32_t
                         temp_buff2[temp_buff2_len++] = temp_buff[0];
                         // printk("%c", temp_buff[0]); //TODO: optimize uart overflow, if uart overflow, uncomment this will print some data
                         // printk("-%d:%s\r\n", temp_buff2_len, temp_buff2);
-                        if(strstr(temp_buff2, "CLOSED\r\n") != NULL){
+                        if(strstr((const char*)temp_buff2, "CLOSED\r\n") != NULL){
                             // printk("pear closed\r\n");
                             *peer_closed = true;
                             peer_just_closed = true;

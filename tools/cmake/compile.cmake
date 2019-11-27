@@ -235,6 +235,28 @@ macro(project name)
         set(EXT "")
     endif()
 
+    # Config toolchain
+    if(CONFIG_TOOLCHAIN_PATH)
+        if(WIN32)
+            file(TO_CMAKE_PATH ${CONFIG_TOOLCHAIN_PATH} CONFIG_TOOLCHAIN_PATH)
+        endif()
+        if(NOT IS_DIRECTORY ${CONFIG_TOOLCHAIN_PATH})
+            message(FATAL_ERROR "TOOLCHAIN_PATH set error:${CONFIG_TOOLCHAIN_PATH}")
+        endif()
+        set(TOOLCHAIN_PATH ${CONFIG_TOOLCHAIN_PATH})
+        set(CMAKE_C_COMPILER "${CONFIG_TOOLCHAIN_PATH}/${CONFIG_TOOLCHAIN_PREFIX}gcc${EXT}")
+        set(CMAKE_CXX_COMPILER "${CONFIG_TOOLCHAIN_PATH}/${CONFIG_TOOLCHAIN_PREFIX}g++${EXT}")
+        set(CMAKE_ASM_COMPILER "${CONFIG_TOOLCHAIN_PATH}/${CONFIG_TOOLCHAIN_PREFIX}gcc${EXT}")
+        set(CMAKE_LINKER "${CONFIG_TOOLCHAIN_PATH}/${CONFIG_TOOLCHAIN_PREFIX}ld${EXT}")
+        set(CMAKE_READELF "${CONFIG_TOOLCHAIN_PATH}/${CONFIG_TOOLCHAIN_PREFIX}readelf${EXT}")
+    else()
+        set(CMAKE_C_COMPILER "gcc${EXT}")
+        set(CMAKE_CXX_COMPILER "g++${EXT}")
+        set(CMAKE_ASM_COMPILER "gcc${EXT}")
+        set(CMAKE_LINKER  "ld${EXT}")
+        set(CMAKE_READELF  "readelf${EXT}")
+    endif()
+    
     # Declare project
     _project(${name} ASM C CXX)
 

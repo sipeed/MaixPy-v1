@@ -6438,7 +6438,7 @@ mp_obj_t py_image_load_image(size_t n_args, const mp_obj_t *args, mp_map_t *kw_a
             if(from_bytes)
             {
                 GET_STR_LEN(args[0], bytes_len);
-                imlib_load_image(&image, NULL, NULL, mp_obj_str_get_str(args[0]), (uint32_t)bytes_len);
+                imlib_load_image(&image, NULL, NULL, (uint8_t*)mp_obj_str_get_str(args[0]), (uint32_t)bytes_len); //TODO: param buf should be const
             }
             else
             {

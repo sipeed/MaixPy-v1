@@ -722,7 +722,7 @@ esp32_spi_aps_list_t *esp32_spi_scan_networks(void)
  */
 int8_t esp32_spi_wifi_set_network(uint8_t *ssid)
 {
-    esp32_spi_params_t *send = esp32_spi_params_alloc_1param(strlen(ssid), ssid);
+    esp32_spi_params_t *send = esp32_spi_params_alloc_1param(strlen((const char*)ssid), ssid);
     esp32_spi_params_t *resp = esp32_spi_send_command_get_response(SET_NET_CMD, send, NULL, 0, 0);
     send->del(send);
 
@@ -755,7 +755,7 @@ Sets the desired access point ssid and passphrase
 */
 int8_t esp32_spi_wifi_wifi_set_passphrase(uint8_t *ssid, uint8_t *passphrase)
 {
-    esp32_spi_params_t *send = esp32_spi_params_alloc_2param(strlen(ssid), ssid, strlen(passphrase), passphrase);
+    esp32_spi_params_t *send = esp32_spi_params_alloc_2param(strlen((const char*)ssid), ssid, strlen((const char*)passphrase), passphrase);
     esp32_spi_params_t *resp = esp32_spi_send_command_get_response(SET_PASSPHRASE_CMD, send, NULL, 0, 0);
     send->del(send);
 
@@ -1004,7 +1004,7 @@ int8_t esp32_spi_disconnect_from_AP(void)
 //Converts a bytearray IP address to a dotted-quad string for printing
 void esp32_spi_pretty_ip(uint8_t *ip, uint8_t *str_ip)
 {
-    sprintf(str_ip, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+    sprintf((char*)str_ip, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
     return;
 }
 
@@ -1023,7 +1023,7 @@ int esp32_spi_get_host_by_name(uint8_t *hostname, uint8_t *ip)
     printk("*** Get host by name\r\n");
 #endif
 
-    esp32_spi_params_t *send = esp32_spi_params_alloc_1param(strlen(hostname), hostname);
+    esp32_spi_params_t *send = esp32_spi_params_alloc_1param(strlen((const char*)hostname), hostname);
     esp32_spi_params_t *resp = esp32_spi_send_command_get_response(REQ_HOST_BY_NAME_CMD, send, NULL, 0, 0);
     send->del(send);
 
@@ -1200,7 +1200,7 @@ int8_t esp32_spi_socket_open(uint8_t sock_num, uint8_t *dest, uint8_t dest_type,
         send->params_num = 5;
         send->params = (void *)malloc(sizeof(void *) * send->params_num);
         //
-        param_len = strlen(dest);
+        param_len = strlen((const char*)dest);
         send->params[0] = (esp32_spi_param_t *)malloc(sizeof(esp32_spi_param_t));
         send->params[0]->param_len = param_len;
         send->params[0]->param = (uint8_t *)malloc(sizeof(uint8_t) * param_len);
@@ -1302,7 +1302,7 @@ esp32_socket_enum_t esp32_spi_socket_status(uint8_t socket_num)
 #if ESP32_SPI_DEBUG
         printk("%s: get resp error!\r\n", __func__);
 #endif
-        return -2;
+        return 0xff;
     }
     esp32_socket_enum_t ret;
 
@@ -1564,7 +1564,7 @@ int8_t esp32_spi_socket_connect(uint8_t socket_num, uint8_t *dest, uint8_t dest_
         uint8_t ret = esp32_spi_socket_status(socket_num);
         if (ret == SOCKET_ESTABLISHED)
             return 0;
-        else if(ret == -2) // EIO
+        else if(ret == 0xff) // EIO
         {
             return -2;
         }
@@ -1704,7 +1704,7 @@ uint8_t connect_server_port(char *host, uint16_t port)
     if (sock != 0xff)
     {
         uint8_t ip[6];
-        if (esp32_spi_get_host_by_name(host, ip) == 0)
+        if (esp32_spi_get_host_by_name((uint8_t*)host, ip) == 0)
         {
             if (esp32_spi_socket_connect(sock, ip, 0, port, TCP_MODE) != 0)
             {

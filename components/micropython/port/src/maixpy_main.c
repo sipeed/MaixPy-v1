@@ -431,14 +431,11 @@ soft_reset:
 		// run boot-up scripts
 		mp_hal_set_interrupt_char(CHAR_CTRL_C);
 		int ret = pyexec_frozen_module("_boot.py");
-		printk("ret1:%d\r\n", ret);
-		if(ret != 0 && !is_ide_dbg_mode())
+		if(ret != 0 && !is_ide_dbg_mode()) // user canceled or ide mode
 		{
 			ret = pyexec_file_if_exists("boot.py");
-			printk("ret2:%d\r\n", ret);
 			if (pyexec_mode_kind == PYEXEC_MODE_FRIENDLY_REPL) {
 				ret = pyexec_file_if_exists("main.py");
-				printk("ret3:%d\r\n", ret);
 			}
 		}
 		do{
