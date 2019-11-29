@@ -59,6 +59,17 @@ cp build/maixpy.bin $release_dir/maixpy_${version}_minimum.bin
 cp build/maixpy.elf $release_dir/elf/maixpy_${version}_minimum.elf
 cd ..
 
+# minimum with IDE support
+cd maixpy_k210_minimum
+echo "-------------------"
+echo "build project maixpy_k210_minimum"
+echo "-------------------"
+python project.py distclean
+python project.py build --config_file "config_with_ide_support.mk"
+cp build/maixpy.bin $release_dir/maixpy_${version}_minimum_with_ide_support.bin
+cp build/maixpy.elf $release_dir/elf/maixpy_${version}_minimum_with_ide_support.elf
+cd ..
+
 #
 cd maixpy_m5stickv
 echo "-------------------"
