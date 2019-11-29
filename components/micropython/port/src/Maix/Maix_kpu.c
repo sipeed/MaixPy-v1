@@ -1503,11 +1503,47 @@ STATIC mp_obj_t py_kpu_memtest(void)
 			}
 		}
 	}
-	printf("###free gc heap memory : %d KB\r\n", mem0/1024); 
-	printf("###free sys heap memory: %ld KB\r\n",  get_free_heap_size()/1024);
+	mp_printf(&mp_plat_print, "###free gc heap memory : %d KB\r\n", mem0/1024); 
+	mp_printf(&mp_plat_print, "###free sys heap memory: %ld KB\r\n",  get_free_heap_size()/1024);
 	return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_kpu_memtest_obj, py_kpu_memtest);
+
+#define FACE_FEATURE_DIM_MAX 512
+STATIC mp_obj_t py_kpu_face_encode(mp_obj_t features_obj)
+{
+	mp_obj_t *feature_obj;
+	uint32_t features_len;
+	float feature[FACE_FEATURE_DIM_MAX];
+	int8_t compress_feature[FACE_FEATURE_DIM_MAX];
+	mp_obj_get_array(features_obj, &features_len, &feature_obj);
+	if(features_len>FACE_FEATURE_DIM_MAX)
+	{
+		mp_raise_ValueError("feature dim <=200\r\n");
+	}
+	for(int i=0; i<features_len; i++) {
+		feature[i] = mp_obj_get_float(feature_obj[i]);
+	}
+	sipeed_kpu_face_encode(feature, compress_feature, features_len);
+	return mp_obj_new_bytearray(features_len, compress_feature);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_kpu_face_encode_obj, py_kpu_face_encode);
+
+STATIC mp_obj_t py_kpu_face_compare(mp_obj_t feature0_obj, mp_obj_t feature1_obj)
+{
+	mp_buffer_info_t f0_bufinfo;
+	mp_buffer_info_t f1_bufinfo;
+	float score;
+    mp_get_buffer_raise(feature0_obj, &f0_bufinfo, MP_BUFFER_READ);
+	mp_get_buffer_raise(feature1_obj, &f1_bufinfo, MP_BUFFER_READ);
+	if(f0_bufinfo.len != f1_bufinfo.len){
+		mp_raise_ValueError("compare feature must in same dim!\r\n");
+		return mp_obj_new_float(0.0);
+	}
+	score = sipeed_kpu_face_compare(f0_bufinfo.buf, f1_bufinfo.buf, f0_bufinfo.len);
+	return mp_obj_new_float(score);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(py_kpu_face_compare_obj, py_kpu_face_compare);
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1524,7 +1560,8 @@ static const mp_map_elem_t globals_dict_table[] = {
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_netinfo),                   	(mp_obj_t)&py_kpu_netinfo_obj },
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_check),                   	(mp_obj_t)&py_kpu_check_obj },
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_memtest),                   	(mp_obj_t)&py_kpu_memtest_obj },
-    { NULL, NULL },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_face_encode),                 (mp_obj_t)&py_kpu_face_encode_obj },
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_face_compare),                (mp_obj_t)&py_kpu_face_compare_obj },
 };
 
 STATIC MP_DEFINE_CONST_DICT(globals_dict, globals_dict_table);

@@ -93,8 +93,8 @@ enum
 #define configUSE_DAEMON_TASK_STARTUP_HOOK		0
 
 /* memory */
-#define configMINIMAL_STACK_SIZE			( ( unsigned short ) 2048 )
-#define configTOTAL_HEAP_SIZE				( ( size_t ) ( 1024 * 512 ) )
+#define configMINIMAL_STACK_SIZE			( ( unsigned short ) CONFIG_FREEROTS_MINIMUM_STACK_SIZE )
+#define configTOTAL_HEAP_SIZE				( ( size_t ) ( CONFIG_FREERTOS_HEAP_TOTAL_SIZE ) )
 #define configSUPPORT_STATIC_ALLOCATION			1
 #define configSUPPORT_DYNAMIC_ALLOCATION		1
 

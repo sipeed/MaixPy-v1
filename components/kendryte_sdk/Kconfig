@@ -17,6 +17,16 @@ menu "Kendryte SDK configurations"
 		config STATIC_TASK_CLEAN_UP_ENABLE
 			bool "static task clean up callback"
 			default n
+		config FREERTOS_MALLOC_CUSTOM
+			bool "Use custom malloc method(heap_4.c) instead of libc's(stdlib.h)"
+			default n
+		config FREERTOS_HEAP_TOTAL_SIZE
+			depends on FREERTOS_MALLOC_CUSTOM
+			int "FreeRTOS heap total size"
+			default 524288
+		config FREEROTS_MINIMUM_STACK_SIZE
+			int "FreeRTOS minimum stack size"
+			default 2048
 	endmenu
 endmenu
 
