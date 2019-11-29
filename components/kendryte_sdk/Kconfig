@@ -28,6 +28,9 @@ menu "Kendryte SDK configurations"
 			int "FreeRTOS minimum stack size"
 			default 2048
 	endmenu
+	config MIC_ARRAY_ENABLE
+		bool " Enable mic array module"
+		default n
 endmenu
 
 

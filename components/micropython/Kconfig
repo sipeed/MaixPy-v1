@@ -52,6 +52,11 @@ menu "Micropython configurations"
 			bool "Add YUV convert table, close this will reduce code but lower speed"
 			default y
 		
+		config MAIXPY_MIC_ARRAY_ENABLE
+			select MIC_ARRAY_ENABLE
+			bool "Enable Maix.MIC_ARRAY module"
+			default y
+
 		config MAIXPY_LVGL_ENABLE
 			bool "Enbale LittlvGL"
 			default n

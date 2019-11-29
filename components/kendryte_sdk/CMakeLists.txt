@@ -44,9 +44,10 @@ if(CONFIG_COMPONENT_KENDRYTE_SDK_ENABLE)
     ###############################################
 
     ############ Add static libs ##################
-    list(APPEND ADD_STATIC_LIB "libs/lib_mic.a"
-                               "libs/lib_sipeed_kpu.a"
-                               )
+    if(CONFIG_MIC_ARRAY_ENABLE)
+        list(APPEND ADD_STATIC_LIB "libs/lib_mic.a")
+    endif()
+    list(APPEND ADD_STATIC_LIB "libs/lib_sipeed_kpu.a")
     ###############################################
 
     list(APPEND ADD_DEFINITIONS -DCONFIG_LOG_LEVEL=${CONFIG_SDK_LOG_LEVEL}
