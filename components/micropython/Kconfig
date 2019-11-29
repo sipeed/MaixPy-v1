@@ -46,7 +46,7 @@ menu "Micropython configurations"
 		endchoice
 
 		config MAIXPY_OMV_MINIMUM
-			bool "Minimum size OMV function"
+			bool "Minimum size OMV function (just disable omv advanced functions )"
 			default n
 		config MAIXPY_OMV_CONV_YUV_FAST
 			bool "Add YUV convert table, close this will reduce code but lower speed"
