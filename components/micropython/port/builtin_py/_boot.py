@@ -12,7 +12,7 @@ else:
     os.chdir("/flash")
 sys.path.append('/flash')
 
-print("[MaixPy] init end") # for IDE
+print("[CyberEye] init end") # for IDE
 for i in range(200):
     time.sleep_ms(1) # wait for key interrupt(for maixpy ide)
 del i
@@ -48,16 +48,22 @@ main_py = '''
 from fpioa_manager import *
 import os, Maix, lcd, image
 from Maix import FPIOA, GPIO
-
 test_pin=16
-fm.fpioa.set_function(test_pin,FPIOA.GPIO7)
+fpioa = FPIOA()
+fpioa.set_function(test_pin,FPIOA.GPIO7)
 test_gpio=GPIO(GPIO.GPIO7,GPIO.IN)
 lcd.init(color=(255,0,0))
-lcd.draw_string(lcd.width()//2-68,lcd.height()//2-4, "Welcome to MaixPy", lcd.WHITE, lcd.RED)
+lcd.rotation(2)
+lcd.draw_string(lcd.width()//2-68,lcd.height()//2-4, "Welcome to cyberEye", lcd.WHITE, lcd.RED)
+try:
+    from user import *
+except Exception as e:
+    lcd.clear()
+    lcd.draw_string(0,0,str(e),lcd.RED, lcd.BLACK)
+    raise
+
 if test_gpio.value() == 0:
     print('PIN 16 pulled down, enter test mode')
-    lcd.clear(lcd.PINK)
-    lcd.draw_string(lcd.width()//2-68,lcd.height()//2-4, "Test Mode, wait ...", lcd.WHITE, lcd.PINK)
     import sensor
     import image
     sensor.reset()
@@ -68,6 +74,7 @@ if test_gpio.value() == 0:
     while True:
         img=sensor.snapshot()
         lcd.display(img)
+
 '''
 
 flash_ls = os.listdir()
@@ -79,15 +86,15 @@ del flash_ls
 del main_py
 
 banner = '''
- __  __              _____  __   __  _____   __     __
-|  \/  |     /\     |_   _| \ \ / / |  __ \  \ \   / /
-| \  / |    /  \      | |    \ V /  | |__) |  \ \_/ /
-| |\/| |   / /\ \     | |     > <   |  ___/    \   /
-| |  | |  / ____ \   _| |_   / . \  | |         | |
-|_|  |_| /_/    \_\ |_____| /_/ \_\ |_|         |_|
+ _ _ _  __     __  ___     _____   ____     _____  __     __  _____
+/  ___| \ \   / / |  _ \  |  _ _| | _  \   |  _ _| \ \   / / |  _ _|
+| /      \ \_/ /  | |_|/  | |_ _  | \| /   | |_ _   \ \_/ /  | |_ _
+| |       \   /   |  _  \ |  _ _| |  _ |   |  _ _|   \   /   |  _ _|
+| \___     | |    | |_| | | |_ _  | | \ \  | |_ _     | |    | |_ _
+\_ _ _|    |_|    |_ _ /  |_ _ _| |_|  \_\ |_ _ _|    |_|    |_ _ _|
 
-Official Site : https://www.sipeed.com
-Wiki          : https://maixpy.sipeed.com
+Official Site : https://www.tinkergen.com
+Wiki          : https://docs.tinkergen.com
 '''
 print(banner)
 del banner
