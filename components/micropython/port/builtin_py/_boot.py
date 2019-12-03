@@ -54,7 +54,7 @@ fpioa.set_function(test_pin,FPIOA.GPIO7)
 test_gpio=GPIO(GPIO.GPIO7,GPIO.IN)
 lcd.init(color=(255,0,0))
 lcd.rotation(2)
-lcd.draw_string(lcd.width()//2-68,lcd.height()//2-4, "Welcome to cyberEye", lcd.WHITE, lcd.RED)
+lcd.draw_string(lcd.width()//2-68,lcd.height()//2-4, "Welcome to CyberEye", lcd.WHITE, lcd.RED)
 try:
     from user import *
 except Exception as e:
