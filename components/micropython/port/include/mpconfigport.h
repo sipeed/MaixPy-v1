@@ -399,9 +399,9 @@ extern const struct _mp_obj_module_t mp_module_touchscreen;
 // We need to provide a declaration/definition of alloca()
 #include <alloca.h>
 
-#define MICROPY_HW_BOARD_NAME "Sipeed_M1"
+#define MICROPY_HW_BOARD_NAME "cybereye"
 #define MICROPY_HW_MCU_NAME "kendryte-k210"
-#define MICROPY_PY_SYS_PLATFORM "MaixPy"
+#define MICROPY_PY_SYS_PLATFORM "CyberEye"
 
 #ifdef __linux__
 #define MICROPY_MIN_USE_STDOUT (1)
