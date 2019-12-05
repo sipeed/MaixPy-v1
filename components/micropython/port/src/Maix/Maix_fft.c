@@ -18,7 +18,7 @@
 #include <string.h>
 
 #include "dmac.h"
-#include "fft.h"
+#include "hal_fft.h"
 #include "i2s.h"
 #include "math.h"
 

@@ -392,41 +392,41 @@ error:
 	switch(err)
 	{
 	case SIPEED_KPU_ERR_NONE:
-		mp_printf(&mp_plat_printf, "ERR_NONE:shouldn't come to here\r\n");
+		mp_printf(&mp_plat_print, "ERR_NONE:shouldn't come to here\r\n");
 		break;
 	case SIPEED_KPU_ERR_PARAM:
-		mp_printf(&mp_plat_printf, "ERR_PARAM: please check param, load address or kmodel file name\r\n");
+		mp_printf(&mp_plat_print, "ERR_PARAM: please check param, load address or kmodel file name\r\n");
 		break;
 	case SIPEED_KPU_ERR_KMODEL_VERSION:
-		mp_printf(&mp_plat_printf, "ERR_KMODEL_VERSION: only support kmodel V3 now\r\n");
+		mp_printf(&mp_plat_print, "ERR_KMODEL_VERSION: only support kmodel V3 now\r\n");
 		break;
 	case SIPEED_KPU_ERR_KMODEL_FORMAT:
-		mp_printf(&mp_plat_printf, "ERR_KMODEL_FORMAT: layer_header.body_size <=0\r\n");
+		mp_printf(&mp_plat_print, "ERR_KMODEL_FORMAT: layer_header.body_size <=0\r\n");
 		break;
 	case SIPEED_KPU_ERR_DECRYPT:
-		mp_printf(&mp_plat_printf, "ERR_DECRYPT: check smodel match with your board\r\n");
+		mp_printf(&mp_plat_print, "ERR_DECRYPT: check smodel match with your board\r\n");
 		break;
 	case SIPEED_KPU_ERR_READ_FILE:
-		mp_printf(&mp_plat_printf, "ERR_READ_FILE: read file failed\r\n");
+		mp_printf(&mp_plat_print, "ERR_READ_FILE: read file failed\r\n");
 		break;
 	case SIPEED_KPU_ERR_NO_MEM:
-		mp_printf(&mp_plat_printf, "ERR_NO_MEM: memory not enough\r\n");
+		mp_printf(&mp_plat_print, "ERR_NO_MEM: memory not enough\r\n");
 		break;
 	case SIPEED_KPU_ERR_GET_CONV_LAYER:
-		mp_printf(&mp_plat_printf, "ERR_GET_CONV_LAYER: first layer should be conv layer\r\n");
+		mp_printf(&mp_plat_print, "ERR_GET_CONV_LAYER: first layer should be conv layer\r\n");
 		break;
 	case SIPEED_KPU_ERR_RUN_MODEL:
-		mp_printf(&mp_plat_printf, "ERR_RUN_MODEL: maybe model dirty\r\n");
+		mp_printf(&mp_plat_print, "ERR_RUN_MODEL: maybe model dirty\r\n");
 		break;
 	case SIPEED_KPU_ERR_MODELS_FULL:
-		mp_printf(&mp_plat_printf, "ERR_MODELS_FULL: we only support load 5 models in the same time\r\n");
+		mp_printf(&mp_plat_print, "ERR_MODELS_FULL: we only support load 5 models in the same time\r\n");
 		break;
 	case SIPEED_KPU_ERR_PERMITION:
-		mp_printf(&mp_plat_printf, "ERR_PERMITION\r\n");
+		mp_printf(&mp_plat_print, "ERR_PERMITION\r\n");
 		break;
 	case SIPEED_KPU_ERR_UNKNOWN:
 	default:
-		mp_printf(&mp_plat_printf, "ERR_UNKNOWN\r\n");
+		mp_printf(&mp_plat_print, "ERR_UNKNOWN\r\n");
 		break;
 	}
     nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "[MAIXPY]kpu: load error:%d", err));

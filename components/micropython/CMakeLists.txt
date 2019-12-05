@@ -302,6 +302,11 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     else()
         set(LVGL_MPY_GEN_SRC "")
     endif()
+    # ulab
+    if(CONFIG_MICROPYTHON_ULAB_ENALBE)
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/ulab/micropython-ulab/code")
+        append_srcs_dir(ADD_SRCS "port/src/ulab/micropython-ulab/code")
+    endif()
     #############################################
 
     ################## FLAGS ####################
