@@ -337,6 +337,15 @@ extern const struct _mp_obj_module_t mp_module_lvgl_helper;
 #define MAIXPY_LVGL_ROOTS
 #endif // CONFIG_MAIXPY_LVGL_ENABLE
 
+// lodepng
+#if CONFIG_MAIXPY_LODEPNG_ENABLE
+    extern const struct _mp_obj_module_t mp_module_lodepng;
+    #define MAIXPY_PY_LODEPNG_DEF \
+        { MP_OBJ_NEW_QSTR(MP_QSTR_lodepng), (mp_obj_t)&mp_module_lodepng },
+#else
+#define MAIXPY_PY_LODEPNG_DEF
+#endif
+
 // touchscreen
 #ifndef CONFIG_MAIXPY_TOUCH_SCREEN_ENABLE
 #define CONFIG_MAIXPY_TOUCH_SCREEN_ENABLE    (0)
@@ -378,6 +387,7 @@ extern const struct _mp_obj_module_t mp_module_touchscreen;
     MAIXPY_PY_NES_DEF \
     MAIXPY_PY_VIDEO_DEF \
     MAIXPY_PY_LVGL_DEF \
+    MAIXPY_PY_LODEPNG_DEF \
     MAIXPY_PY_TOUCHSCREEN_DEF
 
 

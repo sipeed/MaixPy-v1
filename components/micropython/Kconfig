@@ -60,6 +60,9 @@ menu "Micropython configurations"
 		config MAIXPY_LVGL_ENABLE
 			bool "Enbale LittlvGL"
 			default n
+		config MAIXPY_LODEPNG_ENABLE
+			bool "Enable lodepng module"
+			default n
 
 		config MAIXPY_WS2812_ENABLE
 			bool "Enable Ws2812"

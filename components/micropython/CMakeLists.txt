@@ -15,6 +15,7 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     message(STATUS "builtin py dir: ${mpy_frozen_py_dir}")
     set(mpy_build_mpy_dir "${mpy_build_dir}/mpy")
     set(lvgl_build_dir "${mpy_build_dir}/port/lvgl")
+    set(lodepng_build_dir "${mpy_build_dir}/port/lodepng")
     set(components_requirements kendryte_sdk drivers boards utils spiffs)
 
     ################# Add include #################
@@ -302,6 +303,29 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     else()
         set(LVGL_MPY_GEN_SRC "")
     endif()
+    # lodepng
+    if(CONFIG_MAIXPY_LODEPNG_ENABLE)
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/lvgl/lv_bindings/driver/png/lodepng")
+        set(LODEPNG_SRC "${mpy_port_dir}/src/lvgl/lv_bindings/driver/png/lodepng/lodepng.cpp")
+        set(LODEPNG_SRC_C "${lodepng_build_dir}/lodepng.c")
+        set_property(SOURCE ${LODEPNG_SRC_C} PROPERTY GENERATED 1)
+        # add relative path for  ${mpy_build_gen_header_dir}/qstr.i.last need
+        file(RELATIVE_PATH LODEPNG_SRC_C_REL ${CMAKE_CURRENT_LIST_DIR} ${LODEPNG_SRC_C})
+        list(APPEND ADD_SRCS ${LODEPNG_SRC_C_REL})
+        set(LODEPNG_MPY_GEN_SRC "${lodepng_build_dir}/lodepng_mpy.c")
+        set_property(SOURCE ${LODEPNG_MPY_GEN_SRC} PROPERTY GENERATED 1)
+        # add relative path for  ${mpy_build_gen_header_dir}/qstr.i.last need
+        file(RELATIVE_PATH LODEPNG_MPY_GEN_SRC_REL ${CMAKE_CURRENT_LIST_DIR} ${LODEPNG_MPY_GEN_SRC})
+        list(APPEND ADD_SRCS ${LODEPNG_MPY_GEN_SRC_REL})
+        add_custom_command(OUTPUT ${LODEPNG_SRC_C}
+            COMMAND mkdir -p ${lodepng_build_dir}
+            COMMAND cp ${LODEPNG_SRC} ${LODEPNG_SRC_C}
+            DEPENDS ${LODEPNG_SRC}
+            )
+        set(lvgl_gen_py_tool ${mpy_port_dir}/src/lvgl/lv_bindings/gen/gen_mpy.py)
+    else()
+        set(LODEPNG_MPY_GEN_SRC "")
+    endif()
     # ulab
     if(CONFIG_MICROPYTHON_ULAB_ENALBE)
         list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/ulab/micropython-ulab/code")
@@ -341,6 +365,22 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
                     DEPENDS ${LVGL_MPY_GEN_SRC_PP}
                 )
     endif()
+    # lodepng
+    if(CONFIG_MAIXPY_LODEPNG_ENABLE)
+        separate_arguments(cmd_param_lvgl_fake_libc_inc NATIVE_COMMAND ${mpy_port_dir}/src/lvgl/lv_bindings/pycparser/utils/fake_libc_include)
+        set(lodepng_core_header ${mpy_port_dir}/src/lvgl/lv_bindings/driver/png/lodepng/lodepng.h)
+        set(LODEPNG_MPY_GEN_SRC_PP ${lodepng_build_dir}/lodepng.pp.c)
+        set(LODEPNG_MPY_METADATA ${lodepng_build_dir}/lodepng_mpy.json)
+        add_custom_command(OUTPUT ${LODEPNG_MPY_GEN_SRC_PP}
+                    COMMAND mkdir -p ${lodepng_build_dir}
+                    COMMAND ${CMAKE_C_COMPILER} -E ${cmd_param_cflag} ${cmd_param_cinclude} -I${cmd_param_lvgl_fake_libc_inc} ${lodepng_core_header} > ${LODEPNG_MPY_GEN_SRC_PP}
+                    DEPENDS ${lodepng_core_header}
+                    )
+        add_custom_command(OUTPUT ${LODEPNG_MPY_GEN_SRC}
+                    COMMAND ${python} ${lvgl_gen_py_tool} ${cmd_param_cinclude} -M lodepng -MP lodepng -MD ${LODEPNG_MPY_METADATA} -E ${LODEPNG_MPY_GEN_SRC_PP} ${lodepng_core_header} > ${LODEPNG_MPY_GEN_SRC}
+                    DEPENDS ${LODEPNG_MPY_GEN_SRC_PP}
+                )
+    endif()
     #############################################
 
 
@@ -360,7 +400,7 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     add_custom_target(gen_version_header
                             COMMAND mkdir -p ${mpy_build_gen_header_dir}
                             COMMAND ${python} ${mpy_core_src_dir}/makeversionhdr.py ${version_header}
-                            DEPENDS ${LVGL_MPY_GEN_SRC} 
+                            DEPENDS ${LVGL_MPY_GEN_SRC} ${LODEPNG_SRC_C} ${LODEPNG_MPY_GEN_SRC}
                             VERBATIM
                         )
 
