@@ -173,7 +173,7 @@ int binocular_sensor_reset(mp_int_t freq);
 void sensor_init0();
 
 // Reset the sensor to its default state.
-int sensor_reset(mp_int_t freq);
+int sensor_reset(mp_int_t freq, bool default_freq);
 
 // destroy resources created by sensor
 void sensor_deinit();

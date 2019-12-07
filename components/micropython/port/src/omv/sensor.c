@@ -289,7 +289,7 @@ int sensro_gc_detect(sensor_t* sensor, bool pwnd)
     }
     return 0;
 }
-int sensor_init_dvp(mp_int_t freq)
+int sensor_init_dvp(mp_int_t freq, bool default_freq)
 {
     int init_ret = 0;
 	
@@ -333,6 +333,10 @@ int sensor_init_dvp(mp_int_t freq)
         mp_printf(&mp_plat_print, "[MAIXPY]: no sensor\n");
         init_ret = -1;
     }
+    if(default_freq && sensor.chip_id == OV7740_ID)
+    {
+        dvp_set_xclk_rate(22000000);
+    }
     dvp_set_image_format(DVP_CFG_YUV_FORMAT);
     dvp_enable_burst();
 	dvp_disable_auto();
@@ -361,11 +365,11 @@ int sensor_init_irq()
 	return 0;
 }
 
-int sensor_reset(mp_int_t freq)
+int sensor_reset(mp_int_t freq, bool default_freq)
 {
     sensor.reset_set = false;
 	sensor_init_fb();		//init FB
-    if (sensor_init_dvp(freq) != 0) { //init pins, scan I2C, do ov2640 init
+    if (sensor_init_dvp(freq, default_freq) != 0) { //init pins, scan I2C, do ov2640 init
       return -1;
     }
     // Reset the sesnor state

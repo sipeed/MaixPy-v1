@@ -36,11 +36,13 @@ static mp_obj_t py_sensor_reset(size_t n_args, const mp_obj_t *args, mp_map_t *k
 {
     mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_freq), MP_MAP_LOOKUP);
     mp_int_t freq = OMV_XCLK_FREQUENCY;
+    bool default_freq = true;
     if(kw_arg)
     {
+        default_freq = false;
         freq = mp_obj_get_int(kw_arg->value);
     }
-    PY_ASSERT_FALSE_MSG(sensor_reset(freq) != 0, "Reset Failed");
+    PY_ASSERT_FALSE_MSG(sensor_reset(freq, default_freq) != 0, "Reset Failed");
     return mp_const_none;
 }
 
