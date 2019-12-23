@@ -368,6 +368,8 @@ int sensor_init_irq()
 int sensor_reset(mp_int_t freq, bool default_freq)
 {
     sensor.reset_set = false;
+    sensor.vflip = false;
+    sensor.hmirror = false;
 	sensor_init_fb();		//init FB
     if (sensor_init_dvp(freq, default_freq) != 0) { //init pins, scan I2C, do ov2640 init
       return -1;
@@ -924,6 +926,7 @@ int sensor_set_hmirror(int enable)
         /* operation not supported */
         return -1;
     }
+    sensor.hmirror = (enable == 0) ? false : true;
     return 0;
 }
 
@@ -935,6 +938,7 @@ int sensor_set_vflip(int enable)
         /* operation not supported */
         return -1;
     }
+    sensor.vflip = (enable == 0) ? false : true;
     return 0;
 }
 
@@ -1173,14 +1177,69 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
 		//t0=read_cycle();
 		//exchang_data_byte((image->pixels), (MAIN_FB()->w)*(MAIN_FB()->h)*2);
 		//exchang_pixel((image->pixels), (MAIN_FB()->w)*(MAIN_FB()->h)); //cost 3ms@400M
-        if(sensor->pixformat == PIXFORMAT_GRAYSCALE)
+
+        // soft hmirror
+        if(sensor->chip_id == OV7740_ID && sensor->hmirror)
         {
-            image->pixels = image->pix_ai;
+            uint16_t temp;
+            uint32_t width = resolution[sensor->framesize][0];
+            uint32_t height = resolution[sensor->framesize][1];
+            uint16_t* p;
+            uint32_t temp_addr1, temp_addr2, temp_addr3;
+            if(sensor->pixformat == PIXFORMAT_GRAYSCALE)
+            {
+                image->pixels = image->pix_ai;
+                for(uint32_t i=0; i<width/2; ++i)
+                {
+                    for(uint32_t j=0; j<height; ++j)
+                    {
+                        temp = image->pixels[i + width * j];
+                        image->pixels[i + width * j] = image->pixels[(width - 1 - i) + width * j];
+                        image->pixels[(width - 1 - i) + width * j] = temp;
+                    }
+                }
+            }
+            else
+            {
+                image->pixels = MAIN_FB()->pixels;
+                p = (uint16_t*)image->pixels;
+                reverse_u32pixel((uint32_t*)(image->pixels), (MAIN_FB()->w)*(MAIN_FB()->h)/2);
+                //TODO: odd width
+                for(uint32_t i=0; i<width/2; ++i)
+                {
+                    for(uint32_t j=0; j<height; ++j)
+                    {
+                        //TODO: optimize by RISCV ASM var swap
+                        temp_addr1 = i + width * j;
+                        temp_addr2 = (width - 1 - i) + width * j;
+                        temp_addr3 = width*height;
+                        temp = p[temp_addr1];
+                        p[temp_addr1] = p[temp_addr2];
+                        p[temp_addr2] = temp;
+                        // temp = image->pix_ai[temp_addr1];
+                        // image->pix_ai[temp_addr1] = image->pix_ai[temp_addr2];
+                        // image->pix_ai[temp_addr2] = temp;
+                        // temp = image->pix_ai[temp_addr1 + temp_addr3];
+                        // image->pix_ai[temp_addr1 + temp_addr3] = image->pix_ai[temp_addr2 + temp_addr3];
+                        // image->pix_ai[temp_addr2 + temp_addr3] = temp;
+                        // temp = image->pix_ai[temp_addr1 + temp_addr3*2];
+                        // image->pix_ai[temp_addr1 + temp_addr3*2] = image->pix_ai[temp_addr2 + temp_addr3*2];
+                        // image->pix_ai[temp_addr2 + temp_addr3*2] = temp;
+                    }
+                }
+            }
         }
         else
         {
-            image->pixels = MAIN_FB()->pixels;
-		    reverse_u32pixel((uint32_t*)(image->pixels), (MAIN_FB()->w)*(MAIN_FB()->h)/2);
+            if(sensor->pixformat == PIXFORMAT_GRAYSCALE)
+            {
+                image->pixels = image->pix_ai;
+            }
+            else
+            {
+                image->pixels = MAIN_FB()->pixels;
+                reverse_u32pixel((uint32_t*)(image->pixels), (MAIN_FB()->w)*(MAIN_FB()->h)/2);
+            }
         }
 		//t1=read_cycle();
 		//mp_printf(&mp_plat_print, "%ld-%ld=%ld, %ld us!\r\n",t1,t0,(t1-t0),((t1-t0)*1000000/400000000)); 

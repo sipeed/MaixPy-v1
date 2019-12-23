@@ -346,11 +346,12 @@ static int get_rgb_gain_db(sensor_t *sensor, float *r_gain_db, float *g_gain_db,
 
 static int set_hmirror(sensor_t *sensor, int enable)
 {
-    uint8_t reg;
-    int ret = cambus_readb(sensor->slv_addr, 0x0C, &reg);
-    ret |= cambus_writeb(sensor->slv_addr, 0x0C, OV7740_SET_MIRROR(reg, enable)) ;
+    // uint8_t reg;
+    // int ret = cambus_readb(sensor->slv_addr, 0x0C, &reg);
+    // ret |= cambus_writeb(sensor->slv_addr, 0x0C, OV7740_SET_MIRROR(reg, enable)) ;
 
-    return ret;
+    // return ret;
+    return 0;
 }
 
 static int set_vflip(sensor_t *sensor, int enable)

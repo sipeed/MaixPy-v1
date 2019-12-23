@@ -131,6 +131,8 @@ typedef struct _sensor {
     framesize_t framesize;      // Frame size
     framerate_t framerate;      // Frame rate
     gainceiling_t gainceiling;  // AGC gainceiling
+    bool hmirror;
+    bool vflip;
 
     // Sensor function pointers
     int  (*reset)               (sensor_t *sensor);
