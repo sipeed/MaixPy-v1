@@ -347,13 +347,16 @@ static int set_auto_gain(sensor_t *sensor, int enable, float gain_db, float gain
     else
     {
         ret |= cambus_writeb(sensor->slv_addr, 0x13, tmp & 0xFB);
-        ret |= cambus_readb(sensor->slv_addr, 0x15, &tmp);
-        tmp = (tmp & 0xFC) | (gain>>8 & 0x03);
-        ret |= cambus_writeb(sensor->slv_addr, 0x15, tmp);
-        tmp = gain & 0xFF;
-        ret |= cambus_writeb(sensor->slv_addr, 0x00, tmp);
-        tmp = (ceiling & 0x07) << 4;
-        ret |= cambus_writeb(sensor->slv_addr, 0x14, tmp);
+        if(gain!=0xFFFF && (uint16_t)gain_db_ceiling!=0xFFFF)
+        {
+            ret |= cambus_readb(sensor->slv_addr, 0x15, &tmp);
+            tmp = (tmp & 0xFC) | (gain>>8 & 0x03);
+            ret |= cambus_writeb(sensor->slv_addr, 0x15, tmp);
+            tmp = gain & 0xFF;
+            ret |= cambus_writeb(sensor->slv_addr, 0x00, tmp);
+            tmp = (ceiling & 0x07) << 4;
+            ret |= cambus_writeb(sensor->slv_addr, 0x14, tmp);
+        }
     }
     return ret;
 }
@@ -415,7 +418,7 @@ static int set_auto_whitebal(sensor_t *sensor, int enable, float r_gain_db, floa
     }
     else
     {
-        if(r_gain_db!= NAN && g_gain_db!=NAN && b_gain_db!=NAN)
+        if((uint16_t)r_gain_db!= 0xFFFF && (uint16_t)g_gain_db!=0xFFFF && (uint16_t)b_gain_db!=0xFFFF)
         {
             ret |= cambus_writeb(sensor->slv_addr, 0x80, tmp & 0xEF);
             ret |= cambus_writeb(sensor->slv_addr, 0x01, (uint8_t)b_gain_db);
