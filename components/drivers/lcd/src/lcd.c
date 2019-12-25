@@ -20,6 +20,8 @@
 #include "sleep.h"
 #include "global_config.h"
 
+#define SWAP_16(x) ((x>>8&0xff) | (x<<8))
+
 static lcd_ctl_t lcd_ctl;
 
 static uint16_t* g_lcd_display_buff = NULL;
@@ -27,18 +29,8 @@ static uint16_t g_lcd_w = 0;
 static uint16_t g_lcd_h = 0;
 static bool g_lcd_init = false;
 
-// static uint16_t gray2rgb565[64]={
-// 0x0000, 0x2000, 0x4108, 0x6108, 0x8210, 0xa210, 0xc318, 0xe318, 
-// 0x0421, 0x2421, 0x4529, 0x6529, 0x8631, 0xa631, 0xc739, 0xe739, 
-// 0x0842, 0x2842, 0x494a, 0x694a, 0x8a52, 0xaa52, 0xcb5a, 0xeb5a, 
-// 0x0c63, 0x2c63, 0x4d6b, 0x6d6b, 0x8e73, 0xae73, 0xcf7b, 0xef7b, 
-// 0x1084, 0x3084, 0x518c, 0x718c, 0x9294, 0xb294, 0xd39c, 0xf39c, 
-// 0x14a5, 0x34a5, 0x55ad, 0x75ad, 0x96b5, 0xb6b5, 0xd7bd, 0xf7bd, 
-// 0x18c6, 0x38c6, 0x59ce, 0x79ce, 0x9ad6, 0xbad6, 0xdbde, 0xfbde, 
-// 0x1ce7, 0x3ce7, 0x5def, 0x7def, 0x9ef7, 0xbef7, 0xdfff, 0xffff,
-// };
-
-static uint16_t gray2rgb565_swap[64]={
+#if LCD_SWAP_COLOR_BYTES
+static uint16_t gray2rgb565[64]={
 0x0000, 0x0020, 0x0841, 0x0861, 0x1082, 0x10a2, 0x18c3, 0x18e3, 
 0x2104, 0x2124, 0x2945, 0x2965, 0x3186, 0x31a6, 0x39c7, 0x39e7, 
 0x4208, 0x4228, 0x4a49, 0x4a69, 0x528a, 0x52aa, 0x5acb, 0x5aeb, 
@@ -48,7 +40,18 @@ static uint16_t gray2rgb565_swap[64]={
 0xc618, 0xc638, 0xce59, 0xce79, 0xd69a, 0xd6ba, 0xdedb, 0xdefb, 
 0xe71c, 0xe73c, 0xef5d, 0xef7d, 0xf79e, 0xf7be, 0xffdf, 0xffff,
 };
-
+#else
+static uint16_t gray2rgb565[64]={
+0x0000, 0x2000, 0x4108, 0x6108, 0x8210, 0xa210, 0xc318, 0xe318, 
+0x0421, 0x2421, 0x4529, 0x6529, 0x8631, 0xa631, 0xc739, 0xe739, 
+0x0842, 0x2842, 0x494a, 0x694a, 0x8a52, 0xaa52, 0xcb5a, 0xeb5a, 
+0x0c63, 0x2c63, 0x4d6b, 0x6d6b, 0x8e73, 0xae73, 0xcf7b, 0xef7b, 
+0x1084, 0x3084, 0x518c, 0x718c, 0x9294, 0xb294, 0xd39c, 0xf39c, 
+0x14a5, 0x34a5, 0x55ad, 0x75ad, 0x96b5, 0xb6b5, 0xd7bd, 0xf7bd, 
+0x18c6, 0x38c6, 0x59ce, 0x79ce, 0x9ad6, 0xbad6, 0xdbde, 0xfbde, 
+0x1ce7, 0x3ce7, 0x5def, 0x7def, 0x9ef7, 0xbef7, 0xdfff, 0xffff,
+};
+#endif
 
 void lcd_polling_enable(void)
 {
@@ -229,6 +232,9 @@ void lcd_draw_char(uint16_t x, uint16_t y, char c, uint16_t color)
 
 void lcd_draw_string(uint16_t x, uint16_t y, char *str, uint16_t color)
 {
+    #if LCD_SWAP_COLOR_BYTES
+        color = SWAP_16(color);
+    #endif
     while (*str)
     {
         lcd_draw_char(x, y, *str, color);
@@ -245,10 +251,10 @@ void lcd_ram_draw_string(char *str, uint32_t *ptr, uint16_t font_color, uint16_t
     uint8_t *pdata = NULL;
     uint16_t width = 0;
     uint32_t *pixel = NULL;
-
+#if LCD_SWAP_COLOR_BYTES
     font_color = (font_color<<8) | (font_color>>8&0x00ff);
     bg_color   = (bg_color<<8)   | (bg_color>>8&0x00ff);
-
+#endif
     width = 4 * strlen(str);
     while (*str)
     {
@@ -288,6 +294,9 @@ void lcd_ram_draw_string(char *str, uint32_t *ptr, uint16_t font_color, uint16_t
 
 void lcd_clear(uint16_t color)
 {
+    #if LCD_SWAP_COLOR_BYTES
+        color = SWAP_16(color);
+    #endif
     uint32_t data = ((uint32_t)color << 16) | (uint32_t)color;
     lcd_set_area(0, 0, lcd_ctl.width, lcd_ctl.height);
     tft_fill_data(&data, g_lcd_h * g_lcd_w / 2);
@@ -295,7 +304,11 @@ void lcd_clear(uint16_t color)
 
 void lcd_fill_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color)
 {
-	if((x1 == x2) || (y1 == y2)) return;
+	if((x1 == x2) || (y1 == y2))
+        return;
+    #if LCD_SWAP_COLOR_BYTES
+        color = SWAP_16(color);
+    #endif
 	uint32_t data = ((uint32_t)color << 16) | (uint32_t)color;
     lcd_set_area(x1, y1, x2-1, y2-1);
     tft_fill_data(&data, (x2 - x1) * (y2 - y1) / 2);
@@ -305,10 +318,14 @@ void lcd_draw_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint
 {
     uint32_t data_buf[640] = {0};
     uint32_t *p = data_buf;
-    uint32_t data = color;
+    uint32_t data;
     uint32_t index = 0;
 
-    data = (data << 16) | data;
+    #if LCD_SWAP_COLOR_BYTES
+        color = SWAP_16(color);
+    #endif
+
+    data = ((uint32_t)color << 16) | color;
     for (index = 0; index < 160 * width; index++)
         *p++ = data;
 
@@ -323,8 +340,6 @@ void lcd_draw_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint
 }
 
 
-#define SWAP_16(x) ((x>>8&0xff) | (x<<8))
-
 typedef int (*dual_func_t)(int);
 extern volatile dual_func_t dual_func;
 static uint16_t* g_pixs_draw_pic = NULL;
@@ -337,8 +352,13 @@ static int swap_pixs_half(int core)
     uint16_t* p = g_pixs_draw_pic;
     for(i=g_pixs_draw_pic_half_size; i<g_pixs_draw_pic_size ; i+=2)
     {
-        g_lcd_display_buff[i] = SWAP_16(*(p+1));
-        g_lcd_display_buff[i+1] = SWAP_16(*(p));
+        #if LCD_SWAP_COLOR_BYTES
+            g_lcd_display_buff[i] = SWAP_16(*(p+1));
+            g_lcd_display_buff[i+1] = SWAP_16(*(p));
+        #else
+            g_lcd_display_buff[i] = *(p+1);
+            g_lcd_display_buff[i+1] = *p;
+        #endif
         p+=2;
     }
     return 0;
@@ -374,8 +394,13 @@ void lcd_draw_picture(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height,
         dual_func = swap_pixs_half;
         for(i=0; i< g_pixs_draw_pic_half_size; i+=2)
         {
-            g_lcd_display_buff[i] = SWAP_16(*(p+1));
-            g_lcd_display_buff[i+1] = SWAP_16(*(p));
+            #if LCD_SWAP_COLOR_BYTES
+                g_lcd_display_buff[i] = SWAP_16(*(p+1));
+                g_lcd_display_buff[i+1] = SWAP_16(*(p));
+            #else
+                g_lcd_display_buff[i] = *(p+1);
+                g_lcd_display_buff[i+1] = *p;
+            #endif
             p+=2;
         }
         while(dual_func){}
@@ -383,7 +408,11 @@ void lcd_draw_picture(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height,
     }
     if( odd )
     {
-        g_lcd_display_buff[0] = SWAP_16( ((uint16_t*)ptr)[g_pixs_draw_pic_size]);
+        #if LCD_SWAP_COLOR_BYTES
+            g_lcd_display_buff[0] = SWAP_16( ((uint16_t*)ptr)[g_pixs_draw_pic_size]);
+        #else
+            g_lcd_display_buff[0] = ((uint16_t*)ptr)[g_pixs_draw_pic_size];
+        #endif
         lcd_set_area(x1 + width - 1, y1 + height - 1, x1 + width - 1, y1 + height - 1);
         tft_write_half(g_lcd_display_buff, 1);
     }
@@ -411,8 +440,8 @@ void lcd_draw_pic_gray(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height
     uint32_t size = width*height;
     for(i=0; i< size; i+=2)
     {
-        g_lcd_display_buff[i] = gray2rgb565_swap[ptr[i+1]>>2];
-        g_lcd_display_buff[i+1] = gray2rgb565_swap[ptr[i]>>2];
+        g_lcd_display_buff[i] = gray2rgb565[ptr[i+1]>>2];
+        g_lcd_display_buff[i+1] = gray2rgb565[ptr[i]>>2];
     }
     tft_write_word((uint32_t*)g_lcd_display_buff, width * height / 2);
 }

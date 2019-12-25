@@ -23,6 +23,8 @@
 #include "py/runtime0.h"
 #include "py/runtime.h"
 #include "py/objstr.h"
+#include "py/objarray.h"
+#include "py/binary.h"
 //#include "sipeed_sys.h"
 
 static const mp_obj_type_t py_image_type;
@@ -1060,7 +1062,14 @@ static mp_obj_t py_image_to_bytes(size_t n_args, const mp_obj_t *args, mp_map_t 
             }
             break;
     }
-    return mp_obj_new_bytearray(size, arg_img->pixels);
+    mp_obj_array_t *o = m_new_obj(mp_obj_array_t);
+    o->base.type = &mp_type_bytearray;
+    o->typecode = BYTEARRAY_TYPECODE;
+    o->free = 0;
+    o->len = size;
+    o->items = (void*)arg_img->pixels;
+    return o;
+    // return mp_obj_new_bytearray(size, arg_img->pixels);
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_to_bytes_obj, 1, py_image_to_bytes);

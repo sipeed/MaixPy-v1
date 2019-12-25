@@ -18,27 +18,29 @@
 #include <stdint.h>
 #include "st7789.h"
 
+#define LCD_SWAP_COLOR_BYTES 1
+
 /* clang-format off */
 #define BLACK       0x0000
-#define NAVY        0x000F
-#define DARKGREEN   0x03E0
-#define DARKCYAN    0x03EF
-#define MAROON      0x7800
-#define PURPLE      0x780F
-#define OLIVE       0x7BE0
-#define LIGHTGREY   0xC618
-#define DARKGREY    0x7BEF
-#define BLUE        0x001F
-#define GREEN       0x07E0
-#define CYAN        0x07FF
-#define RED         0xF800
-#define MAGENTA     0xF81F
-#define YELLOW      0xFFE0
+#define NAVY        0x0F00
+#define DARKGREEN   0xE003
+#define DARKCYAN    0xEF03
+#define MAROON      0x0078
+#define PURPLE      0x0F78
+#define OLIVE       0xE07B
+#define LIGHTGREY   0x18C6
+#define DARKGREY    0xEF7B
+#define BLUE        0x1F00
+#define GREEN       0xE007
+#define CYAN        0xFF07
+#define RED         0x00F8
+#define MAGENTA     0x1FF8
+#define YELLOW      0xE0FF
 #define WHITE       0xFFFF
-#define ORANGE      0xFD20
-#define GREENYELLOW 0xAFE5
-#define PINK        0xF81F
-#define USER_COLOR  0xAA55
+#define ORANGE      0x20FD
+#define GREENYELLOW 0xE5AF
+#define PINK        0x1FF8
+#define USER_COLOR  0x55AA
 /* clang-format on */
 
 typedef enum _lcd_dir

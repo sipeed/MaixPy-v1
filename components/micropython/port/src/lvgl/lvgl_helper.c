@@ -14,6 +14,7 @@
 #if CONFIG_MAIXPY_TOUCH_SCREEN_ENABLE
 	#include "touchscreen.h"
 #endif
+#include "py/objarray.h"
 
 
 typedef struct mp_ptr_t
@@ -58,7 +59,7 @@ STATIC const mp_ptr_t PTR_OBJ(ptr_global) = {\
 // 	lcd_fill_rectangle(x1, y1, x2, y2, color.full);
 // }
 
-#include "printf.h"
+
 STATIC void lcd_flush(struct _disp_drv_t * disp_drv, const lv_area_t * area, lv_color_t * color_map)
 {
 	int32_t w = area->x2-area->x1+1;
@@ -73,8 +74,11 @@ STATIC void lcd_flush(struct _disp_drv_t * disp_drv, const lv_area_t * area, lv_
 	{
 		for(x=area->x1; x<=area->x2; ++x)
 		{
-			pixels[i++]= (color_map->ch.red<<3) | (color_map->ch.blue<<8) | ( ((color_map->ch.green>>3)&0x07) | (color_map->ch.green<<13));
-			// or LV_COLOR_16_SWAP = 1
+			#if LV_COLOR_16_SWAP
+				pixels[i++]= color_map->full;
+			#else
+				pixels[i++]= (color_map->ch.red<<3) | (color_map->ch.blue<<8) | ( ((color_map->ch.green>>3)&0x07) | (color_map->ch.green<<13));
+			#endif
 			 ++color_map;
 		}
 	}
@@ -137,6 +141,25 @@ static void lv_helper_log(lv_log_level_t level, const char * file, uint32_t line
 }
 #endif
 
+static mp_obj_t rgba8888_to_bgra5658(mp_obj_t image_data)
+{
+	mp_obj_array_t* self = (mp_obj_array_t*)image_data;
+	if(self->base.type != &mp_type_memoryview)
+		mp_raise_ValueError("need memoryview obj");
+	uint8_t* in = (uint8_t*)self->items;
+	uint8_t* out = in;
+	size_t size = self->len / 4;
+	for( size_t i=0; i<size; ++i)
+	{
+		out[0] = ((in[2]&0xF8) >> 3) | ((in[1] & 0x1C) << 3);
+		out[1] = ((in[1]&0xE0) >> 5) | ((in[0] & 0xF8));
+		out[2] = in[3];
+		in += 4;
+		out += 3;
+	}
+	return mp_const_none;
+}
+
 
 // DEFINE_PTR_OBJ(lcd_fill);
 DEFINE_PTR_OBJ(lcd_flush);
@@ -146,6 +169,7 @@ DEFINE_PTR_OBJ(mouse_read);
 #if LV_USE_LOG
 DEFINE_PTR_OBJ(lv_helper_log);
 #endif
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(rgba8888_to_bgra5658_obj, rgba8888_to_bgra5658);
 
 
 STATIC const mp_rom_map_elem_t lvgl_helper_globals_table[] = {
@@ -156,8 +180,9 @@ STATIC const mp_rom_map_elem_t lvgl_helper_globals_table[] = {
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_read), MP_ROM_PTR(&PTR_OBJ(mouse_read))},
 #endif
 #if LV_USE_LOG
-	{ MP_OBJ_NEW_QSTR(MP_QSTR_log), MP_ROM_PTR(&PTR_OBJ(lv_helper_log))}
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_log), MP_ROM_PTR(&PTR_OBJ(lv_helper_log))},
 #endif
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_rgba8888_to_5658), MP_ROM_PTR(&rgba8888_to_bgra5658_obj) },
 };
 
 

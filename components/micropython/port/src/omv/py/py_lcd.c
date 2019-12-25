@@ -133,7 +133,9 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
 			color = COLOR_R8_G8_B8_TO_RGB565(IM_MAX(IM_MIN(mp_obj_get_int(arg_color[0]), COLOR_R8_MAX), COLOR_R8_MIN),
 													IM_MAX(IM_MIN(mp_obj_get_int(arg_color[1]), COLOR_G8_MAX), COLOR_G8_MIN),
 													IM_MAX(IM_MIN(mp_obj_get_int(arg_color[2]), COLOR_B8_MAX), COLOR_B8_MIN));
-			color = color<<8 | (color>>8 & 0xFF);
+			#if LCD_SWAP_COLOR_BYTES
+				color = color<<8 | (color>>8 & 0xFF);
+			#endif			
 		}
 	}
 
@@ -341,7 +343,9 @@ static mp_obj_t py_lcd_clear(size_t n_args, const mp_obj_t *pos_args, mp_map_t *
 			color = COLOR_R8_G8_B8_TO_RGB565(IM_MAX(IM_MIN(mp_obj_get_int(arg_color[0]), COLOR_R8_MAX), COLOR_R8_MIN),
 													IM_MAX(IM_MIN(mp_obj_get_int(arg_color[1]), COLOR_G8_MAX), COLOR_G8_MIN),
 													IM_MAX(IM_MIN(mp_obj_get_int(arg_color[2]), COLOR_B8_MAX), COLOR_B8_MIN));
-			color = color<<8 | (color>>8 & 0xFF);
+			#if LCD_SWAP_COLOR_BYTES
+				color = color<<8 | (color>>8 & 0xFF);
+			#endif
 		}
 	}
     switch (type) {
