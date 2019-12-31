@@ -23,8 +23,7 @@
 #include "py/runtime0.h"
 #include "py/runtime.h"
 #include "py/objstr.h"
-#include "py/objarray.h"
-#include "py/binary.h"
+#include "dvp.h"
 //#include "sipeed_sys.h"
 
 static const mp_obj_type_t py_image_type;
@@ -1062,14 +1061,7 @@ static mp_obj_t py_image_to_bytes(size_t n_args, const mp_obj_t *args, mp_map_t 
             }
             break;
     }
-    mp_obj_array_t *o = m_new_obj(mp_obj_array_t);
-    o->base.type = &mp_type_bytearray;
-    o->typecode = BYTEARRAY_TYPECODE;
-    o->free = 0;
-    o->len = size;
-    o->items = (void*)arg_img->pixels;
-    return o;
-    // return mp_obj_new_bytearray(size, arg_img->pixels);
+    return mp_obj_new_bytearray(size, arg_img->pixels);
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_to_bytes_obj, 1, py_image_to_bytes);
@@ -5603,23 +5595,6 @@ static mp_obj_t py_image_resize(mp_obj_t img_obj, mp_obj_t w_obj, mp_obj_t h_obj
                         out[ x + y * w] = in[x1 + y1 * w0];
                         continue;
                     }
-                    // if( (x2 - x_src) > (x_src - x1) )
-                    // {
-                    //     x_src = x1;
-                    // }
-                    // else
-                    // {
-                    //     x_src = x2;
-                    // }
-                    // if( (y2 - y_src) > (y_src - y2) )
-                    // {
-                    //     y_src = y2;
-                    // }
-                    // else
-                    // {
-                    //     y_src = y1;
-                    // }
-                    // out[x + y * w] = in[(uint16_t)x_src + (uint16_t)y_src*w0];
 
                     temp1 = (x2 - x_src) * COLOR_RGB565_TO_R5(in[ x1 + y1 * w0]) + (x_src - x1) * COLOR_RGB565_TO_R5(in[x2 + y1 * w0]);
                     temp2 = (x2 - x_src) * COLOR_RGB565_TO_R5(in[ x1 + y2 * w0]) + (x_src - x1) * COLOR_RGB565_TO_R5(in[x2 + y2 * w0]);
@@ -5634,6 +5609,28 @@ static mp_obj_t py_image_resize(mp_obj_t img_obj, mp_obj_t w_obj, mp_obj_t h_obj
                 }
             }
         }
+        // Lien add data to image->pix_ai
+        //mp_raise_ValueError("in my add-ai block");
+        image_t* ai_img = (image_t *) py_image_cobj(image);
+        //mp_raise_ValueError("in 1");
+        uint8_t* out_ai = xalloc(w*h*3);    //Lien 
+        //mp_raise_ValueError("in 2");
+        ai_img->pix_ai = out_ai;
+        dvp_set_ai_addr((uint32_t)ai_img->pix_ai, (uint32_t)(ai_img->pix_ai + ai_img->w * ai_img->h), (uint32_t)(ai_img->pix_ai + ai_img->w * ai_img->h * 2));
+        //mp_raise_ValueError("in 3");
+        uint8_t* r = out_ai;
+        uint8_t* g = out_ai+w*h;
+        uint8_t* b = out_ai+w*h*2;
+        uint32_t index;
+        //mp_raise_ValueError("in 4");
+        for(index=0; index < w*h; index++)
+        {
+            r[index] = COLOR_RGB565_TO_R8(out[index]);
+            g[index] = COLOR_RGB565_TO_G8(out[index]);
+            b[index] = COLOR_RGB565_TO_B8(out[index]);
+        }
+        //mp_raise_ValueError("quit my add-ai block");
+        // end add ai data
 		return image;
 		break;
 	}
