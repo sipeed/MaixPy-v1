@@ -5610,26 +5610,20 @@ static mp_obj_t py_image_resize(mp_obj_t img_obj, mp_obj_t w_obj, mp_obj_t h_obj
             }
         }
         // Lien add data to image->pix_ai
-        //mp_raise_ValueError("in my add-ai block");
         image_t* ai_img = (image_t *) py_image_cobj(image);
-        //mp_raise_ValueError("in 1");
-        uint8_t* out_ai = xalloc(w*h*3);    //Lien 
-        //mp_raise_ValueError("in 2");
+        uint8_t* out_ai = xalloc(w*h*3);    
         ai_img->pix_ai = out_ai;
         dvp_set_ai_addr((uint32_t)ai_img->pix_ai, (uint32_t)(ai_img->pix_ai + ai_img->w * ai_img->h), (uint32_t)(ai_img->pix_ai + ai_img->w * ai_img->h * 2));
-        //mp_raise_ValueError("in 3");
         uint8_t* r = out_ai;
         uint8_t* g = out_ai+w*h;
         uint8_t* b = out_ai+w*h*2;
         uint32_t index;
-        //mp_raise_ValueError("in 4");
         for(index=0; index < w*h; index++)
         {
             r[index] = COLOR_RGB565_TO_R8(out[index]);
             g[index] = COLOR_RGB565_TO_G8(out[index]);
             b[index] = COLOR_RGB565_TO_B8(out[index]);
         }
-        //mp_raise_ValueError("quit my add-ai block");
         // end add ai data
 		return image;
 		break;
