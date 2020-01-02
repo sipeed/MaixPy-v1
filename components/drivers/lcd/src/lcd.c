@@ -251,10 +251,6 @@ void lcd_ram_draw_string(char *str, uint32_t *ptr, uint16_t font_color, uint16_t
     uint8_t *pdata = NULL;
     uint16_t width = 0;
     uint32_t *pixel = NULL;
-#if LCD_SWAP_COLOR_BYTES
-    font_color = (font_color<<8) | (font_color>>8&0x00ff);
-    bg_color   = (bg_color<<8)   | (bg_color>>8&0x00ff);
-#endif
     width = 4 * strlen(str);
     while (*str)
     {
