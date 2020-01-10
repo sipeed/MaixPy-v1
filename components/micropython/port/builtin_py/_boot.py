@@ -51,7 +51,7 @@ from Maix import FPIOA, GPIO
 
 test_pin=16
 fm.fpioa.set_function(test_pin,FPIOA.GPIO7)
-test_gpio=GPIO(GPIO.GPIO7,GPIO.IN)
+test_gpio=GPIO(GPIO.GPIO7,GPIO.PULL_UP)
 lcd.init(color=(255,0,0))
 lcd.draw_string(lcd.width()//2-68,lcd.height()//2-4, "Welcome to MaixPy", lcd.WHITE, lcd.RED)
 if test_gpio.value() == 0:
