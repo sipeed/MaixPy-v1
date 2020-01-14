@@ -78,6 +78,39 @@ if not "main.py" in flash_ls:
 del flash_ls
 del main_py
 
+try:
+    sd_ls = os.listdir("/sd")
+except Exception:
+    sd_ls = []
+if "cover.boot.py" in sd_ls:
+    with open("/flash/boot.py") as f:
+        code0 = f.read()
+    with open("/sd/cover.boot.py") as f:
+        code=f.read()
+    if code0 != code:
+        with open("/flash/boot.py", "w") as f:
+            f.write(code)
+        import machine
+        machine.reset()
+
+if "cover.main.py" in sd_ls:
+    with open("/flash/main.py") as f:
+        code0 = f.read()
+    with open("/sd/cover.main.py") as f:
+        code = f.read()
+    if code0 != code:
+        with open("/flash/main.py", "w") as f:
+            f.write(code)
+        import machine
+        machine.reset()
+
+try:
+    del sd_ls
+    del code0
+    del code
+except Exception:
+    pass
+
 banner = '''
  __  __              _____  __   __  _____   __     __
 |  \/  |     /\     |_   _| \ \ / / |  __ \  \ \   / /
