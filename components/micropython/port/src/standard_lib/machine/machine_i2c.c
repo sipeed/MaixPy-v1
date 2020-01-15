@@ -299,8 +299,8 @@ STATIC mp_obj_t machine_i2c_init_helper(machine_hard_i2c_obj_t* self, mp_uint_t 
             mp_raise_ValueError("[MAIXPY]I2C: pin(scl/sda) error!"); 
         self->pin_scl = mp_obj_get_int(args[ARG_scl].u_obj);
         self->pin_sda = mp_obj_get_int(args[ARG_sda].u_obj);
-        fpioa_set_function(self->pin_scl, FUNC_I2C0_SCLK + self->i2c * 2);
-        fpioa_set_function(self->pin_sda, FUNC_I2C0_SDA + self->i2c * 2);
+        fpioa_set_function(self->pin_scl, FUNC_I2C0_SCLK + i2c_id * 2);
+        fpioa_set_function(self->pin_sda, FUNC_I2C0_SDA + i2c_id * 2);
     }
 
     // set param
