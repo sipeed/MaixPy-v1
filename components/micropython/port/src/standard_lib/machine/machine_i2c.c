@@ -118,7 +118,7 @@ uint32_t on_i2c0_transmit()
     if(i2c_obj[0] != NULL)
     {
         ret = mp_call_function_0(i2c_obj[0]->on_transmit);
-        return mp_obj_get_int(ret);
+        return mp_obj_get_int(ret) & 0xFF;
     }
     return 0;
 }
@@ -142,7 +142,7 @@ uint32_t on_i2c1_transmit()
     if(i2c_obj[1] != NULL)
     {
         ret = mp_call_function_0(i2c_obj[1]->on_transmit);
-        return mp_obj_get_int(ret);
+        return mp_obj_get_int(ret) & 0xFF;
     }
     return 0;
 }
@@ -166,7 +166,7 @@ uint32_t on_i2c2_transmit()
     if(i2c_obj[2] != NULL)
     {
         ret = mp_call_function_0(i2c_obj[2]->on_transmit);
-        return mp_obj_get_int(ret);
+        return mp_obj_get_int(ret) & 0xFF;
     }
     return 0;
 }
