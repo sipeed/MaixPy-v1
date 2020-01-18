@@ -75,16 +75,18 @@ if not "main.py" in flash_ls:
     f = open("main.py", "wb")
     f.write(main_py)
     f.close()
-del flash_ls
 del main_py
 
+flash_ls = os.listdir("/flash")
 try:
     sd_ls = os.listdir("/sd")
 except Exception:
     sd_ls = []
 if "cover.boot.py" in sd_ls:
-    with open("/flash/boot.py") as f:
-        code0 = f.read()
+    code0 = ""
+    if "boot.py" in flash_ls:
+        with open("/flash/boot.py") as f:
+            code0 = f.read()
     with open("/sd/cover.boot.py") as f:
         code=f.read()
     if code0 != code:
@@ -94,8 +96,10 @@ if "cover.boot.py" in sd_ls:
         machine.reset()
 
 if "cover.main.py" in sd_ls:
-    with open("/flash/main.py") as f:
-        code0 = f.read()
+    code0 = ""
+    if "main.py" in flash_ls:
+        with open("/flash/main.py") as f:
+            code0 = f.read()
     with open("/sd/cover.main.py") as f:
         code = f.read()
     if code0 != code:
@@ -105,6 +109,7 @@ if "cover.main.py" in sd_ls:
         machine.reset()
 
 try:
+    del flash_ls
     del sd_ls
     del code0
     del code
