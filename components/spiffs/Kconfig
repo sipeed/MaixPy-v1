@@ -1,7 +1,7 @@
 
 
 config COMPONENT_SPIFFS_ENABLE
-	bool "Enbale spiffs component"
+	bool "Enable spiffs component"
 	default n
 menu "SPIFFS Configuration"
 	depends on COMPONENT_SPIFFS_ENABLE

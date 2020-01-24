@@ -1,7 +1,7 @@
 
 
 config COMPONENT_DRIVERS_ENABLE
-	bool "Enbale drivers component"
+	bool "Enable drivers component"
 	default n
 	select COMPONENT_KENDRYTE_SDK_ENABLE
 
@@ -16,12 +16,12 @@ menu "Drivers configuration"
 
 	menu "WS2812"
 		config WS2812_ENABLE
-			bool "Enbale ws2812 over i2s component"
+			bool "Enable ws2812 over i2s component"
 			default n
 	endmenu
 	menu "HTPA thermal sensor"
 		config HTPA_ENABLE
-			bool "Enbale HTPA thermal sensor"
+			bool "Enable HTPA thermal sensor"
 			default n
 	endmenu
 endmenu
