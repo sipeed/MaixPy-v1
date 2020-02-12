@@ -1,7 +1,7 @@
 
 
 config COMPONENT_MICROPYTHON_ENABLE
-	bool "Enbale micropython component"
+	bool "Enable micropython component"
 	default n
 	select COMPONENT_KENDRYTE_SDK_ENABLE
 	select COMPONENT_DRIVERS_ENABLE
@@ -58,7 +58,7 @@ menu "Micropython configurations"
 			default y
 
 		config MAIXPY_LVGL_ENABLE
-			bool "Enbale LittlvGL"
+			bool "Enable LittlvGL"
 			default n
 			select MAIXPY_LODEPNG_ENABLE
 		config MAIXPY_LODEPNG_ENABLE
