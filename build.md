@@ -1,7 +1,7 @@
 Build Maixpy from source code
 =========
 
-Only suport Linux now! not test on Windows or macOS
+Only support Linux now! not test on Windows or macOS
 
 ## Get source code
 
