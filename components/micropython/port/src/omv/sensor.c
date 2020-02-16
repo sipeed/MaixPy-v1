@@ -41,6 +41,7 @@ volatile static uint8_t g_dvp_finish_flag = 0;
 volatile uint8_t g_sensor_buff_index_in = 0, g_sensor_buff_index_out = 0;
 static volatile bool buff_ready = false;
 #endif
+static bool g_set_pixformat_regs = true;
 
 
 static volatile int line = 0;
@@ -425,7 +426,7 @@ int sensor_init_irq()
 	return 0;
 }
 
-int sensor_reset(mp_int_t freq, bool default_freq)
+int sensor_reset(mp_int_t freq, bool default_freq, bool set_regs)
 {
     sensor.reset_set = false;
     sensor.vflip = false;
@@ -446,8 +447,11 @@ int sensor_reset(mp_int_t freq, bool default_freq)
         return -1;
     }
     // Call sensor-specific reset function
-    if (sensor.reset(&sensor) != 0) {	//rst reg, set default cfg.
-        return -1;
+    if(set_regs)
+    {
+        if (sensor.reset(&sensor) != 0) {	//rst reg, set default cfg.
+            return -1;
+        }
     }
     // Disable dvp  IRQ before all cfg done 
     sensor_init_irq();
@@ -754,7 +758,7 @@ int sensor_write_reg(uint8_t reg_addr, uint16_t reg_data)
     return sensor.write_reg(&sensor, reg_addr, reg_data);
 }
 
-int sensor_set_pixformat(pixformat_t pixformat)
+int sensor_set_pixformat(pixformat_t pixformat, bool set_regs)
 {
     switch (pixformat) {
         case PIXFORMAT_RGB565:
@@ -774,30 +778,37 @@ int sensor_set_pixformat(pixformat_t pixformat)
         default:
             return -1;
     }
-    if (sensor.set_pixformat == NULL
-        || sensor.set_pixformat(&sensor, pixformat) != 0) {
-        // Operation not supported
-        return -1;
+    if(set_regs)
+    {
+        if (sensor.set_pixformat == NULL
+            || sensor.set_pixformat(&sensor, pixformat) != 0) {
+            // Operation not supported
+            return -1;
+        }
     }
     // Set pixel format
     sensor.pixformat = pixformat;
     // Skip the first frame.
     MAIN_FB()->bpp = -1;
+    g_set_pixformat_regs = set_regs;
 
     return 0;
 }
 
-int sensor_set_framesize(framesize_t framesize)
+int sensor_set_framesize(framesize_t framesize, bool set_regs)
 {
     sensor.size_set = false;
 
     int w_old = MAIN_FB()->w;
     int h_old = MAIN_FB()->h;
     // Call the sensor specific function
-    if (sensor.set_framesize == NULL
-        || sensor.set_framesize(&sensor, framesize) != 0) {
-        // Operation not supported
-        return EIO;
+    if(set_regs)
+    {
+        if (sensor.set_framesize == NULL
+            || sensor.set_framesize(&sensor, framesize) != 0) {
+            // Operation not supported
+            return EIO;
+        }
     }
     // Set framebuffer size
     sensor.framesize = framesize;
@@ -1141,7 +1152,7 @@ static void sensor_check_buffsize()
             sensor_set_windowing(190, 120, 320, 240);
         } else if (sensor.pixformat == PIXFORMAT_RGB565) {
             // Switch to BAYER if the frame is too big to fit in RAM.
-            sensor_set_pixformat(PIXFORMAT_BAYER);
+            sensor_set_pixformat(PIXFORMAT_BAYER, g_set_pixformat_regs);
         }
     }
 

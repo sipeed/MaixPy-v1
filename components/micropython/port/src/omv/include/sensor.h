@@ -175,7 +175,7 @@ int binocular_sensor_reset(mp_int_t freq);
 void sensor_init0();
 
 // Reset the sensor to its default state.
-int sensor_reset(mp_int_t freq, bool default_freq);
+int sensor_reset(mp_int_t freq, bool default_freq, bool set_regs);
 
 // destroy resources created by sensor
 void sensor_deinit();
@@ -196,10 +196,10 @@ int sensor_read_reg(uint8_t reg_addr);
 int sensor_write_reg(uint8_t reg_addr, uint16_t reg_data);
 
 // Set the sensor pixel format.
-int sensor_set_pixformat(pixformat_t pixformat);
+int sensor_set_pixformat(pixformat_t pixformat, bool set_regs);
 
 // Set the sensor frame size.
-int sensor_set_framesize(framesize_t framesize);
+int sensor_set_framesize(framesize_t framesize, bool set_regs);
 
 // Set the sensor frame rate.
 int sensor_set_framerate(framerate_t framerate);

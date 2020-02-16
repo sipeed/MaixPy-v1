@@ -37,12 +37,18 @@ static mp_obj_t py_sensor_reset(size_t n_args, const mp_obj_t *args, mp_map_t *k
     mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_freq), MP_MAP_LOOKUP);
     mp_int_t freq = OMV_XCLK_FREQUENCY;
     bool default_freq = true;
+    bool set_regs = true;
     if(kw_arg)
     {
         default_freq = false;
         freq = mp_obj_get_int(kw_arg->value);
     }
-    PY_ASSERT_FALSE_MSG(sensor_reset(freq, default_freq) != 0, "Reset Failed");
+    kw_arg = mp_map_lookup(kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_set_regs), MP_MAP_LOOKUP);
+    if(kw_arg)
+    {
+        set_regs = mp_obj_is_true(kw_arg->value);
+    }
+    PY_ASSERT_FALSE_MSG(sensor_reset(freq, default_freq, set_regs) != 0, "Reset Failed");
     return mp_const_none;
 }
 
@@ -212,8 +218,17 @@ static mp_obj_t py_sensor_get_id() {
 //    return mp_const_none;
 //}
 
-static mp_obj_t py_sensor_set_pixformat(mp_obj_t pixformat) {
-    if (sensor_set_pixformat(mp_obj_get_int(pixformat)) != 0) {
+static mp_obj_t py_sensor_set_pixformat(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
+{
+    if(n_args != 1)
+        mp_raise_ValueError("arg err");
+    mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_set_regs), MP_MAP_LOOKUP);
+    bool set_regs = true;
+    if(kw_arg)
+    {
+        set_regs = mp_obj_is_true(kw_arg->value);
+    }
+    if (sensor_set_pixformat(mp_obj_get_int(args[0]), set_regs) != 0) {
         PY_ASSERT_TRUE_MSG(0, "Pixel format is not supported!");
     }
     return mp_const_true;
@@ -249,8 +264,17 @@ static mp_obj_t py_sensor_set_framerate(mp_obj_t framerate) {
    return mp_const_none;
 }
 
-static mp_obj_t py_sensor_set_framesize(mp_obj_t framesize) {
-    int ret = sensor_set_framesize(mp_obj_get_int(framesize));
+static mp_obj_t py_sensor_set_framesize(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
+{
+    if(n_args != 1)
+        mp_raise_ValueError("arg err");
+    mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_set_regs), MP_MAP_LOOKUP);
+    bool set_regs = true;
+    if(kw_arg)
+    {
+        set_regs = mp_obj_is_true(kw_arg->value);
+    }
+    int ret = sensor_set_framesize(mp_obj_get_int(args[0]), set_regs);
     if ( ret != 0) {
         mp_raise_OSError(ret);
     }
@@ -492,9 +516,9 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_sensor_get_fb_obj,              py_sensor_ge
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_sensor_get_id_obj,              py_sensor_get_id);
 //STATIC MP_DEFINE_CONST_FUN_OBJ_3(py_sensor_alloc_extra_fb_obj,      py_sensor_alloc_extra_fb);
 //STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_sensor_dealloc_extra_fb_obj,    py_sensor_dealloc_extra_fb);
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_set_pixformat_obj,       py_sensor_set_pixformat);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_sensor_set_pixformat_obj,       1,     py_sensor_set_pixformat);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_set_framerate_obj,       py_sensor_set_framerate);
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_set_framesize_obj,       py_sensor_set_framesize);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_sensor_set_framesize_obj,       1,     py_sensor_set_framesize);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_set_windowing_obj,         py_sensor_set_windowing);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_set_gainceiling_obj,     py_sensor_set_gainceiling);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_set_contrast_obj,        py_sensor_set_contrast);
