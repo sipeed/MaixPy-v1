@@ -93,6 +93,15 @@ static mp_obj_t py_sensor_skip_frames(size_t n_args, const mp_obj_t *args, mp_ma
    if (kw_arg != NULL) {
        time = mp_obj_get_int(kw_arg->value);
    }
+#if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
+    image_t image = {
+        .w      = MAIN_FB()->w,
+        .h      = MAIN_FB()->h,
+        .bpp    = MAIN_FB()->bpp,
+        .pixels = MAIN_FB()->pixels[0],
+		.pix_ai = MAIN_FB()->pix_ai[0]
+    };
+#else
     image_t image = {
         .w      = MAIN_FB()->w,
         .h      = MAIN_FB()->h,
@@ -100,6 +109,7 @@ static mp_obj_t py_sensor_skip_frames(size_t n_args, const mp_obj_t *args, mp_ma
         .pixels = MAIN_FB()->pixels,
 		.pix_ai = MAIN_FB()->pix_ai
     };
+#endif
    uint32_t millis = systick_current_millis();
    if (!n_args) {
        while ((systick_current_millis() - millis) < time) { // 32-bit math handles wrap arrounds...

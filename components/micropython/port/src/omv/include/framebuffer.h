@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include "mutex.h"
 #include "imlib_config.h"
+#include "global_config.h"
+#define SENSOR_BUFFER_NUM 2
 
 typedef struct framebuffer {
     int x,y;
@@ -18,8 +20,13 @@ typedef struct framebuffer {
     int w_max, h_max;
     int u,v;
     int bpp;
-	uint8_t* pixels;
+#if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
+	uint8_t* pixels[SENSOR_BUFFER_NUM];
+	uint8_t* pix_ai[SENSOR_BUFFER_NUM];
+#else
+    uint8_t* pixels;
 	uint8_t* pix_ai;
+#endif
 } __attribute__((aligned(8))) framebuffer_t;
 
 typedef struct jpegbuffer {
@@ -41,7 +48,11 @@ extern framebuffer_t *fb_framebuffer;
 #endif
 
 // Use this macro to get a pointer to the free SRAM area located after the framebuffer.
+#if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
+#define MAIN_FB_PIXELS()    (MAIN_FB()->pixels[0] + fb_buffer_size())
+#else
 #define MAIN_FB_PIXELS()    (MAIN_FB()->pixels + fb_buffer_size())
+#endif
 
 // Use this macro to get a pointer to the free SRAM area located after the framebuffer.
 // #define JPEG_FB_PIXELS()    (JPEG_FB()->pixels + JPEG_FB()->size)

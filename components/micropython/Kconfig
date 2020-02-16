@@ -1,7 +1,7 @@
 
 
 config COMPONENT_MICROPYTHON_ENABLE
-	bool "Enable micropython component"
+	bool "Enbale micropython component"
 	default n
 	select COMPONENT_KENDRYTE_SDK_ENABLE
 	select COMPONENT_DRIVERS_ENABLE
@@ -51,6 +51,9 @@ menu "Micropython configurations"
 		config MAIXPY_OMV_CONV_YUV_FAST
 			bool "Add YUV convert table, close this will reduce code but lower speed"
 			default y
+		config MAIXPY_OMV_DOUBLE_BUFF
+			bool "Set double buffer for sensor(camera)"
+			default n
 		
 		config MAIXPY_MIC_ARRAY_ENABLE
 			select MIC_ARRAY_ENABLE
@@ -58,7 +61,7 @@ menu "Micropython configurations"
 			default y
 
 		config MAIXPY_LVGL_ENABLE
-			bool "Enable LittlvGL"
+			bool "Enbale LittlvGL"
 			default n
 			select MAIXPY_LODEPNG_ENABLE
 		config MAIXPY_LODEPNG_ENABLE

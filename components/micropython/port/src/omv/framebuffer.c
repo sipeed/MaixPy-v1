@@ -11,7 +11,7 @@
 #include "framebuffer.h"
 
 mutex_t lock_tmp;
-static framebuffer_t _fb_framebuffer0={0,0,0,0,0,0,0,0,0,NULL,NULL};
+static framebuffer_t _fb_framebuffer0={0,0,0,0,0,0,0,0,0,NULL,NULL,NULL,NULL};
 // static framebuffer_t _fb_framebuffer1={0,0,0,0,0,0,0,NULL,g_ai_buf_out};
 framebuffer_t *fb_framebuffer = &_fb_framebuffer0;
 
@@ -21,8 +21,9 @@ framebuffer_t *fb_framebuffer = &_fb_framebuffer0;
     jpegbuffer_t* jpeg_fb_framebuffer = &_jpeg_fb_framebuffer;
 #endif
 
-
-
+#if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
+extern volatile uint8_t g_sensor_buff_index_in;
+#endif
 
 
 uint32_t fb_buffer_size()
@@ -60,7 +61,11 @@ void fb_update_jpeg_buffer()
                 JPEG_FB()->size = 0;
             } else {
                 memcpy(JPEG_FB()->pixels,
+#if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
+                MAIN_FB()->pixels[g_sensor_buff_index_in],
+#else
                 MAIN_FB()->pixels,
+#endif
                 MAIN_FB()->bpp);
                 JPEG_FB()->w = MAIN_FB()->w;
                 JPEG_FB()->h = MAIN_FB()->h;
@@ -80,14 +85,22 @@ void fb_update_jpeg_buffer()
                 src.w=MAIN_FB()->w;
                 src.h=MAIN_FB()->h;
                 src.bpp=MAIN_FB()->bpp;
+#if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
+                src.pixels=MAIN_FB()->pix_ai[g_sensor_buff_index_in];
+#else
                 src.pixels=MAIN_FB()->pix_ai;
+#endif
             }
             else
             {
                 src.w=MAIN_FB()->w;
                 src.h=MAIN_FB()->h;
                 src.bpp=MAIN_FB()->bpp;
+#if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
+                src.pixels=MAIN_FB()->pixels[g_sensor_buff_index_in];
+#else
                 src.pixels=MAIN_FB()->pixels;
+#endif
             }
             image_t dst = {.w=MAIN_FB()->w, .h=MAIN_FB()->h, .bpp=(OMV_JPEG_BUF_SIZE-64),  .pixels=JPEG_FB()->pixels};
 

@@ -485,7 +485,11 @@ int picojpeg_util_read(image_t* img, mp_obj_t file, uint8_t* buf, uint32_t buf_l
       img->bpp = IMAGE_BPP_GRAYSCALE;
    else
       img->bpp = IMAGE_BPP_RGB565;
+#if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
+   if( img->data == MAIN_FB()->pixels[0]) //FIXME:
+#else
    if( img->data == MAIN_FB()->pixels)
+#endif
    {
       MAIN_FB()->w = img->w;
       MAIN_FB()->h = img->h;

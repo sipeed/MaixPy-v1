@@ -264,5 +264,7 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
 
 int sensor_run(int enable);
 
+bool is_img_data_in_main_fb(uint8_t* data);
+
 #endif /* __SENSOR_H__ */
 

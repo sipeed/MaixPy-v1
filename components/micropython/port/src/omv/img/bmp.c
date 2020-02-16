@@ -202,8 +202,14 @@ void bmp_read(image_t *img, const char *path)
     }
     if(!bmp_read_pixels(file, img, 0, img->h, &rs))
     {
+#if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
+        if(img->pixels != MAIN_FB()->pixels[0] )//FIXME:
+#else
         if(img->pixels != MAIN_FB()->pixels )
-            xfree(img->pixels);
+#endif
+    {   
+        xfree(img->pixels);
+    }
         vfs_internal_close(file, &err);
         mp_raise_OSError(MP_EIO);
     }
