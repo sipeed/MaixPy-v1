@@ -95,43 +95,57 @@ void _ndelay(uint32_t ns)
 static int sensor_irq(void *ctx)
 {
 #if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
-    if (dvp_get_interrupt(DVP_STS_FRAME_FINISH)) {	//frame end
+    if(sensor.double_buff)
+    {
+        if (dvp_get_interrupt(DVP_STS_FRAME_FINISH)) {	//frame end
+            dvp_clear_interrupt(DVP_STS_FRAME_START | DVP_STS_FRAME_FINISH);
+            if( (g_sensor_buff_index_in + 1)%SENSOR_BUFFER_NUM == g_sensor_buff_index_out)
+            {
+                buff_ready = true;
+            }
+            else
+            {
+                g_sensor_buff_index_in = (g_sensor_buff_index_in + 1) % SENSOR_BUFFER_NUM;
+                buff_ready = false;
+            }
+            // g_dvp_finish_flag = 1;
+        } else {	//frame start
+            if(g_sensor_buff_index_in == g_sensor_buff_index_out)
+            {
+                if( !buff_ready )
+                {
+                    // g_dvp_finish_flag = 0;
+                    // printk("--%d\r\n",g_sensor_buff_index_in);
+                    dvp_set_ai_addr((uint32_t)MAIN_FB()->pix_ai[g_sensor_buff_index_in], (uint32_t)(MAIN_FB()->pix_ai[g_sensor_buff_index_in] + MAIN_FB()->w * MAIN_FB()->h), (uint32_t)(MAIN_FB()->pix_ai[g_sensor_buff_index_in] + MAIN_FB()->w * MAIN_FB()->h * 2));
+                    dvp_set_display_addr((uint32_t)MAIN_FB()->pixels[g_sensor_buff_index_in]);
+                    dvp_start_convert();
+                }
+            }
+            else
+            {
+                if( !buff_ready )
+                {
+                    // g_dvp_finish_flag = 0;
+                    // printk("==%d\r\n",g_sensor_buff_index_in);
+                    dvp_set_ai_addr((uint32_t)MAIN_FB()->pix_ai[g_sensor_buff_index_in], (uint32_t)(MAIN_FB()->pix_ai[g_sensor_buff_index_in] + MAIN_FB()->w * MAIN_FB()->h), (uint32_t)(MAIN_FB()->pix_ai[g_sensor_buff_index_in] + MAIN_FB()->w * MAIN_FB()->h * 2));
+                    dvp_set_display_addr((uint32_t)MAIN_FB()->pixels[g_sensor_buff_index_in]);
+                    dvp_start_convert();
+                }
+            }
+            dvp_clear_interrupt(DVP_STS_FRAME_START); 
+        }
+    }
+    else
+    {
+        if (dvp_get_interrupt(DVP_STS_FRAME_FINISH)) {	//frame end
 		dvp_clear_interrupt(DVP_STS_FRAME_START | DVP_STS_FRAME_FINISH);
-        if( (g_sensor_buff_index_in + 1)%SENSOR_BUFFER_NUM == g_sensor_buff_index_out)
-        {
-            buff_ready = true;
+		g_dvp_finish_flag = 1;
+        } else {	//frame start
+            if(g_dvp_finish_flag == 0)  //only we finish the convert, do transmit again
+                dvp_start_convert();	//so we need deal img ontime, or skip one framebefore next
+            dvp_clear_interrupt(DVP_STS_FRAME_START);
         }
-        else
-        {
-            g_sensor_buff_index_in = (g_sensor_buff_index_in + 1) % SENSOR_BUFFER_NUM;
-            buff_ready = false;
-        }
-		// g_dvp_finish_flag = 1;
-	} else {	//frame start
-        if(g_sensor_buff_index_in == g_sensor_buff_index_out)
-        {
-            if( !buff_ready )
-            {
-                // g_dvp_finish_flag = 0;
-                // printk("--%d\r\n",g_sensor_buff_index_in);
-                dvp_set_ai_addr((uint32_t)MAIN_FB()->pix_ai[g_sensor_buff_index_in], (uint32_t)(MAIN_FB()->pix_ai[g_sensor_buff_index_in] + MAIN_FB()->w * MAIN_FB()->h), (uint32_t)(MAIN_FB()->pix_ai[g_sensor_buff_index_in] + MAIN_FB()->w * MAIN_FB()->h * 2));
-                dvp_set_display_addr((uint32_t)MAIN_FB()->pixels[g_sensor_buff_index_in]);
-                dvp_start_convert();
-            }
-        }
-        else
-        {
-            if( !buff_ready )
-            {
-                // g_dvp_finish_flag = 0;
-                // printk("==%d\r\n",g_sensor_buff_index_in);
-                dvp_set_ai_addr((uint32_t)MAIN_FB()->pix_ai[g_sensor_buff_index_in], (uint32_t)(MAIN_FB()->pix_ai[g_sensor_buff_index_in] + MAIN_FB()->w * MAIN_FB()->h), (uint32_t)(MAIN_FB()->pix_ai[g_sensor_buff_index_in] + MAIN_FB()->w * MAIN_FB()->h * 2));
-                dvp_set_display_addr((uint32_t)MAIN_FB()->pixels[g_sensor_buff_index_in]);
-                dvp_start_convert();
-            }
-        }
-		dvp_clear_interrupt(DVP_STS_FRAME_START); 
-	}
+    }
 #else
     // sensor_t *sensor = ctx;
 	if (dvp_get_interrupt(DVP_STS_FRAME_FINISH)) {	//frame end
@@ -426,11 +440,12 @@ int sensor_init_irq()
 	return 0;
 }
 
-int sensor_reset(mp_int_t freq, bool default_freq, bool set_regs)
+int sensor_reset(mp_int_t freq, bool default_freq, bool set_regs, bool double_buff)
 {
     sensor.reset_set = false;
     sensor.vflip = false;
     sensor.hmirror = false;
+    sensor.double_buff = double_buff;
 	sensor_init_fb();		//init FB
     if (sensor_init_dvp(freq, default_freq) != 0) { //init pins, scan I2C, do ov2640 init
       return -1;
@@ -825,7 +840,10 @@ int sensor_set_framesize(framesize_t framesize, bool set_regs)
     if(MAIN_FB()->w != w_old || MAIN_FB()->h != h_old)
     {
 #if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
-    for(int i=0; i<SENSOR_BUFFER_NUM; ++i)
+    uint8_t buff_size = SENSOR_BUFFER_NUM;
+    if( !sensor.double_buff)
+        buff_size = 1;
+    for(int i=0; i<buff_size; ++i)
     {
         if(MAIN_FB()->pixels[i])
             free(MAIN_FB()->pixels[i]);
@@ -1243,7 +1261,14 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
     // the framebuffer is enabled and the image sensor does not support JPEG encoding.
     // Note: This doesn't run unless the IDE is connected and the framebuffer is enabled.
 #if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
-    if( !( (g_sensor_buff_index_in == g_sensor_buff_index_out) && !buff_ready ) )
+    if(sensor->double_buff)
+    {
+        if( !( (g_sensor_buff_index_in == g_sensor_buff_index_out) && !buff_ready ) )
+        {
+            fb_update_jpeg_buffer();
+        }
+    }
+    else
     {
         fb_update_jpeg_buffer();
     }
@@ -1299,33 +1324,54 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
 		}
 
 #if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
-        if(g_sensor_buff_index_out != g_sensor_buff_index_in)
+        if(sensor->double_buff)
         {
-            g_sensor_buff_index_out = (g_sensor_buff_index_out + 1) % SENSOR_BUFFER_NUM;
-            if( (g_sensor_buff_index_out == g_sensor_buff_index_in) && buff_ready )
+            if(g_sensor_buff_index_out != g_sensor_buff_index_in)
             {
-                g_sensor_buff_index_in = (g_sensor_buff_index_in + 1) % SENSOR_BUFFER_NUM;
-                buff_ready = false;
+                g_sensor_buff_index_out = (g_sensor_buff_index_out + 1) % SENSOR_BUFFER_NUM;
+                if( (g_sensor_buff_index_out == g_sensor_buff_index_in) && buff_ready )
+                {
+                    g_sensor_buff_index_in = (g_sensor_buff_index_in + 1) % SENSOR_BUFFER_NUM;
+                    buff_ready = false;
+                }
             }
+            else
+            {
+            }
+            // printk("out--:%d %d %d\r\n", g_sensor_buff_index_out, g_sensor_buff_index_in, buff_ready);
+            //wait for new frame
+            uint32_t start =  systick_current_millis();
+            while( (g_sensor_buff_index_in == g_sensor_buff_index_out) && (!buff_ready))// rempty
+            {
+                _ndelay(50);
+                if(systick_current_millis() - start > 300)//wait for 30ms
+                    return -1;
+            }
+            // Set the user image.
+            image->w = MAIN_FB()->w;
+            image->h = MAIN_FB()->h;
+            image->bpp = MAIN_FB()->bpp;
+            image->pix_ai = MAIN_FB()->pix_ai[g_sensor_buff_index_out];  
+            image->pixels = MAIN_FB()->pixels[g_sensor_buff_index_out];  
         }
         else
         {
+            //wait for new frame
+            g_dvp_finish_flag = 0;
+            uint32_t start =  systick_current_millis();
+            while (g_dvp_finish_flag == 0)
+            {
+                _ndelay(50);
+                if(systick_current_millis() - start > 300)//wait for 30ms
+                    return -1;
+            }
+            // Set the user image.
+            image->w = MAIN_FB()->w;
+            image->h = MAIN_FB()->h;
+            image->bpp = MAIN_FB()->bpp;
+            image->pix_ai = MAIN_FB()->pix_ai[0];
+            image->pixels = MAIN_FB()->pixels[0];
         }
-        // printk("out--:%d %d %d\r\n", g_sensor_buff_index_out, g_sensor_buff_index_in, buff_ready);
-		//wait for new frame
-        uint32_t start =  systick_current_millis();
-        while( (g_sensor_buff_index_in == g_sensor_buff_index_out) && (!buff_ready))// rempty
-        {
-            _ndelay(50);
-            if(systick_current_millis() - start > 300)//wait for 30ms
-                return -1;
-        }
-        // Set the user image.
-		image->w = MAIN_FB()->w;
-		image->h = MAIN_FB()->h;
-		image->bpp = MAIN_FB()->bpp;
-		image->pix_ai = MAIN_FB()->pix_ai[g_sensor_buff_index_out];  
-        image->pixels = MAIN_FB()->pixels[g_sensor_buff_index_out];  
 #else
 		//wait for new frame
 		g_dvp_finish_flag = 0;
@@ -1426,7 +1472,10 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
 bool is_img_data_in_main_fb(uint8_t* data)
 {
 #if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
-    for(uint8_t i=0; i<SENSOR_BUFFER_NUM; ++i)
+    uint8_t buff_size = SENSOR_BUFFER_NUM; 
+    if(sensor.double_buff)
+        buff_size = 1;
+    for(uint8_t i=0; i<buff_size; ++i)
     {
         if( (MAIN_FB()->pixels[i] != NULL) &&
             (data >= MAIN_FB()->pixels[i]) &&

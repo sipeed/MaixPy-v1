@@ -21,6 +21,7 @@ typedef struct framebuffer {
     int u,v;
     int bpp;
 #if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
+    bool double_buff;
 	uint8_t* pixels[SENSOR_BUFFER_NUM];
 	uint8_t* pix_ai[SENSOR_BUFFER_NUM];
 #else

@@ -120,6 +120,7 @@ typedef struct _sensor {
     uint32_t hw_flags;          // Hardware flags (clock polarities/hw capabilities)
     bool     reset_set;         // reset called
     bool     size_set;          // set_framesie called
+    bool     double_buff;
 
     uint32_t vsync_pin;         // VSYNC GPIO output pin.
     polarity_t pwdn_pol; // PWDN polarity (TODO move to hw_flags)
@@ -175,7 +176,7 @@ int binocular_sensor_reset(mp_int_t freq);
 void sensor_init0();
 
 // Reset the sensor to its default state.
-int sensor_reset(mp_int_t freq, bool default_freq, bool set_regs);
+int sensor_reset(mp_int_t freq, bool default_freq, bool set_regs, bool double_buff);
 
 // destroy resources created by sensor
 void sensor_deinit();

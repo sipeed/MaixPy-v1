@@ -53,7 +53,7 @@ menu "Micropython configurations"
 			default y
 		config MAIXPY_OMV_DOUBLE_BUFF
 			bool "Set double buffer for sensor(camera)"
-			default n
+			default y
 		
 		config MAIXPY_MIC_ARRAY_ENABLE
 			select MIC_ARRAY_ENABLE
