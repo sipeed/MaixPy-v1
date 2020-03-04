@@ -1,10 +1,16 @@
 
 if(CONFIG_COMPONENT_KENDRYTE_SDK_ENABLE)
+	# xtl options
+	add_definitions(-DTCB_SPAN_NO_EXCEPTIONS -DTCB_SPAN_NO_CONTRACT_CHECKING)
+	# nncase options
+	add_definitions(-DNNCASE_TARGET=k210)
     ################# Add include #################
     list(APPEND ADD_INCLUDE "include"
                             "kendryte-standalone-sdk/lib/bsp/include"
                             "kendryte-standalone-sdk/lib/drivers/include"
                             "kendryte-standalone-sdk/lib/utils/include"
+							#"kendryte-standalone-sdk/lib/nncase/include"
+							#"kendryte-standalone-sdk/third_party/xtl/include"
         )
     if(CONFIG_FREERTOS_ENABLE)
         list(APPEND ADD_INCLUDE "kendryte-standalone-sdk/lib/freertos/include"
@@ -18,6 +24,13 @@ if(CONFIG_COMPONENT_KENDRYTE_SDK_ENABLE)
     append_srcs_dir(ADD_SRCS "kendryte-standalone-sdk/lib/bsp")
     append_srcs_dir(ADD_SRCS "kendryte-standalone-sdk/lib/drivers")
     append_srcs_dir(ADD_SRCS "src")
+	#ADD_SUBDIRECTORY("kendryte-standalone-sdk/lib/nncase")
+	#append_srcs_dir(ADD_SRCS "kendryte-standalone-sdk/lib/nncase/runtime/neutral")
+	#append_srcs_dir(ADD_SRCS "kendryte-standalone-sdk/lib/nncase/runtime/k210")
+	#append_srcs_dir(ADD_SRCS "kendryte-standalone-sdk/lib/nncase/runtime")
+	#append_srcs_dir(ADD_SRCS "kendryte-standalone-sdk/lib/nncase")
+	#append_srcs_dir(ADD_SRCS "kendryte-standalone-sdk/third_party/xtl")
+	
     if(CONFIG_FREERTOS_ENABLE)
         append_srcs_dir(ADD_SRCS "kendryte-standalone-sdk/lib/freertos")
         append_srcs_dir(ADD_SRCS "kendryte-standalone-sdk/lib/freertos/portable")
@@ -48,6 +61,16 @@ if(CONFIG_COMPONENT_KENDRYTE_SDK_ENABLE)
         list(APPEND ADD_STATIC_LIB "libs/lib_mic.a")
     endif()
     list(APPEND ADD_STATIC_LIB "libs/lib_sipeed_kpu.a")
+    if(CONFIG_LIB_NNCASE_SOURCE_CODE_ENABLE)
+        message("compile nncase source code")
+    else()
+        message("add nncase static lib")
+        # xtl options
+        list(APPEND ADD_DEFINITIONS -DTCB_SPAN_NO_EXCEPTIONS -DTCB_SPAN_NO_CONTRACT_CHECKING)
+        # nncase options
+        list(APPEND ADD_DEFINITIONS -DNNCASE_TARGET=k210)
+        list(APPEND ADD_STATIC_LIB "libs/libnncase.a")
+    endif()
     ###############################################
 
     list(APPEND ADD_DEFINITIONS -DCONFIG_LOG_LEVEL=${CONFIG_SDK_LOG_LEVEL}

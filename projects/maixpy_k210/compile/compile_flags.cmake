@@ -67,9 +67,7 @@ set(CMAKE_CXX_FLAGS -mcmodel=medany
                     -Wno-sign-compare
                     -Wno-error=missing-braces
                     -Wno-error=pointer-sign
-                    -Wno-pointer-to-int-cast
                     -Wno-strict-aliasing
-                    -Wno-override-init
                     -Wno-error=format=
                     -Wno-error=format-truncation=
                     -Wno-error=restrict
@@ -95,7 +93,7 @@ set(CMAKE_C_LINK_FLAGS ${CMAKE_C_LINK_FLAGS}
                         ${LINK_FLAGS}
                         )
 set(CMAKE_CXX_LINK_FLAGS ${CMAKE_C_LINK_FLAGS}
-                        ${LINK_FLAGS}
+                        #${LINK_FLAGS}
                         )
 # set(CMAKE_EXE_LINKER_FLAGS  ${CMAKE_EXE_LINKER_FLAGS}
 #                             ${LINK_FLAGS}
