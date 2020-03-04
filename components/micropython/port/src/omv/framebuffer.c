@@ -22,7 +22,7 @@ framebuffer_t *fb_framebuffer = &_fb_framebuffer0;
 #endif
 
 #if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
-extern volatile uint8_t g_sensor_buff_index_in;
+extern volatile uint8_t g_sensor_buff_index_out;
 #endif
 
 
@@ -62,7 +62,7 @@ void fb_update_jpeg_buffer()
             } else {
                 memcpy(JPEG_FB()->pixels,
 #if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
-                MAIN_FB()->pixels[g_sensor_buff_index_in],
+                MAIN_FB()->pixels[g_sensor_buff_index_out],
 #else
                 MAIN_FB()->pixels,
 #endif
@@ -86,7 +86,7 @@ void fb_update_jpeg_buffer()
                 src.h=MAIN_FB()->h;
                 src.bpp=MAIN_FB()->bpp;
 #if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
-                src.pixels=MAIN_FB()->pix_ai[g_sensor_buff_index_in];
+                src.pixels=MAIN_FB()->pix_ai[g_sensor_buff_index_out];
 #else
                 src.pixels=MAIN_FB()->pix_ai;
 #endif
@@ -97,7 +97,7 @@ void fb_update_jpeg_buffer()
                 src.h=MAIN_FB()->h;
                 src.bpp=MAIN_FB()->bpp;
 #if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
-                src.pixels=MAIN_FB()->pixels[g_sensor_buff_index_in];
+                src.pixels=MAIN_FB()->pixels[g_sensor_buff_index_out];
 #else
                 src.pixels=MAIN_FB()->pixels;
 #endif
