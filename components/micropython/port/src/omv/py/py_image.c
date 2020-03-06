@@ -516,15 +516,12 @@ static mp_obj_t py_image_del(mp_obj_t img_obj)
     image_t* img = (image_t *) py_image_cobj(img_obj);
     if( img->data )
     {
-        if( (MAIN_FB()->pixels != NULL) &&
-            (img->data >= MAIN_FB()->pixels) &&
-            (img->data <  (MAIN_FB()->pixels + MAIN_FB()->w_max * MAIN_FB()->h_max * OMV_INIT_BPP) )
-           )
+        if(is_img_data_in_main_fb(img->data))
         {
            return mp_const_none;
         }
-        if( img->data != MAIN_FB()->pixels )
-            xfree(img->data);
+        xfree(img->data);
+        img->data = NULL;
     }
     return mp_const_none;
 }
@@ -689,7 +686,8 @@ static mp_obj_t py_image_mean_pool(mp_obj_t img_obj, mp_obj_t x_div_obj, mp_obj_
     arg_img->w = out_img.w;
     arg_img->h = out_img.h;
 
-    if (MAIN_FB()->pixels == arg_img->data) {
+    if(is_img_data_in_main_fb(arg_img->data))
+    {
         MAIN_FB()->w = out_img.w;
         MAIN_FB()->h = out_img.h;
     }
@@ -743,8 +741,8 @@ static mp_obj_t py_image_midpoint_pool(size_t n_args, const mp_obj_t *args, mp_m
     imlib_midpoint_pool(arg_img, &out_img, x_div, y_div, bias);
     arg_img->w = out_img.w;
     arg_img->h = out_img.h;
-
-    if (MAIN_FB()->pixels == arg_img->data) {
+    if(is_img_data_in_main_fb(arg_img->data))
+    {
         MAIN_FB()->w = out_img.w;
         MAIN_FB()->h = out_img.h;
     }
@@ -835,7 +833,7 @@ static mp_obj_t py_image_to_bitmap(size_t n_args, const mp_obj_t *args, mp_map_t
         }
     }
 
-    if ((!copy) && (MAIN_FB()->pixels == out.data)) {
+    if ((!copy) && is_img_data_in_main_fb(out.data)) {
         MAIN_FB()->bpp = out.bpp;
     }
 
@@ -888,7 +886,7 @@ static mp_obj_t py_image_to_grayscale(size_t n_args, const mp_obj_t *args, mp_ma
         }
     }
 
-    if ((!copy) && (MAIN_FB()->pixels == out.data)) {
+    if ((!copy) && is_img_data_in_main_fb(out.data)) {
         MAIN_FB()->bpp = out.bpp;
     }
 
@@ -943,7 +941,7 @@ static mp_obj_t py_image_to_rgb565(size_t n_args, const mp_obj_t *args, mp_map_t
         }
     }
 
-    if ((!copy) && (MAIN_FB()->pixels == out.data)) {
+    if ((!copy) && is_img_data_in_main_fb(out.data)) {
         MAIN_FB()->bpp = out.bpp;
     }
 
@@ -1007,7 +1005,7 @@ static mp_obj_t py_image_to_rainbow(size_t n_args, const mp_obj_t *args, mp_map_
         }
     }
 
-    if ((!copy) && (MAIN_FB()->pixels == out.data)) {
+    if ((!copy) && is_img_data_in_main_fb(out.data)) {
         MAIN_FB()->bpp = out.bpp;
     }
 
@@ -1032,7 +1030,7 @@ static mp_obj_t py_image_compress(size_t n_args, const mp_obj_t *args, mp_map_t 
     fb_free();
     fb_alloc_free_till_mark();
 
-    if (MAIN_FB()->pixels == arg_img->data) {
+    if (is_img_data_in_main_fb(arg_img->data)) {
         MAIN_FB()->bpp = arg_img->bpp;
     }
 
@@ -1124,7 +1122,7 @@ static mp_obj_t py_image_compress_for_ide(size_t n_args, const mp_obj_t *args, m
     fb_free();
     fb_alloc_free_till_mark();
 
-    if (MAIN_FB()->pixels == arg_img->data) {
+    if (is_img_data_in_main_fb(arg_img->data)) {
         MAIN_FB()->bpp = arg_img->bpp;
     }
 
@@ -1224,12 +1222,16 @@ static mp_obj_t py_image_copy(size_t n_args, const mp_obj_t *args, mp_map_t *kw_
     image.data = NULL;
 
     if (copy_to_fb) {
-       PY_ASSERT_TRUE_MSG(arg_img->data != MAIN_FB()->pixels, "Cannot copy to fb!");
+       PY_ASSERT_TRUE_MSG(!is_img_data_in_main_fb(arg_img->data), "Cannot copy to fb!");
        PY_ASSERT_TRUE_MSG((image_size(&image) <= OMV_RAW_BUF_SIZE), "FB Overflow!");
        MAIN_FB()->w = image.w;
        MAIN_FB()->h = image.h;
        MAIN_FB()->bpp = image.bpp;
+#if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
+       image.data = MAIN_FB()->pixels[0];//FIXME:
+#else
        image.data = MAIN_FB()->pixels;
+#endif
     } else {
        image.data = xalloc(image_size(&image));
     }
@@ -1664,7 +1666,7 @@ STATIC mp_obj_t py_image_binary(size_t n_args, const mp_obj_t *args, mp_map_t *k
 
     list_free(&arg_thresholds);
 
-    if (arg_to_bitmap && (!arg_copy) && (MAIN_FB()->pixels == out.data)) {
+    if (arg_to_bitmap && (!arg_copy) && is_img_data_in_main_fb(out.data)) {
         MAIN_FB()->bpp = out.bpp;
     }
 
@@ -2002,7 +2004,7 @@ STATIC mp_obj_t py_image_replace(size_t n_args, const mp_obj_t *args, mp_map_t *
 
     fb_alloc_free_till_mark();
 
-    if (MAIN_FB()->pixels == arg_img->data) {
+    if (is_img_data_in_main_fb(arg_img->data)) {
         MAIN_FB()->w = arg_img->w;
         MAIN_FB()->h = arg_img->h;
     }
@@ -6267,7 +6269,11 @@ mp_obj_t py_imagereader_next_frame(size_t n_args, const mp_obj_t *args, mp_map_t
 
     if (copy_to_fb) {
         PY_ASSERT_TRUE_MSG((size <= OMV_RAW_BUF_SIZE), "FB Overflow!");
+#if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
+        image.data = MAIN_FB()->pixels[0];//FIXME:
+#else
         image.data = MAIN_FB()->pixels;
+#endif
         MAIN_FB()->w = image.w;
         MAIN_FB()->h = image.h;
         MAIN_FB()->bpp = image.bpp;
@@ -6444,7 +6450,11 @@ mp_obj_t py_image_load_image(size_t n_args, const mp_obj_t *args, mp_map_t *kw_a
     {
         if(copy_to_fb)
         {
+#if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
+            image.data = MAIN_FB()->pixels[0];//FIXME: use fixed buffer may cause bug when sensor is running!
+#else
             image.data = MAIN_FB()->pixels;
+#endif
         }
         if( mp_obj_is_str_or_bytes(args[0]) )
         {
@@ -6478,7 +6488,11 @@ mp_obj_t py_image_load_image(size_t n_args, const mp_obj_t *args, mp_map_t *kw_a
             MAIN_FB()->w = image.w;
             MAIN_FB()->h = image.h;
             MAIN_FB()->bpp = image.bpp;
+#if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
+            image.data = MAIN_FB()->pixels[0];
+#else
             image.data = MAIN_FB()->pixels;
+#endif
         }
         else
         {

@@ -16,5 +16,11 @@ menu "Components configuration"
 	osource "${PROJECT_PATH}/*/Kconfig"
 endmenu
 
+menu "Others"
+	config LIB_NNCASE_SOURCE_CODE_ENABLE
+		bool "compile nncase source code"
+		default n
+endmenu
+
 
 

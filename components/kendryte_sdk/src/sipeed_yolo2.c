@@ -2,6 +2,7 @@
 #include "sipeed_kpu.h"
 #include <stdlib.h>
 #include <math.h>
+#include "printf.h"
 
 // #include "lcd.h"
 
@@ -29,12 +30,15 @@ int region_layer_init(region_layer_t *rl, void* ctx)
 	uint16_t wi,hi,chi;
 	uint16_t wo,ho,cho;
 	size_t size;
+	int kmodel_type=sipeed_kpu_model_get_type(ctx);
+	
 	
 	if(sipeed_kpu_model_get_input_shape(ctx, &wi, &hi, &chi) != SIPEED_KPU_ERR_NONE)
 	{
 		// mp_printf(&mp_plat_print, "[MAIXPY]rl: first layer not conv layer!\r\n");
 		return -1;
 	}
+	
 	if(sipeed_kpu_model_get_output_shape(ctx, &wo, &ho, &cho) != SIPEED_KPU_ERR_NONE)
 	{
 		// mp_printf(&mp_plat_print, "[MAIXPY]rl: can't fetch last layer!\r\n");
@@ -53,7 +57,9 @@ int region_layer_init(region_layer_t *rl, void* ctx)
     rl->boxes_number = (rl->layer_width * rl->layer_height * rl->anchor_number);
     rl->output_number = (rl->boxes_number * (rl->classes + rl->coords + 1));
     
-	sipeed_kpu_get_output(ctx, 0, &(rl->output), &size);	//module output -> rl output
+	sipeed_kpu_get_output(ctx, 0, &(rl->output), &size);	
+	
+	//module output -> rl output
 	//mp_printf(&mp_plat_print, "size=%ld\r\n",size);
     //rl->scale = output_scale;
     //rl->bias = output_bias;
@@ -99,8 +105,10 @@ int region_layer_init(region_layer_t *rl, void* ctx)
         rl->activate[i] = 1.0 / (1.0 + expf(-(i * rl->scale + rl->bias)));
         rl->softmax[i] = expf(rl->scale * (i - 255));
     }*/
-    for (uint32_t i = 0; i < rl->boxes_number; i++)
-        rl->probs[i] = &(rl->probs_buf[i * (rl->classes + 1)]);
+    for (uint32_t i = 0; i < rl->boxes_number; i++){
+	rl->probs[i] = &(rl->probs_buf[i * (rl->classes + 1)]);}
+	
+	
     return 0;
 malloc_error:
     //free(rl->output);

@@ -120,6 +120,7 @@ typedef struct _sensor {
     uint32_t hw_flags;          // Hardware flags (clock polarities/hw capabilities)
     bool     reset_set;         // reset called
     bool     size_set;          // set_framesie called
+    bool     double_buff;
 
     uint32_t vsync_pin;         // VSYNC GPIO output pin.
     polarity_t pwdn_pol; // PWDN polarity (TODO move to hw_flags)
@@ -175,7 +176,7 @@ int binocular_sensor_reset(mp_int_t freq);
 void sensor_init0();
 
 // Reset the sensor to its default state.
-int sensor_reset(mp_int_t freq, bool default_freq);
+int sensor_reset(mp_int_t freq, bool default_freq, bool set_regs, bool double_buff);
 
 // destroy resources created by sensor
 void sensor_deinit();
@@ -196,10 +197,10 @@ int sensor_read_reg(uint8_t reg_addr);
 int sensor_write_reg(uint8_t reg_addr, uint16_t reg_data);
 
 // Set the sensor pixel format.
-int sensor_set_pixformat(pixformat_t pixformat);
+int sensor_set_pixformat(pixformat_t pixformat, bool set_regs);
 
 // Set the sensor frame size.
-int sensor_set_framesize(framesize_t framesize);
+int sensor_set_framesize(framesize_t framesize, bool set_regs);
 
 // Set the sensor frame rate.
 int sensor_set_framerate(framerate_t framerate);
@@ -263,6 +264,8 @@ int sensor_set_lens_correction(int enable, int radi, int coef);
 int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_cb);
 
 int sensor_run(int enable);
+
+bool is_img_data_in_main_fb(uint8_t* data);
 
 #endif /* __SENSOR_H__ */
 

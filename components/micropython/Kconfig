@@ -51,6 +51,9 @@ menu "Micropython configurations"
 		config MAIXPY_OMV_CONV_YUV_FAST
 			bool "Add YUV convert table, close this will reduce code but lower speed"
 			default y
+		config MAIXPY_OMV_DOUBLE_BUFF
+			bool "Set double buffer for sensor(camera)"
+			default y
 		
 		config MAIXPY_MIC_ARRAY_ENABLE
 			select MIC_ARRAY_ENABLE

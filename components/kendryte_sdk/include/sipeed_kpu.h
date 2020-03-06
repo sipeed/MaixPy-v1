@@ -15,6 +15,10 @@ typedef enum{
     SIPEED_KPU_ERR_RUN_MODEL,
     SIPEED_KPU_ERR_MODELS_FULL,
     SIPEED_KPU_ERR_PERMITION,
+	SIPEED_KPU_ERR_IDX_OUTRANGE,
+	SIPEED_KPU_ERR_SIZE_NOTMATCH,
+	SIPEED_KPU_ERR_OUTPUTS_NODONE,
+	SIPEED_KPU_ERR_NOT_IMPLEMENT,
     SIPEED_KPU_ERR_UNKNOWN,
 } sipeed_kpu_err_t;
 
@@ -34,9 +38,14 @@ int sipeed_kpu_model_get_layer_num(void* ctx);
 int sipeed_kpu_model_get_layer_size(void* ctx, uint32_t index);
 char sipeed_kpu_model_getdtype_from_type(kpu_model_layer_type_t type);
 char* sipeed_kpu_model_getname_from_type(kpu_model_layer_type_t type);
-
+int sipeed_kpu_model_get_type(void* ctx);
 void sipeed_kpu_face_encode(float* feature, int8_t* compress_feature, uint32_t len);
 float sipeed_kpu_face_compare(int8_t* feature0, int8_t* feature1, uint32_t len);
+//Add for kmodel V4
+sipeed_kpu_err_t sipeed_kpu_set_outputs_shape(void* ctx, uint16_t idx, uint16_t w, uint16_t h, uint16_t ch);
+sipeed_kpu_err_t sipeed_kpu_get_outputs_shape(void* ctx, uint16_t idx, uint16_t* w, uint16_t* h, uint16_t* ch);
+//Add for Flash loader
+sipeed_kpu_err_t sipeed_kpu_model_load_flash(void** ctx, uint32_t flash_addr, uint32_t is_dual_buf, uint32_t batch_size, uint32_t spi_speed, uint32_t* size);
 
 
 /**

@@ -26,5 +26,15 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_OBJDUMP} -S ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.elf > ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.txt
         )
 
+## copy libs
+## libnncase.a
+if(CONFIG_LIB_NNCASE_SOURCE_CODE_ENABLE)
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                COMMAND cp ${CMAKE_BINARY_DIR}/nncase/libnncase.a ${SDK_PATH}/components/kendryte_sdk/libs/
+                COMMENT "======== copy libnncase.a ======="
+        )
+endif()
+
+
 
 
