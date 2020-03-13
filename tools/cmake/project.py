@@ -126,6 +126,7 @@ elif project_args.cmd == "build" or project_args.cmd == "rebuild":
 
     time_end = time.time()
     print("==================================")
+    print("time: {}".format(time.asctime(time.localtime())))
     print("build end, time last:%.2fs" %(time_end-time_start))
     print("==================================")
 # clean

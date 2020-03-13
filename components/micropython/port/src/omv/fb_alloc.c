@@ -11,6 +11,8 @@
 #include "framebuffer.h"
 #include "omv_boardconfig.h"
 #include "stdlib.h"
+#include "printf.h"
+#include "sipeed_mem.h"
 
 
 typedef struct 
@@ -52,7 +54,8 @@ void fb_alloc_init0()
 
 uint64_t fb_avail()
 {
-    return OMV_FB_ALLOC_SIZE;
+    size_t size = get_free_heap_size2();
+    return  size > OMV_FB_ALLOC_SIZE ? OMV_FB_ALLOC_SIZE : size;
 }
 
 void fb_alloc_mark()
@@ -89,7 +92,10 @@ void *fb_alloc(uint64_t size)
     size=((size+32-1)/32)*32;//TODO:
     void* p = malloc(size);
     if(!p)
+    {
+        printk("fb alloc %d fail,errno:%d\r\n", size);
         fb_alloc_fail();
+    }
 
     for(i=0; i<FB_MAX_ALLOC_TIMES; ++i)
     {

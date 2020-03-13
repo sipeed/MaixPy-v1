@@ -38,6 +38,7 @@
 #include "syscalls.h"
 #include "printf.h"
 #include "sleep.h"
+#include "sipeed_mem.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1732,7 +1733,7 @@ STATIC mp_obj_t py_kpu_memtest(void)
 		}
 	}
 	mp_printf(&mp_plat_print, "###free gc heap memory : %d KB\r\n", mem0/1024); 
-	mp_printf(&mp_plat_print, "###free sys heap memory: %ld KB\r\n",  get_free_heap_size()/1024);
+	mp_printf(&mp_plat_print, "###free sys heap memory: %ld KB\r\n",  get_free_heap_size2()/1024);
 	return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_kpu_memtest_obj, py_kpu_memtest);

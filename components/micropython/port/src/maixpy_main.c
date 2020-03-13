@@ -52,6 +52,7 @@
 #include "syslog.h"
 #include "atomic.h"
 #include "entry.h"
+#include "sipeed_mem.h"
 /*****peripheral****/
 #include "fpioa.h"
 #include "gpio.h"
@@ -364,6 +365,7 @@ void mp_task(
 #endif
 
 soft_reset:
+		sipeed_reset_sys_mem();
 		// initialise the stack pointer for the main thread
 		mp_stack_set_top((void *)(uint64_t)mp_main_stack_top);
 		//mp_stack_set_limit(MP_TASK_STACK_SIZE - 1024);//Not open MICROPY_STACK_CHECK
