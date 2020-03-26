@@ -45,6 +45,14 @@ int point_quadrance(point_t *ptr0, point_t *ptr1)
     return (delta_x * delta_x) + (delta_y * delta_y);
 }
 
+void point_rotate(int x, int y, float r, int center_x, int center_y, int16_t *new_x, int16_t *new_y)
+{
+    x -= center_x;
+    y -= center_y;
+    *new_x = (x * cosf(r)) - (y * sinf(r)) + center_x;
+    *new_y = (x * sinf(r)) + (y * cosf(r)) + center_y;
+}
+
 ////////////////
 // Line Stuff //
 ////////////////
