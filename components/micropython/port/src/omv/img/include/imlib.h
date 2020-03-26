@@ -1217,6 +1217,7 @@ void mjpeg_close(mp_obj_t fp, uint32_t *frames, uint32_t *bytes, float fps);
 point_t *point_alloc(int16_t x, int16_t y);
 bool point_equal(point_t *p1, point_t *p2);
 float point_distance(point_t *p1, point_t *p2);
+void point_rotate(int x, int y, float r, int center_x, int center_y, int16_t *new_x, int16_t *new_y);
 
 /* Rectangle functions */
 rectangle_t *rectangle_alloc(int16_t x, int16_t y, int16_t w, int16_t h);
@@ -1310,7 +1311,9 @@ void imlib_draw_line(image_t *img, int x0, int y0, int x1, int y1, int c, int th
 void imlib_draw_rectangle(image_t *img, int rx, int ry, int rw, int rh, int c, int thickness, bool fill);
 void imlib_draw_circle(image_t *img, int cx, int cy, int r, int c, int thickness, bool fill);
 void imlib_draw_ellipse(image_t *img, int cx, int cy, int rx, int ry, int rotation, int c, int thickness, bool fill);
-void imlib_draw_string(image_t *img, int x_off, int y_off, const char *str, int c, float scale, int x_spacing, int y_spacing, bool mono_space);
+void imlib_draw_string(image_t *img, int x_off, int y_off, const char *str, int c, float scale, int x_spacing, int y_spacing, bool mono_space,
+                       int char_rotation, bool char_hmirror, bool char_vflip, int string_rotation, bool string_hmirror, bool string_vflip);
+
 void imlib_draw_image(image_t *img, image_t *other, int x_off, int y_off, float x_scale, float y_scale, float alpha, image_t *mask);
 void imlib_flood_fill(image_t *img, int x, int y,
                       float seed_threshold, float floating_threshold,
