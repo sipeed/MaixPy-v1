@@ -1015,10 +1015,11 @@ static int gc0328_set_hmirror(sensor_t *sensor, int enable)
 {
     uint8_t data;
     cambus_readb(GC0328_ADDR, 0x17, &data);
+	data = data & 0xFC;
     if(enable){
-        data = data | 0x01;
+        data = data | 0x01 | (sensor->vflip ? 0x02 : 0x00);
     }else{
-        data = data & 0xfe;
+        data = data | (sensor->vflip ? 0x02 : 0x00);
     }
     return cambus_writeb(GC0328_ADDR, 0x17, data);
 }
@@ -1027,10 +1028,11 @@ static int gc0328_set_vflip(sensor_t *sensor, int enable)
 {
     uint8_t data;
     cambus_readb(GC0328_ADDR, 0x17, &data);
+	data = data & 0xFC;
     if(enable){
-        data = data | 0x02;
+        data = data | 0x02 | (sensor->hmirror ? 0x01 : 0x00);
     }else{
-        data = data & 0xfd;
+        data = data | (sensor->hmirror ? 0x01 : 0x00);
     }
     return cambus_writeb(GC0328_ADDR, 0x17, data);
 }

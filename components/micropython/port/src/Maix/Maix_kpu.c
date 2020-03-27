@@ -1299,7 +1299,7 @@ STATIC mp_obj_t py_kpu_forward(size_t n_args, const mp_obj_t *pos_args, mp_map_t
 		py_kpu_net_obj_t *kpu_net = MP_OBJ_TO_PTR(args[ARG_kpu_net].u_obj);
 		image_t *arg_img = py_image_cobj(args[ARG_img].u_obj);
         sipeed_kpu_err_t ret;
-		
+
 		int out_index = args[ARG_out_index].u_int;		//which output you want, defaultly index 0
 		uint16_t w0=0;uint16_t h0=0;uint16_t ch0=0;
 		int kmodel_type=sipeed_kpu_model_get_type(kpu_net->kmodel_ctx);
@@ -1338,7 +1338,7 @@ STATIC mp_obj_t py_kpu_forward(size_t n_args, const mp_obj_t *pos_args, mp_map_t
 			printf("%c", val>0?'.':' ');*/
 		};
         g_ai_done_flag = 0;
-		
+
 		/*************************************************************************************/
 		if(abs(kmodel_type)==3) {
 			uint8_t* features;

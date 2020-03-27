@@ -442,6 +442,10 @@ int sensor_init_irq()
 
 int sensor_reset(mp_int_t freq, bool default_freq, bool set_regs, bool double_buff)
 {
+#if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
+    g_sensor_buff_index_out = 0;
+    g_sensor_buff_index_in = 0;
+#endif
     sensor.reset_set = false;
     sensor.vflip = false;
     sensor.hmirror = false;
@@ -1251,7 +1255,7 @@ int sensor_flush(void)
 	return 0;
 }
 
-int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_cb)
+int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_cb, bool update_jb)
 {	
     if(!sensor->reset_set || !sensor->size_set)
         return -2;
@@ -1260,21 +1264,24 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
     // Compress the framebuffer for the IDE preview, only if it's not the first frame,
     // the framebuffer is enabled and the image sensor does not support JPEG encoding.
     // Note: This doesn't run unless the IDE is connected and the framebuffer is enabled.
-#if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
-    if(sensor->double_buff)
+    if(update_jb)
     {
-        if( !( (g_sensor_buff_index_in == g_sensor_buff_index_out) && !buff_ready ) )
-        {
+        #if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
+            if(sensor->double_buff)
+            {
+                if( !( (g_sensor_buff_index_in == g_sensor_buff_index_out) && !buff_ready ) )
+                {
+                    fb_update_jpeg_buffer();
+                }
+            }
+            else
+            {
+                fb_update_jpeg_buffer();
+            }
+        #else
             fb_update_jpeg_buffer();
-        }
+        #endif
     }
-    else
-    {
-        fb_update_jpeg_buffer();
-    }
-#else
-    fb_update_jpeg_buffer();
-#endif
 
     // Make sure the raw frame fits into the FB. If it doesn't it will be cropped if
     // the format is set to GS, otherwise the pixel format will be swicthed to BAYER.
@@ -1474,7 +1481,7 @@ bool is_img_data_in_main_fb(uint8_t* data)
 #if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
     uint8_t buff_size = SENSOR_BUFFER_NUM; 
     if(sensor.double_buff)
-        buff_size = 1;
+        buff_size = 2;
     for(uint8_t i=0; i<buff_size; ++i)
     {
         if( (MAIN_FB()->pixels[i] != NULL) &&
