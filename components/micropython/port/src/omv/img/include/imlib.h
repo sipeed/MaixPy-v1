@@ -22,6 +22,7 @@
 #include "collections.h"
 #include "imlib_config.h"
 #include "py/obj.h"
+#include "imdefs.h"
 
 #define IM_LOG2_2(x)    (((x) &                0x2ULL) ? ( 2                        ) :             1) // NO ({ ... }) !
 #define IM_LOG2_4(x)    (((x) &                0xCULL) ? ( 2 +  IM_LOG2_2((x) >>  2)) :  IM_LOG2_2(x)) // NO ({ ... }) !
@@ -407,16 +408,6 @@ typedef enum image_bpp
 }
 image_bpp_t;
 
-typedef struct image {
-    int w;
-    int h;
-    int bpp;
-    union {
-        uint8_t *pixels;
-        uint8_t *data;
-    };
-	uint8_t *pix_ai;	//for MAIX AI speed up
-} __attribute__((aligned(8)))image_t;
 
 void image_init(image_t *ptr, int w, int h, int bpp, void *data);
 void image_copy(image_t *dst, image_t *src);

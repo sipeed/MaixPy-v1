@@ -39,21 +39,10 @@
 #include "printf.h"
 #include "sleep.h"
 #include "sipeed_mem.h"
+#include "Maix_kpu.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 
-typedef struct py_kpu_net_obj
-{
-    mp_obj_base_t base;
-    
-    void*           kmodel_ctx;  //sipeed_model_ctx_t
-    mp_obj_t        model_size;
-    mp_obj_t        model_addr;
-    mp_obj_t        model_path;
-    mp_obj_t        max_layers;
-    mp_obj_t        net_args;   // for yolo2
-    mp_obj_t        net_deinit; // for yolo2
-} __attribute__((aligned(8))) py_kpu_net_obj_t;
 
 typedef struct{
     uint16_t index;
@@ -166,7 +155,7 @@ static const mp_rom_map_elem_t py_kpu_net_dict_table[] = {
 
 static MP_DEFINE_CONST_DICT(py_kpu_net_dict, py_kpu_net_dict_table);
 
-static const mp_obj_type_t py_kpu_net_obj_type = {
+const mp_obj_type_t py_kpu_net_obj_type = {
     { &mp_type_type },
     .name  = MP_QSTR_kpu_net,
     .print = py_kpu_net_obj_print,
@@ -1793,6 +1782,7 @@ static const mp_map_elem_t globals_dict_table[] = {
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_memtest),                   	(mp_obj_t)&py_kpu_memtest_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_face_encode),                 (mp_obj_t)&py_kpu_face_encode_obj },
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_face_compare),                (mp_obj_t)&py_kpu_face_compare_obj },
+    { MP_ROM_QSTR(MP_QSTR_classifier),                      MP_ROM_PTR(&Maix_kpu_classifier_type) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(globals_dict, globals_dict_table);

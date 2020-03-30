@@ -19,8 +19,6 @@
 
 #include "modMaix.h"
 
-#if MICROPY_PY_MACHINE
-
 STATIC const mp_rom_map_elem_t maix_module_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_machine) },
     { MP_ROM_QSTR(MP_QSTR_FPIOA), MP_ROM_PTR(&Maix_fpioa_type) },
@@ -45,4 +43,3 @@ const mp_obj_module_t maix_module = {
     .globals = (mp_obj_dict_t*)&maix_module_globals,
 };
 
-#endif // MICROPY_PY_MACHINE
