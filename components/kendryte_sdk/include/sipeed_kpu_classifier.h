@@ -35,6 +35,10 @@ int maix_kpu_classifier_add_sample_img(void* obj, image_t* img);
 int maix_kpu_classifier_del(void** obj);
 int maix_kpu_classifier_train(void* obj);
 int maix_kpu_classifier_predict(void* obj, image_t* img, float* min_distance);
+int maix_kpu_classifier_rm_class_img(void* obj);
+int maix_kpu_classifier_rm_sample_img(void* obj);
+int maix_kpu_classifier_save(void* obj, const char* path);
+int maix_kpu_classifier_load(void** obj, const char* path, kpu_model_info_t* kmodel, int* class_num, int* sample_num);
 
 #ifdef __cplusplus
 }

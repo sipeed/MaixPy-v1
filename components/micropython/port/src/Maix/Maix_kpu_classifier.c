@@ -39,8 +39,22 @@ STATIC int add_class_img(maix_kpu_classifier_t* self, image_t* img){
     return ret;
 }
 
+STATIC int rm_class_img(maix_kpu_classifier_t* self){
+    int ret = maix_kpu_classifier_rm_class_img(self->obj);
+    if(ret < 0)
+        mp_raise_OSError(-ret);
+    return ret;
+}
+
 STATIC int add_sample_img(maix_kpu_classifier_t* self, image_t* img){
     int ret = maix_kpu_classifier_add_sample_img(self->obj, img);
+    if(ret < 0)
+        mp_raise_OSError(-ret);
+    return ret;
+}
+
+STATIC int rm_sample_img(maix_kpu_classifier_t* self){
+    int ret = maix_kpu_classifier_rm_sample_img(self->obj);
     if(ret < 0)
         mp_raise_OSError(-ret);
     return ret;
@@ -65,6 +79,28 @@ STATIC int predict(maix_kpu_classifier_t* self, image_t* img, float* min_distanc
     return ret;
 }
 
+
+STATIC void save_trained_model(maix_kpu_classifier_t* self, const char* path){
+    int ret = maix_kpu_classifier_save(self->obj, path);
+    if(ret < 0)
+        mp_raise_OSError(-ret);
+}
+
+STATIC void load_trained_model(maix_kpu_classifier_t* self, const char* path, py_kpu_net_obj_t* model, int* class_num, int* sample_num){
+    self->model = m_new(kpu_model_info_t, 1);
+    self->kpu_model = model;
+    self->model->kmodel_ctx = model->kmodel_ctx;
+    self->model->max_layers = model->max_layers;
+    self->model->model_addr = model->model_addr;
+    if(model->model_path == mp_const_none)
+        self->model->model_path = NULL;
+    else
+        self->model->model_path = mp_obj_str_get_str(model->model_path);
+    self->model->model_size = model->model_size;
+    int ret = maix_kpu_classifier_load(&self->obj, path, self->model, class_num, sample_num);
+    if(ret < 0)
+        mp_raise_OSError(-ret);
+}
 
 mp_obj_t maix_kpu_classifier_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     maix_kpu_classifier_t* self = m_new_obj_with_finaliser(maix_kpu_classifier_t);
@@ -94,6 +130,18 @@ mp_obj_t classifier_add_class_img(mp_obj_t self_in, mp_obj_t img_in){
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(classifier_add_class_img_obj, classifier_add_class_img);
 
 
+mp_obj_t classifier_rm_class_img(mp_obj_t self_in){
+    if(mp_obj_get_type(self_in) != &Maix_kpu_classifier_type){
+        mp_raise_ValueError("must be obj");
+    }
+    maix_kpu_classifier_t* self = (maix_kpu_classifier_t*)self_in;
+    int ret_index = rm_class_img(self);
+    return mp_obj_new_int(ret_index);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(classifier_rm_class_img_obj, classifier_rm_class_img);
+
+
 mp_obj_t classifier_add_sample_img(mp_obj_t self_in, mp_obj_t img_in){
     if(mp_obj_get_type(self_in) != &Maix_kpu_classifier_type){
         mp_raise_ValueError("must be obj");
@@ -105,6 +153,17 @@ mp_obj_t classifier_add_sample_img(mp_obj_t self_in, mp_obj_t img_in){
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(classifier_add_sample_img_obj, classifier_add_sample_img);
+
+mp_obj_t classifier_rm_sample_img(mp_obj_t self_in){
+    if(mp_obj_get_type(self_in) != &Maix_kpu_classifier_type){
+        mp_raise_ValueError("must be obj");
+    }
+    maix_kpu_classifier_t* self = (maix_kpu_classifier_t*)self_in;
+    int ret_index = rm_sample_img(self);
+    return mp_obj_new_int(ret_index);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(classifier_rm_sample_img_obj, classifier_rm_sample_img);
 
 mp_obj_t classifier_del(mp_obj_t self_in){
     if(mp_obj_get_type(self_in) != &Maix_kpu_classifier_type){
@@ -145,13 +204,51 @@ mp_obj_t classifier_predict(mp_obj_t self_in, mp_obj_t img_in){
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(classifier_predict_obj, classifier_predict);
 
+
+mp_obj_t classifier_save(mp_obj_t self_in, mp_obj_t path_in){
+    if(mp_obj_get_type(self_in) != &Maix_kpu_classifier_type){
+        mp_raise_ValueError("must be obj");
+    }
+    maix_kpu_classifier_t* self = (maix_kpu_classifier_t*)self_in;
+    const char* path = mp_obj_str_get_str(path_in);
+    save_trained_model(self, path);
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(classifier_save_obj, classifier_save);
+
+
+mp_obj_t classifier_load(mp_obj_t model_in, mp_obj_t path_in){
+    if(mp_obj_get_type(model_in) == &Maix_kpu_classifier_type){
+        mp_raise_ValueError("must be class");
+    }
+    if(mp_obj_get_type(model_in) != &py_kpu_net_obj_type){
+        mp_raise_ValueError("must be model");
+    }
+    if(mp_obj_get_type(path_in) != &mp_type_str){
+        mp_raise_ValueError("path err");
+    }
+    maix_kpu_classifier_t* self = m_new_obj_with_finaliser(maix_kpu_classifier_t);
+    self->base.type = &Maix_kpu_classifier_type;
+    self->obj = NULL;
+    int class_num = 0, sample_num = 0;
+    load_trained_model(self, mp_obj_str_get_str(path_in), (py_kpu_net_obj_t*)model_in, &class_num, &sample_num);
+    mp_obj_t* items[3] = {(mp_obj_t)self, mp_obj_new_int(class_num), mp_obj_new_int(sample_num)};
+    return mp_obj_new_tuple(3, items);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(classifier_load_obj, classifier_load);
+    
+    
 STATIC const mp_map_elem_t locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__),        MP_OBJ_NEW_QSTR(MP_QSTR_classifier) },
-    { MP_ROM_QSTR(MP_QSTR_add_class_img),    (mp_obj_t)(&classifier_add_class_img_obj) },
-    { MP_ROM_QSTR(MP_QSTR_add_sample_img),    (mp_obj_t)(&classifier_add_sample_img_obj) },
-    { MP_ROM_QSTR(MP_QSTR_train),    (mp_obj_t)(&classifier_train_obj) },
-    { MP_ROM_QSTR(MP_QSTR_predict),    (mp_obj_t)(&classifier_predict_obj) },
-    { MP_ROM_QSTR(MP_QSTR___del__),    (mp_obj_t)(&classifier_del_obj) },
+    { MP_ROM_QSTR(MP_QSTR_add_class_img),   (mp_obj_t)(&classifier_add_class_img_obj) },
+    { MP_ROM_QSTR(MP_QSTR_add_sample_img),  (mp_obj_t)(&classifier_add_sample_img_obj) },
+    { MP_ROM_QSTR(MP_QSTR_train),           (mp_obj_t)(&classifier_train_obj) },
+    { MP_ROM_QSTR(MP_QSTR_predict),         (mp_obj_t)(&classifier_predict_obj) },
+    { MP_ROM_QSTR(MP_QSTR___del__),         (mp_obj_t)(&classifier_del_obj) },
+    { MP_ROM_QSTR(MP_QSTR_rm_class_img),    (mp_obj_t)(&classifier_rm_class_img_obj) },
+    { MP_ROM_QSTR(MP_QSTR_rm_sample_img),   (mp_obj_t)(&classifier_rm_sample_img_obj) },
+    { MP_ROM_QSTR(MP_QSTR_save),            (mp_obj_t)(&classifier_save_obj) },
+    { MP_ROM_QSTR(MP_QSTR_load),            (mp_obj_t)(&classifier_load_obj) },
 };
 STATIC MP_DEFINE_CONST_DICT(locals_dict, locals_dict_table);
 
