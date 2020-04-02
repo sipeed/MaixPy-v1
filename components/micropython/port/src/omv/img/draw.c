@@ -412,9 +412,19 @@ void imlib_draw_image(image_t *img, image_t *other, int x_off, int y_off, float 
             int other_x = fast_roundf(x * over_xscale);
 
             if ((!mask) || image_get_mask_pixel(mask, other_x, other_y)) {
-                int pixel = safe_map_pixel(img, other, imlib_get_pixel(other, other_x, other_y));
-                imlib_set_pixel(img, x_off + x, y_off + y, (alpha == 1) ? pixel :
-                                (pixel * alpha) + (imlib_get_pixel(img, x_off + x, y_off + y) * beta));
+                int pixel = imlib_get_pixel(other, other_x, other_y);
+		if(alpha == 1)
+			imlib_set_pixel(img, x_off + x, y_off + y, pixel);
+		else
+		{
+			int pixel2=imlib_get_pixel(img, x_off + x, y_off + y);
+			uint16_t r=(uint16_t)(((float)(uint16_t)COLOR_RGB565_TO_R8(pixel))*alpha+((float)(uint16_t)COLOR_RGB565_TO_R8(pixel2))*beta);
+			uint16_t g=(uint16_t)(((float)(uint16_t)COLOR_RGB565_TO_G8(pixel))*alpha+((float)(uint16_t)COLOR_RGB565_TO_G8(pixel2))*beta);
+			uint16_t b=(uint16_t)(((float)(uint16_t)COLOR_RGB565_TO_B8(pixel))*alpha+((float)(uint16_t)COLOR_RGB565_TO_B8(pixel2))*beta);
+            uint16_t c=COLOR_R8_G8_B8_TO_RGB565(r>255?255:r,g>255?255:g,b>255?255:b);
+			imlib_set_pixel(img, x_off + x, y_off + y,c);
+
+		}
             }
         }
     }
