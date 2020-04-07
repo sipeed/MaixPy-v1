@@ -257,11 +257,11 @@ STATIC void machine_hw_spi_init(mp_obj_base_t *self_in, size_t n_args, const mp_
     cs[1] = check_pin(args[ARG_cs1].u_obj);
     cs[2] = check_pin(args[ARG_cs2].u_obj);
     cs[3] = check_pin(args[ARG_cs3].u_obj);
-    // if( sck >=0 && (cs[0]>=0 || cs[1]>=0 || cs[2]>=0 || cs[3]>=0) ) // sck and cs set
-    // {
-    //     valid = true;
-    //     is_set_fpioa = true;
-    // }
+    if( sck >=0 || (cs[0]>=0 || cs[1]>=0 || cs[2]>=0 || cs[3]>=0) ) // sck and cs set
+    {
+        // valid = true;
+        is_set_fpioa = true;
+    }
     // if( sck < 0 && cs[0]<0 && cs[1]<0 && cs[2]<0 && cs[3]<0 ) // not set
     //     valid = true; 
     // if(!valid)
