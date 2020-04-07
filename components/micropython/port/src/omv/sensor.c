@@ -1406,8 +1406,8 @@ int sensor_snapshot(sensor_t *sensor, image_t *image, streaming_cb_t streaming_c
         if(sensor->chip_id == OV7740_ID && sensor->hmirror)
         {
             uint16_t temp;
-            uint32_t width = resolution[sensor->framesize][0];
-            uint32_t height = resolution[sensor->framesize][1];
+            uint32_t width = image->w;
+            uint32_t height = image->h;
             uint16_t* p;
             uint32_t temp_addr1, temp_addr2, temp_addr3;
             if(sensor->pixformat == PIXFORMAT_GRAYSCALE)
