@@ -394,7 +394,7 @@ STATIC void machine_uart_print(const mp_print_t *print, mp_obj_t self_in, mp_pri
     machine_uart_obj_t *self = MP_OBJ_TO_PTR(self_in);
     //uart_get_baudrate(self->uart_num, &baudrate);
     mp_printf(print, "[MAIXPY]UART%d:( baudrate=%u, bits=%u, parity=%s, stop=%s)",
-        self->uart_num,self->baudrate, self->bitwidth, _parity_name[self->parity],
+        self->uart_num+1,self->baudrate, self->bitwidth, _parity_name[self->parity],
         _stop_name[self->stop]);
 }
 
