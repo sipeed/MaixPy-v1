@@ -5687,7 +5687,7 @@ static mp_obj_t py_image_pix_to_ai(mp_obj_t img_obj)
 	{	
 		uint8_t* out = img->pix_ai;
 		if(out == NULL) {
-			out = xalloc(w*h*3);	//TODO: check 128bit align
+			out = xalloc( ( (w+63)&(~0x3F) ) * h*3); // 64B align for conv function	//TODO: check 128bit align
 			img->pix_ai = out;	
 		}
 		uint8_t* r = out;
