@@ -33,7 +33,30 @@ if ide:
     lcd.init(color=lcd.PINK)
     repl = UART.repl_uart()
     repl.init(1500000, 8, None, 1, read_buf_len=2048, ide=True, from_ide=False)
-    sys.exit()    
+    sys.exit()
+
+
+# MaixCube PMU AXP173
+from machine import I2C
+i2c_bus = I2C(I2C.I2C0, freq=400000, scl=30, sda=31)
+axp173_addr = 0x34
+dev_list = i2c_bus.scan()
+
+if axp173_addr in dev_list:
+    # print("I2C:" + str(i2c_bus.scan()))
+    i2c_bus.writeto_mem(axp173_addr, 0x46, 0xFF)  # Clear the interrupts
+    i2c_bus.writeto_mem(axp173_addr, 0x33, 0xC1)  # set target voltage and current of battery(axp173 datasheet PG.)
+
+    # REG 10H: EXTEN & DC-DC2 control
+    reg = (i2c_bus.readfrom_mem(axp173_addr, 0x10, 1))[0] # read reg value
+    i2c_bus.writeto_mem(axp173_addr, 0x10, reg & 0xFC)
+    del reg
+
+del dev_list
+del axp173_addr
+del i2c_bus
+del I2C
+
 
 import gc
 import machine
