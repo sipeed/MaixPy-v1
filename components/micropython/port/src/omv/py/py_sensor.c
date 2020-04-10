@@ -17,6 +17,7 @@
 #include "py_helper.h"
 #include "framebuffer.h"
 #include "mphalport.h"
+#include "global_config.h"
 
 extern sensor_t sensor;
 
@@ -509,6 +510,16 @@ static mp_obj_t py_sensor_read_reg(mp_obj_t addr) {
    return mp_obj_new_int(sensor_read_reg(mp_obj_get_int(addr)));
 }
 
+#if  !defined(OMV_MINIMUM)|| CONFIG_MAIXPY_IDE_SUPPORT
+static mp_obj_t py_sensor_set_jpeg_buff_quality(mp_obj_t quality) {
+    if(!mp_obj_is_int(quality)){
+        mp_raise_ValueError("must be int");
+    }
+    JPEG_FB()->quality = mp_obj_get_int(quality);
+    return mp_const_none;
+}
+#endif
+
 //static void py_sensor_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
 //    mp_printf(print, "<Sensor MID:0x%.2X%.2X PID:0x%.2X VER:0x%.2X>",
 //            sensor.id.MIDH, sensor.id.MIDL, sensor.id.PID, sensor.id.VER);
@@ -551,6 +562,9 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_3(py_sensor_set_lens_correction_obj, py_sensor_se
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_run_obj,    py_sensor_run);
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(py_sensor_write_reg_obj,           py_sensor_write_reg);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_read_reg_obj,            py_sensor_read_reg);
+#if  !defined(OMV_MINIMUM)|| CONFIG_MAIXPY_IDE_SUPPORT
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_sensor_set_jpeg_buff_quality_obj, py_sensor_set_jpeg_buff_quality);
+#endif
 
 STATIC const mp_map_elem_t globals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__),    MP_OBJ_NEW_QSTR(MP_QSTR_sensor) },
@@ -641,6 +655,9 @@ STATIC const mp_map_elem_t globals_dict_table[] = {
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_flush),    (mp_obj_t)&py_sensor_flush_obj },
    { MP_OBJ_NEW_QSTR(MP_QSTR___write_reg),         (mp_obj_t)&py_sensor_write_reg_obj },
    { MP_OBJ_NEW_QSTR(MP_QSTR___read_reg),          (mp_obj_t)&py_sensor_read_reg_obj },
+#if  !defined(OMV_MINIMUM)|| CONFIG_MAIXPY_IDE_SUPPORT
+    { MP_OBJ_NEW_QSTR(MP_QSTR_set_jb_quality),          (mp_obj_t)&py_sensor_set_jpeg_buff_quality_obj },
+#endif
 };
 
 STATIC MP_DEFINE_CONST_DICT(globals_dict, globals_dict_table);
