@@ -471,8 +471,6 @@ void *pvPortMalloc(size_t xWantedSize)
 	void* p = NULL;
 	taskENTER_CRITICAL();
 	p = malloc(xWantedSize);
-	#include "printf.h"
-	printk("malloc");
 	(void)taskEXIT_CRITICAL();
 	return p;
 }

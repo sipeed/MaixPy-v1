@@ -17,6 +17,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+void * __dso_handle = 0 ;
+
 int core1_function(void *ctx)
 {
     uint64_t core = current_coreid();
