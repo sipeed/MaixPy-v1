@@ -61,15 +61,17 @@ if(CONFIG_COMPONENT_KENDRYTE_SDK_ENABLE)
         list(APPEND ADD_STATIC_LIB "libs/lib_mic.a")
     endif()
     list(APPEND ADD_STATIC_LIB "libs/lib_sipeed_kpu.a")
-    if(CONFIG_LIB_NNCASE_SOURCE_CODE_ENABLE)
-        message("compile nncase source code")
-    else()
-        message("add nncase static lib")
-        # xtl options
-        list(APPEND ADD_DEFINITIONS -DTCB_SPAN_NO_EXCEPTIONS -DTCB_SPAN_NO_CONTRACT_CHECKING)
-        # nncase options
-        list(APPEND ADD_DEFINITIONS -DNNCASE_TARGET=k210)
-        list(APPEND ADD_STATIC_LIB "libs/libnncase.a")
+    if(CONFIG_MICROPYTHON_KMODEL_V4_SUPPORT)
+        if(CONFIG_LIB_NNCASE_SOURCE_CODE_ENABLE)
+            message("compile nncase source code")
+        else()
+            message("add nncase static lib")
+            # xtl options
+            list(APPEND ADD_DEFINITIONS -DTCB_SPAN_NO_EXCEPTIONS -DTCB_SPAN_NO_CONTRACT_CHECKING)
+            # nncase options
+            list(APPEND ADD_DEFINITIONS -DNNCASE_TARGET=k210)
+            list(APPEND ADD_STATIC_LIB "libs/libnncase.a")
+        endif()
     endif()
     ###############################################
 
