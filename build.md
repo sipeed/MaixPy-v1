@@ -1,7 +1,7 @@
 Build Maixpy from source code
 =========
 
-Only support Linux now! not test on Windows or macOS
+Only support Linux(recommend) and macOS
 
 ## Get source code
 
@@ -36,6 +36,15 @@ sudo apt install python3 python3-pip build-essential cmake
 sudo pip3 install -r requirements.txt
 
 ```
+
+If macOS:
+* Install cmake by brew or downlaod dmg file from [cmake official website](https://cmake.org/download/)
+* Ensure command `cmake --version` can be executed in terminal, in macOS maybe you need to add cmake bin dir to `PATH` in `~/.bashrc` or `~/.zshrc` like:
+```
+export PATH=$PATH:/Applications/CMake.app/Contents/bin/
+```
+
+
 > recommend `python3` instead of python2
 
 Check `CMake` version by 
@@ -51,7 +60,7 @@ The `cmake` version should be at least `v3.9`, if not, please install latest `cm
 
 ## Download toolchain
 
-Download the latest toolchain from [here](https://github.com/kendryte/kendryte-gnu-toolchain/releases), or [kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz(CDN)](http://dl.cdn.sipeed.com/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz)
+Download the latest toolchain from [here](https://github.com/kendryte/kendryte-gnu-toolchain/releases) (macOS and linux), or [kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz(CDN)](http://dl.cdn.sipeed.com/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz) (for linux)
 
 And extract to `/opt/kendryte-toolchain/`
 
