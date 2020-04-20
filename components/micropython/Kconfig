@@ -43,6 +43,8 @@ menu "Micropython configurations"
 			depends on MAIXPY_TOUCH_SCREEN_ENABLE
 			config MAIXPY_TOUCH_SCREEN_DRIVER_NS2009
 				bool "Select ns2009 touch screen driver"
+			config MAIXPY_TOUCH_SCREEN_DRIVER_FT52XX
+				bool "Select ft52xx touch screen driver"
 		endchoice
 
 		config MAIXPY_OMV_MINIMUM

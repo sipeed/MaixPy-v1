@@ -263,6 +263,12 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
             list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/touchscreen/ns2009/include")
             append_srcs_dir(ADD_SRCS "port/src/touchscreen/ns2009")
         endif()
+        if(CONFIG_MAIXPY_TOUCH_SCREEN_DRIVER_FT52XX)
+            list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/touchscreen/ft52xx"
+                                    "${mpy_port_dir}/src/touchscreen/ns2009/include")
+            append_srcs_dir(ADD_SRCS "port/src/touchscreen/ft52xx")
+            append_srcs_dir(ADD_SRCS "port/src/touchscreen/ns2009")
+        endif()
     endif()
     # omv minimum
     if(CONFIG_MAIXPY_OMV_MINIMUM)

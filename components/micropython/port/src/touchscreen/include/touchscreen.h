@@ -3,6 +3,12 @@
 
 #include "stdbool.h"
 
+typedef enum {
+    TOUCHSCREEN_TYPE_NS2009 = 0,
+    TOUCHSCREEN_TYPE_FT62XX = 1,
+}touchscreen_drivers_type_t;
+
+
 typedef enum{
     TOUCHSCREEN_STATUS_IDLE =0,
     TOUCHSCREEN_STATUS_RELEASE,
@@ -29,6 +35,7 @@ typedef struct
 {
     machine_hard_i2c_obj_t* i2c;
     int calibration[CALIBRATION_SIZE];          // 7 Bytes
+    uint8_t drives_type;
 } touchscreen_config_t;
 
 //TODO: replace heap with GC
