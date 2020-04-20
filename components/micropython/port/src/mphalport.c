@@ -16,6 +16,17 @@
 	#include "FreeRTOS.h"
 #endif 
 
+MP_WEAK uintptr_t mp_hal_stdio_poll(uintptr_t poll_flags) {
+    uintptr_t ret = 0;
+    if (MP_STATE_PORT(Maix_stdio_uart) != NULL) {
+        mp_obj_t Maix_stdio_uart = MP_OBJ_FROM_PTR(MP_STATE_PORT(Maix_stdio_uart));
+        int errcode;
+        const mp_stream_p_t *stream_p = mp_get_stream(Maix_stdio_uart);
+        ret = stream_p->ioctl(Maix_stdio_uart, MP_STREAM_POLL, poll_flags, &errcode);
+    }
+    return ret | mp_uos_dupterm_poll(poll_flags);
+}
+
 int mp_hal_stdin_rx_chr(void) {
 	int c = 0;
 	for (;;)
@@ -42,8 +53,8 @@ int mp_hal_stdin_rx_chr(void) {
 		// #if MICROPY_PY_THREAD
 		// 		ulTaskNotifyTake(pdFALSE, 1);
 		// #endif
-		extern void mp_handle_pending(void);
-        mp_handle_pending();
+		extern void mp_handle_pending(bool);
+        mp_handle_pending(true);
         MICROPY_PY_USOCKET_EVENTS_HANDLER
         MP_THREAD_GIL_EXIT();
 	#if MICROPY_PY_THREAD

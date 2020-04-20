@@ -436,8 +436,8 @@ extern const struct _mp_obj_module_t mp_module_touchscreen;
 #if MICROPY_PY_THREAD
 #define MICROPY_EVENT_POLL_HOOK \
     do { \
-        extern void mp_handle_pending(void); \
-        mp_handle_pending(); \
+        extern void mp_handle_pending(bool); \
+        mp_handle_pending(true); \
         MICROPY_PY_USOCKET_EVENTS_HANDLER \
         MP_THREAD_GIL_EXIT(); \
         MP_THREAD_GIL_ENTER(); \
@@ -445,8 +445,8 @@ extern const struct _mp_obj_module_t mp_module_touchscreen;
 #else
 #define MICROPY_EVENT_POLL_HOOK \
     do { \
-        extern void mp_handle_pending(void); \
-        mp_handle_pending(); \
+        extern void mp_handle_pending(bool); \
+        mp_handle_pending(true); \
         MICROPY_PY_USOCKET_EVENTS_HANDLER \
     } while (0);
 #endif
