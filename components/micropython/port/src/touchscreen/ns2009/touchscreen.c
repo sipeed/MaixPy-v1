@@ -6,7 +6,9 @@
 #include "errno.h"
 #include "ns2009.h"
 #include "tscal.h"
+#if defined(CONFIG_MAIXPY_TOUCH_SCREEN_DRIVER_FT52XX)
 #include "ft52xx.h"
+#endif
 
 static struct ts_ns2009_pdata_t *ts_ns2009_pdata;
 i2c_device_number_t m_i2c_num = 0;
