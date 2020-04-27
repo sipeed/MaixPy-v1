@@ -25,7 +25,7 @@
 // {
 // #endif
 
-u8 save_ftr_mdl(v_ftr_tag *ftr, u32 addr);
+uint8_t save_ftr_mdl(v_ftr_tag *ftr, u32 addr);
 
 //void init_voice_mdl(void);
 extern v_ftr_tag ftr_save[20 * 4];

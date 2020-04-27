@@ -25,10 +25,10 @@ extern "C"
     //#pragma pack(4)
     typedef struct
     {
-        u16 save_sign;                       //存储标记 用于判断flash中特征模板是否有效
-        u16 frm_num;                         //帧数
+        uint16_t save_sign;                       //存储标记 用于判断flash中特征模板是否有效
+        uint16_t frm_num;                         //帧数
                                              // u8 word_num;
-        s16 mfcc_dat[vv_frm_max * mfcc_num]; //MFCC转换结果
+        int16_t mfcc_dat[vv_frm_max * mfcc_num]; //MFCC转换结果
                                              // float mfcc_dat[vv_frm_max*mfcc_num];
     } v_ftr_tag;                             //语音特征结构体
     //#pragma pack()

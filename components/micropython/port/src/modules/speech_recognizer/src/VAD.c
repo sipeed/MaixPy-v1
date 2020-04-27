@@ -13,24 +13,24 @@
 #define atap_frm_t 30                           //背景噪音自适应时间帧长度 ms
 #define atap_frm_len ((fs / 1000) * atap_frm_t) //背景噪音自适应帧长度
 
-u16 vad_data[VcBuf_Len];
-u32 frm_n;
+uint16_t vad_data[VcBuf_Len];
+uint32_t frm_n;
 
 /*  求取自适应参数
  *  noise   ：噪声起始点
     n_len   ：噪声长度
     atap    ；自适应参数
 */
-void noise_atap(const u16 *noise, u16 n_len, atap_tag *atap)
+void noise_atap(const uint16_t *noise, uint16_t n_len, atap_tag *atap)
 {
-    u32 h, i;
-    u32 n_max;
-    u32 max_sum; //每一帧噪声最大值 累加取平均 求噪声阈值
-    u32 n_sum;   //所有数值之和 求平均值 确定零(中)值
-    u32 mid;     //中值
-    u32 abs;     //绝对值
-    u32 abs_sum; //绝对值和
-    u32 frm_num;
+    uint32_t h, i;
+    uint32_t n_max;
+    uint32_t max_sum; //每一帧噪声最大值 累加取平均 求噪声阈值
+    uint32_t n_sum;   //所有数值之和 求平均值 确定零(中)值
+    uint32_t mid;     //中值
+    uint32_t abs;     //绝对值
+    uint32_t abs_sum; //绝对值和
+    uint32_t frm_num;
 
     if ((n_len % atap_frm_len) != 0) //参数检查
         return;
@@ -64,8 +64,8 @@ void noise_atap(const u16 *noise, u16 n_len, atap_tag *atap)
     atap->n_thl = max_sum * n_thl_ratio;
     atap->s_thl = s_thl_ratio(abs_sum);
     atap->z_thl = z_thl_ratio(FRAME_LEN) / n_thl_ratio;
-    printf("VAD sum=%d ", atap->s_thl);
-    printf("VAD zero=%d\n", atap->z_thl);
+    // printf("VAD sum=%d ", atap->s_thl);
+    // printf("VAD zero=%d\n", atap->z_thl);
 }
 #define v_durmin_t 200                                     //有效语音最短时间门限 ms
 #define v_durmin_f v_durmin_t / (frame_time - frame_mov_t) //有效语音最短帧数
@@ -92,20 +92,20 @@ void noise_atap(const u16 *noise, u16 n_len, atap_tag *atap)
     同时低于两门限，并且持续时间超过无声最长时间门限，
     返回最开始低于门限的时间点，将其标记为有效语音结束点。
 *********/
-void VAD(const u16 *vc, u16 buf_len, valid_tag *valid_voice, atap_tag *atap_arg)
+void VAD(const uint16_t *vc, uint16_t buf_len, valid_tag *valid_voice, atap_tag *atap_arg)
 {
-    u8 last_sig = 0;        // 上次跃出门限带的状态 1:门限带以下；2:门限带以上
-    u8 cur_stus = 0;        // 当前语音段状态 0无声段  1前端过渡段  2语音段  3后端过渡段
-    u16 front_duration = 0; //前端过渡段超过门限值持续帧数
-    u16 back_duration = 0;  //后端过渡段低于门限值持续帧数
-    u32 h, i;
-    u32 frm_sum;  // 短时绝对值和
-    u32 frm_zero; // 短时过零(门限)率
-    u32 a_thl;    // 上门限值
-    u32 b_thl;    // 下门限值
+    uint8_t last_sig = 0;        // 上次跃出门限带的状态 1:门限带以下；2:门限带以上
+    uint8_t cur_stus = 0;        // 当前语音段状态 0无声段  1前端过渡段  2语音段  3后端过渡段
+    uint16_t front_duration = 0; //前端过渡段超过门限值持续帧数
+    uint16_t back_duration = 0;  //后端过渡段低于门限值持续帧数
+    uint32_t h, i;
+    uint32_t frm_sum;  // 短时绝对值和
+    uint32_t frm_zero; // 短时过零(门限)率
+    uint32_t a_thl;    // 上门限值
+    uint32_t b_thl;    // 下门限值
 
-    u8 valid_con = 0; //语音段计数 最大max_vc_con
-    u32 frm_con = 0;  //帧计数
+    uint8_t valid_con = 0; //语音段计数 最大max_vc_con
+    uint32_t frm_con = 0;  //帧计数
 
     a_thl = atap_arg->mid_val + atap_arg->n_thl;
     b_thl = atap_arg->mid_val - atap_arg->n_thl;
@@ -165,7 +165,7 @@ void VAD(const u16 *vc, u16 buf_len, valid_tag *valid_voice, atap_tag *atap_arg)
                 if (front_duration >= v_durmin_f)
                 {                                                                                                                   //前端过渡段帧数超过最短有效语音帧数
                     cur_stus = 2;                                                                                                   //进入语音段
-                    ((valid_tag *)(valid_voice + valid_con))->start = (u16 *)vc + i - ((v_durmin_f - 1) * (FRAME_LEN - frame_mov)); //记录起始帧位置
+                    ((valid_tag *)(valid_voice + valid_con))->start = (uint16_t *)vc + i - ((v_durmin_f - 1) * (FRAME_LEN - frame_mov)); //记录起始帧位置
                     front_duration = 0;                                                                                             //前端过渡段持续帧数置0
                 }
             }
@@ -189,7 +189,7 @@ void VAD(const u16 *vc, u16 buf_len, valid_tag *valid_voice, atap_tag *atap_arg)
                 if (back_duration >= s_durmax_f)
                 {                                                                                                                       //后端过渡段帧数超过最长无声帧数
                     cur_stus = 0;                                                                                                       //进入无声段
-                    ((valid_tag *)(valid_voice + valid_con))->end = (u16 *)vc + i - (s_durmax_f * (FRAME_LEN - frame_mov)) + FRAME_LEN; //记录结束帧位置
+                    ((valid_tag *)(valid_voice + valid_con))->end = (uint16_t *)vc + i - (s_durmax_f * (FRAME_LEN - frame_mov)) + FRAME_LEN; //记录结束帧位置
                     valid_con++;
                     if (valid_con == max_vc_con)
                         return;
@@ -197,7 +197,8 @@ void VAD(const u16 *vc, u16 buf_len, valid_tag *valid_voice, atap_tag *atap_arg)
                 }
             }
             else if (cur_stus == 1)
-            { //当前是前端过渡段 两参数都回落到门限值以下
+            { 
+                //当前是前端过渡段 两参数都回落到门限值以下
                 //持续时间低于语音最短时间门限 视为短时噪声
                 front_duration = 0;
                 cur_stus = 0; //记为无声段
@@ -206,18 +207,18 @@ void VAD(const u16 *vc, u16 buf_len, valid_tag *valid_voice, atap_tag *atap_arg)
     }
 }
 
-u8 VAD2(const u16 *vc, valid_tag *valid_voice, atap_tag *atap_arg)
+uint8_t VAD2(const uint16_t *vc, valid_tag *valid_voice, atap_tag *atap_arg)
 {
-    u8 last_sig = 0;           // 上次跃出门限带的状态 1:门限带以下；2:门限带以上
-    static u8 cur_stus;        // 当前语音段状态 0无声段  1前端过渡段  2语音段  3后端过渡段
-    static u16 front_duration; //前端过渡段超过门限值持续帧数
-    static u16 back_duration;  //后端过渡段低于门限值持续帧数
-    static u8 word_num_tmp;
-    u32 h, i;
-    u32 frm_sum;  // 短时绝对值和
-    u32 frm_zero; // 短时过零(门限)率
-    u32 a_thl;    // 上门限值
-    u32 b_thl;    // 下门限值
+    uint8_t last_sig = 0;           // 上次跃出门限带的状态 1:门限带以下；2:门限带以上
+    static uint8_t cur_stus;        // 当前语音段状态 0无声段  1前端过渡段  2语音段  3后端过渡段
+    static uint16_t front_duration; //前端过渡段超过门限值持续帧数
+    static uint16_t back_duration;  //后端过渡段低于门限值持续帧数
+    static uint8_t word_num_tmp;
+    uint32_t h, i;
+    uint32_t frm_sum;  // 短时绝对值和
+    uint32_t frm_zero; // 短时过零(门限)率
+    uint32_t a_thl;    // 上门限值
+    uint32_t b_thl;    // 下门限值
 
     a_thl = atap_arg->mid_val + atap_arg->n_thl;
     b_thl = atap_arg->mid_val - atap_arg->n_thl;
@@ -280,7 +281,7 @@ u8 VAD2(const u16 *vc, valid_tag *valid_voice, atap_tag *atap_arg)
             {                       //前端过渡段帧数超过最短有效语音帧数
                 cur_stus = 2;       //进入语音段
                 front_duration = 0; //前端过渡段持续帧数置0
-                valid_voice[0].start = (u16 *)vad_data;
+                valid_voice[0].start = (uint16_t *)vad_data;
             }
             for (i = 0; i < FRAME_LEN - frame_mov; i++) //copy the valid data
                 vad_data[FRAME_LEN + (FRAME_LEN - frame_mov) * frm_n + i] = vc[i + frame_mov];
@@ -288,7 +289,7 @@ u8 VAD2(const u16 *vc, valid_tag *valid_voice, atap_tag *atap_arg)
             if (FRAME_LEN + (FRAME_LEN - frame_mov) * frm_n > VcBuf_Len + frame_mov - FRAME_LEN)
             {
                 cur_stus = 0;                                     //进入无声段
-                valid_voice[0].end = (u16 *)vad_data + VcBuf_Len; //记录结束帧位置
+                valid_voice[0].end = (uint16_t *)vad_data + VcBuf_Len; //记录结束帧位置
                                                                   //                valid_voice[0].word_num = word_num_tmp;
                 return 1;
             }
@@ -306,7 +307,7 @@ u8 VAD2(const u16 *vc, valid_tag *valid_voice, atap_tag *atap_arg)
             if (FRAME_LEN + (FRAME_LEN - frame_mov) * frm_n > VcBuf_Len + frame_mov - FRAME_LEN)
             {
                 cur_stus = 0;                                     //进入无声段
-                valid_voice[0].end = (u16 *)vad_data + VcBuf_Len; //记录结束帧位置
+                valid_voice[0].end = (uint16_t *)vad_data + VcBuf_Len; //记录结束帧位置
                                                                   //                valid_voice[0].word_num = word_num_tmp;
                 return 1;
             }
@@ -319,7 +320,7 @@ u8 VAD2(const u16 *vc, valid_tag *valid_voice, atap_tag *atap_arg)
             if (FRAME_LEN + (FRAME_LEN - frame_mov) * frm_n > VcBuf_Len + frame_mov - FRAME_LEN)
             {
                 cur_stus = 0;                                     //进入无声段
-                valid_voice[0].end = (u16 *)vad_data + VcBuf_Len; //记录结束帧位置
+                valid_voice[0].end = (uint16_t *)vad_data + VcBuf_Len; //记录结束帧位置
                                                                   //                valid_voice[0].word_num = word_num_tmp;
                 return 1;
             }
@@ -338,7 +339,7 @@ u8 VAD2(const u16 *vc, valid_tag *valid_voice, atap_tag *atap_arg)
             frm_n++;
             if (FRAME_LEN + (FRAME_LEN-frame_mov) * frm_n > VcBuf_Len + frame_mov - FRAME_LEN) {
                 cur_stus = 0; //进入无声段
-                valid_voice[0].end = (u16 *)vad_data + VcBuf_Len;//记录结束帧位置
+                valid_voice[0].end = (uint16_t *)vad_data + VcBuf_Len;//记录结束帧位置
 //              valid_voice[0].word_num = word_num_tmp;
                 return 1;
             }
@@ -353,7 +354,7 @@ u8 VAD2(const u16 *vc, valid_tag *valid_voice, atap_tag *atap_arg)
             frm_n++;
             if (FRAME_LEN + (FRAME_LEN-frame_mov) * frm_n > VcBuf_Len + frame_mov - FRAME_LEN) {
                 cur_stus = 0; //进入无声段
-                valid_voice[0].end = (u16 *)vad_data + VcBuf_Len;//记录结束帧位置
+                valid_voice[0].end = (uint16_t *)vad_data + VcBuf_Len;//记录结束帧位置
 //              valid_voice[0].word_num = word_num_tmp;
                 return 1;
             }
@@ -363,7 +364,7 @@ u8 VAD2(const u16 *vc, valid_tag *valid_voice, atap_tag *atap_arg)
                 cur_stus = 0; //进入无声段
                 back_duration = 0;
                 frm_n = frm_n - s_durmax_f;
-                valid_voice[0].end = (u16 *)vad_data + frm_n * (FRAME_LEN - frame_mov) + FRAME_LEN; //记录结束帧位置
+                valid_voice[0].end = (uint16_t *)vad_data + frm_n * (FRAME_LEN - frame_mov) + FRAME_LEN; //记录结束帧位置
                                                                                                     //              valid_voice[0].word_num = word_num_tmp;
                 return 1;
             }

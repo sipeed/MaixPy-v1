@@ -146,13 +146,13 @@ int printPath(struct pointOritation *po, int n, int m, int *g)
     返回值
     dis         矢量距离
 */
-u32 get_dis(s16 *frm_ftr1, s16 *frm_ftr2)
+uint32_t get_dis(int16_t *frm_ftr1, int16_t *frm_ftr2)
 {
-    u8 i;
+    uint8_t i;
 
 #if 0
 #if 1
-    u32 dis;
+    uint32_t dis;
     s32 dif;    //两矢量相同维度上的差值
 
     dis = 0;
@@ -166,7 +166,7 @@ u32 get_dis(s16 *frm_ftr1, s16 *frm_ftr2)
     //USART1_printf("%d\r\n",dis);
     return dis;
 #else
-    u32 dis;
+    uint32_t dis;
     s32 dif;
     s32 avr;
 
@@ -223,8 +223,8 @@ u32 get_dis(s16 *frm_ftr1, s16 *frm_ftr2)
 }
 
 //平行四边形两外两顶点 X坐标值
-static u16 X1;          //上边交点
-static u16 X2;          //下边交点
+static uint16_t X1;          //上边交点
+static uint16_t X2;          //下边交点
 static int in_frm_num;  //输入特征帧数
 static int mdl_frm_num; //特征模板帧数
 
@@ -235,7 +235,7 @@ static int mdl_frm_num; //特征模板帧数
  *  范围控制
 
 */
-u8 dtw_limit(u16 x, u16 y)
+uint8_t dtw_limit(uint16_t x, uint16_t y)
 {
     if (x < X1)
     {
@@ -271,15 +271,15 @@ u8 dtw_limit(u16 x, u16 y)
     dis     :累计匹配距离
 */
 
-u32 dtw(v_ftr_tag *ftr_in, v_ftr_tag *frt_mdl)
+uint32_t dtw(v_ftr_tag *ftr_in, v_ftr_tag *frt_mdl)
 {
-    u32 dis;
-    //  u16 x, y;
-    u16 step;
-    s16 *in;
-    s16 *mdl;
-    //  u32 d_right_up, right, right_up; //up,
-    //  u32 min;
+    uint32_t dis;
+    //  uint16_t x, y;
+    uint16_t step;
+    int16_t *in;
+    int16_t *mdl;
+    //  uint32_t d_right_up, right, right_up; //up,
+    //  uint32_t min;
     int i, j;
 
     in_frm_num = ftr_in->frm_num;
@@ -356,9 +356,9 @@ u32 dtw(v_ftr_tag *ftr_in, v_ftr_tag *frt_mdl)
     return (dis / step); //步长归一化
 }
 
-void get_mean(s16 *frm_ftr1, s16 *frm_ftr2, s16 *mean)
+void get_mean(int16_t *frm_ftr1, int16_t *frm_ftr2, int16_t *mean)
 {
-    u8 i;
+    uint8_t i;
 
     for (i = 0; i < mfcc_num; i++)
     {
@@ -378,16 +378,16 @@ void get_mean(s16 *frm_ftr1, s16 *frm_ftr2, s16 *mean)
     dis     :累计匹配距离
 */
 
-u32 get_mdl(v_ftr_tag *ftr_in1, v_ftr_tag *ftr_in2, v_ftr_tag *ftr_mdl)
+uint32_t get_mdl(v_ftr_tag *ftr_in1, v_ftr_tag *ftr_in2, v_ftr_tag *ftr_mdl)
 {
-    u32 dis;
-    u16 x, y;
-    u16 step;
-    s16 *in1;
-    s16 *in2;
-    s16 *mdl;
-    u32 right, right_up, d_right_up; //up,
-    u32 min;
+    uint32_t dis;
+    uint16_t x, y;
+    uint16_t step;
+    int16_t *in1;
+    int16_t *in2;
+    int16_t *mdl;
+    uint32_t right, right_up, d_right_up; //up,
+    uint32_t min;
 
     in_frm_num = ftr_in1->frm_num;
     mdl_frm_num = ftr_in2->frm_num;

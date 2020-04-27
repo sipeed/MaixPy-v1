@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "syslog.h"
+
 #include "sysctl.h"
 #include "plic.h"
 #include "uarths.h"
@@ -47,7 +49,7 @@ volatile uint8_t i2s_rec_flag;
 volatile uint8_t i2s_start_flag = 0;
 
 uint8_t comm; //关键词号
-static const char *TAG = "speech_recognizer";
+static const char *TAG = "SpeechRecognizer";
 
 uint8_t speech_recognizer_save_mdl(uint16_t *v_dat, uint32_t addr);
 uint8_t speech_recognizer_spch_recg(uint16_t *v_dat, uint32_t *mtch_dis);
@@ -91,13 +93,9 @@ int i2s_dma_irq(void *ctx)
 
 int speech_recognizer_init(i2s_device_number_t device_num)
 {
-    // io_mux_init
-    fpioa_set_function(20, FUNC_I2S0_IN_D0);
-    fpioa_set_function(18, FUNC_I2S0_SCLK);
-    fpioa_set_function(19, FUNC_I2S0_WS);
-
-    //i2s init
+    // i2s init
     i2s_init(device_num, I2S_RECEIVER, 0x3);
+    LOGI(TAG, "use i2s_device:[%d]\n", device_num);
 
     i2s_rx_channel_config(device_num, I2S_CHANNEL_0,
                           RESOLUTION_16_BIT, SCLK_CYCLES_32,
@@ -113,7 +111,7 @@ int speech_recognizer_init(i2s_device_number_t device_num)
     sysctl_enable_irq();
     return 0;
 }
-#include "syslog.h"
+
 int speech_recognizer_record(uint8_t keyword_num, uint8_t model_num)
 {
     if (keyword_num > 10)
@@ -169,7 +167,8 @@ int speech_recognizer_add_voice_model(uint8_t keyword_num, uint8_t model_num, co
 
 int speech_recognizer_print_model(uint8_t keyword_num, uint8_t model_num)
 {
-    mp_printf(&mp_plat_print, "[MaixPy] frm_num=%d\n", ftr_save[keyword_num * 4 + model_num].frm_num);
+    mp_printf(&mp_plat_print, "\n---------------\n");
+    mp_printf(&mp_plat_print, "frm_num=%d\n", ftr_save[keyword_num * 4 + model_num].frm_num);
     for (int i = 0; i < (vv_frm_max * mfcc_num); i++)
     {
         if (((i + 1) % 35) == 0)
@@ -179,7 +178,16 @@ int speech_recognizer_print_model(uint8_t keyword_num, uint8_t model_num)
             // mp_printf(&mp_plat_print, "[MaixPy] %d, ", ftr_save[keyword_num * 4 + model_num].mfcc_dat[i]);
             printf("%d, ", ftr_save[keyword_num * 4 + model_num].mfcc_dat[i]);
     }
-    mp_printf(&mp_plat_print, "[MaixPy] \nprint model ok!\n");
+    mp_printf(&mp_plat_print, "\n---------------\n");
+    mp_printf(&mp_plat_print, "\nprint model ok!\n");
+    return 0;
+}
+
+int speech_recognizer_get_data(uint8_t keyword_num, uint8_t model_num, uint16_t *frm_num, int16_t **voice_model, uint32_t *voice_model_len)
+{
+    *frm_num = ftr_save[keyword_num * 4 + model_num].frm_num;
+    *voice_model = ftr_save[keyword_num * 4 + model_num].mfcc_dat;
+    *voice_model_len = vv_frm_max * mfcc_num;
     return 0;
 }
 
@@ -259,14 +267,14 @@ get_noise1:
             return MFCC_fail;
     }
     //  if (valid_voice[0].end == ((void *)0)) {
-    //      mp_printf(&mp_plat_print, "[MaixPy] VAD_fail\n");
+    //      LOGI(TAG, "VAD_fail\n");
     //      return VAD_fail;
     //  }
 
     get_mfcc(&(valid_voice[0]), &ftr, &atap_arg);
     if (ftr.frm_num == 0)
     {
-        //mp_printf(&mp_plat_print, "[MaixPy] MFCC_fail\n");
+        //LOGI(TAG, "MFCC_fail\n");
         return MFCC_fail;
     }
     //  ftr.word_num = valid_voice[0].word_num;
@@ -322,7 +330,9 @@ get_noise2:
 
     //wait for finish
     while (i2s_rec_flag == 0)
+    {
         continue;
+    }
     if (i2s_rec_flag == 1)
     {
         for (i = 0; i < frame_mov; i++)
@@ -360,14 +370,14 @@ get_noise2:
         if (receive_char == 's')
         {
             *mtch_dis = dis_err;
-            mp_printf(&mp_plat_print, "[MaixPy] send 'c' to start\n");
+            LOGI(TAG, "send 'c' to start\n");
             return 0;
         }
     }
-    mp_printf(&mp_plat_print, "[MaixPy] vad ok\n");
+    LOGI(TAG, "vad ok\n");
     //  if (valid_voice[0].end == ((void *)0)) {
     //      *mtch_dis=dis_err;
-    //      USART1_printf("VAD fail ");
+    //      USART1_LOGI(TAG, "VAD fail ");
     //      return (void *)0;
     //  }
 
@@ -375,16 +385,16 @@ get_noise2:
     if (ftr.frm_num == 0)
     {
         *mtch_dis = dis_err;
-        mp_printf(&mp_plat_print, "[MaixPy] MFCC fail ");
+        LOGI(TAG, "MFCC fail ");
         return 0;
     }
     //  for (i = 0; i < ftr.frm_num * mfcc_num; i++) {
     //      if (i % 12 == 0)
-    //          mp_printf(&mp_plat_print, "[MaixPy] \n");
-    //      mp_printf(&mp_plat_print, "[MaixPy] %d ", ftr.mfcc_dat[i]);
+    //          LOGI(TAG, "\n");
+    //      LOGI(TAG, "%d ", ftr.mfcc_dat[i]);
     //  }
     //  ftr.word_num = valid_voice[0].word_num;
-    mp_printf(&mp_plat_print, "[MaixPy] mfcc ok\n");
+    LOGI(TAG, "mfcc ok\n");
     i = 0;
     min_comm = 0;
     min_dis = dis_max;
@@ -396,8 +406,8 @@ get_noise2:
         cur_dis = ((ftr_mdl->save_sign) == save_mask) ? dtw(ftr_mdl, &ftr) : dis_err;
         if ((ftr_mdl->save_sign) == save_mask)
         {
-            mp_printf(&mp_plat_print, "[MaixPy] no. %d, frm_num = %d, save_mask=%d", i + 1, ftr_mdl->frm_num, ftr_mdl->save_sign);
-            mp_printf(&mp_plat_print, "[MaixPy] cur_dis=%d\n", cur_dis);
+            mp_printf(&mp_plat_print, "[MaixPy] no. %d, frm_num = %d, save_mask=%d\r\n", i + 1, ftr_mdl->frm_num, ftr_mdl->save_sign);
+            LOGI(TAG, "cur_dis=%d\n", cur_dis);
         }
         if (cur_dis < min_dis)
         {
@@ -407,7 +417,7 @@ get_noise2:
         i++;
     }
     cycle1 = read_csr(mcycle) - cycle0;
-    mp_printf(&mp_plat_print, "[MaixPy] [INFO] recg cycle = 0x%08x\n", cycle1);
+    mp_printf(&mp_plat_print, "[MaixPy] recg cycle = 0x%08x\r\n", cycle1);
     if (min_comm % 4)
         min_comm = min_comm / ftr_per_comm + 1;
     else
