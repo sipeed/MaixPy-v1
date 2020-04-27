@@ -92,6 +92,35 @@ STATIC mp_obj_t modules_speech_recognizer_get_model_data(size_t n_args, const mp
     sr_array->items = self->p_mfcc_data;
     return sr_array;
 }
+STATIC mp_obj_t modules_speech_recognizer_add_voice_model(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
+{
+    speech_recognizer_obj_t* self = MP_OBJ_TO_PTR(args[0]);
+    mp_int_t keyword_num = mp_obj_get_int(args[1]);
+    mp_int_t model_num = mp_obj_get_int(args[2]);
+    mp_int_t frm_num = mp_obj_get_int(args[4]);
+    mp_obj_array_t * sr_array = MP_OBJ_TO_PTR(args[3]);
+    self->p_mfcc_data = (int16_t)sr_array->items;
+    
+    if(keyword_num >10 )
+    {
+        mp_printf(&mp_plat_print, "[MaixPy] keyword_num>10\n");
+        return mp_const_false;
+    }
+    if(model_num > 4)
+    {
+        mp_printf(&mp_plat_print, "[MaixPy] keyword_num>4\n");
+        return mp_const_false;
+    }
+    mp_printf(&mp_plat_print, "[MaixPy] add_voice_model[%d:%d]\n", keyword_num, keyword_num);
+    // speech_recognizer_get_data(keyword_num, model_num, &self->frm_num, &self->p_mfcc_data, &self->voice_model_len);
+    // mp_obj_array_t * sr_array = m_new_obj(mp_obj_array_t);
+    // sr_array->base.type = &mp_type_bytearray;
+    // sr_array->typecode = BYTEARRAY_TYPECODE;
+    // sr_array->free = 0;
+    // sr_array->len = self->voice_model_len * 4;
+    // sr_array->items = self->p_mfcc_data;
+    return mp_const_true;
+}
 
 STATIC mp_obj_t modules_speech_recognizer_init_helper(speech_recognizer_obj_t *self_in, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
