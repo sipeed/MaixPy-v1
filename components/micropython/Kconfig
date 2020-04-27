@@ -72,16 +72,25 @@ menu "Micropython configurations"
 			bool "Enable Ws2812"
 			default n
 			select WS2812_ENABLE
+
 		config MAIXPY_HTPA_ENABLE
 			bool "Enable HTPA thermal sensor"
 			default n
 			select HTPA_ENABLE
+
 		config MICROPYTHON_ULAB_ENALBE
 			bool "Enable ulab module(a numpy-like fast vector module)"
 			default y
+
 		config MICROPYTHON_KMODEL_V4_SUPPORT
 			bool "support v4 kmodel"
 			default n
+
+		config MAIXPY_SPEECH_RECOGNIZER_ENABLE
+			bool "Enable Speech Recognizer"
+			default n
+			select SPEECH_RECOGNIZER_ENABLE
+			
 	endmenu
 
 	menu "Debug configurations"
