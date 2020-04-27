@@ -19,6 +19,9 @@ STATIC const mp_map_elem_t modules_globals_table[] = {
 #if CONFIG_MAIXPY_HTPA_ENABLE
     { MP_ROM_QSTR(MP_QSTR_htpa),  MP_ROM_PTR(&modules_htpa_type) },
 #endif
+#if CONFIG_MAIXPY_SPEECH_RECOGNIZER_ENABLE
+    { MP_ROM_QSTR(MP_QSTR_SpeechRecognizer),  MP_ROM_PTR(&modules_speech_recognizer_type) },
+#endif
 };
 
 STATIC MP_DEFINE_CONST_DICT (

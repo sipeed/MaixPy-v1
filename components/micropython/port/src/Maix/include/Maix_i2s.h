@@ -1,6 +1,7 @@
 #ifndef MICROPY_MAIX_I2S_H
 #define MICROPY_MAIX_I2S_H
 
+#include "py/obj.h"
 #include "i2s.h"
 typedef struct _i2s_channle_t{
     i2s_word_length_t resolution;
