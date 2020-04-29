@@ -162,13 +162,13 @@ static int exchang_data_byte(uint8_t* addr,uint32_t length)
 void InfoNES_LoadFrame()
 {
     exchang_data_byte(WorkFrame, NES_DISP_WIDTH*NES_DISP_HEIGHT*2);
-    lcd_draw_picture(32, 0, NES_DISP_WIDTH, NES_DISP_HEIGHT, (uint32_t *)WorkFrame);
+    lcd_draw_picture(0, 0, NES_DISP_WIDTH, NES_DISP_HEIGHT, (uint32_t *)WorkFrame);
     return;
 }
 
 
 /* Get a joypad state */
-//wasd:上下左右  kl:AB nm:sel,start
+//wasd:上下左坳  kl:AB nm:sel,start
 
 #define SELECT_MASK    (1<<0)
 #define L3_MASK        (1<<1)
