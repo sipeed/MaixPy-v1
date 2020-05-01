@@ -2,7 +2,7 @@
 #define _MFCC_H
 #include "VAD.h"
 #include "g_def.h"
-
+#include "dmac.h"
 #include "hal_fft.h"
 
 #define hp_ratio(x) (x * 95 / 100)   //预加重系数 0.95
