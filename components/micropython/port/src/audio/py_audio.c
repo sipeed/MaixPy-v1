@@ -310,9 +310,28 @@ MP_DEFINE_CONST_FUN_OBJ_KW(Maix_audio_record_process_obj,2, Maix_audio_record_pr
 
 //----------------record ------------------------
 
-STATIC mp_obj_t Maix_audio_record(mp_obj_t self_in) {
+STATIC mp_obj_t Maix_audio_record(mp_obj_t self_in, mp_obj_t record_in) {
     Maix_audio_obj_t *self = MP_OBJ_TO_PTR(self_in);//get auduio obj
-    audio_t* audio = &self->audio; 
+    Maix_audio_obj_t *record = MP_OBJ_TO_PTR(record_in);//get auduio obj
+    audio_t* audio = &self->audio;
+    audio_t* input = &record->audio;
+    int err_code = 0;
+    // printf("audio->format %d\n", audio->format);
+    // printf("record->audio.type %d\n", record->audio.type);
+    
+    uint16_t* buf = (uint16_t*)malloc(input->points * sizeof(uint16_t));//
+    for(int i = 0; i < input->points; i += 1){
+        buf[i] = input->buf[i] & 0xffff;//left an right channle 16 bit resolution
+    }
+    vfs_internal_write(audio->fp,buf,input->points * sizeof(uint16_t), &err_code);
+    wav_encode_t* wav_encode = audio->record_obj;
+    wav_encode->data.chunk_size +=  input->points * sizeof(uint16_t);
+    free(buf);
+    if(err_code!=0)
+        return err_code;
+        
+    return mp_const_none;
+
     switch(audio->format)
     {
         case AUDIO_WAV_FMT:
@@ -324,7 +343,7 @@ STATIC mp_obj_t Maix_audio_record(mp_obj_t self_in) {
     return mp_const_none;
 }
 
-MP_DEFINE_CONST_FUN_OBJ_1(Maix_audio_record_obj,Maix_audio_record);
+MP_DEFINE_CONST_FUN_OBJ_2(Maix_audio_record_obj,Maix_audio_record);
 
 //----------------finish ------------------------
 
