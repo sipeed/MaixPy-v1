@@ -6,15 +6,15 @@
 #include <string.h>
 
 #include "syslog.h"
-
 #include "sysctl.h"
+
+#include "dmac.h"
 #include "plic.h"
 #include "uarths.h"
 #include "i2s.h"
 #include "Maix_i2s.h"
 #include "fpioa.h"
 
-#include "g_def.h"
 #include "VAD.h"
 #include "MFCC.h"
 #include "DTW.h"
@@ -93,15 +93,6 @@ int i2s_dma_irq(void *ctx)
 
 int speech_recognizer_init(i2s_device_number_t device_num)
 {
-    // i2s init
-    i2s_init(device_num, I2S_RECEIVER, 0x3);
-    LOGI(TAG, "use i2s_device:[%d]\n", device_num);
-
-    i2s_rx_channel_config(device_num, I2S_CHANNEL_0,
-                          RESOLUTION_16_BIT, SCLK_CYCLES_32,
-                          TRIGGER_LEVEL_4, STANDARD_MODE);
-
-    i2s_set_sample_rate(device_num, 8000);
 
     dmac_init();
     dmac_set_irq(DMAC_CHANNEL3, i2s_dma_irq, NULL, 3);

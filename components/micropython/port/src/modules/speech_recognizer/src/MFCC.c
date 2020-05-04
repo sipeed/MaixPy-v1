@@ -3,15 +3,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "g_def.h"
+
 #include <math.h>
 #include "ADC.h"
 #include "VAD.h"
+#include "dmac.h"
 #include "MFCC.h"
 #include "MFCC_Arg.h"
 #include <float.h>
 #include "sysctl.h"
-#include "dmac.h"
 #include "hal_fft.h"
 #include "FIR.h"
 
@@ -90,7 +90,7 @@ void fft_sync_data(int16_t *data, uint8_t point, fft_data_t *fft_data)
 uint32_t *mfcc_fft(int16_t *dat_buf, uint16_t buf_len)
 {
     uint16_t i;
-    s32 real, imag;
+    int32_t real, imag;
     fft_data_t output_data;
 
     if (buf_len > mfcc_fft_point)
@@ -151,13 +151,13 @@ void get_mfcc(valid_tag *valid, v_ftr_tag *v_ftr, atap_tag *atap_arg)
     uint16_t h, i;
     uint32_t *frq_spct;          //频谱
     int16_t vc_temp[FRAME_LEN]; //语音暂存区
-    s32 temp;
+    int32_t temp;
 
     uint32_t pow_spct[tri_num]; //三角滤波器输出对数功率谱
     uint16_t frm_con;
     int16_t *mfcc_p;
-    s8 *dct_p;
-    s32 mid;
+    int8_t *dct_p;
+    int32_t mid;
     uint16_t v_frm_num;
 
     //USART1_printf("start=%d end=%d",(uint32_t)(valid->start),(uint32_t)(valid->end));
@@ -169,7 +169,7 @@ void get_mfcc(valid_tag *valid, v_ftr_tag *v_ftr, atap_tag *atap_arg)
     }
     else
     {
-        mid = (s32)atap_arg->mid_val;
+        mid = (int32_t)atap_arg->mid_val;
         mfcc_p = v_ftr->mfcc_dat;
         frm_con = 0;
         //low pass filter
@@ -182,8 +182,8 @@ void get_mfcc(valid_tag *valid, v_ftr_tag *v_ftr, atap_tag *atap_arg)
             for (i = 0; i < FRAME_LEN; i++)
             {
                 //预加重
-                //  printf("vc_dat[%d]=%d ",i,((s32)(*(vc_dat+i))-mid));
-                temp = ((s32)(*(vc_dat + i)) - mid) - hp_ratio(((s32)(*(vc_dat + i - 1)) - mid));
+                //  printf("vc_dat[%d]=%d ",i,((int32_t )(*(vc_dat+i))-mid));
+                temp = ((int32_t)(*(vc_dat + i)) - mid) - hp_ratio(((int32_t)(*(vc_dat + i - 1)) - mid));
                 //  printf("vc_hp[%d]=%d ",i,temp);
                 //加汉明窗 并放大10倍
                 vc_temp[i] = (int16_t)(temp * hamm[i] / (hamm_top / 10));
@@ -229,12 +229,12 @@ void get_mfcc(valid_tag *valid, v_ftr_tag *v_ftr, atap_tag *atap_arg)
             }
 
             //反离散余弦变换
-            dct_p = (s8 *)dct_arg;
+            dct_p = (int8_t*)dct_arg;
             for (h = 0; h < mfcc_num; h++)
             {
                 mfcc_p[h] = 0;
                 for (i = 0; i < tri_num; i++)
-                    mfcc_p[h] += (((s32)pow_spct[i]) * ((s32)dct_p[i]) / 100);
+                    mfcc_p[h] += (((int32_t)pow_spct[i]) * ((int32_t)dct_p[i]) / 100);
                 //printf("%d,",mfcc_p[h]);
                 dct_p += tri_num;
             }

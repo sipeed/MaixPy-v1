@@ -24,7 +24,6 @@
 
 #include "flash.h"
 
-#include "g_def.h"
 #include "VAD.h"
 #include "MFCC.h"
 #include "DTW.h"
