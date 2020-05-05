@@ -156,23 +156,25 @@ int speech_recognizer_add_voice_model(uint8_t keyword_num, uint8_t model_num, co
     return 0;
 }
 
-int speech_recognizer_print_model(uint8_t keyword_num, uint8_t model_num)
-{
-    mp_printf(&mp_plat_print, "\n---------------\n");
-    mp_printf(&mp_plat_print, "frm_num=%d\n", ftr_save[keyword_num * 4 + model_num].frm_num);
-    for (int i = 0; i < (vv_frm_max * mfcc_num); i++)
-    {
-        if (((i + 1) % 35) == 0)
-            // mp_printf(&mp_plat_print, "[MaixPy] %d,\n", ftr_save[keyword_num * 4 + model_num].mfcc_dat[i]);
-            printf("%d,\n", ftr_save[keyword_num * 4 + model_num].mfcc_dat[i]);
-        else
-            // mp_printf(&mp_plat_print, "[MaixPy] %d, ", ftr_save[keyword_num * 4 + model_num].mfcc_dat[i]);
-            printf("%d, ", ftr_save[keyword_num * 4 + model_num].mfcc_dat[i]);
-    }
-    mp_printf(&mp_plat_print, "\n---------------\n");
-    mp_printf(&mp_plat_print, "\nprint model ok!\n");
-    return 0;
-}
+// int speech_recognizer_print_model(uint8_t keyword_num, uint8_t model_num)
+// {
+//     mp_printf(&mp_plat_print, "\n---------------\n");
+//     mp_printf(&mp_plat_print, "frm_num=%d\n", ftr_save[keyword_num * 4 + model_num].frm_num);
+//     uint8_t *pdata = (uint8_t *)ftr_save[keyword_num * 4 + model_num].mfcc_dat;
+//     for (int i = 0; i < (vv_frm_max * mfcc_num)*(sizeof(int16_t)/sizeof(uint8_t)); i++)
+//     {
+//         if (((i + 1) % 20) == 0)
+//         {
+//             printf("%3d,\n", pdata[i]);
+//             msleep(1);
+//         }
+//         else
+//             printf("%3d,", pdata[i]);
+//     }
+//     mp_printf(&mp_plat_print, "\n---------------\n");
+//     mp_printf(&mp_plat_print, "\nprint model ok!\n");
+//     return 0;
+// }
 
 int speech_recognizer_get_data(uint8_t keyword_num, uint8_t model_num, uint16_t *frm_num, int16_t **voice_model, uint32_t *voice_model_len)
 {

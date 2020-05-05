@@ -18,9 +18,10 @@ extern const mp_obj_type_t Maix_i2s_type;
 const mp_obj_type_t modules_speech_recognizer_type;
 
 // 自定义结构体类型 speech_recognizer_obj_t
-typedef struct _speech_recognizer_obj_t {
-    mp_obj_base_t base; // 定义的结构体对象需要包含改成员
-    Maix_i2s_obj_t* dev;
+typedef struct _speech_recognizer_obj_t
+{
+    mp_obj_base_t base; // 定义的结构体对象需要包含该成员
+    Maix_i2s_obj_t *dev;
     uint32_t keyword_num;
     uint32_t model_num;
     uint16_t frm_num;
@@ -28,120 +29,182 @@ typedef struct _speech_recognizer_obj_t {
     int16_t *p_mfcc_data;
 } speech_recognizer_obj_t;
 
-
 STATIC mp_obj_t modules_speech_recognizer_record(size_t n_args, const mp_obj_t *args)
 {
     mp_printf(&mp_plat_print, "modules_speech_recognizer_record\r\n");
-  
+
     mp_int_t keyword_num = mp_obj_get_int(args[1]);
     mp_int_t model_num = mp_obj_get_int(args[2]);
-    if(keyword_num >10 )
+    if (keyword_num > 10)
     {
         mp_printf(&mp_plat_print, "[MaixPy] keyword_num>10\n");
         return mp_const_false;
     }
-    if(model_num > 4)
+    if (model_num > 4)
     {
         mp_printf(&mp_plat_print, "[MaixPy] keyword_num>4\n");
         return mp_const_false;
     }
-    mp_printf(&mp_plat_print, "[MAIXPY]: record[%d:%d]\n", keyword_num+1, keyword_num+1);
-    speech_recognizer_record(keyword_num, keyword_num);
+    mp_printf(&mp_plat_print, "[MAIXPY]: record[%d:%d]\n", keyword_num, model_num);
+    speech_recognizer_record(keyword_num, model_num);
     return mp_const_true;
 }
+
 STATIC mp_obj_t modules_speech_recognizer_print_model(size_t n_args, const mp_obj_t *args)
 {
+    speech_recognizer_obj_t *self = MP_OBJ_TO_PTR(args[0]);
     mp_int_t keyword_num = mp_obj_get_int(args[1]);
     mp_int_t model_num = mp_obj_get_int(args[2]);
-    if(keyword_num >10 )
+    if (keyword_num > 10)
     {
         mp_printf(&mp_plat_print, "[MaixPy] keyword_num>10\n");
         return mp_const_false;
     }
-    if(model_num > 4)
+    if (model_num > 4)
     {
         mp_printf(&mp_plat_print, "[MaixPy] keyword_num>4\n");
         return mp_const_false;
     }
-    mp_printf(&mp_plat_print, "[MaixPy] print_model[%d:%d]\n", keyword_num, keyword_num);
-    speech_recognizer_print_model(keyword_num, keyword_num);
-    return mp_const_true;
-}
-STATIC mp_obj_t modules_speech_recognizer_get_model_data(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
-{
-    speech_recognizer_obj_t* self = MP_OBJ_TO_PTR(args[0]);
-    mp_int_t keyword_num = mp_obj_get_int(args[1]);
-    mp_int_t model_num = mp_obj_get_int(args[2]);
-    if(keyword_num >10 )
-    {
-        mp_printf(&mp_plat_print, "[MaixPy] keyword_num>10\n");
-        return mp_const_false;
-    }
-    if(model_num > 4)
-    {
-        mp_printf(&mp_plat_print, "[MaixPy] keyword_num>4\n");
-        return mp_const_false;
-    }
-    mp_printf(&mp_plat_print, "[MaixPy] get_model_data[%d:%d]\n", keyword_num, keyword_num);
+
     speech_recognizer_get_data(keyword_num, model_num, &self->frm_num, &self->p_mfcc_data, &self->voice_model_len);
-    mp_obj_array_t * sr_array = m_new_obj(mp_obj_array_t);
+
+    mp_obj_array_t *sr_array = m_new_obj(mp_obj_array_t);
     sr_array->base.type = &mp_type_bytearray;
     sr_array->typecode = BYTEARRAY_TYPECODE;
     sr_array->free = 0;
-    sr_array->len = self->voice_model_len * 4;
+    sr_array->len = self->voice_model_len;
     sr_array->items = self->p_mfcc_data;
-    return sr_array;
+
+    mp_printf(&mp_plat_print, "[MaixPy] [(%d,%d)|frm_num:%d]\n", keyword_num, model_num, self->frm_num);
+
+    // printf("\r\n[%s]-----------------\r\n", __FUNCTION__);
+    // int16_t *pbuf_16 = (int16_t *)sr_array->items;
+    // for (int i = 0; i < (sr_array->len); i++)
+    // {
+    //     if (((i + 1) % 35) == 0)
+    //     {
+    //         printf("%4d  \n", pbuf_16[i]);
+    //         msleep(2);
+    //     }
+    //     else
+    //         printf("%4d  ", pbuf_16[i]);
+    // }
+    // printf("\r\n-----------------#\r\n");
+
+    return mp_const_true;
 }
-STATIC mp_obj_t modules_speech_recognizer_add_voice_model(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
+
+// -----------------------------------------------------------------------------
+STATIC mp_obj_t modules_speech_recognizer_get_model_data(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
-    speech_recognizer_obj_t* self = MP_OBJ_TO_PTR(args[0]);
+    speech_recognizer_obj_t *self = MP_OBJ_TO_PTR(args[0]);
     mp_int_t keyword_num = mp_obj_get_int(args[1]);
     mp_int_t model_num = mp_obj_get_int(args[2]);
-    mp_int_t frm_num = mp_obj_get_int(args[4]);
-    mp_obj_array_t * sr_array = MP_OBJ_TO_PTR(args[3]);
-    self->p_mfcc_data = (int16_t)sr_array->items;
-    
-    if(keyword_num >10 )
+    if (keyword_num > 10)
     {
         mp_printf(&mp_plat_print, "[MaixPy] keyword_num>10\n");
         return mp_const_false;
     }
-    if(model_num > 4)
+    if (model_num > 4)
+    {
+        mp_printf(&mp_plat_print, "[MaixPy] model_num>4\n");
+        return mp_const_false;
+    }
+
+    speech_recognizer_get_data(keyword_num, model_num, &self->frm_num, &self->p_mfcc_data, &self->voice_model_len);
+
+    mp_obj_array_t *sr_array = m_new_obj(mp_obj_array_t);
+    sr_array->base.type = &mp_type_bytearray;
+    sr_array->typecode = BYTEARRAY_TYPECODE;
+    sr_array->free = 0;
+    sr_array->len = self->voice_model_len;
+    sr_array->items = self->p_mfcc_data;
+
+    mp_printf(&mp_plat_print, "[MaixPy] [(%d,%d)|frm_num:%d]\n", keyword_num, model_num, self->frm_num);
+
+    // printf("\r\n[%s]-----------------\r\n", __FUNCTION__);
+    // int16_t *pbuf_16 = (int16_t *)sr_array->items;
+    // for (int i = 0; i < (sr_array->len); i++)
+    // {
+    //     if (((i + 1) % 35) == 0)
+    //     {
+    //         printf("%4d  \n", pbuf_16[i]);
+    //         msleep(2);
+    //     }
+    //     else
+    //         printf("%4d  ", pbuf_16[i]);
+    // }
+    // printf("\r\n-----------------#\r\n");
+
+    return sr_array;
+}
+
+STATIC mp_obj_t modules_speech_recognizer_add_voice_model(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
+{
+    speech_recognizer_obj_t *self = MP_OBJ_TO_PTR(args[0]);
+    mp_int_t keyword_num = mp_obj_get_int(args[1]);
+    mp_int_t model_num = mp_obj_get_int(args[2]);
+    mp_int_t frm_num = mp_obj_get_int(args[3]);
+    mp_obj_array_t *sr_array = MP_OBJ_TO_PTR(args[4]);
+    self->voice_model_len = sr_array->len;
+    self->p_mfcc_data = sr_array->items;
+    self->frm_num = frm_num;
+    if (keyword_num > 10)
+    {
+        mp_printf(&mp_plat_print, "[MaixPy] keyword_num>10\n");
+        return mp_const_false;
+    }
+    if (model_num > 4)
     {
         mp_printf(&mp_plat_print, "[MaixPy] keyword_num>4\n");
         return mp_const_false;
     }
-    mp_printf(&mp_plat_print, "[MaixPy] add_voice_model[%d:%d]\n", keyword_num, keyword_num);
-    // speech_recognizer_get_data(keyword_num, model_num, &self->frm_num, &self->p_mfcc_data, &self->voice_model_len);
-    // mp_obj_array_t * sr_array = m_new_obj(mp_obj_array_t);
-    // sr_array->base.type = &mp_type_bytearray;
-    // sr_array->typecode = BYTEARRAY_TYPECODE;
-    // sr_array->free = 0;
-    // sr_array->len = self->voice_model_len * 4;
-    // sr_array->items = self->p_mfcc_data;
+    mp_printf(&mp_plat_print, "[MaixPy] add_voice_model[%d:%d]\n", keyword_num, model_num);
+    mp_printf(&mp_plat_print, "[MaixPy] model[frm_num:%d:len:%d]\n", self->frm_num, sr_array->len);
+
+    // printf("\r\n[%s]-----------------\r\n", __FUNCTION__);
+    // int16_t *pbuf_16 = (int16_t *)sr_array->items;
+    // for (int i = 0; i < (sr_array->len); i++)
+    // {
+    //     if (((i + 1) % 35) == 0)
+    //     {
+    //         printf("%4d  \n", pbuf_16[i]);
+    //         msleep(2);
+    //     }
+    //     else
+    //         printf("%4d  ", pbuf_16[i]);
+    // }
+    // printf("\r\n-----------------#\r\n");
+
+    speech_recognizer_add_voice_model(keyword_num, model_num, self->p_mfcc_data, self->frm_num);
+
     return mp_const_true;
 }
 
+// -----------------------------------------------------------------------------
 STATIC mp_obj_t modules_speech_recognizer_init_helper(speech_recognizer_obj_t *self_in, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
     //parse paremeter
-    enum {ARG_dev,};
+    enum
+    {
+        ARG_dev,
+    };
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_dev, MP_ARG_OBJ , {.u_obj = mp_const_none} },
+        {MP_QSTR_dev, MP_ARG_OBJ, {.u_obj = mp_const_none}},
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
-    
-    speech_recognizer_obj_t* self = MP_OBJ_TO_PTR(self_in);
 
-    if(args[ARG_dev].u_obj != mp_const_none)
+    speech_recognizer_obj_t *self = MP_OBJ_TO_PTR(self_in);
+
+    if (args[ARG_dev].u_obj != mp_const_none)
     {
         mp_obj_t I2S_dev = args[ARG_dev].u_obj;
-        if(&Maix_i2s_type != mp_obj_get_type(I2S_dev))
+        if (&Maix_i2s_type != mp_obj_get_type(I2S_dev))
             mp_raise_ValueError("Invaild I2S device");
-        Maix_i2s_obj_t* i2s_dev = MP_OBJ_TO_PTR(I2S_dev);
+        Maix_i2s_obj_t *i2s_dev = MP_OBJ_TO_PTR(I2S_dev);
         self->dev = i2s_dev;
-        mp_printf(&mp_plat_print, "[MaixPy] i2s_num:%d\r\n",self->dev->i2s_num );
+        mp_printf(&mp_plat_print, "[MaixPy] i2s_num:%d\r\n", self->dev->i2s_num);
         speech_recognizer_init(self->dev->i2s_num);
     }
     else
@@ -152,25 +215,25 @@ STATIC mp_obj_t modules_speech_recognizer_init_helper(speech_recognizer_obj_t *s
     return mp_const_true;
 }
 
-STATIC mp_obj_t modules_speech_recognizer_init(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
-    return modules_speech_recognizer_init_helper(args[0], n_args -1 , args + 1, kw_args);
+STATIC mp_obj_t modules_speech_recognizer_init(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
+{
+    return modules_speech_recognizer_init_helper(args[0], n_args - 1, args + 1, kw_args);
 }
-
 
 STATIC mp_obj_t modules_speech_recognizer_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args)
 {
-    mp_arg_check_num(n_args, n_kw, 1, 1, true); // 检查参数个数
+    mp_arg_check_num(n_args, n_kw, 1, 1, true);
 
-    speech_recognizer_obj_t *self = m_new_obj_with_finaliser(speech_recognizer_obj_t);   // 创建对象, 分配空间
-    self->base.type = &modules_speech_recognizer_type;       // 定义对象类型
-    
+    speech_recognizer_obj_t *self = m_new_obj_with_finaliser(speech_recognizer_obj_t);
+    self->base.type = &modules_speech_recognizer_type;
+
     // init instance
     mp_map_t kw_args;
     mp_map_init_fixed_table(&kw_args, n_kw, args + n_args);
-    if(mp_const_false == modules_speech_recognizer_init_helper(self, n_args, args, &kw_args))
+    if (mp_const_false == modules_speech_recognizer_init_helper(self, n_args, args, &kw_args))
         return mp_const_false;
 
-    return MP_OBJ_FROM_PTR(self);   // 返回对象的指针
+    return MP_OBJ_FROM_PTR(self);
 }
 
 STATIC mp_obj_t modules_speech_recognizer_recognize(mp_obj_t self_in)
@@ -181,7 +244,7 @@ STATIC mp_obj_t modules_speech_recognizer_recognize(mp_obj_t self_in)
     return mp_obj_new_int(rev_val);
 }
 
-MP_DEFINE_CONST_FUN_OBJ_KW(modules_speech_recognizer_init_obj, 1 ,modules_speech_recognizer_init);
+MP_DEFINE_CONST_FUN_OBJ_KW(modules_speech_recognizer_init_obj, 1, modules_speech_recognizer_init);
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modules_speech_recognizer_record_obj, 3, 3, modules_speech_recognizer_record);
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modules_speech_recognizer_print_model_obj, 3, 3, modules_speech_recognizer_print_model);
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modules_speech_recognizer_get_model_data_obj, 3, 3, modules_speech_recognizer_get_model_data);

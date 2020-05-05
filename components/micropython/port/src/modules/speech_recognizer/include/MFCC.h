@@ -15,6 +15,7 @@
 #define mfcc_num 12 //MFCC阶数
 
 #define vv_tim_max 2200                                                         //单段有效语音最长时间 ms
+        // ((2200-20)/(20-10)+1)=219
 #define vv_frm_max ((vv_tim_max - frame_time) / (frame_time - frame_mov_t) + 1) //单段有效语音最长帧数
 
 #ifdef __cplusplus
