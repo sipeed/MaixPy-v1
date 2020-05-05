@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include "g_def.h"
+#include "dmac.h"
 #include "ADC.h"
 #include "VAD.h"
 #include "MFCC.h"

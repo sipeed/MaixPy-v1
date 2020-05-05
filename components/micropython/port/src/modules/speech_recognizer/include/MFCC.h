@@ -1,8 +1,8 @@
 #ifndef _MFCC_H
 #define _MFCC_H
 #include "VAD.h"
-#include "g_def.h"
 #include "dmac.h"
+
 #include "hal_fft.h"
 
 #define hp_ratio(x) (x * 95 / 100)   //预加重系数 0.95
@@ -15,6 +15,7 @@
 #define mfcc_num 12 //MFCC阶数
 
 #define vv_tim_max 2200                                                         //单段有效语音最长时间 ms
+        // ((2200-20)/(20-10)+1)=219
 #define vv_frm_max ((vv_tim_max - frame_time) / (frame_time - frame_mov_t) + 1) //单段有效语音最长帧数
 
 #ifdef __cplusplus
@@ -27,7 +28,7 @@ extern "C"
     {
         uint16_t save_sign;                       //存储标记 用于判断flash中特征模板是否有效
         uint16_t frm_num;                         //帧数
-                                             // u8 word_num;
+                                             // uint8_t word_num;
         int16_t mfcc_dat[vv_frm_max * mfcc_num]; //MFCC转换结果
                                              // float mfcc_dat[vv_frm_max*mfcc_num];
     } v_ftr_tag;                             //语音特征结构体

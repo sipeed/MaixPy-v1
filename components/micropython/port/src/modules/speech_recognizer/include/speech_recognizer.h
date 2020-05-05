@@ -24,7 +24,6 @@
 
 #include "flash.h"
 
-#include "g_def.h"
 #include "VAD.h"
 #include "MFCC.h"
 #include "DTW.h"
@@ -35,7 +34,7 @@
 
 int speech_recognizer_init(i2s_device_number_t device_num);
 int speech_recognizer_record(uint8_t keyword_num, uint8_t model_num);
-int speech_recognizer_print_model(uint8_t keyword_num, uint8_t model_num);
+// int speech_recognizer_print_model(uint8_t keyword_num, uint8_t model_num);
 int speech_recognizer_get_data(uint8_t keyword_num, uint8_t model_num, uint16_t *frm_num, int16_t **voice_model, uint32_t *voice_model_len);
 int speech_recognizer_add_voice_model(uint8_t keyword_num, uint8_t model_num, const int16_t *voice_model, uint16_t frame_num);
 int speech_recognizer_recognize(void);

@@ -6,15 +6,15 @@
 #include <string.h>
 
 #include "syslog.h"
-
 #include "sysctl.h"
+
+#include "dmac.h"
 #include "plic.h"
 #include "uarths.h"
 #include "i2s.h"
 #include "Maix_i2s.h"
 #include "fpioa.h"
 
-#include "g_def.h"
 #include "VAD.h"
 #include "MFCC.h"
 #include "DTW.h"
@@ -93,15 +93,6 @@ int i2s_dma_irq(void *ctx)
 
 int speech_recognizer_init(i2s_device_number_t device_num)
 {
-    // i2s init
-    i2s_init(device_num, I2S_RECEIVER, 0x3);
-    LOGI(TAG, "use i2s_device:[%d]\n", device_num);
-
-    i2s_rx_channel_config(device_num, I2S_CHANNEL_0,
-                          RESOLUTION_16_BIT, SCLK_CYCLES_32,
-                          TRIGGER_LEVEL_4, STANDARD_MODE);
-
-    i2s_set_sample_rate(device_num, 8000);
 
     dmac_init();
     dmac_set_irq(DMAC_CHANNEL3, i2s_dma_irq, NULL, 3);
@@ -165,23 +156,25 @@ int speech_recognizer_add_voice_model(uint8_t keyword_num, uint8_t model_num, co
     return 0;
 }
 
-int speech_recognizer_print_model(uint8_t keyword_num, uint8_t model_num)
-{
-    mp_printf(&mp_plat_print, "\n---------------\n");
-    mp_printf(&mp_plat_print, "frm_num=%d\n", ftr_save[keyword_num * 4 + model_num].frm_num);
-    for (int i = 0; i < (vv_frm_max * mfcc_num); i++)
-    {
-        if (((i + 1) % 35) == 0)
-            // mp_printf(&mp_plat_print, "[MaixPy] %d,\n", ftr_save[keyword_num * 4 + model_num].mfcc_dat[i]);
-            printf("%d,\n", ftr_save[keyword_num * 4 + model_num].mfcc_dat[i]);
-        else
-            // mp_printf(&mp_plat_print, "[MaixPy] %d, ", ftr_save[keyword_num * 4 + model_num].mfcc_dat[i]);
-            printf("%d, ", ftr_save[keyword_num * 4 + model_num].mfcc_dat[i]);
-    }
-    mp_printf(&mp_plat_print, "\n---------------\n");
-    mp_printf(&mp_plat_print, "\nprint model ok!\n");
-    return 0;
-}
+// int speech_recognizer_print_model(uint8_t keyword_num, uint8_t model_num)
+// {
+//     mp_printf(&mp_plat_print, "\n---------------\n");
+//     mp_printf(&mp_plat_print, "frm_num=%d\n", ftr_save[keyword_num * 4 + model_num].frm_num);
+//     uint8_t *pdata = (uint8_t *)ftr_save[keyword_num * 4 + model_num].mfcc_dat;
+//     for (int i = 0; i < (vv_frm_max * mfcc_num)*(sizeof(int16_t)/sizeof(uint8_t)); i++)
+//     {
+//         if (((i + 1) % 20) == 0)
+//         {
+//             printf("%3d,\n", pdata[i]);
+//             msleep(1);
+//         }
+//         else
+//             printf("%3d,", pdata[i]);
+//     }
+//     mp_printf(&mp_plat_print, "\n---------------\n");
+//     mp_printf(&mp_plat_print, "\nprint model ok!\n");
+//     return 0;
+// }
 
 int speech_recognizer_get_data(uint8_t keyword_num, uint8_t model_num, uint16_t *frm_num, int16_t **voice_model, uint32_t *voice_model_len)
 {

@@ -1,6 +1,7 @@
 #ifndef _DTW_H
 #define _DTW_H
-#include "g_def.h"
+
+#include "dmac.h"
 
 #define dis_err 0xFFFFFFFF
 #define dis_max 0xFFFFFFFF

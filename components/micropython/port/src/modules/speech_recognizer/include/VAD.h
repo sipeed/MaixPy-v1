@@ -1,7 +1,7 @@
 #ifndef _VAD_H
 #define _VAD_H
 
-#include "g_def.h"
+#include <stdint.h>
 
 #define max_vc_con 3                        //VAD最多检测的语音段数
 #define frame_time 20                       // 每帧时间长度 单位ms

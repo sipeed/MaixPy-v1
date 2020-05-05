@@ -10,16 +10,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "g_def.h"
+
 #include "flash.h"
 #include "uarths.h"
 #include "MFCC.h"
 
 v_ftr_tag ftr_save[20 * 4];
 
-u8 save_ftr_mdl(v_ftr_tag *ftr, u32 addr)
+uint8_t save_ftr_mdl(v_ftr_tag *ftr, uint32_t addr)
 {
-    //  u32 ftr_size;
+    //  uint32_t ftr_size;
 
     addr = addr / size_per_ftr;
 
