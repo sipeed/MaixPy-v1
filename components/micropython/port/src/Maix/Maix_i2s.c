@@ -240,7 +240,12 @@ STATIC mp_obj_t Maix_i2s_record(size_t n_args, const mp_obj_t *pos_args, mp_map_
             mp_raise_ValueError("[MAIXPY]I2S:Too many points");
         }
         audio_obj->audio.points = args[ARG_points].u_int;
-        audio_obj->audio.buf = self->buf;
+        char* audio_buf = m_new(uint32_t, audio_obj->audio.points);
+        if (audio_buf == NULL) {
+            mp_raise_ValueError("[MAIXPY]I2S:create audio new buf error");
+        }
+        memcpy(audio_buf, self->buf, sizeof(uint32_t) * audio_obj->audio.points);
+        audio_obj->audio.buf = audio_buf;
     }
     else if(args[ARG_time].u_int > 0)
     {
@@ -251,7 +256,13 @@ STATIC mp_obj_t Maix_i2s_record(size_t n_args, const mp_obj_t *pos_args, mp_map_
         if(smp_points > self->points_num)
             mp_raise_ValueError("[MAIXPY]I2S:sampling size is out of bounds");
         audio_obj->audio.points = smp_points;
-        audio_obj->audio.buf = self->buf;
+        char* audio_buf = m_new(uint32_t, audio_obj->audio.points);
+        if (audio_buf == NULL)
+        {
+            mp_raise_ValueError("[MAIXPY]I2S:create audio new buf error");
+        }
+        memcpy(audio_buf, self->buf, sizeof(uint32_t) * smp_points);
+        audio_obj->audio.buf = audio_buf;
     }else 
     {
         mp_raise_ValueError("[MAIXPY]I2S:please input recording points or time");
