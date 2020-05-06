@@ -427,6 +427,7 @@ uint32_t recvPkg(esp8285_obj *nic, char *out_buff, uint32_t out_buff_len, uint32
     while (State != EXIT) {
         // wait any uart data
         uart_recv_len = uart_rx_any(nic->uart_obj);
+        // printk("uart_recv_len %d\n", uart_recv_len);
         if (uart_recv_len > 0) {
 
             if (tmp_len >= sizeof(tmp_buf)) { // lock across
@@ -449,10 +450,11 @@ uint32_t recvPkg(esp8285_obj *nic, char *out_buff, uint32_t out_buff_len, uint32
                         tmp_state = 1, tmp_bak = tmp_pos, State = IPD;
                         continue;
                     } else {
-                        // printk("(%02X)", tmp_buf[tmp_pos]);
+                        // printk("other (%02X)\n", tmp_buf[tmp_pos]);
                         tmp_len -= 1; // clear don't need data, such as (0D)(0A)
                         continue;
                     }
+                    continue;
                 }
 
                 if (State == IPD) {
@@ -494,10 +496,12 @@ uint32_t recvPkg(esp8285_obj *nic, char *out_buff, uint32_t out_buff_len, uint32
                             } else {
                                 tmp_len = tmp_bak, tmp_bak = 0; // Clean up the commands in the buffer and roll back the data
                                 frame_len = len, State = DATA;
+                                // printk("%s | IPD frame_len %d\n", __func__, frame_len);
                             }
                         }
                         continue;
                     }
+                    continue;
                 }
 
                 if (State == DATA) {
@@ -505,7 +509,7 @@ uint32_t recvPkg(esp8285_obj *nic, char *out_buff, uint32_t out_buff_len, uint32
                     
                     frame_len -= tmp_len, tmp_len = 0; // get data
 
-                    if (frame_len < 0) {
+                    if (frame_len < 0) { // already frame_len - tmp_len before (not frame_len <= 0)
 
                         if (frame_len == -1 && tmp_buf[tmp_pos] == 'C') { // wait "CLOSED\r\n"
                             frame_bak = frame_len;
@@ -561,9 +565,13 @@ uint32_t recvPkg(esp8285_obj *nic, char *out_buff, uint32_t out_buff_len, uint32
                     continue;
                 }
 
+                continue;
+
             } else {
                 State = EXIT;
             }
+
+            continue;
         }
         
         if (mp_hal_ticks_ms() - interrupt > timeout) {
@@ -573,6 +581,8 @@ uint32_t recvPkg(esp8285_obj *nic, char *out_buff, uint32_t out_buff_len, uint32
         if (*peer_closed) {
             break; // disconnection
         }
+        
+        // mp_hal_wake_main_task_from_isr();
     }
 
     size = Buffer_Size(&nic->buffer);
