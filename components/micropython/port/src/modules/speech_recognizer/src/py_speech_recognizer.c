@@ -143,8 +143,9 @@ STATIC mp_obj_t modules_speech_recognizer_add_voice_model(size_t n_args, const m
     speech_recognizer_obj_t *self = MP_OBJ_TO_PTR(args[0]);
     mp_int_t keyword_num = mp_obj_get_int(args[1]);
     mp_int_t model_num = mp_obj_get_int(args[2]);
-    mp_int_t frm_num = mp_obj_get_int(args[4]);
-    mp_obj_array_t *sr_array = MP_OBJ_TO_PTR(args[3]);
+    mp_int_t frm_num = mp_obj_get_int(args[3]);
+    mp_obj_array_t *sr_array = MP_OBJ_TO_PTR(args[4]);
+
     self->p_mfcc_data = (int16_t)sr_array->items;
     self->frm_num = frm_num;
     if (keyword_num > 10)
