@@ -255,41 +255,51 @@ int avi_record_header_init(const char* path, avi_t* avi_config)
 							   sizeof(strf_bmp_header_t);// 29*4
 	buf += sizeof(strf_bmp_header_t);                       // video stream header ok
 
-	// LIST for audio header
-	list_header=(list_header_t*)(buf);
-	list_header->list_id = AVI_LIST_ID;                  //"LIST"
-	list_header->list_type = AVI_STRL_ID;                //"strl"
-	buf += sizeof(list_header_t);
+	if(avi_config->record_audio)
+	{
+		// LIST for audio header
+		list_header=(list_header_t*)(buf);
+		list_header->list_id = AVI_LIST_ID;                  //"LIST"
+		list_header->list_type = AVI_STRL_ID;                //"strl"
+		buf += sizeof(list_header_t);
 
-	strh_header=(strh_header_t*)(buf);
-	strh_header->block_id = AVI_STRH_ID;                 //"strh"
-	strh_header->block_size = sizeof(strh_header_t)-8;   //0x38(56)
-	strh_header->stream_type = AVI_AUDS_STREAM;          //"auds"  //audio info
-	strh_header->handler = avi_config->audio_format;         //PCM=0x01
-	strh_header->scale = 1;
-	strh_header->rate  = avi_config->audio_sample_rate;
-	strh_header->ref_buf_size = 4096;//TODO:
-	strh_header->quality = 0xFFFFFFFF;
-	buf += sizeof(strh_header_t);
+		strh_header=(strh_header_t*)(buf);
+		strh_header->block_id = AVI_STRH_ID;                 //"strh"
+		strh_header->block_size = sizeof(strh_header_t)-8;   //0x38(56)
+		strh_header->stream_type = AVI_AUDS_STREAM;          //"auds"  //audio info
+		strh_header->handler = avi_config->audio_format;         //PCM=0x01
+		strh_header->scale = 1;
+		strh_header->rate  = avi_config->audio_sample_rate;
+		strh_header->ref_buf_size = 4096;//TODO:
+		strh_header->quality = 0xFFFFFFFF;
+		buf += sizeof(strh_header_t);
 
-	wav_header = (strf_wav_header_t*)(buf);
-	wav_header->block_id = AVI_STRF_ID;                     //"strf"
-	wav_header->block_size = sizeof(strf_wav_header_t) -8;  //0x28(40)
-	wav_header->format_tag = avi_config->audio_format;
-	wav_header->channels = avi_config->audio_channels;
-	wav_header->sample_rate = avi_config->audio_sample_rate;
-	wav_header->block_align = 4;
-	wav_header->bits_depth  = 16;
+		wav_header = (strf_wav_header_t*)(buf);
+		wav_header->block_id = AVI_STRF_ID;                     //"strf"
+		wav_header->block_size = sizeof(strf_wav_header_t) -8;  //0x28(40)
+		wav_header->format_tag = avi_config->audio_format;
+		wav_header->channels = avi_config->audio_channels;
+		wav_header->sample_rate = avi_config->audio_sample_rate;
+		wav_header->block_align = 4;
+		wav_header->bits_depth  = 16;
 
-	list_header->block_size =  sizeof(list_header_t)-8 +    // 1*4
-	                           sizeof(strh_header_t) +      //16*4
-							   sizeof(strf_wav_header_t);   // 6*4
-	buf += sizeof(strf_wav_header_t);                       // video stream header ok
+		list_header->block_size =  sizeof(list_header_t)-8 +    // 1*4
+								sizeof(strh_header_t) +      //16*4
+								sizeof(strf_wav_header_t);   // 6*4
+		buf += sizeof(strf_wav_header_t);                       // video stream header ok
 
-	list_header0->block_size = sizeof(list_header_t)-8 +  //sizeof(hdrl)
+		list_header0->block_size = sizeof(list_header_t)-8 +  //sizeof(hdrl)
+								sizeof(avih_header_t) +    
+								list_header_video->block_size+8 + //list video size
+								list_header->block_size+8;        //list audio size
+
+	}
+	else
+	{
+		list_header0->block_size = sizeof(list_header_t)-8 +  //sizeof(hdrl)
 	                           sizeof(avih_header_t) +    
-							   list_header_video->block_size+8 + //list video size
-							   list_header->block_size+8;        //list audio size
+							   list_header_video->block_size+8; //list video size
+	}
 
 	//TODO: fill JUNK data to align
 	list_header=(list_header_t*)(buf);
