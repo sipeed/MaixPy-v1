@@ -141,6 +141,32 @@ void lcd_set_direction(lcd_dir_t dir)
         return;
     //dir |= 0x08;  //excahnge RGB
     lcd_ctl.dir = dir;
+
+#if defined(CONFIG_BOARD_TWATCH)
+    lcd_ctl.width = g_lcd_w - 1;
+    lcd_ctl.height = g_lcd_h - 1;
+    switch (dir)
+    {
+    case DIR_XY_RLUD:
+        lcd_ctl.start_offset_w = 0;
+        lcd_ctl.start_offset_h = 0;
+        break;
+    case DIR_YX_LRUD:
+        lcd_ctl.start_offset_w = 0;
+        lcd_ctl.start_offset_h = 0;
+        break;
+    case DIR_YX_RLDU:  
+        lcd_ctl.start_offset_w = 80;
+        lcd_ctl.start_offset_h = 0;
+        break;
+    case DIR_XY_LRDU:   
+        lcd_ctl.start_offset_w = 0;
+        lcd_ctl.start_offset_h = 80;
+        break;  
+    default:
+        break;
+    }
+#else
     if (dir & DIR_XY_MASK)
     {
         lcd_ctl.width = g_lcd_w - 1;
@@ -155,7 +181,7 @@ void lcd_set_direction(lcd_dir_t dir)
         lcd_ctl.start_offset_w = lcd_ctl.start_offset_w0;
         lcd_ctl.start_offset_h = lcd_ctl.start_offset_h0;
     }
-    
+#endif
     tft_write_command(MEMORY_ACCESS_CTL);
     tft_write_byte((uint8_t *)&dir, 1);
 }

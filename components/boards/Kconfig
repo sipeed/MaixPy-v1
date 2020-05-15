@@ -9,6 +9,8 @@ menu "Board config"
 
 		config BOARD_M5STICK
 			bool "Select board m5stick"
+		config BOARD_TWATCH
+			bool "Select board TWatch"
 	endchoice
 
 	config LCD_DEFAULT_WIDTH

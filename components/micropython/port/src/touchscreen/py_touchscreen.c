@@ -9,10 +9,12 @@ mp_obj_t py_touchscreen_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *
 {
     enum{
         ARG_i2c,
+        ARG_type,
         ARG_cal
     };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_i2c, MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        { MP_QSTR_type, MP_ARG_OBJ, {.u_obj = mp_const_none} },
         { MP_QSTR_cal, MP_ARG_OBJ, {.u_obj = mp_const_none} }
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -24,6 +26,26 @@ mp_obj_t py_touchscreen_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *
     {
         config.i2c = NULL;
     }
+
+    int ret;
+    mp_obj_t type_obj = args[ARG_type].u_obj;
+    if ( type_obj !=  mp_const_none) {
+        mp_int_t  type_int = mp_obj_get_int(type_obj);
+        switch (type_int) {
+        case TOUCHSCREEN_TYPE_NS2009:
+            config.drives_type = TOUCHSCREEN_TYPE_NS2009;
+            break;
+        case TOUCHSCREEN_TYPE_FT62XX:
+            config.drives_type = TOUCHSCREEN_TYPE_FT62XX;
+            ret = touchscreen_init((void *)&config);
+            if ( ret != 0)
+                mp_raise_OSError(ret);
+            return mp_const_none;
+        default:
+            break;
+        }
+    }
+
     mp_obj_t cal = args[ARG_cal].u_obj;
     if( cal !=  mp_const_none)
     {
@@ -45,7 +67,7 @@ mp_obj_t py_touchscreen_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *
         config.calibration[5] = -700369;
         config.calibration[6] = 65536;
     }
-    int ret = touchscreen_init((void*)&config);
+    ret = touchscreen_init((void*)&config);
     if( ret != 0)
         mp_raise_OSError(ret);
     return mp_const_none;
@@ -110,6 +132,8 @@ STATIC const mp_map_elem_t globals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_STATUS_RELEASE),   MP_ROM_INT(TOUCHSCREEN_STATUS_RELEASE) },
     { MP_ROM_QSTR(MP_QSTR_STATUS_PRESS),   MP_ROM_INT(TOUCHSCREEN_STATUS_PRESS) },
     { MP_ROM_QSTR(MP_QSTR_STATUS_MOVE),   MP_ROM_INT(TOUCHSCREEN_STATUS_MOVE) },
+    { MP_ROM_QSTR(MP_QSTR_NS2009),   MP_ROM_INT(TOUCHSCREEN_TYPE_NS2009) },
+    { MP_ROM_QSTR(MP_QSTR_FT62XX),   MP_ROM_INT(TOUCHSCREEN_TYPE_FT62XX) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(globals_dict, globals_dict_table);

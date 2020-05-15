@@ -161,6 +161,12 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
 				fpioa_set_function(19, FUNC_SPI0_SCLK);
 				fpioa_set_function(18, FUNC_SPI0_D0);
 				ret = lcd_init(args[ARG_freq].u_int, false, 52, 40, 40, 52, true, width_curr, height_curr);
+			#elif defined(CONFIG_BOARD_TWATCH)
+				fpioa_set_function(37, FUNC_GPIOHS0 + RST_GPIONUM);
+				fpioa_set_function(38, FUNC_GPIOHS0 + DCX_GPIONUM);
+				fpioa_set_function(36, FUNC_SPI0_SS0+LCD_SPI_SLAVE_SELECT);
+				fpioa_set_function(39, FUNC_SPI0_SCLK);
+				ret = lcd_init(args[ARG_freq].u_int, true, 0, 0 ,0 ,0 , true, width_curr, height_curr);
 			#else
 				// backlight_init = false;
 				fpioa_set_function(37, FUNC_GPIOHS0 + RST_GPIONUM);
