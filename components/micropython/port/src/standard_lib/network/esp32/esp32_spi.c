@@ -595,7 +595,9 @@ int8_t esp32_spi_start_scan_networks(void)
 
     if (resp == NULL)
     {
+#if ESP32_SPI_DEBUG
         printk("%s: get resp error!\r\n", __func__);
+#endif
         return -1;
     }
 
@@ -922,7 +924,7 @@ uint8_t esp32_spi_is_connected(void)
 //  that contains a 'ssid' and 'password' entry
 void esp32_spi_connect(uint8_t *secrets)
 {
-    printk("%s not Support Yet!\r\n", __func__);
+    // printk("%s not Support Yet!\r\n", __func__);
     return;
 }
 
@@ -1009,7 +1011,7 @@ void esp32_spi_pretty_ip(uint8_t *ip, uint8_t *str_ip)
 
 void esp32_spi_unpretty_ip(uint8_t *ip)
 {
-    printk("%s: Not Support Yet!\r\n", __func__);
+    // printk("%s: Not Support Yet!\r\n", __func__);
     return;
 }
 
