@@ -46,7 +46,7 @@ sipeed_kpu_err_t sipeed_kpu_set_outputs_shape(void* ctx, uint16_t idx, uint16_t 
 sipeed_kpu_err_t sipeed_kpu_get_outputs_shape(void* ctx, uint16_t idx, uint16_t* w, uint16_t* h, uint16_t* ch);
 //Add for Flash loader
 sipeed_kpu_err_t sipeed_kpu_model_load_flash(void** ctx, uint32_t flash_addr, uint32_t is_dual_buf, uint32_t batch_size, uint32_t spi_speed, uint32_t* size);
-
+void sipeed_kpu_use_dma(int);
 
 /**
  * @brief       Kpu run for AI( V1 API)

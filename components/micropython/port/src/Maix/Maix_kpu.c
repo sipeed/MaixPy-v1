@@ -676,13 +676,14 @@ mp_obj_t py_kpu_calss_yolo2_deinit(mp_obj_t self_in)
 
 STATIC mp_obj_t py_kpu_class_init_yolo2(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
-    enum { ARG_kpu_net, ARG_threshold, ARG_nms_value, ARG_anchor_number, ARG_anchor};
+    enum { ARG_kpu_net, ARG_threshold, ARG_nms_value, ARG_anchor_number, ARG_anchor, ARG_dma};
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_kpu_net,              MP_ARG_OBJ, {.u_obj = mp_const_none} },
         { MP_QSTR_threshold,            MP_ARG_OBJ, {.u_obj = mp_const_none} },
         { MP_QSTR_nms_value,            MP_ARG_OBJ, {.u_obj = mp_const_none} },
         { MP_QSTR_anchor_number,        MP_ARG_INT, {.u_int = 0x0}           },
         { MP_QSTR_anchor,               MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        { MP_QSTR_dma, 		        	MP_ARG_INT, {.u_int = -1} },
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -692,6 +693,7 @@ STATIC mp_obj_t py_kpu_class_init_yolo2(size_t n_args, const mp_obj_t *pos_args,
         float threshold, nms_value, *anchor = NULL;
         int anchor_number;
 
+        sipeed_kpu_use_dma(args[ARG_dma].u_int);
         threshold = mp_obj_get_float(args[ARG_threshold].u_obj);
         if(!(threshold >= 0.0 && threshold <= 1.0))
         {
@@ -1273,11 +1275,12 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(py_kpu_set_layers_obj, py_kpu_set_layers);
 
 STATIC mp_obj_t py_kpu_forward(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
-	enum { ARG_kpu_net, ARG_img, ARG_out_index};
+	enum { ARG_kpu_net, ARG_img, ARG_out_index, ARG_dma};
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_kpu_net,              MP_ARG_OBJ, {.u_obj = mp_const_none} },
 		{ MP_QSTR_img,              	MP_ARG_OBJ, {.u_obj = mp_const_none} },
 		{ MP_QSTR_out_index, 			MP_ARG_INT, {.u_int = 0x0} },
+        { MP_QSTR_dma, 		        	MP_ARG_INT, {.u_int = -1} },
     };	//type
     char char_temp[30];
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -1288,7 +1291,7 @@ STATIC mp_obj_t py_kpu_forward(size_t n_args, const mp_obj_t *pos_args, mp_map_t
 		py_kpu_net_obj_t *kpu_net = MP_OBJ_TO_PTR(args[ARG_kpu_net].u_obj);
 		image_t *arg_img = py_image_cobj(args[ARG_img].u_obj);
         sipeed_kpu_err_t ret;
-
+        sipeed_kpu_use_dma(args[ARG_dma].u_int);
 		int out_index = args[ARG_out_index].u_int;		//which output you want, defaultly index 0
 		uint16_t w0=0;uint16_t h0=0;uint16_t ch0=0;
 		int kmodel_type=sipeed_kpu_model_get_type(kpu_net->kmodel_ctx);
