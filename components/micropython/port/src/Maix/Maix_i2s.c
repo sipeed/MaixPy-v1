@@ -240,7 +240,12 @@ STATIC mp_obj_t Maix_i2s_record(size_t n_args, const mp_obj_t *pos_args, mp_map_
             mp_raise_ValueError("[MAIXPY]I2S:Too many points");
         }
         audio_obj->audio.points = args[ARG_points].u_int;
-        audio_obj->audio.buf = self->buf;
+        char* audio_buf = m_new(uint32_t, audio_obj->audio.points);
+        if (audio_buf == NULL) {
+            mp_raise_ValueError("[MAIXPY]I2S:create audio new buf error");
+        }
+        memcpy(audio_buf, self->buf, sizeof(uint32_t) * audio_obj->audio.points);
+        audio_obj->audio.buf = audio_buf;
     }
     else if(args[ARG_time].u_int > 0)
     {
@@ -251,7 +256,13 @@ STATIC mp_obj_t Maix_i2s_record(size_t n_args, const mp_obj_t *pos_args, mp_map_
         if(smp_points > self->points_num)
             mp_raise_ValueError("[MAIXPY]I2S:sampling size is out of bounds");
         audio_obj->audio.points = smp_points;
-        audio_obj->audio.buf = self->buf;
+        char* audio_buf = m_new(uint32_t, audio_obj->audio.points);
+        if (audio_buf == NULL)
+        {
+            mp_raise_ValueError("[MAIXPY]I2S:create audio new buf error");
+        }
+        memcpy(audio_buf, self->buf, sizeof(uint32_t) * smp_points);
+        audio_obj->audio.buf = audio_buf;
     }else 
     {
         mp_raise_ValueError("[MAIXPY]I2S:please input recording points or time");
@@ -259,10 +270,17 @@ STATIC mp_obj_t Maix_i2s_record(size_t n_args, const mp_obj_t *pos_args, mp_map_
 
     //record 
     i2s_receive_data_dma(self->i2s_num, audio_obj->audio.buf, audio_obj->audio.points , DMAC_CHANNEL5);
-    dmac_wait_idle(DMAC_CHANNEL5);//wait to finish recv
+    // dmac_wait_idle(DMAC_CHANNEL5);//wait to finish recv
     return MP_OBJ_FROM_PTR(audio_obj);
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(Maix_i2s_record_obj,1,Maix_i2s_record);
+
+STATIC mp_obj_t Maix_i2s_wait_record(void*self_)
+{
+    dmac_wait_idle(DMAC_CHANNEL5);//wait to finish recv
+    return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_1(Maix_i2s_wait_record_obj, Maix_i2s_wait_record);
 
 STATIC mp_obj_t Maix_i2s_play(void*self_, mp_obj_t audio_obj)
 {
@@ -292,6 +310,7 @@ STATIC const mp_rom_map_elem_t Maix_i2s_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_channel_config),  MP_ROM_PTR(&Maix_i2s_channel_config_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_sample_rate), MP_ROM_PTR(&Maix_i2s_set_sample_rate_obj) },
     { MP_ROM_QSTR(MP_QSTR_record),          MP_ROM_PTR(&Maix_i2s_record_obj) },
+    { MP_ROM_QSTR(MP_QSTR_wait_record),          MP_ROM_PTR(&Maix_i2s_wait_record_obj) },
     { MP_ROM_QSTR(MP_QSTR_play),            MP_ROM_PTR(&Maix_i2s_play_obj) },
     //advance interface , some user don't use it
     // { MP_ROM_QSTR(MP_QSTR_set_dma_divede_16), MP_ROM_PTR(&Maix_i2s_set_dma_divede_16_obj) },
