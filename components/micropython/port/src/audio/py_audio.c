@@ -48,11 +48,15 @@ STATIC mp_obj_t Maix_audio_init_helper(Maix_audio_obj_t *self, size_t n_args, co
     //parse paremeter
     enum {ARG_array,
           ARG_path,
-          ARG_points};
+          ARG_points,
+          ARG_is_create,
+          ARG_samplerate};
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_array, MP_ARG_OBJ , {.u_obj = mp_const_none} },
         { MP_QSTR_path,  MP_ARG_OBJ  , {.u_obj = mp_const_none} },
         { MP_QSTR_points, MP_ARG_INT | MP_ARG_KW_ONLY , {.u_int = MAX_SAMPLE_POINTS} },
+        { MP_QSTR_is_create, MP_ARG_BOOL | MP_ARG_KW_ONLY , {.u_bool = false} },
+        { MP_QSTR_samplerate, MP_ARG_INT | MP_ARG_KW_ONLY , {.u_int = 44100} },
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -85,10 +89,62 @@ STATIC mp_obj_t Maix_audio_init_helper(Maix_audio_obj_t *self, size_t n_args, co
     {
         int err = 0;
         char* path_str = (char*)mp_obj_str_get_str(args[ARG_path].u_obj);
-        mp_obj_t fp = vfs_internal_open(path_str,"rb",&err);
-        if( err != 0)
-            mp_raise_OSError(err);
-        audio_obj->fp = fp;
+
+        mp_obj_t fp = NULL;
+
+        if (args[ARG_is_create].u_bool == true) {
+            // record to create file
+            fp = vfs_internal_open(path_str,"wb",&err);
+
+            if( err != 0)
+                mp_raise_OSError(err);
+            audio_obj->fp = fp;
+            
+            int err_code = 0;
+            int close_code = 0;
+            wav_finish(audio_obj);//free memory
+            //create encode object
+            audio_obj->record_obj = m_new(wav_encode_t,1);//new format obj
+            if(NULL == audio_obj->record_obj)
+            {
+                mp_printf(&mp_plat_print, "[MAIXPY]: Can not create encode object\n");
+                m_del(wav_encode_t,audio_obj->record_obj,1);
+                vfs_internal_close(audio_obj->fp,&close_code);
+            }
+            //file chunk
+            wav_encode_t* wav_encode = audio_obj->record_obj;
+            wav_encode->file.riff_id = 0x46464952;//'riff'
+            wav_encode->file.file_size = 0;
+            wav_encode->file.wave_id = 0x45564157;//'wave'
+            //formate chunk
+            format_chunk_t* wav_fmt = &wav_encode->format;
+            wav_fmt->fmt_ID = 0x20746D66;//'fmt '
+            wav_fmt->chunk_size = 16;
+            wav_fmt->format_tag = 1;
+            wav_fmt->numchannels = 2;
+            wav_fmt->samplerate = args[ARG_samplerate].u_int;
+            wav_fmt->bitspersample = 16;//only support 16bit resolution
+            //data chunk
+            wav_encode->data.data_ID = 0x61746164;//'data'
+            wav_encode->data.chunk_size = 0; 
+            vfs_internal_seek(audio_obj->fp,44,VFS_SEEK_SET,&err_code);//head length 44
+            // return mp_const_none;
+            if(err_code != 0)
+            {
+                mp_printf(&mp_plat_print, "[MAIXPY]: seek error  close file\n");
+                m_del(wav_encode_t,audio_obj->record_obj,1);
+                vfs_internal_close(audio_obj->fp,&close_code);
+                mp_raise_OSError(err_code);
+            }
+
+        } else {
+            fp = vfs_internal_open(path_str,"rb",&err);
+            if( err != 0)
+                mp_raise_OSError(err);
+            audio_obj->fp = fp;
+        }
+    
+        // printf("audio_obj->fp %p\n", audio_obj->fp);
         audio_obj->type = FILE_AUDIO;
         //We can find the format of audio by path_str,but now just support wav
         int16_t index_format = strlen(path_str)-4;
@@ -254,9 +310,28 @@ MP_DEFINE_CONST_FUN_OBJ_KW(Maix_audio_record_process_obj,2, Maix_audio_record_pr
 
 //----------------record ------------------------
 
-STATIC mp_obj_t Maix_audio_record(mp_obj_t self_in) {
+STATIC mp_obj_t Maix_audio_record(mp_obj_t self_in, mp_obj_t record_in) {
     Maix_audio_obj_t *self = MP_OBJ_TO_PTR(self_in);//get auduio obj
-    audio_t* audio = &self->audio; 
+    Maix_audio_obj_t *record = MP_OBJ_TO_PTR(record_in);//get auduio obj
+    audio_t* audio = &self->audio;
+    audio_t* input = &record->audio;
+    int err_code = 0;
+    // printf("audio->format %d\n", audio->format);
+    // printf("record->audio.type %d\n", record->audio.type);
+    
+    uint16_t* buf = (uint16_t*)malloc(input->points * sizeof(uint16_t));//
+    for(int i = 0; i < input->points; i += 1){
+        buf[i] = input->buf[i] & 0xffff;//left an right channle 16 bit resolution
+    }
+    vfs_internal_write(audio->fp,buf,input->points * sizeof(uint16_t), &err_code);
+    wav_encode_t* wav_encode = audio->record_obj;
+    wav_encode->data.chunk_size +=  input->points * sizeof(uint16_t);
+    free(buf);
+    if(err_code!=0)
+        return err_code;
+        
+    return mp_const_none;
+
     switch(audio->format)
     {
         case AUDIO_WAV_FMT:
@@ -268,7 +343,7 @@ STATIC mp_obj_t Maix_audio_record(mp_obj_t self_in) {
     return mp_const_none;
 }
 
-MP_DEFINE_CONST_FUN_OBJ_1(Maix_audio_record_obj,Maix_audio_record);
+MP_DEFINE_CONST_FUN_OBJ_2(Maix_audio_record_obj,Maix_audio_record);
 
 //----------------finish ------------------------
 
