@@ -351,15 +351,15 @@ void pyexec_str(vstr_t* str) {
 }
 #endif
 
-void mp_task(
-	void *pvParameter
-	) {
+void mp_task(void *pvParameter)
+{
+		volatile void* tmp;
+		volatile void* sp = &tmp;
 #if MICROPY_PY_THREAD
-		volatile void *stack_p = 0;
-        volatile void *mp_main_stack_top = &stack_p;
-		mp_thread_init(mp_main_stack_top, MP_TASK_STACK_LEN);
-#else
-		volatile void* mp_main_stack_top = (void*)get_sp();
+		TaskStatus_t task_status;
+		vTaskGetInfo(mp_main_task_handle,&task_status,(BaseType_t)pdTRUE,(eTaskState)eInvalid);
+		volatile void *mp_main_stack_base = task_status.pxStackBase;
+		mp_thread_init(mp_main_stack_base, MP_TASK_STACK_LEN);
 #endif
 		config_data_t* config = (config_data_t*)pvParameter;
 #if MICROPY_ENABLE_GC
@@ -373,7 +373,7 @@ void mp_task(
 soft_reset:
 		sipeed_reset_sys_mem();
 		// initialise the stack pointer for the main thread
-		mp_stack_set_top((void *)(uint64_t)mp_main_stack_top);
+		mp_stack_set_top((void *)sp);
 		mp_stack_set_limit(MP_TASK_STACK_SIZE - 1024);
 #if MICROPY_ENABLE_GC
 		gc_init(gc_heap, gc_heap + config->gc_heap_size);

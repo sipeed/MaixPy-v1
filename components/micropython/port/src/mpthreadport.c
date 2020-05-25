@@ -67,6 +67,7 @@ void mp_thread_init(void *stack, uint32_t stack_len) {
     thread->stack_len = stack_len;
     thread->next = NULL;
     mp_thread_mutex_init(&thread_mutex);
+    assert(sizeof(StackType_t) == sizeof(void*));
 }
 
 void mp_thread_gc_others(void) {

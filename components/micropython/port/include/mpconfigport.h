@@ -45,7 +45,7 @@
 #define MICROPY_HW_UART_REPL                (1)
 // MCU definition
 #define MP_ENDIANNESS_LITTLE                (1)
-#define MICROPY_NO_ALLOCA                   (1)
+#define MICROPY_NO_ALLOCA                   (0)
 
 
 // optimisations
@@ -71,7 +71,7 @@
 #define MICROPY_ENABLE_SCHEDULER            (1)
 #define MICROPY_SCHEDULER_DEPTH             (8)
 
-#define MICROPY_STACK_CHECK                 (0)
+#define MICROPY_STACK_CHECK                 (1)
 #define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF (1)
 #define MICROPY_KBD_EXCEPTION               (1)
 #define MICROPY_REPL_EMACS_KEYS             (1)

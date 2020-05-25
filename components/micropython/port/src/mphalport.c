@@ -11,6 +11,7 @@
 #include "sysctl.h"
 #include "sleep.h"
 #include "machine_uart.h"
+#include "printf.h"
 
 #if  MICROPY_PY_THREAD
 	#include "FreeRTOS.h"
@@ -60,11 +61,14 @@ const mp_print_t mp_debug_print = {NULL, mp_hal_debug_tx_strn_cooked};
 // Send string of given length
 void mp_hal_stdout_tx_strn(const char *str, mp_uint_t len) {
 
-	MP_THREAD_GIL_EXIT();
+	bool release_gil = len > 20 ? true : false;
+	if(release_gil)
+		MP_THREAD_GIL_EXIT();
     if (MP_STATE_PORT(Maix_stdio_uart) != NULL) {
         uart_tx_strn(MP_STATE_PORT(Maix_stdio_uart), str, len);
     }
-	MP_THREAD_GIL_ENTER();
+	if(release_gil)
+		MP_THREAD_GIL_ENTER();
    	mp_uos_dupterm_tx_strn(str, len);
 }
 
@@ -72,9 +76,10 @@ void mp_hal_debug_tx_strn_cooked(void *env, const char *str, size_t len) {
     (void)env;
     while (len--) {
         if (*str == '\n') {
-            mp_hal_stdout_tx_strn("\r", 1);
+            printk("\r\n");
         }
-       mp_hal_stdout_tx_strn(str++, 1);
+       printk("%c", *str);
+	   str++;
     }
 }
 
@@ -104,19 +109,22 @@ void mp_hal_delay_ms(mp_uint_t ms)
 		}
 		else
 		{
-			// vTaskDelay(ms);
 			mp_uint_t us = ms * 1000;
 			mp_uint_t dt;
 			mp_uint_t t0 = mp_hal_ticks_us();
 			for (;;) {
+				extern void mp_handle_pending();
+				mp_handle_pending();
+				MICROPY_PY_USOCKET_EVENTS_HANDLER
+				MP_THREAD_GIL_EXIT();
+				ulTaskNotifyTake(pdFALSE, 1);
+				MP_THREAD_GIL_ENTER();
 				mp_uint_t t1 = mp_hal_ticks_us();
 				dt = t1 - t0;
 				if (dt + portTICK_PERIOD_MS * 1000 >= us) {
 					// doing a vTaskDelay would take us beyond requested delay time
 					break;
 				}
-				MICROPY_EVENT_POLL_HOOK
-				// ulTaskNotifyTake(pdFALSE, 1);
 			}
 			if (dt < us) {
 				// do the remaining delay accurately
