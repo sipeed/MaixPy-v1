@@ -359,7 +359,7 @@ void mp_task(void *pvParameter)
 		TaskStatus_t task_status;
 		vTaskGetInfo(mp_main_task_handle,&task_status,(BaseType_t)pdTRUE,(eTaskState)eInvalid);
 		volatile void *mp_main_stack_base = task_status.pxStackBase;
-		mp_thread_init(mp_main_stack_base, MP_TASK_STACK_LEN);
+		mp_thread_init((void*)mp_main_stack_base, MP_TASK_STACK_LEN);
 #endif
 		config_data_t* config = (config_data_t*)pvParameter;
 #if MICROPY_ENABLE_GC
@@ -374,7 +374,11 @@ soft_reset:
 		sipeed_reset_sys_mem();
 		// initialise the stack pointer for the main thread
 		mp_stack_set_top((void *)sp);
+#if MICROPY_PY_THREAD 
 		mp_stack_set_limit(MP_TASK_STACK_SIZE - 1024);
+#else
+		mp_stack_set_limit(32768); // stack size 32k set in ld
+#endif
 #if MICROPY_ENABLE_GC
 		gc_init(gc_heap, gc_heap + config->gc_heap_size);
 		printk("gc heap=%p-%p(%d)\r\n",gc_heap, gc_heap + config->gc_heap_size, config->gc_heap_size);

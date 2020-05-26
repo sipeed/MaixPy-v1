@@ -67,13 +67,13 @@ void mp_thread_init(void *stack, uint32_t stack_len) {
     thread->stack = stack;
     thread->stack_len = stack_len;
     thread->next = NULL;
-    mp_thread_mutex_init(&thread_mutex);
+    mp_thread_mutex_init((mp_thread_mutex_t*)&thread_mutex);
     assert(sizeof(StackType_t) == sizeof(void*));
 }
 
 void mp_thread_gc_others(void) {
-    mp_thread_mutex_lock(&thread_mutex, 1);
-    for (thread_t *th = thread; th != NULL; th = th->next) {
+    mp_thread_mutex_lock((mp_thread_mutex_t*)&thread_mutex, 1);
+    for (thread_t *th = (thread_t*)thread; th != NULL; th = th->next) {
         gc_collect_root((void**)&th, 1);
         gc_collect_root(&th->arg, 1); // probably not needed
         if (th->id == xTaskGetCurrentTaskHandle()) {
@@ -83,10 +83,10 @@ void mp_thread_gc_others(void) {
             continue;
         }
         TaskStatus_t task_status;
-		vTaskGetInfo(th->id, &task_status,(BaseType_t)pdFALSE,(eTaskState)eInvalid);
-        gc_collect_root(task_status.pxStackTop, ( (uint64_t)th->stack + (th->stack_len*sizeof(StackType_t)+1024) - (uint64_t)task_status.pxStackTop)/sizeof(void*));
+        vTaskGetInfo(th->id, &task_status,(BaseType_t)pdFALSE,(eTaskState)eInvalid);
+        gc_collect_root((void**)task_status.pxStackTop, ( (uint64_t)th->stack + (th->stack_len*sizeof(StackType_t)+1024) - (uint64_t)task_status.pxStackTop)/sizeof(void*));
     }
-    mp_thread_mutex_unlock(&thread_mutex);	
+    mp_thread_mutex_unlock((mp_thread_mutex_t*)&thread_mutex);	
 }
 
 mp_state_thread_t *mp_thread_get_state(void) {
@@ -98,14 +98,14 @@ void mp_thread_set_state(void *state) {
 }
 
 void mp_thread_start(void) {
-    mp_thread_mutex_lock(&thread_mutex, 1);
-    for (thread_t *th = thread; th != NULL; th = th->next) {
+    mp_thread_mutex_lock((mp_thread_mutex_t*)&thread_mutex, 1);
+    for (thread_t *th = (thread_t*)thread; th != NULL; th = th->next) {
         if (th->id == xTaskGetCurrentTaskHandle()) {
             th->ready = 1;
             break;
         }
     }
-    mp_thread_mutex_unlock(&thread_mutex);
+    mp_thread_mutex_unlock((mp_thread_mutex_t*)&thread_mutex);
 }
 
 STATIC void *(*ext_thread_entry)(void*) = NULL;
@@ -136,27 +136,27 @@ void mp_thread_create_ex(void *(*entry)(void*), void *arg, size_t *stack_size, i
 
     thread_t *th = m_new_obj(thread_t);
 
-    mp_thread_mutex_lock(&thread_mutex, 1);
+    mp_thread_mutex_lock((mp_thread_mutex_t*)&thread_mutex, 1);
 
     // create thread
     TaskHandle_t thread_id;
     TaskStatus_t task_status;
-	//todo add schedule processor
+    //todo add schedule processor
     xTaskCreateAtProcessor(0, // processor
-						   freertos_entry, // function entry
-						   name, //task name
-						   *stack_size / sizeof(StackType_t), //stack_deepth
-						   arg, //function arg
-						   priority, //task priority,please don't change this parameter,because it will impack function running
-						   &thread_id);//task handle
+                           freertos_entry, // function entry
+                           name, //task name
+                           *stack_size / sizeof(StackType_t), //stack_deepth
+                           arg, //function arg
+                           priority, //task priority,please don't change this parameter,because it will impack function running
+                           &thread_id);//task handle
     //mp_printf(&mp_plat_print, "[MAIXPY]: thread_id %p created \n",thread_id);
     if (thread_id == NULL) {
         m_del_obj(thread_t,th);
-        mp_thread_mutex_unlock(&thread_mutex);
+        mp_thread_mutex_unlock((mp_thread_mutex_t*)&thread_mutex);
         nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "can't create thread"));
     }
-	vTaskGetInfo(thread_id,&task_status,(BaseType_t)pdTRUE,(eTaskState)eInvalid);
-	stack = task_status.pxStackBase;
+    vTaskGetInfo(thread_id,&task_status,(BaseType_t)pdTRUE,(eTaskState)eInvalid);
+    stack = task_status.pxStackBase;
     // adjust the stack_size to provide room to recover from hitting the limit
     *stack_size -= 1024;
 
@@ -165,34 +165,34 @@ void mp_thread_create_ex(void *(*entry)(void*), void *arg, size_t *stack_size, i
     th->ready = 0;
     th->arg = arg;
     th->stack = stack;
-	//stack_len may be a bug,because that k210 addr width is 64 bit ,but addr width is 32bit
-	//the StackType_t type is a type of the uintprt_t,uintprt_t in k210 is 64bit 
+    //stack_len may be a bug,because that k210 addr width is 64 bit ,but addr width is 32bit
+    //the StackType_t type is a type of the uintprt_t,uintprt_t in k210 is 64bit 
     th->stack_len = *stack_size / sizeof(StackType_t);
-    th->next = thread;
+    th->next = (thread_t*)thread;
     thread = th;
-    mp_thread_mutex_unlock(&thread_mutex);
+    mp_thread_mutex_unlock((mp_thread_mutex_t*)&thread_mutex);
 
 }
 
 void mp_thread_create(void *(*entry)(void*), void *arg, size_t *stack_size) {
-    uint8_t thread_name[15] = {0};
+    char thread_name[15] = {0};
     sprintf(thread_name,"mp_thread%d",thread_num);
     mp_thread_create_ex(entry, arg, stack_size, MP_THREAD_PRIORITY, thread_name);
     thread_num++;
 }
-
+		
 void mp_thread_finish(void) {
-    mp_thread_mutex_lock(&thread_mutex, 1);
-    thread_t *th = thread;
-    thread_t *pre_th = NULL;
-    for (th = thread; th != NULL; th = th->next) {
+    mp_thread_mutex_lock((mp_thread_mutex_t*)&thread_mutex, 1);
+    thread_t *th = NULL;
+    // thread_t *pre_th = NULL;
+    for (th = (thread_t*)thread; th != NULL; th = th->next) {
         if (th->id == xTaskGetCurrentTaskHandle()) {
             th->ready = 0;
             break;
         }
-        pre_th = th;
+        // pre_th = th;
     }
-    mp_thread_mutex_unlock(&thread_mutex);
+    mp_thread_mutex_unlock((mp_thread_mutex_t*)&thread_mutex);
 }
 
 void mp_thread_mutex_init(mp_thread_mutex_t *mutex) {
@@ -210,8 +210,8 @@ void mp_thread_mutex_unlock(mp_thread_mutex_t *mutex) {
 
 void mp_thread_deinit(void) {
 
-    mp_thread_mutex_lock(&thread_mutex, 1);
-    for (thread_t *th = thread; th != NULL; th = th->next) {
+    mp_thread_mutex_lock((mp_thread_mutex_t*)&thread_mutex, 1);
+    for (thread_t *th = (thread_t*)thread; th != NULL; th = th->next) {
         // don't delete the current task
         if (th->id == xTaskGetCurrentTaskHandle()) {
             continue;
@@ -219,7 +219,7 @@ void mp_thread_deinit(void) {
         vTaskDelete(th->id);
         m_del_obj(thread_t,th);
     }
-    mp_thread_mutex_unlock(&thread_mutex);
+    mp_thread_mutex_unlock((mp_thread_mutex_t*)&thread_mutex);
     // allow FreeRTOS to clean-up the threads
     vTaskDelay(2);
 
@@ -232,8 +232,8 @@ void vPortCleanUpTCB(void *tcb) {
         return;
     }
     thread_t *prev = NULL;
-    mp_thread_mutex_lock(&thread_mutex, 1);
-    for (thread_t *th = thread; th != NULL; prev = th, th = th->next) {
+    mp_thread_mutex_lock((mp_thread_mutex_t*)&thread_mutex, 1);
+    for (thread_t *th = (thread_t*)thread; th != NULL; prev = th, th = th->next) {
         // unlink the node from the list
         if ((void*)th->id == tcb) {
             if (prev != NULL) {
@@ -247,7 +247,7 @@ void vPortCleanUpTCB(void *tcb) {
             break;
         }
     }
-    mp_thread_mutex_unlock(&thread_mutex);
+    mp_thread_mutex_unlock((mp_thread_mutex_t*)&thread_mutex);
 }
 #else
 void vPortCleanUpTCB(void *tcb) {
