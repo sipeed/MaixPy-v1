@@ -27,6 +27,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "py/mpconfig.h"
 #include "py/mpstate.h"
@@ -81,47 +82,11 @@ void mp_thread_gc_others(void) {
         if (!th->ready) {
             continue;
         }
-        gc_collect_root(th->stack, th->stack_len); // probably not needed
+        TaskStatus_t task_status;
+		vTaskGetInfo(th->id, &task_status,(BaseType_t)pdFALSE,(eTaskState)eInvalid);
+        gc_collect_root(task_status.pxStackTop, ( (uint64_t)th->stack + (th->stack_len*sizeof(StackType_t)+1024) - (uint64_t)task_status.pxStackTop)/sizeof(void*));
     }
-    mp_thread_mutex_unlock(&thread_mutex);
-
-    // int n_th = 0;
-    // void **ptrs;
-    // mp_state_thread_t *state;
-
-    // mp_thread_mutex_lock(&thread_mutex, 1);
-    // for (thread_t *th = thread; th != NULL; th = th->next) {
-    //     if (!th->ready) continue;                               // thread not ready
-	// 	//if (th->type == THREAD_TYPE_SERVICE) continue;          // Only scan PYTHON threads
-    //     if (th->id == xTaskGetCurrentTaskHandle()) continue;    // Do not process the running thread
-
-    //     //state = (mp_state_thread_t *)th->state_thread;
-    //     n_th++;
-
-    //     // Mark the root pointers on thread
-    //     //gc_collect_root((void **)state->dict_locals, 1);
-
-    //     if (th->arg) {
-    //         // Mark the pointers on thread arguments
-    //         ptrs = (void**)(void*)&th->arg;
-    //         gc_collect_root(ptrs, 1);
-    //     }
-
-    //     #if MICROPY_ENABLE_PYSTACK
-    //     // Mark the pointers on thread pystack
-    //     //ptrs = (void**)(void*)state->pystack_start;
-    //     //gc_collect_root(ptrs, (state->pystack_cur - state->pystack_start) / sizeof(void*));
-    //     #endif
-
-    //     // If PyStack is used, no pointers to MPy heap are placed on tasks stack
-    //     #if !MICROPY_ENABLE_PYSTACK
-    //     // Mark the pointers on thread stack
-    //     //gc_collect_root(th->curr_sp, ((void *)state->stack_top - th->curr_sp) / sizeof(void*)); // probably not needed
-    //     #endif
-    // }
-    // mp_thread_mutex_unlock(&thread_mutex);
-    // return n_th;
-	
+    mp_thread_mutex_unlock(&thread_mutex);	
 }
 
 mp_state_thread_t *mp_thread_get_state(void) {

@@ -14,7 +14,6 @@ if(CONFIG_COMPONENT_KENDRYTE_SDK_ENABLE)
         )
     if(CONFIG_FREERTOS_ENABLE)
         list(APPEND ADD_INCLUDE "kendryte-standalone-sdk/lib/freertos/include"
-                                "kendryte-standalone-sdk/lib/freertos/portable"
         )
     endif()
     # list(APPEND ADD_PRIVATE_INCLUDE "include_private")
