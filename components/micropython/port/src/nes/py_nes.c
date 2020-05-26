@@ -146,7 +146,7 @@ mp_obj_t py_nes_init(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 		}
 	}
 
-	lcd_set_direction(DIR_XY_RLUD|0x08);  //RLDU
+	lcd_set_direction(DIR_YX_RLDU|0x08);  //RLDU
 	//we DO NOT initialize here for we want user to set in python layer
 	lcd_clear(BLACK);
 
