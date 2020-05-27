@@ -748,7 +748,7 @@ bool is_ide_dbg_mode()
 
 bool ide_dbg_interrupt_main()
 {
-
+    return true;
 }
 
 void ide_dbg_on_script_end()
