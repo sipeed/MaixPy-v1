@@ -36,6 +36,7 @@ static volatile int xfer_length;  // bytes need to send
 static enum usbdbg_cmd cmd;
 static volatile bool is_ide_mode = false;
 
+static volatile bool script_need_interrupt = false;
 static volatile bool script_ready;
 static volatile bool script_running;
 static vstr_t script_buf;
@@ -474,6 +475,7 @@ ide_dbg_status_t ide_dbg_dispatch_cmd(machine_uart_obj_t* uart, uint8_t* data)
                         MP_STATE_VM(sched_state) = MP_SCHED_PENDING;
                     }
                     #endif
+                    script_need_interrupt = true;
                 }
                 cmd = USBDBG_NONE;
             }
@@ -675,6 +677,29 @@ void      ide_save_file()
     p_data_temp = NULL;
 }
 
+
+bool ide_dbg_interrupt_main()
+{
+    if (script_need_interrupt) {
+        // interrupt running code by raising an exception
+        mp_obj_exception_clear_traceback(mp_const_ide_interrupt);
+        // pendsv_nlr_jump_hard(mp_const_ide_interrupt);
+        MP_STATE_VM(mp_pending_exception) = mp_const_ide_interrupt; //MP_OBJ_FROM_PTR(&MP_STATE_VM(mp_kbd_exception));
+        #if MICROPY_ENABLE_SCHEDULER
+        if (MP_STATE_VM(sched_state) == MP_SCHED_IDLE) {
+            MP_STATE_VM(sched_state) = MP_SCHED_PENDING;
+        }
+        #endif
+    }
+    return script_need_interrupt;
+}
+
+void ide_dbg_on_script_end()
+{
+    script_need_interrupt = false;
+}
+
+
 #else // CONFIG_MAIXPY_IDE_SUPPORT /////////////////////////////////////
 
 bool ide_debug_init0()
@@ -721,5 +746,14 @@ bool is_ide_dbg_mode()
     return false;
 }
 
+bool ide_dbg_interrupt_main()
+{
+
+}
+
+void ide_dbg_on_script_end()
+{
+
+}
 #endif
 

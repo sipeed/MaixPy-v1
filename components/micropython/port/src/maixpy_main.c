@@ -328,9 +328,10 @@ void pyexec_str(vstr_t* str) {
     mp_obj_dict_t *volatile old_locals = mp_locals_get();
 
 	// set new context
-	mp_obj_t globals = mp_obj_new_dict(0);
+	// mp_obj_t globals = mp_obj_new_dict(0);
     mp_obj_t locals = mp_obj_new_dict(0);
-	mp_locals_set(MP_OBJ_TO_PTR(globals));
+	mp_obj_dict_store(locals, MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR___main__));
+	mp_globals_set(MP_OBJ_TO_PTR(locals));
     mp_locals_set(MP_OBJ_TO_PTR(locals));
 
     nlr_buf_t nlr;
@@ -343,9 +344,15 @@ void pyexec_str(vstr_t* str) {
         nlr_pop();
 		mp_globals_set(old_globals);
         mp_locals_set(old_locals);
+#if MICROPY_PY_THREAD
+		mp_thread_deinit();
+#endif
     } else {
 		mp_globals_set(old_globals);
         mp_locals_set(old_locals);
+#if MICROPY_PY_THREAD
+		mp_thread_deinit();
+#endif
         mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
     }
 }
@@ -492,6 +499,7 @@ soft_reset:
 				{
 					mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
 				}
+				ide_dbg_on_script_end();
 			}
 		}while(MP_STATE_PORT(Maix_stdio_uart)->ide_debug_mode);
 

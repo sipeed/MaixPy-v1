@@ -34,6 +34,7 @@
 #include "py/gc.h"
 #include "py/mpthread.h"
 #include "mpthreadport.h"
+#include "global_config.h"
 
 
 #if MICROPY_PY_THREAD
@@ -113,7 +114,20 @@ STATIC void freertos_entry(void *arg) {
     if (ext_thread_entry) {
         ext_thread_entry(arg);
     }
+#if CONFIG_MAIXPY_IDE_SUPPORT
+    // interrupt main thread if child thread interrupt by IDE in IDE mode
+    // child thread normally exit will not interrupt main thread
+    extern bool ide_dbg_interrupt_main();
+    bool interrupt = ide_dbg_interrupt_main();
+    if(!interrupt)
+    {
+        // normal exit, delete this thread itself
+        // if end by IDE, delete by main thread by invoke mp_thread_deinit();
+        vTaskDelete(NULL);
+    }
+#else
     vTaskDelete(NULL);
+#endif
     for (;;);
 }
 
@@ -180,7 +194,7 @@ void mp_thread_create(void *(*entry)(void*), void *arg, size_t *stack_size) {
     mp_thread_create_ex(entry, arg, stack_size, MP_THREAD_PRIORITY, thread_name);
     thread_num++;
 }
-		
+
 void mp_thread_finish(void) {
     mp_thread_mutex_lock((mp_thread_mutex_t*)&thread_mutex, 1);
     thread_t *th = NULL;
@@ -209,20 +223,27 @@ void mp_thread_mutex_unlock(mp_thread_mutex_t *mutex) {
 
 
 void mp_thread_deinit(void) {
-
-    mp_thread_mutex_lock((mp_thread_mutex_t*)&thread_mutex, 1);
-    for (thread_t *th = (thread_t*)thread; th != NULL; th = th->next) {
-        // don't delete the current task
-        if (th->id == xTaskGetCurrentTaskHandle()) {
-            continue;
+    for (;;) {
+        // Find a task to delete
+        TaskHandle_t id = NULL;
+        mp_thread_mutex_lock((mp_thread_mutex_t*)&thread_mutex, 1);
+        for (thread_t *th = (thread_t*)thread; th != NULL; th = th->next) {
+            // Don't delete the current task
+            if (th->id != xTaskGetCurrentTaskHandle()) {
+                id = th->id;
+                break;
+            }
         }
-        vTaskDelete(th->id);
-        m_del_obj(thread_t,th);
-    }
-    mp_thread_mutex_unlock((mp_thread_mutex_t*)&thread_mutex);
-    // allow FreeRTOS to clean-up the threads
-    vTaskDelay(2);
+        mp_thread_mutex_unlock((mp_thread_mutex_t*)&thread_mutex);
 
+        if (id == NULL) {
+            // No tasks left to delete
+            break;
+        } else {
+            // Call FreeRTOS to delete the task (it will call vPortCleanUpTCB)
+            vTaskDelete(id);
+        }
+    }
 }
 
 // free mem, need set CONFIG_STATIC_TASK_CLEAN_UP_ENABLE=y in Kconfig

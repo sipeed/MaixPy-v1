@@ -117,7 +117,8 @@ void mp_hal_delay_ms(mp_uint_t ms)
 				mp_handle_pending();
 				MICROPY_PY_USOCKET_EVENTS_HANDLER
 				MP_THREAD_GIL_EXIT();
-				ulTaskNotifyTake(pdFALSE, 1);
+				// ulTaskNotifyTake(pdFALSE, 1);
+				portYIELD();
 				MP_THREAD_GIL_ENTER();
 				mp_uint_t t1 = mp_hal_ticks_us();
 				dt = t1 - t0;
