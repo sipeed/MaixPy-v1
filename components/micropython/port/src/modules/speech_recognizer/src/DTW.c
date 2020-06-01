@@ -39,7 +39,9 @@ int64_t avr_mdl[mfcc_num];
 
 int64_t standard_in[mfcc_num];
 int64_t standard_mdl[mfcc_num];
-int dtw_data[vv_frm_max * vv_frm_max];
+// static int dtw_data[vv_frm_max * vv_frm_max];
+
+int *pdtw_data = NULL;
 
 struct pointOritation //节点方向，用来回溯每个W点
 {
@@ -262,6 +264,21 @@ uint8_t dtw_limit(uint16_t x, uint16_t y)
     return ins;
 }
 
+#include <stdlib.h>
+int *dtw_mem_init(void)
+{
+    if (pdtw_data != NULL)
+    {
+        return pdtw_data;
+    }
+    else
+    {
+        pdtw_data = (int *)malloc(vv_frm_max * vv_frm_max * sizeof(int));
+        return pdtw_data;
+    }
+    
+}
+
 /*
  *  DTW 动态时间规整
     参数
@@ -270,7 +287,6 @@ uint8_t dtw_limit(uint16_t x, uint16_t y)
     返回值
     dis     :累计匹配距离
 */
-
 uint32_t dtw(v_ftr_tag *ftr_in, v_ftr_tag *frt_mdl)
 {
     uint32_t dis;
@@ -281,7 +297,7 @@ uint32_t dtw(v_ftr_tag *ftr_in, v_ftr_tag *frt_mdl)
     //  uint32_t d_right_up, right, right_up; //up,
     //  uint32_t min;
     int i, j;
-
+    dtw_mem_init();
     in_frm_num = ftr_in->frm_num;
     mdl_frm_num = frt_mdl->frm_num;
 
@@ -339,7 +355,8 @@ uint32_t dtw(v_ftr_tag *ftr_in, v_ftr_tag *frt_mdl)
             {
                 //dtw_data[i][j] = get_dis(in + (i * mfcc_num), mdl + (j * mfcc_num));
                 //dtw_data[i][j] = get_dis(in, mdl);
-                *(dtw_data + i * mdl_frm_num + j) = get_dis(in, mdl);
+                *(pdtw_data + i * mdl_frm_num + j) = get_dis(in, mdl);
+                // *(dtw_data + i * mdl_frm_num + j) = get_dis(in, mdl);
                 //  printf("%d,", dtw_data[i*mdl_frm_num+j]);
                 mdl += mfcc_num;
             }
@@ -347,7 +364,8 @@ uint32_t dtw(v_ftr_tag *ftr_in, v_ftr_tag *frt_mdl)
             mdl = frt_mdl->mfcc_dat;
             in += mfcc_num;
         }
-        gArray(dtw_data, in_frm_num, mdl_frm_num, *g, *pOritation);
+        gArray(pdtw_data, in_frm_num, mdl_frm_num, *g, *pOritation);
+        // gArray(dtw_data, in_frm_num, mdl_frm_num, *g, *pOritation);
         step = printPath(*pOritation, in_frm_num, mdl_frm_num, *g);
         //printf("step=%d\r\n",step);
         dis = *((int *)g + (in_frm_num - 1) * mdl_frm_num + mdl_frm_num - 1);

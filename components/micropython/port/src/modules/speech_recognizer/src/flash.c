@@ -15,12 +15,28 @@
 #include "uarths.h"
 #include "MFCC.h"
 
-v_ftr_tag ftr_save[20 * 4];
+// v_ftr_tag ftr_save[20 * 4];
+v_ftr_tag *ftr_save = NULL;
+
+#include <stdlib.h>
+int *save_ftr_mdl_mem_init(void)
+{
+    if (ftr_save != NULL)
+    {
+        return ftr_save;
+    }
+    else
+    {
+        ftr_save = (v_ftr_tag *)malloc(20*4 * sizeof(v_ftr_tag));
+        return ftr_save;
+    }
+    
+}
 
 uint8_t save_ftr_mdl(v_ftr_tag *ftr, uint32_t addr)
 {
     //  uint32_t ftr_size;
-
+    save_ftr_mdl_mem_init();
     addr = addr / size_per_ftr;
 
     if (addr > 40)

@@ -57,6 +57,18 @@ static volatile uint32_t ide_file_save_status = 0; //0: ok, 1: busy recieve data
 static uint32_t ide_file_length = 0;
 static uint8_t* p_data_temp = NULL;
 
+bool  ide_get_script_status()
+{
+    if (is_ide_mode) {
+        return script_running;
+    }
+    else if (ide_file_save_status != 0)
+    {
+        return false;
+    }
+    return true;
+}
+
 static void vstr_init_00(vstr_t *vstr, size_t alloc) {
     if (alloc < 1) {
         alloc = 1;

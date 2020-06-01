@@ -32,11 +32,21 @@
 #include "i2s.h"
 #include "Maix_i2s.h"
 
-int speech_recognizer_init(i2s_device_number_t device_num);
+typedef enum _sr_status_t
+{
+    SR_NONE = 0,
+    SR_WAIT_SPEECKING = 1,
+    SR_GET_NOISEING = 2,
+}
+sr_status_t;
+
+int speech_recognizer_init(Maix_i2s_obj_t *dev);
 int speech_recognizer_record(uint8_t keyword_num, uint8_t model_num);
+sr_status_t speech_recognizer_get_status(void);
 // int speech_recognizer_print_model(uint8_t keyword_num, uint8_t model_num);
 int speech_recognizer_get_data(uint8_t keyword_num, uint8_t model_num, uint16_t *frm_num, int16_t **voice_model, uint32_t *voice_model_len);
 int speech_recognizer_add_voice_model(uint8_t keyword_num, uint8_t model_num, const int16_t *voice_model, uint16_t frame_num);
+uint8_t speech_recognizer_set_Threshold(uint16_t n_thl, uint16_t z_thl, uint32_t s_thl);
 int speech_recognizer_recognize(void);
 
 #endif
