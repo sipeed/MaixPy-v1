@@ -35,14 +35,19 @@
 typedef enum _sr_status_t
 {
     SR_NONE = 0,
-    SR_WAIT_SPEECKING = 1,
-    SR_GET_NOISEING = 2,
+    SR_RECORD_WAIT_SPEACKING,
+    SR_RECORD_SUCCESSFUL,
+    SR_RECOGNIZER_WAIT_SPEACKING,
+    SR_RECOGNIZER_SUCCESSFULL,
+    SR_GET_NOISEING,
 }
 sr_status_t;
 
 int speech_recognizer_init(Maix_i2s_obj_t *dev);
 int speech_recognizer_record(uint8_t keyword_num, uint8_t model_num);
 sr_status_t speech_recognizer_get_status(void);
+int speech_recognizer_get_result(void);
+int speech_recognizer_finish(void);
 // int speech_recognizer_print_model(uint8_t keyword_num, uint8_t model_num);
 int speech_recognizer_get_data(uint8_t keyword_num, uint8_t model_num, uint16_t *frm_num, int16_t **voice_model, uint32_t *voice_model_len);
 int speech_recognizer_add_voice_model(uint8_t keyword_num, uint8_t model_num, const int16_t *voice_model, uint16_t frame_num);

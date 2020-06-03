@@ -230,9 +230,19 @@ STATIC mp_obj_t modules_speech_recognizer_make_new(const mp_obj_type_t *type, si
     return MP_OBJ_FROM_PTR(self);
 }
 
+STATIC mp_obj_t modules_speech_recognizer_get_result(mp_obj_t self_in)
+{
+    int res = speech_recognizer_get_result();
+    return mp_obj_new_int(res);
+}
+STATIC mp_obj_t modules_speech_recognizer_finish(mp_obj_t self_in)
+{
+    speech_recognizer_finish();
+    return mp_const_true;
+}
 STATIC mp_obj_t modules_speech_recognizer_recognize(mp_obj_t self_in)
 {
-    mp_printf(&mp_plat_print, "[MaixPy] recognize...\r\n");
+    // mp_printf(&mp_plat_print, "[MaixPy] recognize...\r\n");
     speech_recognizer_obj_t *self = MP_OBJ_TO_PTR(self_in);
     mp_int_t rev_val = speech_recognizer_recognize();
     return mp_obj_new_int(rev_val);
@@ -246,6 +256,8 @@ STATIC mp_obj_t modules_speech_recognizer_get_status(mp_obj_t self_in)
 
 MP_DEFINE_CONST_FUN_OBJ_KW(modules_speech_recognizer_init_obj, 1, modules_speech_recognizer_init);
 MP_DEFINE_CONST_FUN_OBJ_KW(modules_speech_recognizer_get_status_obj, 1, modules_speech_recognizer_get_status);
+MP_DEFINE_CONST_FUN_OBJ_KW(modules_speech_recognizer_get_result_obj, 1, modules_speech_recognizer_get_result);
+MP_DEFINE_CONST_FUN_OBJ_KW(modules_speech_recognizer_finish_obj, 1, modules_speech_recognizer_finish);
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modules_speech_recognizer_record_obj, 3, 3, modules_speech_recognizer_record);
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modules_speech_recognizer_print_model_obj, 3, 3, modules_speech_recognizer_print_model);
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modules_speech_recognizer_get_model_data_info_obj, 3, 3, modules_speech_recognizer_get_model_data_info);
@@ -257,7 +269,8 @@ MP_DEFINE_CONST_FUN_OBJ_1(modules_speech_recognizer_recognize_obj, modules_speec
 STATIC const mp_rom_map_elem_t mp_module_speech_recognizer_locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&modules_speech_recognizer_init_obj)},
     {MP_ROM_QSTR(MP_QSTR_get_status), MP_ROM_PTR(&modules_speech_recognizer_get_status_obj)},
-    // {MP_ROM_QSTR(MP_QSTR_get_result), MP_ROM_PTR(&modules_speech_recognizer_get_result_obj)},
+    {MP_ROM_QSTR(MP_QSTR_get_result), MP_ROM_PTR(&modules_speech_recognizer_get_result_obj)},
+    {MP_ROM_QSTR(MP_QSTR_get_del), MP_ROM_PTR(&modules_speech_recognizer_finish_obj)},
 
     {MP_ROM_QSTR(MP_QSTR_record), MP_ROM_PTR(&modules_speech_recognizer_record_obj)},
 
