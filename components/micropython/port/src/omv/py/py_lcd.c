@@ -96,6 +96,15 @@ static mp_obj_t py_lcd_deinit()
     return mp_const_none;
 }
 
+#define PY_LCD_CHECK_CONFIG(GOAL)\
+	{\
+		const char key[] = #GOAL;\
+		mp_map_elem_t *elem = mp_map_lookup(&self->map, mp_obj_new_str(key, sizeof(key) - 1), MP_MAP_LOOKUP);\
+		if (elem != NULL) {\
+			*(GOAL) = mp_obj_get_int(elem->value);\
+		}\
+	}
+
 void py_lcd_load_config(int *rst, int *dcx, int *ss, int *clk)
 {
 	const char cfg[] = "lcd";
@@ -104,35 +113,10 @@ void py_lcd_load_config(int *rst, int *dcx, int *ss, int *clk)
 	// mp_print_str(&mp_plat_print, "\r\n");
 	if (tmp != mp_const_none && mp_obj_is_type(tmp, &mp_type_dict)) {
 		mp_obj_dict_t *self = MP_OBJ_TO_PTR(tmp);
-
-		{
-			const char key[] = "rst";
-			mp_map_elem_t *elem = mp_map_lookup(&self->map, mp_obj_new_str(key, sizeof(key) - 1), MP_MAP_LOOKUP);
-			if (elem != NULL) {
-				*rst = mp_obj_get_int(elem->value);
-			}
-		}
-		{
-			const char key[] = "dcx";
-			mp_map_elem_t *elem = mp_map_lookup(&self->map, mp_obj_new_str(key, sizeof(key) - 1), MP_MAP_LOOKUP);
-			if (elem != NULL) {
-				*dcx = mp_obj_get_int(elem->value);
-			}
-		}
-		{
-			const char key[] = "ss";
-			mp_map_elem_t *elem = mp_map_lookup(&self->map, mp_obj_new_str(key, sizeof(key) - 1), MP_MAP_LOOKUP);
-			if (elem != NULL) {
-				*ss = mp_obj_get_int(elem->value);
-			}
-		}
-		{
-			const char key[] = "clk";
-			mp_map_elem_t *elem = mp_map_lookup(&self->map, mp_obj_new_str(key, sizeof(key) - 1), MP_MAP_LOOKUP);
-			if (elem != NULL) {
-				*clk = mp_obj_get_int(elem->value);
-			}
-		}
+		PY_LCD_CHECK_CONFIG(rst);
+		PY_LCD_CHECK_CONFIG(dcx);
+		PY_LCD_CHECK_CONFIG(ss);
+		PY_LCD_CHECK_CONFIG(clk);
 		mp_printf(&mp_plat_print, "[%s]: rst=%d, dcx=%d, ss=%d, clk=%d\r\n", __func__, *rst, *dcx, *ss, *clk);
 	}
 }
