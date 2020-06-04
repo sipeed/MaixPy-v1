@@ -11,6 +11,7 @@
 #include "cambus.h"
 #include "dvp.h"
 #include "gc0328.h"
+#include "mt9d111.h"
 #include "py/mpprint.h"
 #include "sysctl.h"
 #include "fpioa.h"
@@ -231,6 +232,18 @@ int cambus_scan_gc0328(void)
     }
     return id;
 }
+
+int cambus_scan_mt9d111(void)
+{
+    uint16_t id = mt9d111_read_id(i2c_device);
+    if (id != MT9D111_ID_CODE)
+    {
+        mp_printf(&mp_plat_print, "error mt9d111 detect, ret id is 0x%x\r\n", id);
+        return 0;
+    }
+    return id;
+}
+
 int cambus_readb(uint8_t slv_addr, uint16_t reg_addr, uint8_t *reg_data)
 {
 

@@ -21,6 +21,7 @@
 #include "syslog.h"
 #include "ff.h"
 #include "gc0328.h"
+#include "mt9d111.h"
 #include "ov7740.h"
 #include "mphalport.h"
 #include "ov3660.h"
@@ -359,6 +360,30 @@ int sensro_gc_detect(sensor_t* sensor, bool pwnd)
     }
     return 0;
 }
+int sensro_mt_detect(sensor_t* sensor, bool pwnd)
+{
+    if(pwnd)
+        DCMI_PWDN_LOW();
+    DCMI_RESET_LOW();
+    mp_hal_delay_ms(10);
+    DCMI_RESET_HIGH();
+    mp_hal_delay_ms(10);
+    uint16_t id = cambus_scan_mt9d111();
+    if(0 == id)
+    {
+        return -3;
+    }
+    else
+    {
+        // mp_printf(&mp_plat_print, "[MAIXPY]: find mt9d111\n");
+        sensor->slv_addr = MT9D111_CONFIG_I2C_ID;
+        sensor->chip_id = id;
+        sensor->snapshot = sensor_snapshot;
+	    sensor->flush = sensor_flush;
+        mt9d111_init(sensor);
+    }
+    return 0;
+}
 int sensor_init_dvp(mp_int_t freq, bool default_freq)
 {
     int init_ret = 0;
@@ -396,6 +421,10 @@ int sensor_init_dvp(mp_int_t freq, bool default_freq)
     }
     else if(0 == sensro_gc_detect(&sensor, true)){//find gc0328 sensor
         mp_printf(&mp_plat_print, "[MAIXPY]: find gc3028\n");
+        cambus_set_writeb_delay(2);
+    }
+    else if(0 == sensro_mt_detect(&sensor, true)){//find mt sensor
+        mp_printf(&mp_plat_print, "[MAIXPY]: find mt9d111\n");
         cambus_set_writeb_delay(2);
     }
     else
