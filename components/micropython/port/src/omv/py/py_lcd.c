@@ -21,6 +21,7 @@
 #include "sysctl.h"
 #include "global_config.h"
 #include "boards.h"
+#include "Maix_config.h"
 
 // extern uint8_t g_lcd_buf[];
 
@@ -95,6 +96,47 @@ static mp_obj_t py_lcd_deinit()
     return mp_const_none;
 }
 
+void py_lcd_load_config(int *rst, int *dcx, int *ss, int *clk)
+{
+	const char cfg[] = "lcd";
+	mp_obj_t tmp = maix_config_get_value(mp_obj_new_str(cfg, sizeof(cfg) - 1), mp_const_none);
+	// mp_obj_print_helper(&mp_plat_print, tmp, PRINT_STR);
+	// mp_print_str(&mp_plat_print, "\r\n");
+	if (tmp != mp_const_none && mp_obj_is_type(tmp, &mp_type_dict)) {
+		mp_obj_dict_t *self = MP_OBJ_TO_PTR(tmp);
+
+		{
+			const char key[] = "rst";
+			mp_map_elem_t *elem = mp_map_lookup(&self->map, mp_obj_new_str(key, sizeof(key) - 1), MP_MAP_LOOKUP);
+			if (elem != NULL) {
+				*rst = mp_obj_get_int(elem->value);
+			}
+		}
+		{
+			const char key[] = "dcx";
+			mp_map_elem_t *elem = mp_map_lookup(&self->map, mp_obj_new_str(key, sizeof(key) - 1), MP_MAP_LOOKUP);
+			if (elem != NULL) {
+				*dcx = mp_obj_get_int(elem->value);
+			}
+		}
+		{
+			const char key[] = "ss";
+			mp_map_elem_t *elem = mp_map_lookup(&self->map, mp_obj_new_str(key, sizeof(key) - 1), MP_MAP_LOOKUP);
+			if (elem != NULL) {
+				*ss = mp_obj_get_int(elem->value);
+			}
+		}
+		{
+			const char key[] = "clk";
+			mp_map_elem_t *elem = mp_map_lookup(&self->map, mp_obj_new_str(key, sizeof(key) - 1), MP_MAP_LOOKUP);
+			if (elem != NULL) {
+				*clk = mp_obj_get_int(elem->value);
+			}
+		}
+		mp_printf(&mp_plat_print, "[%s]: rst=%d, dcx=%d, ss=%d, clk=%d\r\n", __func__, *rst, *dcx, *ss, *clk);
+	}
+}
+
 static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
 	int ret = 0;
@@ -166,11 +208,19 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
 			width_curr = width_conf;
 			height_curr = height_conf;
 			type = LCD_SHIELD;
+
+			int rst = args[ARG_rst].u_int;
+			int dcx = args[ARG_dcx].u_int;
+			int ss = args[ARG_ss].u_int;
+			int clk = args[ARG_clk].u_int;
+			py_lcd_load_config(&rst, &dcx, &ss, &clk);
+
 			// backlight_init = false;
-			fpioa_set_function(args[ARG_rst].u_int, FUNC_GPIOHS0 + RST_GPIONUM);
-			fpioa_set_function(args[ARG_dcx].u_int, FUNC_GPIOHS0 + DCX_GPIONUM);
-			fpioa_set_function(args[ARG_ss].u_int, FUNC_SPI0_SS0+LCD_SPI_SLAVE_SELECT);
-			fpioa_set_function(args[ARG_clk].u_int, FUNC_SPI0_SCLK);
+			fpioa_set_function(rst, FUNC_GPIOHS0 + RST_GPIONUM);
+			fpioa_set_function(dcx, FUNC_GPIOHS0 + DCX_GPIONUM);
+			fpioa_set_function(ss, FUNC_SPI0_SS0+LCD_SPI_SLAVE_SELECT);
+			fpioa_set_function(clk, FUNC_SPI0_SCLK);
+
 			ret = lcd_init(args[ARG_freq].u_int, true, offset_w, offset_h, offset_w2, offset_h2, args[ARG_invert].u_int!=1?false:true, width_curr, height_curr);
 			lcd_clear(color);
 			break;
