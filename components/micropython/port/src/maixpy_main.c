@@ -81,6 +81,7 @@
 #include "sipeed_conv.h"
 #include "ide_dbg.h"
 #include "global_config.h"
+#include "Maix_config.h"
 
 /********* others *******/
 #include "boards.h"
@@ -438,6 +439,9 @@ soft_reset:
 		bool mounted_sdcard = false;
 		bool mounted_flash= false;
 		mounted_flash = mpy_mount_spiffs(&spiffs_user_mount_handle);//init spiffs of flash
+		if (mounted_flash) {
+			maix_config_init();
+		}
 		sd_init();
 		if (sdcard_is_present()) {
 			spiffs_stat  fno;
