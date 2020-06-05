@@ -445,6 +445,7 @@ int sensor_reset(mp_int_t freq, bool default_freq, bool set_regs, bool double_bu
 #if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
     g_sensor_buff_index_out = 0;
     g_sensor_buff_index_in = 0;
+    buff_ready = false;
 #endif
     sensor.reset_set = false;
     sensor.vflip = false;
