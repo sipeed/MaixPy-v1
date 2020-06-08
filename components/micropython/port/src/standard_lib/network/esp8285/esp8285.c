@@ -370,7 +370,9 @@ uint32_t esp_recv_mul_id(esp8285_obj* nic,char* coming_mux_id, char* buffer, uin
 {
     return recvPkg(nic,buffer, buffer_size, NULL, timeout, coming_mux_id, NULL, false);
 }
+
 #include "printf.h"
+
 /*----------------------------------------------------------------------------*/
 /* +IPD,<id>,<len>:<data> */
 /* +IPD,<len>:<data> */
@@ -378,7 +380,263 @@ uint32_t esp_recv_mul_id(esp8285_obj* nic,char* coming_mux_id, char* buffer, uin
  * 
  * @return -1: parameters error, -2: EOF, -3: timeout, -4:peer closed and no data in buffer
  */
-uint32_t recvPkg(esp8285_obj*nic,char* out_buff, uint32_t out_buff_len, uint32_t *data_len, uint32_t timeout, char* coming_mux_id, bool* peer_closed, bool first_time_recv)
+uint32_t recvPkg(esp8285_obj *nic, char *out_buff, uint32_t out_buff_len, uint32_t *data_len, uint32_t timeout, char *coming_mux_id, bool *peer_closed, bool first_time_recv)
+{
+    // printk("%s | head obl %d *dl %d tu %d ftr %d peer_closed %d coming_mux_id %d\n", __func__, out_buff_len, *data_len, timeout, first_time_recv);
+    // printk("peer_closed %d coming_mux_id %d\r\n");
+
+    int err = 0, size = 0;
+
+    // only for single socket but need socket map & buffer TODO:
+    const mp_stream_p_t *uart_stream = mp_get_stream(nic->uart_obj);
+    static bool socket_eof = false;
+    static int8_t mux_id = -1;
+    static int32_t frame_sum = 0, frame_len = 0, frame_bak = 0;
+
+    // parameters check
+    if (out_buff == NULL) {
+        return -1;
+    }
+    
+    if (first_time_recv) {
+        frame_sum = frame_len = 0;
+        socket_eof = false;
+    }
+
+    // required data already in buf, just return data
+    size = Buffer_Size(&nic->buffer);
+    
+    if (size >= out_buff_len) {
+        Buffer_Gets(&nic->buffer, (uint8_t *)out_buff, out_buff_len);
+        if (data_len) {
+            *data_len = out_buff_len;
+        }
+        size = size > out_buff_len ? out_buff_len : size;
+        frame_sum -= size;
+        // printk("Buffer_Size frame_sum %d size %d *data_len %d\n", frame_sum, size, *data_len);
+
+        return size;
+    }
+
+    if (frame_sum <= 0 && socket_eof) {
+        Buffer_Clear(&nic->buffer);
+        if (socket_eof) { //buffer empty, return EOF
+            return -2;
+        }
+    }
+
+    enum fsm_state { IDLE, IPD, DATA, EXIT } State = IDLE;
+    static uint8_t tmp_buf[1560 * 2] = {0}; // tmp_buf as queue 1560
+    uint32_t tmp_bak = 0, tmp_state = 0, tmp_len = 0, tmp_pos = 0, tmp_eof = 0;
+    mp_uint_t interrupt = mp_hal_ticks_ms(), uart_recv_len = 0, res = 0;
+    while (socket_eof == false && State != EXIT) {
+        // wait any uart data
+        uart_recv_len = uart_rx_any(nic->uart_obj);
+        // printk("uart_recv_len %d\n", uart_recv_len);
+        if (uart_recv_len > 0) {
+
+            if (tmp_len >= sizeof(tmp_buf)) { // lock across
+                // printk("lock across frame_len %d tmp_len %d\n", frame_len, tmp_len);
+                tmp_len = 0;
+            }
+
+            res = uart_stream->read(nic->uart_obj, tmp_buf + tmp_len, 1, &err);
+            // printk("%s | tmp_buf %s res %d err %d\n", __func__, tmp_buf, res, err);
+            if (res == 1 && err == 0) {
+                
+                interrupt = mp_hal_ticks_ms();
+                // backup tmp_len to tmp_pos (tmp_pos - 1)
+
+                tmp_pos = tmp_len, tmp_len += 1; // buffer push
+                // printk("[%02X]", tmp_buf[tmp_pos]);
+
+                if (State == IDLE) {
+                    if (tmp_buf[tmp_pos] == '+') {
+                        tmp_state = 1, tmp_bak = tmp_pos, State = IPD;
+                        continue;
+                    } else {
+                        // printk("other (%02X)\n", tmp_buf[tmp_pos]);
+                        tmp_len -= 1; // clear don't need data, such as (0D)(0A)
+                        continue;
+                    }
+                    continue;
+                }
+
+                if (State == IPD) {
+
+                    if (tmp_pos - tmp_bak > 12) { // Over the length of the '+IPD,3,1452:' or '+IPD,1452:'
+                        tmp_state = 0, State = IDLE;
+                        continue;
+                    }
+
+                    if (0 < tmp_state && tmp_state < 5) {
+                        // printk("(%d, %02X) [%d, %02X]\n", tmp_pos, tmp_buf[tmp_pos], tmp_pos - tmp_bak, ("+IPD,")[tmp_pos - tmp_bak]);
+                        if (tmp_buf[tmp_pos] == ("+IPD,")[tmp_pos - tmp_bak]) {
+                            tmp_state += 1; // tmp_state 1 + "IPD," to tmp_state 5
+                        } else {
+                            tmp_state = 0, State = IDLE;
+                        }
+                        continue;
+                    }
+
+                    if (tmp_state == 5 && tmp_buf[tmp_pos] == ':')
+                    {
+                        tmp_state = 6, State = IDLE;
+                        tmp_buf[tmp_pos + 1] = '\0'; // lock tmp_buf
+                        // printk("%s | is `IPD` tmp_bak %d tmp_len %d command %s\n", __func__, tmp_bak, tmp_len, tmp_buf + tmp_bak);
+                        char *index = strstr((char *)tmp_buf + tmp_bak + 5 /* 5 > '+IPD,' and `+IPD,325:` in tmp_buf */, ",");
+                        int ret = 0, len = 0;
+                        if (index) { // '+IPD,3,1452:'
+                            ret = sscanf((char *)tmp_buf + tmp_bak, "+IPD,%hhd,%d:", &mux_id, &len);
+                            if (ret != 2 || mux_id < 0 || mux_id > 4 || len <= 0) {
+                                ; // Misjudge or fail, return, or clean up later
+                            } else {
+                                tmp_len = tmp_bak, tmp_bak = 0; // Clean up the commands in the buffer and roll back the data
+                                frame_len = len, State = DATA;
+                            }
+                        } else { // '+IPD,1452:'
+                            ret = sscanf((char *)tmp_buf + tmp_bak, "+IPD,%d:", &len);
+                            if (ret != 1 || len <= 0) {
+                                ; // Misjudge or fail, return, or clean up later
+                            } else {
+                                tmp_len = tmp_bak, tmp_bak = 0; // Clean up the commands in the buffer and roll back the data
+                                frame_len = len, State = DATA;
+                                // printk("%s | IPD frame_len %d\n", __func__, frame_len);
+                            }
+                        }
+                        continue;
+                    }
+                    continue;
+                }
+
+                if (State == DATA) {
+                    // printk("%s | frame_len %d tmp_len %d tmp_buf[tmp_pos] %02X\n", __func__, frame_len, tmp_len, tmp_buf[tmp_pos]);
+                    
+                    frame_len -= tmp_len, tmp_len = 0; // get data
+
+                    if (frame_len < 0) { // already frame_len - tmp_len before (not frame_len <= 0)
+                        tmp_eof = 0;
+                        if (frame_len == -1 && tmp_buf[tmp_pos] == 'C') { // wait "CLOSED\r\n"
+                            frame_bak = frame_len;
+                            tmp_state = 7;
+                            continue;
+                        }
+                        if (tmp_state == 6 && tmp_buf[tmp_pos] == '\r') {
+                            tmp_state = 7;
+                            continue;
+                        }
+                        if (tmp_state == 7 && tmp_buf[tmp_pos] == '\n') {
+                            if (frame_len == -2) { // match +IPD EOF （\r\n）
+                                tmp_state = 0, State = IDLE;
+                                // After receive complete, confirm the data is enough
+                                size = Buffer_Size(&nic->buffer);
+                                // printk("%s | size %d out_buff_len %d\n", __func__, size, out_buff_len);
+                                if (size >= out_buff_len) { // data enough
+                                    // printk("%s | recv out_buff_len overflow\n", __func__);
+                                    State = EXIT;
+                                }
+                            } else if (frame_len == -8 && frame_bak == -1)  {
+                                // printk("%s | Get 'CLOSED'\n", __func__);
+                                socket_eof = true;
+                                frame_bak = 0, tmp_state = 0, State = EXIT;
+                            } else {
+                                tmp_state = 6;
+                            }
+                            continue;
+                        }
+                        
+                        // 存在异常，没有得到 \r\n 的匹配，并排除 CLOSED\r\n 的指令触发的可能性，意味着传输可能越界出错了 \r\n ，则立即回到空闲状态。
+                        if (frame_len <= -1 && frame_bak != -1) {
+                            // printk("%s | tmp_state %d frame_len %d tmp %02X\n", __func__, tmp_state, frame_len, tmp_buf[tmp_pos]);
+                            State = IDLE;
+                            continue;
+                        }
+                    } else {
+                        // for(int i = 0; i < tmp_len; i++) {
+                        //     int tmp = tmp_buf[i];
+                        //     printk("[%02X]", tmp);
+                        // }
+                        // printk("%s | frame_len %d tmp_len %d\n", __func__, frame_len, tmp_pos + 1);
+                        // printk("%.*s", tmp_len, tmp_buf);
+                        if (!Buffer_Puts(&nic->buffer, tmp_buf, (tmp_pos + 1))) {
+                            printk("%s | network->buffer overflow Buffer Max %d Size %d\n", __func__, ESP8285_BUF_SIZE, Buffer_Size(&nic->buffer));
+                            State = EXIT;
+                        } else {
+                            // reduce data len
+                            // printk("[%02X]", tmp_buf[tmp_pos]);
+                            frame_sum += (tmp_pos + 1);
+                        }
+                        // printk("frame_sum %d frame_len %d tmp_len %d\n", frame_sum, frame_len, tmp_pos + 1);
+                        if (frame_len == 0) {
+                            // After receive complete, confirm the data is enough
+                            size = Buffer_Size(&nic->buffer);
+                            // printk("%s | size %d out_buff_len %d\n", __func__, size, out_buff_len);
+                            if (size >= out_buff_len) { // data enough
+                                // printk("%s | recv out_buff_len overflow\n", __func__);
+                                tmp_eof = 1;
+                                // State = EXIT;
+                            }
+                        }
+                    }
+                    continue;
+                }
+
+                continue;
+
+            } else {
+                State = EXIT;
+            }
+
+            continue;
+        }
+        
+        if (mp_hal_ticks_ms() - interrupt > timeout) {
+            // printk("uart timeout break %d %d %d\r\n", mp_hal_ticks_ms(), interrupt, timeout);
+            break; // uart no return data to timeout break
+        }
+
+        if (*peer_closed) {
+            break; // disconnection
+        }
+        
+        if (tmp_eof > 0 && tmp_eof++ > 100) { // 806400 tmp_eof 10 > one byte so 115200 > tmp_eof * 8 
+            // printk("size %d\r\n", size);
+            break; // sometimes communication no eof(\r\n)
+        }
+
+        // mp_hal_wake_main_task_from_isr();
+    }
+
+    size = Buffer_Size(&nic->buffer);
+    
+    // peer closed and no data in buffer
+    if (size == 0 && *peer_closed) {
+        frame_sum = 0;
+        return -4;
+    }
+
+    size = size > out_buff_len ? out_buff_len : size;
+    
+    Buffer_Gets(&nic->buffer, (uint8_t *)out_buff, size);
+    if (data_len) {
+        *data_len = size;
+    }
+
+    frame_sum -= size;
+
+    // printk(" %s | tail obl %d *dl %d se %d\n", __func__, out_buff_len, *data_len, size);
+
+    return size;
+}
+
+/*----------------------------------------------------------------------------*/
+/* +IPD,<id>,<len>:<data> */
+/* +IPD,<len>:<data> */
+/**
+ * 
+ * @return -1: parameters error, -2: EOF, -3: timeout, -4:peer closed and no data in buffer
+ */
+uint32_t old_recvPkg(esp8285_obj*nic,char* out_buff, uint32_t out_buff_len, uint32_t *data_len, uint32_t timeout, char* coming_mux_id, bool* peer_closed, bool first_time_recv)
 {
 	const mp_stream_p_t * uart_stream = mp_get_stream(nic->uart_obj);
 

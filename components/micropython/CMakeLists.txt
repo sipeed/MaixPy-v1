@@ -32,7 +32,6 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
                             "${mpy_port_dir}/src/Maix/include"
                             "${mpy_port_dir}/src/modules/include"
                             "${mpy_port_dir}/src/modules/ultrasonic/include"
-                            "${mpy_port_dir}/src/modules/speech_recognizer/include"
                             "${mpy_port_dir}/src/omv/include"
                             "${mpy_port_dir}/src/omv/boards/MAIX"
                             "${mpy_port_dir}/src/omv/img/include"
@@ -55,7 +54,6 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     endif()
     append_srcs_dir(MPY_PORT_SRCS "port/src/modules")
     append_srcs_dir(MPY_PORT_SRCS "port/src/modules/ultrasonic/src")
-    append_srcs_dir(MPY_PORT_SRCS "port/src/modules/speech_recognizer/src")
     append_srcs_dir(MPY_PORT_SRCS "port/src/modules/ws2812/src")
     append_srcs_dir(MPY_PORT_SRCS "port/src/modules/htpa/src")
     append_srcs_dir(MPY_PORT_SRCS "port/src/omv")
@@ -339,6 +337,16 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
         list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/ulab/micropython-ulab/code")
         append_srcs_dir(ADD_SRCS "port/src/ulab/micropython-ulab/code")
     endif()
+
+    if(1 OR CONFIG_MICROPY_SSL_MBEDTLS)
+        list(APPEND ADD_INCLUDE "${mpy_core_dir}/lib/mbedtls/include")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMBEDTLS_CONFIG_FILE='\"${mpy_port_dir}/src/mbedtls/include/mbedtls_config.h\"'")
+        # message(${CMAKE_C_FLAGS})
+        append_srcs_dir(ADD_SRCS "port/src/mbedtls")
+        append_srcs_dir(ADD_SRCS "core/lib/mbedtls/library")
+        list(REMOVE_ITEM ADD_SRCS "${mpy_core_dir}/lib/mbedtls/library/net_sockets.c")
+    endif()
+
     #############################################
 
     ################## FLAGS ####################

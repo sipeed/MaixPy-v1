@@ -119,6 +119,9 @@ STATIC mp_uint_t esp8285_socket_send(mod_network_socket_obj_t *socket, const byt
 		*_errno = MP_EPIPE;
 		return MP_STREAM_ERROR;
 	}
+    // printk("%s len %d\r\n", __func__, len);
+    mp_hal_delay_us(len * 50); // maybe 50 us time required to send per byte
+    // vTaskDelay(len / portTICK_PERIOD_MS);
     return len;
 }
 
