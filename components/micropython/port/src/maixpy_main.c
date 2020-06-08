@@ -81,6 +81,7 @@
 #include "sipeed_conv.h"
 #include "ide_dbg.h"
 #include "global_config.h"
+#include "Maix_config.h"
 
 /********* others *******/
 #include "boards.h"
@@ -319,6 +320,66 @@ void load_config_from_spiffs(config_data_t* config)
 	SPIFFS_close(&spiffs_user_mount_handle.fs, fd);
 }
 
+void mp_load_system_config() {
+	if (mp_const_true == maix_config_init()) {
+
+		// get and set freq_cpu
+		{
+			const char key[] = "freq_cpu";
+			mp_obj_t tmp = maix_config_get_value(mp_obj_new_str(key, sizeof(key) - 1), mp_obj_new_int(FREQ_CPU_DEFAULT));
+			if (mp_obj_is_int(tmp)) {
+				mp_int_t value = mp_obj_get_int(tmp);
+				mp_printf(&mp_plat_print, "%s %lu\r\n", key, value);
+				// sysctl_cpu_set_freq(value);
+			}
+		}
+
+		// get and set freq_pll1
+		{
+			const char key[] = "freq_pll1";
+			mp_obj_t tmp = maix_config_get_value(mp_obj_new_str(key, sizeof(key) - 1), mp_obj_new_int(FREQ_PLL1_DEFAULT));
+			if (mp_obj_is_int(tmp)) {
+				mp_int_t value = mp_obj_get_int(tmp);
+				mp_printf(&mp_plat_print, "%s %lu\r\n", key, value);
+				// sysctl_pll_set_freq(SYSCTL_PLL1, value);
+			}
+		}
+
+		// get and set kpu_div
+		{
+			const char key[] = "kpu_div";
+			mp_obj_t tmp = maix_config_get_value(mp_obj_new_str(key, sizeof(key) - 1), mp_obj_new_int(1));
+			if (mp_obj_is_int(tmp)) {
+				mp_int_t value = mp_obj_get_int(tmp);
+				mp_printf(&mp_plat_print, "%s %lu\r\n", key, value);
+				// sysctl_clock_set_threshold(SYSCTL_THRESHOLD_AI, value - 1);
+			}
+		}
+		
+		// get lcd dict key-value
+		{
+			const char key[] = "lcd";
+			mp_obj_t tmp = maix_config_get_value(mp_obj_new_str(key, sizeof(key) - 1), mp_obj_new_dict(0));
+			if (mp_obj_is_type(tmp, &mp_type_dict)) {
+				mp_obj_dict_t *self = MP_OBJ_TO_PTR(tmp);
+    		size_t cur = 0;
+				mp_map_elem_t *next = NULL;
+				bool first = true;
+				while ((next = dict_iter_next(self, &cur)) != NULL) {
+						if (!first) {
+								mp_print_str(&mp_plat_print, ", ");
+						}
+						first = false;
+						mp_obj_print_helper(&mp_plat_print, next->key, PRINT_STR);
+						mp_print_str(&mp_plat_print, ": ");
+						mp_obj_print_helper(&mp_plat_print, next->value, PRINT_STR);
+				}
+				mp_printf(&mp_plat_print, "\r\n");
+			}
+		}
+	}
+}
+
 #if MICROPY_ENABLE_COMPILER
 void pyexec_str(vstr_t* str) {
 	// gc.collect()
@@ -438,6 +499,9 @@ soft_reset:
 		bool mounted_sdcard = false;
 		bool mounted_flash= false;
 		mounted_flash = mpy_mount_spiffs(&spiffs_user_mount_handle);//init spiffs of flash
+		if (mounted_flash) {
+			mp_load_system_config();
+		}
 		sd_init();
 		if (sdcard_is_present()) {
 			spiffs_stat  fno;
