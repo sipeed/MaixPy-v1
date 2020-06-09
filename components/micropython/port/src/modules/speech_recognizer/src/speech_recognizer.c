@@ -254,27 +254,44 @@ int speech_recognizer_record(uint8_t keyword_num, uint8_t model_num)
     i2s_start_flag = 1;
 
     addr = ftr_start_addr + comm * size_per_comm + prc_count * size_per_ftr;
+#if MICROPY_PY_THREAD
     sr_record_addr = addr;
     vTaskResume(sr_task_handle);
+#else
+    if (speech_recognizer_save_mdl(VcBuf, addr) == save_ok)
+    {
+        return 0;
+    }
+    else
+    {
+        return -3;
+    }
+#endif
     return 0;
 }
 
+
 int speech_recognizer_recognize(void)
 {
-    // uint8_t res;
-    // uint32_t dis;
+#if !MICROPY_PY_THREAD
+    uint8_t res;
+    uint32_t dis;
+#endif
 
     g_index = 0;
     i2s_rec_flag = 0;
     i2s_start_flag = 1;
     sr_action = 2;
-    // res = speech_recognizer_spch_recg(VcBuf, &dis);
-    // if (dis != dis_err)
-    //     return res;
-    // else
-    //     return -1;
+#if MICROPY_PY_THREAD
     vTaskResume(sr_task_handle);
     return 0;
+#else
+    res = speech_recognizer_spch_recg(VcBuf, &dis);
+    if (dis != dis_err)
+        return res;
+    else
+        return -1;
+#endif
 }
 
 int speech_recognizer_add_voice_model(uint8_t keyword_num, uint8_t model_num, const int16_t *voice_model, uint16_t frame_num)
