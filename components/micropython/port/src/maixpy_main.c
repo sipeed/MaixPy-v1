@@ -500,7 +500,7 @@ soft_reset:
 		bool mounted_flash= false;
 		mounted_flash = mpy_mount_spiffs(&spiffs_user_mount_handle);//init spiffs of flash
 		if (mounted_flash) {
-			mp_load_system_config();
+			maix_config_init();
 		}
 		sd_init();
 		if (sdcard_is_present()) {

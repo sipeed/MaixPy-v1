@@ -21,6 +21,7 @@
 #include "sysctl.h"
 #include "global_config.h"
 #include "boards.h"
+#include "Maix_config.h"
 
 // extern uint8_t g_lcd_buf[];
 
@@ -34,6 +35,8 @@ static uint16_t height_curr = 0, height_conf = 0;
 static enum {
 	LCD_NONE,
 	LCD_SHIELD,
+	LCD_M5STICK,
+	LCD_TWATCH,
 	LCD_IPS_240X240
 } type = LCD_NONE;
 static uint8_t rotation = 0;
@@ -81,6 +84,8 @@ static mp_obj_t py_lcd_deinit()
         case LCD_NONE:
             return mp_const_none;
         case LCD_SHIELD:
+		case LCD_M5STICK:
+		case LCD_TWATCH:
 		case LCD_IPS_240X240:
 			lcd_destroy();
             width_curr = 0;
@@ -89,6 +94,31 @@ static mp_obj_t py_lcd_deinit()
             return mp_const_none;
     }
     return mp_const_none;
+}
+
+#define PY_LCD_CHECK_CONFIG(GOAL)\
+	{\
+		const char key[] = #GOAL;\
+		mp_map_elem_t *elem = mp_map_lookup(&self->map, mp_obj_new_str(key, sizeof(key) - 1), MP_MAP_LOOKUP);\
+		if (elem != NULL) {\
+			*(GOAL) = mp_obj_get_int(elem->value);\
+		}\
+	}
+
+void py_lcd_load_config(int *rst, int *dcx, int *ss, int *clk)
+{
+	const char cfg[] = "lcd";
+	mp_obj_t tmp = maix_config_get_value(mp_obj_new_str(cfg, sizeof(cfg) - 1), mp_const_none);
+	// mp_obj_print_helper(&mp_plat_print, tmp, PRINT_STR);
+	// mp_print_str(&mp_plat_print, "\r\n");
+	if (tmp != mp_const_none && mp_obj_is_type(tmp, &mp_type_dict)) {
+		mp_obj_dict_t *self = MP_OBJ_TO_PTR(tmp);
+		PY_LCD_CHECK_CONFIG(rst);
+		PY_LCD_CHECK_CONFIG(dcx);
+		PY_LCD_CHECK_CONFIG(ss);
+		PY_LCD_CHECK_CONFIG(clk);
+		mp_printf(&mp_plat_print, "[%s]: rst=%d, dcx=%d, ss=%d, clk=%d\r\n", __func__, *rst, *dcx, *ss, *clk);
+	}
 }
 
 static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
@@ -108,6 +138,10 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
 		ARG_offset_height,
 		ARG_offset_width2,
 		ARG_offset_height2,
+		ARG_rst,
+		ARG_dcx,
+		ARG_ss,
+		ARG_clk,
     };
     static const mp_arg_t allowed_args[] = {
 		{ MP_QSTR_type, MP_ARG_INT, {.u_int = LCD_SHIELD} },
@@ -120,6 +154,10 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
 		{ MP_QSTR_offset_height, MP_ARG_INT, {.u_int = -1} },
 		{ MP_QSTR_offset_width2, MP_ARG_INT, {.u_int = -1} },
 		{ MP_QSTR_offset_height2, MP_ARG_INT, {.u_int = -1} },
+		{ MP_QSTR_rst, MP_ARG_INT, {.u_int = 37} },
+		{ MP_QSTR_dcx, MP_ARG_INT, {.u_int = 38} },
+		{ MP_QSTR_ss, MP_ARG_INT, {.u_int = 36} },
+		{ MP_QSTR_clk, MP_ARG_INT, {.u_int = 39} },
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -154,27 +192,51 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
 			width_curr = width_conf;
 			height_curr = height_conf;
 			type = LCD_SHIELD;
-			#ifdef CONFIG_BOARD_M5STICK
-				fpioa_set_function(21, FUNC_GPIOHS0 + RST_GPIONUM);
-				fpioa_set_function(20, FUNC_GPIOHS0 + DCX_GPIONUM);
-				fpioa_set_function(22, FUNC_SPI0_SS0+LCD_SPI_SLAVE_SELECT);
-				fpioa_set_function(19, FUNC_SPI0_SCLK);
-				fpioa_set_function(18, FUNC_SPI0_D0);
-				ret = lcd_init(args[ARG_freq].u_int, false, 52, 40, 40, 52, true, width_curr, height_curr);
-			#elif defined(CONFIG_BOARD_TWATCH)
-				fpioa_set_function(37, FUNC_GPIOHS0 + RST_GPIONUM);
-				fpioa_set_function(38, FUNC_GPIOHS0 + DCX_GPIONUM);
-				fpioa_set_function(36, FUNC_SPI0_SS0+LCD_SPI_SLAVE_SELECT);
-				fpioa_set_function(39, FUNC_SPI0_SCLK);
-				ret = lcd_init(args[ARG_freq].u_int, true, 0, 0 ,0 ,0 , true, width_curr, height_curr);
-			#else
-				// backlight_init = false;
-				fpioa_set_function(37, FUNC_GPIOHS0 + RST_GPIONUM);
-				fpioa_set_function(38, FUNC_GPIOHS0 + DCX_GPIONUM);
-				fpioa_set_function(36, FUNC_SPI0_SS0+LCD_SPI_SLAVE_SELECT);
-				fpioa_set_function(39, FUNC_SPI0_SCLK);
-				ret = lcd_init(args[ARG_freq].u_int, true, offset_w, offset_h, offset_w2, offset_h2, args[ARG_invert].u_int!=1?false:true, width_curr, height_curr);
-			#endif
+
+			int rst = args[ARG_rst].u_int;
+			int dcx = args[ARG_dcx].u_int;
+			int ss = args[ARG_ss].u_int;
+			int clk = args[ARG_clk].u_int;
+			py_lcd_load_config(&rst, &dcx, &ss, &clk);
+
+			// backlight_init = false;
+			fpioa_set_function(rst, FUNC_GPIOHS0 + RST_GPIONUM);
+			fpioa_set_function(dcx, FUNC_GPIOHS0 + DCX_GPIONUM);
+			fpioa_set_function(ss, FUNC_SPI0_SS0+LCD_SPI_SLAVE_SELECT);
+			fpioa_set_function(clk, FUNC_SPI0_SCLK);
+
+			ret = lcd_init(args[ARG_freq].u_int, true, offset_w, offset_h, offset_w2, offset_h2, args[ARG_invert].u_int!=1?false:true, width_curr, height_curr);
+			lcd_clear(color);
+			break;
+        }
+		case LCD_M5STICK:
+		{
+			width_conf = args[ARG_width].u_int;
+			height_conf = args[ARG_height].u_int;
+			width_curr = width_conf;
+			height_curr = height_conf;
+			type = LCD_M5STICK;
+			fpioa_set_function(21, FUNC_GPIOHS0 + RST_GPIONUM);
+			fpioa_set_function(20, FUNC_GPIOHS0 + DCX_GPIONUM);
+			fpioa_set_function(22, FUNC_SPI0_SS0+LCD_SPI_SLAVE_SELECT);
+			fpioa_set_function(19, FUNC_SPI0_SCLK);
+			fpioa_set_function(18, FUNC_SPI0_D0);
+			ret = lcd_init(args[ARG_freq].u_int, false, 52, 40, 40, 52, true, width_curr, height_curr);
+			lcd_clear(color);
+			break;
+        }
+		case LCD_TWATCH: 
+		{
+			width_conf = args[ARG_width].u_int;
+			height_conf = args[ARG_height].u_int;
+			width_curr = width_conf;
+			height_curr = height_conf;
+			type = LCD_TWATCH;
+			fpioa_set_function(37, FUNC_GPIOHS0 + RST_GPIONUM);
+			fpioa_set_function(38, FUNC_GPIOHS0 + DCX_GPIONUM);
+			fpioa_set_function(36, FUNC_SPI0_SS0+LCD_SPI_SLAVE_SELECT);
+			fpioa_set_function(39, FUNC_SPI0_SCLK);
+			ret = lcd_init(args[ARG_freq].u_int, true, 0, 0 ,0 ,0 , true, width_curr, height_curr);
 			lcd_clear(color);
 			break;
         }
@@ -303,6 +365,8 @@ static mp_obj_t py_lcd_display(size_t n_args, const mp_obj_t *args, mp_map_t *kw
         case LCD_NONE:
             return mp_const_none;
         case LCD_SHIELD:
+		case LCD_M5STICK:
+		case LCD_TWATCH:
 		case LCD_IPS_240X240:
 			//fill pad
 			if(oft.x < 0 || oft.y < 0)
@@ -352,6 +416,8 @@ static mp_obj_t py_lcd_clear(size_t n_args, const mp_obj_t *pos_args, mp_map_t *
         case LCD_NONE:
             return mp_const_none;
         case LCD_SHIELD:
+		case LCD_M5STICK:
+		case LCD_TWATCH:
 		case LCD_IPS_240X240:
             lcd_clear(color);
             return mp_const_none;
