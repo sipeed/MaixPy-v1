@@ -44,6 +44,26 @@ static bool invert = false;
 static uint16_t screen_dir = DIR_YX_RLDU;
 // static bool backlight_init = false;
 
+typedef struct
+{
+    // Hardward Interface config
+    uint8_t rst_pin;
+    uint8_t dcx_pin;
+    uint8_t cs_pin; // cs or nss
+    uint8_t bl_pin;
+    uint8_t clk_pin;
+    uint32_t clk_rate; //
+
+    // LCD parmater config
+    uint16_t height;
+    uint16_t width;
+    uint16_t offset_x;
+    uint16_t offset_y;
+
+    uint8_t dir;
+    bool invert;
+} py_lcd_config_t;
+
 // Send out 8-bit data using the SPI object.
 static void lcd_write_command_byte(uint8_t data_byte)
 {
@@ -97,17 +117,17 @@ static mp_obj_t py_lcd_deinit()
     return mp_const_none;
 }
 
-#define PY_LCD_CHECK_CONFIG(GOAL)                                                                             \
+#define PY_LCD_CHECK_CONFIG(GOAL, val)                                                                        \
     {                                                                                                         \
         const char key[] = #GOAL;                                                                             \
         mp_map_elem_t *elem = mp_map_lookup(&self->map, mp_obj_new_str(key, sizeof(key) - 1), MP_MAP_LOOKUP); \
         if (elem != NULL)                                                                                     \
         {                                                                                                     \
-            *(GOAL) = mp_obj_get_int(elem->value);                                                            \
+            *(val) = mp_obj_get_int(elem->value);                                                             \
         }                                                                                                     \
     }
 
-void py_lcd_load_config(int *rst, int *dcx, int *ss, int *clk)
+void py_lcd_load_config(py_lcd_config_t *lcd_cfg)
 {
     const char cfg[] = "lcd";
     mp_obj_t tmp = maix_config_get_value(mp_obj_new_str(cfg, sizeof(cfg) - 1), mp_const_none);
@@ -116,11 +136,23 @@ void py_lcd_load_config(int *rst, int *dcx, int *ss, int *clk)
     if (tmp != mp_const_none && mp_obj_is_type(tmp, &mp_type_dict))
     {
         mp_obj_dict_t *self = MP_OBJ_TO_PTR(tmp);
-        PY_LCD_CHECK_CONFIG(rst);
-        PY_LCD_CHECK_CONFIG(dcx);
-        PY_LCD_CHECK_CONFIG(ss);
-        PY_LCD_CHECK_CONFIG(clk);
-        mp_printf(&mp_plat_print, "[%s]: rst=%d, dcx=%d, ss=%d, clk=%d\r\n", __func__, *rst, *dcx, *ss, *clk);
+
+        PY_LCD_CHECK_CONFIG(rst, &lcd_cfg->rst_pin);
+        PY_LCD_CHECK_CONFIG(dcx, &lcd_cfg->dcx_pin);
+        PY_LCD_CHECK_CONFIG(ss, &lcd_cfg->cs_pin);
+        PY_LCD_CHECK_CONFIG(clk, &lcd_cfg->clk_pin);
+
+        PY_LCD_CHECK_CONFIG(height, &lcd_cfg->height);
+        PY_LCD_CHECK_CONFIG(width, &lcd_cfg->width);
+        PY_LCD_CHECK_CONFIG(invert, &lcd_cfg->invert);
+        PY_LCD_CHECK_CONFIG(offset_x, &lcd_cfg->offset_x);
+        PY_LCD_CHECK_CONFIG(offset_y, &lcd_cfg->offset_y);
+        PY_LCD_CHECK_CONFIG(dir, &lcd_cfg->dir);
+
+        // mp_printf(&mp_plat_print, "[%s]: rst=%d, dcx=%d, ss=%d, clk=%d\r\n",
+        //           __func__, lcd_cfg->rst_pin, lcd_cfg->dcx_pin, lcd_cfg->cs_pin, lcd_cfg->clk_pin);
+
+        // mp_printf(&mp_plat_print, "[%d:%s]height*width[%d:%d]\r\n", __LINE__, __func__, lcd_cfg->height, lcd_cfg->width);
     }
 }
 
@@ -195,6 +227,7 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         return mp_const_none;
     case LCD_SHIELD:
     {
+        /*
         width_conf = args[ARG_width].u_int;
         height_conf = args[ARG_height].u_int;
         width_curr = width_conf;
@@ -206,15 +239,40 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         int ss = args[ARG_ss].u_int;
         int clk = args[ARG_clk].u_int;
         py_lcd_load_config(&rst, &dcx, &ss, &clk);
+         */
+        type = LCD_SHIELD;
+
+        py_lcd_config_t lcd_cfg;
+        lcd_cfg.rst_pin = args[ARG_rst].u_int;
+        lcd_cfg.dcx_pin = args[ARG_dcx].u_int;
+        lcd_cfg.cs_pin = args[ARG_ss].u_int;
+        lcd_cfg.clk_pin = args[ARG_clk].u_int;
+
+        lcd_cfg.width = args[ARG_width].u_int;
+        lcd_cfg.height = args[ARG_height].u_int;
+        lcd_cfg.invert = args[ARG_invert].u_int;
+        lcd_cfg.dir = 0;
+        py_lcd_load_config(&lcd_cfg);
+
+        width_conf = lcd_cfg.width;
+        height_conf = lcd_cfg.height;
+        width_curr = width_conf;
+        height_curr = height_conf;
+        invert = lcd_cfg.invert;
 
         // backlight_init = false;
-        fpioa_set_function(rst, FUNC_GPIOHS0 + RST_GPIONUM);
-        fpioa_set_function(dcx, FUNC_GPIOHS0 + DCX_GPIONUM);
-        fpioa_set_function(ss, FUNC_SPI0_SS0 + LCD_SPI_SLAVE_SELECT);
-        fpioa_set_function(clk, FUNC_SPI0_SCLK);
-
-        ret = lcd_init(args[ARG_freq].u_int, true, offset_w, offset_h, 
-            offset_w2, offset_h2, args[ARG_invert].u_int != 1 ? false : true, width_curr, height_curr);
+        fpioa_set_function(lcd_cfg.rst_pin, FUNC_GPIOHS0 + RST_GPIONUM);
+        fpioa_set_function(lcd_cfg.dcx_pin, FUNC_GPIOHS0 + DCX_GPIONUM);
+        fpioa_set_function(lcd_cfg.cs_pin, FUNC_SPI0_SS0 + LCD_SPI_SLAVE_SELECT);
+        fpioa_set_function(lcd_cfg.clk_pin, FUNC_SPI0_SCLK);
+        ret = lcd_init(args[ARG_freq].u_int, true, offset_w, offset_h,
+                       offset_w2, offset_h2, invert != 1 ? false : true, width_curr, height_curr);
+        // ret = lcd_init(args[ARG_freq].u_int, true, offset_w, offset_h,
+        //     offset_w2, offset_h2, args[ARG_invert].u_int != 1 ? false : true, width_curr, height_curr);
+        if (0 != lcd_cfg.dir)
+        {
+            lcd_set_direction(lcd_cfg.dir);
+        }
         lcd_clear(color);
         break;
     }
@@ -269,8 +327,8 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
             offset_w2 = 80;
         if (args[ARG_offset_height2].u_int == -1)
             offset_h2 = 0;
-        ret = lcd_init(args[ARG_freq].u_int, true, offset_w, offset_h, 
-            offset_w2, offset_h2, args[ARG_invert].u_int == 0 ? false : true, width_curr, height_curr);
+        ret = lcd_init(args[ARG_freq].u_int, true, offset_w, offset_h,
+                       offset_w2, offset_h2, args[ARG_invert].u_int == 0 ? false : true, width_curr, height_curr);
         lcd_clear(color);
         break;
     }
@@ -396,20 +454,22 @@ static mp_obj_t py_lcd_display(size_t n_args, const mp_obj_t *args, mp_map_t *kw
             lcd_fill_rectangle(width_curr - r_pad, t_pad, width_curr, height_curr - b_pad, BLACK);
         }
         if (is_cut)
-        { //cut from img
+        {
+            //cut from img
             if (IM_IS_GS(arg_img))
             {
-                lcd_draw_pic_grayroi(l_pad, t_pad, arg_img->w, arg_img->h, 
-                    rect.x, rect.y, rect.w, rect.h, (uint8_t *)(arg_img->pixels));
+                lcd_draw_pic_grayroi(l_pad, t_pad, arg_img->w, arg_img->h,
+                                     rect.x, rect.y, rect.w, rect.h, (uint8_t *)(arg_img->pixels));
             }
             else
             {
-                lcd_draw_pic_roi(l_pad, t_pad, arg_img->w, arg_img->h, 
-                    rect.x, rect.y, rect.w, rect.h, (uint32_t *)(arg_img->pixels));
+                lcd_draw_pic_roi(l_pad, t_pad, arg_img->w, arg_img->h,
+                                 rect.x, rect.y, rect.w, rect.h, (uint32_t *)(arg_img->pixels));
             }
         }
         else
-        { //no cut
+        {
+            //no cut
             if (IM_IS_GS(arg_img))
             {
                 lcd_draw_pic_gray(l_pad, t_pad, rect.w, rect.h, (uint8_t *)(arg_img->pixels));
