@@ -1,18 +1,19 @@
 /*
-* Copyright 2019 Sipeed Co.,Ltd.
+ * Copyright 2019 Sipeed Co.,Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
 /*****std lib****/
 #include <stdio.h>
 #include <stdlib.h>
@@ -446,6 +447,42 @@ void pyexec_str(vstr_t *str)
 }
 #endif
 
+#define SDCARD_CHECK_CONFIG(GOAL, val)                                                                        \
+    {                                                                                                         \
+        const char key[] = #GOAL;                                                                             \
+        mp_map_elem_t *elem = mp_map_lookup(&self->map, mp_obj_new_str(key, sizeof(key) - 1), MP_MAP_LOOKUP); \
+        if (elem != NULL)                                                                                     \
+        {                                                                                                     \
+            *(val) = mp_obj_get_int(elem->value);                                                             \
+        }                                                                                                     \
+    }
+
+void sd_preinit_config(sdcard_config_t *config)
+{
+    // printk("[%d:%s]\r\n", __LINE__, __FUNCTION__);
+
+    const char cfg[] = "sdcard";
+    mp_obj_t tmp = maix_config_get_value(mp_obj_new_str(cfg, sizeof(cfg) - 1), mp_const_none);
+    if (tmp != mp_const_none && mp_obj_is_type(tmp, &mp_type_dict))
+    {
+        mp_obj_dict_t *self = MP_OBJ_TO_PTR(tmp);
+
+        SDCARD_CHECK_CONFIG(sclk, &config->sclk_pin);
+        SDCARD_CHECK_CONFIG(mosi, &config->mosi_pin);
+        SDCARD_CHECK_CONFIG(miso, &config->miso_pin);
+        SDCARD_CHECK_CONFIG(cs, &config->cs_pin);
+        SDCARD_CHECK_CONFIG(cs, &config->cs_gpio_num);// cs_io_num and cs_fun_num same
+    }
+    else
+    {
+        config->sclk_pin = 27;
+        config->mosi_pin = 28;
+        config->miso_pin = 26;
+        config->cs_pin = 29;
+        config->cs_gpio_num = 29;
+    }
+}
+
 void mp_task(void *pvParameter)
 {
     volatile void *tmp;
@@ -532,6 +569,8 @@ soft_reset:
     {
         maix_config_init();
     }
+
+    sd_preinit_register_handler(sd_preinit_config);
     sd_init();
     if (sdcard_is_present())
     {
