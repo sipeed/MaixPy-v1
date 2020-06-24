@@ -251,22 +251,25 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         lcd_cfg.width = args[ARG_width].u_int;
         lcd_cfg.height = args[ARG_height].u_int;
         lcd_cfg.invert = args[ARG_invert].u_int;
+
         lcd_cfg.dir = 0;
+        lcd_cfg.invert = 0;
         py_lcd_load_config(&lcd_cfg);
 
         width_conf = lcd_cfg.width;
         height_conf = lcd_cfg.height;
         width_curr = width_conf;
         height_curr = height_conf;
-        invert = lcd_cfg.invert;
-
+        invert = (lcd_cfg.invert != 1) ? false : true;
+        
+        // mp_printf(&mp_plat_print, "invert:%d\r\n", invert);
         // backlight_init = false;
         fpioa_set_function(lcd_cfg.rst_pin, FUNC_GPIOHS0 + RST_GPIONUM);
         fpioa_set_function(lcd_cfg.dcx_pin, FUNC_GPIOHS0 + DCX_GPIONUM);
         fpioa_set_function(lcd_cfg.cs_pin, FUNC_SPI0_SS0 + LCD_SPI_SLAVE_SELECT);
         fpioa_set_function(lcd_cfg.clk_pin, FUNC_SPI0_SCLK);
         ret = lcd_init(args[ARG_freq].u_int, true, offset_w, offset_h,
-                       offset_w2, offset_h2, invert != 1 ? false : true, width_curr, height_curr);
+                       offset_w2, offset_h2, invert, width_curr, height_curr);
         // ret = lcd_init(args[ARG_freq].u_int, true, offset_w, offset_h,
         //     offset_w2, offset_h2, args[ARG_invert].u_int != 1 ? false : true, width_curr, height_curr);
         if (0 != lcd_cfg.dir)
