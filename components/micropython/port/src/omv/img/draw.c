@@ -268,81 +268,81 @@ void imlib_draw_ellipse(image_t *img, int cx, int cy, int rx, int ry, int rotati
     scratch_draw_rotated_ellipse(img, cx, cy, rx * 2, ry * 2, rotation, fill, c, thickness);
 }
 
-void imlib_draw_string(image_t *img, int x_off, int y_off, const char *str, int c, float scale, int x_spacing, int y_spacing, bool mono_space)
-{
-    const int anchor = x_off;
+// static void imlib_draw_string(image_t *img, int x_off, int y_off, const char *str, int c, float scale, int x_spacing, int y_spacing, bool mono_space)
+// {
+//     const int anchor = x_off;
 
-    for(char ch, last = '\0'; (ch = *str); str++, last = ch) {
+//     for(char ch, last = '\0'; (ch = *str); str++, last = ch) {
 
-        if ((last == '\r') && (ch == '\n')) { // handle "\r\n" strings
-            continue;
-        }
+//         if ((last == '\r') && (ch == '\n')) { // handle "\r\n" strings
+//             continue;
+//         }
 
-        if ((ch == '\n') || (ch == '\r')) { // handle '\n' or '\r' strings
-            x_off = anchor;
-            y_off += fast_roundf(font[0].h * scale) + y_spacing; // newline height == space height
-            continue;
-        }
+//         if ((ch == '\n') || (ch == '\r')) { // handle '\n' or '\r' strings
+//             x_off = anchor;
+//             y_off += fast_roundf(font[0].h * scale) + y_spacing; // newline height == space height
+//             continue;
+//         }
 
-        if ((ch < ' ') || (ch > '~')) { // handle unknown characters
-            imlib_draw_rectangle(img,
-                x_off + (fast_roundf(scale * 3) / 2),
-                y_off + (fast_roundf(scale * 3) / 2),
-                fast_roundf(font[0].w * scale) - ((fast_roundf(scale * 3) / 2) * 2),
-                fast_roundf(font[0].h * scale) - ((fast_roundf(scale * 3) / 2) * 2),
-                c, fast_roundf(scale), false);
-            continue;
-        }
+//         if ((ch < ' ') || (ch > '~')) { // handle unknown characters
+//             imlib_draw_rectangle(img,
+//                 x_off + (fast_roundf(scale * 3) / 2),
+//                 y_off + (fast_roundf(scale * 3) / 2),
+//                 fast_roundf(font[0].w * scale) - ((fast_roundf(scale * 3) / 2) * 2),
+//                 fast_roundf(font[0].h * scale) - ((fast_roundf(scale * 3) / 2) * 2),
+//                 c, fast_roundf(scale), false);
+//             continue;
+//         }
 
-        const glyph_t *g = &font[ch - ' '];
+//         const glyph_t *g = &font[ch - ' '];
 
-        if (!mono_space) {
-            // Find the first pixel set and offset to that.
-            bool exit = false;
+//         if (!mono_space) {
+//             // Find the first pixel set and offset to that.
+//             bool exit = false;
 
-            for (int x = 0, xx = g->w; x < xx; x++) {
-                for (int y = 0, yy = g->h; y < yy; y++) {
-                    if (g->data[y] & (1 << (g->w - 1 - x))) {
-                        x_off -= fast_roundf(x * scale);
-                        exit = true;
-                        break;
-                    }
-                }
+//             for (int x = 0, xx = g->w; x < xx; x++) {
+//                 for (int y = 0, yy = g->h; y < yy; y++) {
+//                     if (g->data[y] & (1 << (g->w - 1 - x))) {
+//                         x_off -= fast_roundf(x * scale);
+//                         exit = true;
+//                         break;
+//                     }
+//                 }
 
-                if (exit) break;
-            }
-        }
+//                 if (exit) break;
+//             }
+//         }
 
-        for (int y = 0, yy = fast_roundf(g->h * scale); y < yy; y++) {
-            for (int x = 0, xx = fast_roundf(g->w * scale); x < xx; x++) {
-                if (g->data[fast_roundf(y / scale)] & (1 << (g->w - 1 - fast_roundf(x / scale)))) {
-                    imlib_set_pixel(img, (x_off + x), (y_off + y), c);
-                }
-            }
-        }
+//         for (int y = 0, yy = fast_roundf(g->h * scale); y < yy; y++) {
+//             for (int x = 0, xx = fast_roundf(g->w * scale); x < xx; x++) {
+//                 if (g->data[fast_roundf(y / scale)] & (1 << (g->w - 1 - fast_roundf(x / scale)))) {
+//                     imlib_set_pixel(img, (x_off + x), (y_off + y), c);
+//                 }
+//             }
+//         }
 
-        if (mono_space) {
-            x_off += fast_roundf(g->w * scale) + x_spacing;
-        } else {
-            // Find the last pixel set and offset to that.
-            bool exit = false;
+//         if (mono_space) {
+//             x_off += fast_roundf(g->w * scale) + x_spacing;
+//         } else {
+//             // Find the last pixel set and offset to that.
+//             bool exit = false;
 
-            for (int x = g->w - 1; x >= 0; x--) {
-                for (int y = g->h - 1; y >= 0; y--) {
-                    if (g->data[y] & (1 << (g->w - 1 - x))) {
-                        x_off += fast_roundf((x + 2) * scale) + x_spacing;
-                        exit = true;
-                        break;
-                    }
-                }
+//             for (int x = g->w - 1; x >= 0; x--) {
+//                 for (int y = g->h - 1; y >= 0; y--) {
+//                     if (g->data[y] & (1 << (g->w - 1 - x))) {
+//                         x_off += fast_roundf((x + 2) * scale) + x_spacing;
+//                         exit = true;
+//                         break;
+//                     }
+//                 }
 
-                if (exit) break;
-            }
+//                 if (exit) break;
+//             }
 
-            if (!exit) x_off += fast_roundf(scale * 3); // space char
-        }
-    }
-}
+//             if (!exit) x_off += fast_roundf(scale * 3); // space char
+//         }
+//     }
+// }
 
 static int safe_map_pixel(image_t *dst, image_t *src, int pixel)
 {
