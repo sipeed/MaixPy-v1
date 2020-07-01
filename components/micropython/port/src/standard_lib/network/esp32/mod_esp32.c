@@ -520,9 +520,9 @@ STATIC mp_uint_t esp32_socket_send(mod_network_socket_obj_t *socket, const byte 
     uint16_t len_send;
     while(1)
     {
-        len_send = len > SPI_MAX_DMA_LEN ? SPI_MAX_DMA_LEN : len;
+        len_send = (len - sent_len) > SPI_MAX_DMA_LEN ? SPI_MAX_DMA_LEN : (len - sent_len);
         //TODO: esp32_spi_socket_write is nonblock in esp32 firmware
-        if(esp32_spi_socket_write(self->sock_id, (uint8_t*)buf, len_send ) == 0)
+        if(esp32_spi_socket_write(self->sock_id, (uint8_t*)buf + sent_len, len_send ) == 0)
         {
             *_errno = MP_EIO;
             return -1;
