@@ -644,6 +644,7 @@ void imlib_load_image(image_t *img, const char *path, mp_obj_t file, uint8_t* bu
         {
             mp_raise_msg(&mp_type_OSError, "Not support");
         }
+        vfs_internal_close(file, &err);
         bmp_read(img, path);
     } else if ((magic[0]==0xFF) && (magic[1]==0xD8)) { // JPEG
         // jpeg_read(img, path);
