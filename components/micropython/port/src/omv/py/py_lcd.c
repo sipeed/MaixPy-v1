@@ -57,8 +57,10 @@ typedef struct
     // LCD parmater config
     uint16_t height;
     uint16_t width;
-    uint16_t offset_x;
-    uint16_t offset_y;
+    uint16_t offset_y1;
+    uint16_t offset_x1;
+    uint16_t offset_y2;
+    uint16_t offset_x2;
 
     uint8_t dir;
     bool invert;
@@ -145,14 +147,15 @@ void py_lcd_load_config(py_lcd_config_t *lcd_cfg)
         PY_LCD_CHECK_CONFIG(height, &lcd_cfg->height);
         PY_LCD_CHECK_CONFIG(width, &lcd_cfg->width);
         PY_LCD_CHECK_CONFIG(invert, &lcd_cfg->invert);
-        PY_LCD_CHECK_CONFIG(offset_x, &lcd_cfg->offset_x);
-        PY_LCD_CHECK_CONFIG(offset_y, &lcd_cfg->offset_y);
+        PY_LCD_CHECK_CONFIG(offset_x1, &lcd_cfg->offset_x1);
+        PY_LCD_CHECK_CONFIG(offset_y1, &lcd_cfg->offset_y1);
+        PY_LCD_CHECK_CONFIG(offset_x2, &lcd_cfg->offset_x2);
+        PY_LCD_CHECK_CONFIG(offset_y2, &lcd_cfg->offset_y2);
         PY_LCD_CHECK_CONFIG(dir, &lcd_cfg->dir);
 
         // mp_printf(&mp_plat_print, "[%s]: rst=%d, dcx=%d, ss=%d, clk=%d\r\n",
         //           __func__, lcd_cfg->rst_pin, lcd_cfg->dcx_pin, lcd_cfg->cs_pin, lcd_cfg->clk_pin);
 
-        // mp_printf(&mp_plat_print, "[%d:%s]height*width[%d:%d]\r\n", __LINE__, __func__, lcd_cfg->height, lcd_cfg->width);
     }
 }
 
@@ -251,10 +254,11 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         lcd_cfg.width = args[ARG_width].u_int;
         lcd_cfg.height = args[ARG_height].u_int;
         lcd_cfg.invert = args[ARG_invert].u_int;
-
+        
         lcd_cfg.dir = 0;
         lcd_cfg.invert = 0;
         py_lcd_load_config(&lcd_cfg);
+      
 
         width_conf = lcd_cfg.width;
         height_conf = lcd_cfg.height;
@@ -262,14 +266,13 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         height_curr = height_conf;
         invert = (lcd_cfg.invert != 1) ? false : true;
         
-        // mp_printf(&mp_plat_print, "invert:%d\r\n", invert);
         // backlight_init = false;
         fpioa_set_function(lcd_cfg.rst_pin, FUNC_GPIOHS0 + RST_GPIONUM);
         fpioa_set_function(lcd_cfg.dcx_pin, FUNC_GPIOHS0 + DCX_GPIONUM);
         fpioa_set_function(lcd_cfg.cs_pin, FUNC_SPI0_SS0 + LCD_SPI_SLAVE_SELECT);
         fpioa_set_function(lcd_cfg.clk_pin, FUNC_SPI0_SCLK);
-        ret = lcd_init(args[ARG_freq].u_int, true, offset_w, offset_h,
-                       offset_w2, offset_h2, invert, width_curr, height_curr);
+        ret = lcd_init(args[ARG_freq].u_int, true, lcd_cfg.offset_x1, lcd_cfg.offset_y1,
+                       lcd_cfg.offset_x2, lcd_cfg.offset_y2, invert, width_curr, height_curr);
         // ret = lcd_init(args[ARG_freq].u_int, true, offset_w, offset_h,
         //     offset_w2, offset_h2, args[ARG_invert].u_int != 1 ? false : true, width_curr, height_curr);
         if (0 != lcd_cfg.dir)
