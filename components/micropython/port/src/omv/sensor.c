@@ -889,8 +889,8 @@ int sensor_set_pixformat(pixformat_t pixformat, bool set_regs)
     switch (pixformat)
     {
     case PIXFORMAT_RGB565:
-        //  dvp_set_image_format(DVP_CFG_RGB_FORMAT);
-        //  break;
+        dvp_set_image_format(DVP_CFG_RGB_FORMAT);
+        break;
     case PIXFORMAT_YUV422:
         dvp_set_image_format(DVP_CFG_YUV_FORMAT);
         break;
