@@ -1473,7 +1473,7 @@ STATIC mp_obj_t py_image_draw_string(size_t n_args, const mp_obj_t *args, mp_map
     int arg_y_spacing =
         py_helper_keyword_int(n_args, args, offset + 3, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_y_spacing), 2);
     bool arg_mono_space =
-        py_helper_keyword_int(n_args, args, offset + 4, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_mono_space), true);
+        py_helper_keyword_int(n_args, args, offset + 4, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_mono_space), 0);
 
     imlib_draw_string(arg_img, arg_x_off, arg_y_off, arg_str,
                       arg_c, arg_scale, arg_x_spacing, arg_y_spacing,
