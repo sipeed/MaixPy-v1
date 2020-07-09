@@ -579,6 +579,7 @@ soft_reset:
         if (!mounted_flash || SPIFFS_stat(&spiffs_user_mount_handle.fs, "SKIPSD", &fno) != SPIFFS_OK)
         {
             mounted_sdcard = init_sdcard_fs();
+            if (!mounted_sdcard) mounted_sdcard = init_sdcard_fs(); // fail try again mounted_sdcard.
         }
     }
     if (mounted_sdcard)
