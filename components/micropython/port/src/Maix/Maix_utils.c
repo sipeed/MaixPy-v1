@@ -5,6 +5,7 @@
 #include "stdint.h"
 #include "stdbool.h"
 #include "stdlib.h"
+#include "sipeed_mem.h"
 
 STATIC mp_obj_t py_gc_heap_size(size_t n_args, const mp_obj_t *args) {
     config_data_t config;
@@ -20,6 +21,12 @@ STATIC mp_obj_t py_gc_heap_size(size_t n_args, const mp_obj_t *args) {
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_gc_heap_size_obj, 0, 1, py_gc_heap_size);
+
+// sys_free(): return the number of bytes of available sys heap RAM
+STATIC mp_obj_t py_heap_free(void) {
+    return MP_OBJ_NEW_SMALL_INT(get_free_heap_size2());
+}
+MP_DEFINE_CONST_FUN_OBJ_0(py_heap_free_obj, py_heap_free);
 
 // STATIC mp_obj_t py_malloc(mp_obj_t arg) {
 //     void malloc_stats(void);
@@ -41,6 +48,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_gc_heap_size_obj, 0, 1, py_gc_heap
 static const mp_map_elem_t locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__),        MP_OBJ_NEW_QSTR(MP_QSTR_utils) },
     { MP_ROM_QSTR(MP_QSTR_gc_heap_size),    (mp_obj_t)(&py_gc_heap_size_obj) },
+    { MP_ROM_QSTR(MP_QSTR_heap_free),    (mp_obj_t)(&py_heap_free_obj) },
     // { MP_ROM_QSTR(MP_QSTR_malloc),    (mp_obj_t)(&py_malloc_obj) },
     // { MP_ROM_QSTR(MP_QSTR_free),    (mp_obj_t)(&py_free_obj) },
 };
