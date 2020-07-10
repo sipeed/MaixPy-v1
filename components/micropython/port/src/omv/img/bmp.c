@@ -157,7 +157,7 @@ bool bmp_read_pixels(mp_obj_t fp, image_t *img, int line_start, int line_end, bm
                 if(read_byte(fp, &b)) {
                     return false;
                 }
-                uint16_t pixel = IM_RGB565(IM_R825(r), IM_G826(g), IM_B825(b));
+                uint16_t pixel = IM_RGB565(IM_R825(b), IM_G826(g), IM_B825(r));
                 if (j < img->w) {
                     if (rs->bmp_h < 0) { // vertical flip
                         if (rs->bmp_w < 0) { // horizontal flip
