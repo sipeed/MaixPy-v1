@@ -161,6 +161,7 @@ typedef struct _sensor {
     int  (*set_lens_correction) (sensor_t *sensor, int enable, int radi, int coef);
     int  (*snapshot)            (sensor_t *sensor, image_t *image, streaming_cb_t streaming_cb, bool update_jb);
 	int  (*flush)				(void);
+    int  (*set_windowing)       (framesize_t framesize, int x, int y, int w, int h);
 /*
 	GPIO_TypeDef *vsync_gpio;   // VSYNC GPIO output port.
 */
