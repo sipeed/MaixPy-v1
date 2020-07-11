@@ -29,7 +29,6 @@
 
 #include "mphalport.h"
 
-
 int gc2145_reset(sensor_t *sensor)
 {
     uint16_t index = 0;
