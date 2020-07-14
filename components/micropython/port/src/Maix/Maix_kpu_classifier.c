@@ -5,6 +5,7 @@
 #include "py_image.h"
 #include "sipeed_kpu_classifier.h"
 #include "Maix_kpu.h"
+#include "sipeed_kpu.h"
 
 const mp_obj_type_t Maix_kpu_classifier_type;
 
@@ -27,13 +28,13 @@ STATIC void init_obj(maix_kpu_classifier_t* self, py_kpu_net_obj_t* model, mp_in
     else
         self->model->model_path = mp_obj_str_get_str(model->model_path);
     self->model->model_size = model->model_size;
-    int ret = maix_kpu_classifier_init(&self->obj, self->model, (int)class_num, (int)sample_num);
+    int ret = maix_kpu_classifier_init(&self->obj, self->model, (int)class_num, (int)sample_num, false, 0);
     if(ret < 0)
         mp_raise_OSError(-ret);
 }
 
-STATIC int add_class_img(maix_kpu_classifier_t* self, image_t* img){
-    int ret = maix_kpu_classifier_add_class_img(self->obj, img);
+STATIC int add_class_img(maix_kpu_classifier_t* self, image_t* img, int idx){
+    int ret = maix_kpu_classifier_add_class_img(self->obj, img, idx);
     if(ret < 0)
         mp_raise_OSError(-ret);
     return ret;
@@ -73,7 +74,7 @@ STATIC void train(maix_kpu_classifier_t* self){
 }
 
 STATIC int predict(maix_kpu_classifier_t* self, image_t* img, float* min_distance){
-    int ret = maix_kpu_classifier_predict(self->obj, img, min_distance);
+    int ret = maix_kpu_classifier_predict(self->obj, img, min_distance, NULL, NULL, NULL, NULL);
     if(ret < 0)
         mp_raise_OSError(-ret);
     return ret;
@@ -113,21 +114,25 @@ mp_obj_t maix_kpu_classifier_make_new(const mp_obj_type_t *type, size_t n_args, 
     if(mp_obj_get_type(args[0]) != &py_kpu_net_obj_type){
         mp_raise_ValueError("model");
     }
+    sipeed_kpu_use_dma(1);
     init_obj(self, (py_kpu_net_obj_t*)args[0], mp_obj_get_int(args[1]), mp_obj_get_int(args[2]));
     return (mp_obj_t)self;
 }
 
-mp_obj_t classifier_add_class_img(mp_obj_t self_in, mp_obj_t img_in){
-    if(mp_obj_get_type(self_in) != &Maix_kpu_classifier_type){
+mp_obj_t classifier_add_class_img(size_t n_args, const mp_obj_t *args){
+    if(mp_obj_get_type(args[0]) != &Maix_kpu_classifier_type){
         mp_raise_ValueError("must be obj");
     }
-    maix_kpu_classifier_t* self = (maix_kpu_classifier_t*)self_in;
-    image_t* img = py_image_cobj(img_in);
-    int ret_index = add_class_img(self, img);
+    maix_kpu_classifier_t* self = (maix_kpu_classifier_t*)args[0];
+    image_t* img = py_image_cobj(args[1]);
+    int idx = -1;
+    if(n_args > 2)
+        idx = mp_obj_get_int(args[2]);
+    int ret_index = add_class_img(self, img, idx);
     return mp_obj_new_int(ret_index);
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(classifier_add_class_img_obj, classifier_add_class_img);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(classifier_add_class_img_obj, 2, 3, classifier_add_class_img);
 
 
 mp_obj_t classifier_rm_class_img(mp_obj_t self_in){
