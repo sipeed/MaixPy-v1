@@ -128,10 +128,11 @@ static void py_kpu_net_obj_print(const mp_print_t *print, mp_obj_t self_in, mp_p
                 );
 }
 
+STATIC mp_obj_t py_kpu_deinit(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args);
 mp_obj_t py_kpu_net_del(mp_obj_t self_in)
 {
     mp_printf(&mp_plat_print, "kpu_net __del__\r\n");
-    sipeed_kpu_model_destroy(&((py_kpu_net_obj_t *)self_in)->kmodel_ctx);
+    py_kpu_deinit(1, &self_in, NULL);
     return mp_const_none;
 }
 mp_obj_t py_kpu_net_model_addr(mp_obj_t self_in) { return ((py_kpu_net_obj_t *)self_in)->model_addr; }
