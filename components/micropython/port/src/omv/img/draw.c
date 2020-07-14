@@ -431,10 +431,12 @@ void imlib_draw_image(image_t *img, image_t *other, int x_off, int y_off, float 
 }
 
 #ifdef IMLIB_ENABLE_FLOOD_FILL
-void imlib_flood_fill(image_t *img, int x, int y,
+
+size_t imlib_flood_fill(image_t *img, int x, int y,
                       float seed_threshold, float floating_threshold,
                       int c, bool invert, bool clear_background, image_t *mask)
 {
+	size_t count = 0;
     if ((0 <= x) && (x < img->w) && (0 <= y) && (y < img->h)) {
         image_t out;
         out.w = img->w;
@@ -479,7 +481,7 @@ void imlib_flood_fill(image_t *img, int x, int y,
             }
         }
 
-        imlib_flood_fill_int(&out, img, x, y, color_seed_threshold, color_floating_threshold, NULL, NULL);
+        count = imlib_flood_fill_int(&out, img, x, y, color_seed_threshold, color_floating_threshold, NULL, NULL);
 
         switch(img->bpp) {
             case IMAGE_BPP_BINARY: {
@@ -531,5 +533,6 @@ void imlib_flood_fill(image_t *img, int x, int y,
 
         fb_free();
     }
+	return count;
 }
 #endif // IMLIB_ENABLE_FLOOD_FILL
