@@ -6552,6 +6552,25 @@ mp_obj_t py_image_load_image(size_t n_args, const mp_obj_t *args, mp_map_t *kw_a
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_load_image_obj, 0, py_image_load_image);
 
+#include "font.h"
+
+mp_obj_t py_image_font_load(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
+{
+    mp_int_t index = mp_obj_get_int(args[0]);
+    mp_int_t width = mp_obj_get_int(args[1]);
+    mp_int_t high = mp_obj_get_int(args[2]);
+    font_load(index, width, high, args[3]);
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_font_load_obj, 4, py_image_font_load);
+
+mp_obj_t py_image_font_free(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
+{
+    font_free();
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_font_free_obj, 0, py_image_font_free);
+
 #ifndef OMV_MINIMUM
 mp_obj_t py_image_load_cascade(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
@@ -6578,25 +6597,6 @@ mp_obj_t py_image_load_cascade(size_t n_args, const mp_obj_t *args, mp_map_t *kw
     return o;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_load_cascade_obj, 1, py_image_load_cascade);
-
-#include "font.h"
-
-mp_obj_t py_image_font_load(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
-{
-    mp_int_t index = mp_obj_get_int(args[0]);
-    mp_int_t width = mp_obj_get_int(args[1]);
-    mp_int_t high = mp_obj_get_int(args[2]);
-    font_load(index, width, high, args[3]);
-    return mp_const_none;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_font_load_obj, 4, py_image_font_load);
-
-mp_obj_t py_image_font_free(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
-{
-    font_free();
-    return mp_const_none;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_font_free_obj, 0, py_image_font_free);
 
 mp_obj_t py_image_load_descriptor(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
@@ -6941,10 +6941,10 @@ static const mp_rom_map_elem_t globals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_CODE93),              MP_ROM_INT(BARCODE_CODE93)},
     {MP_ROM_QSTR(MP_QSTR_CODE128),             MP_ROM_INT(BARCODE_CODE128)},
 #endif
-    {MP_ROM_QSTR(MP_QSTR_font_load),           MP_ROM_PTR(&py_image_font_load_obj)},
-    {MP_ROM_QSTR(MP_QSTR_font_free),           MP_ROM_PTR(&py_image_font_free_obj)},
     {MP_ROM_QSTR(MP_QSTR_ASCII),               MP_ROM_INT(ASCII)},
     {MP_ROM_QSTR(MP_QSTR_UTF8),                MP_ROM_INT(UTF8)},
+    {MP_ROM_QSTR(MP_QSTR_font_load),           MP_ROM_PTR(&py_image_font_load_obj)},
+    {MP_ROM_QSTR(MP_QSTR_font_free),           MP_ROM_PTR(&py_image_font_free_obj)},
     {MP_ROM_QSTR(MP_QSTR_ImageWriter),         MP_ROM_PTR(&py_image_imagewriter_obj)},
     {MP_ROM_QSTR(MP_QSTR_Image),               MP_ROM_PTR(&py_image_load_image_obj)},
     {MP_ROM_QSTR(MP_QSTR_ImageWriter),         MP_ROM_PTR(&py_image_imagewriter_obj)},
