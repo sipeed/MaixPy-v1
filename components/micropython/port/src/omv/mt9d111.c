@@ -436,7 +436,7 @@ uint16_t mt9d111_read_id(i2c_device_number_t extern_i2c_dev_tmp)
     // return 0x1519;
     mt9d11_write(i2c_dev_tmp, MT9D111_REG_PAGE_REGISTER, MT9D111_REG_PAGE_0);
     uint16_t id = mt9d11_read(i2c_dev_tmp, MT9D111_REG_RESERVED);
-    printk("[mt9d11] Sensor ID:0x%x,req:0x1519\r\n", id);
+    // printk("[mt9d11] Sensor ID:0x%x,req:0x1519\r\n", id);
     return id;
 }
 
