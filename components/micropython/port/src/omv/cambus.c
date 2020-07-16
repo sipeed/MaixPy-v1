@@ -257,7 +257,7 @@ int cambus_scan_mt9d111(void)
     uint16_t id = mt9d111_read_id(i2c_device);
     if (id != MT9D111_ID_CODE)
     {
-        mp_printf(&mp_plat_print, "error mt9d111 detect, ret id is 0x%x\r\n", id);
+        // mp_printf(&mp_plat_print, "error mt9d111 detect, ret id is 0x%x\r\n", id);
         return 0;
     }
     return id;
