@@ -5,6 +5,8 @@
 
 #include "printf.h"
 
+#include "vfs_spiffs.h"
+
 /*
  * Name Envy-Code-B-10pt-1.ttf (8 * 10)
  * Included characters:
@@ -218,9 +220,9 @@ struct font
   8, 12, ASCII, BuildIn, ascii
 };
 
-static inline void font_init(uint8_t w, uint8_t h, uint8_t i, uint8_t s, void *t)
+static inline void font_init(uint8_t width, uint8_t high, uint8_t index, uint8_t source_type, void *font_offset)
 {
-  struct font tmp = { w, h, i, s, t };
+  struct font tmp = { width, high, index, source_type, font_offset};
   font_config = tmp;
 }
 
@@ -245,36 +247,27 @@ void font_free()
   }
 }
 
-void font_load(uint8_t index, uint8_t width, uint8_t high, void *source)
+void font_load(uint8_t index, uint8_t width, uint8_t high, uint8_t source_type, void *src_addr)
 {
-  switch (index)
-  {
-    case UTF8:
-    {
-      mp_obj_t fp;
-      mp_uint_t bytes;
-      FRESULT res;
-      
-      const char *path = mp_obj_str_get_str(source);
 
-      if ((res = file_read_open_raise(&fp, path)) == FR_OK) {
-        font_init(width, high, UTF8, File, fp);
-      }
-      
-      // File open or write error
-      if (res != FR_OK) {
-          nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, ffs_strerror(res)));
-      }
-      break;
-    }
+    switch (index)
+    {
+    case UTF8:
+        if (src_addr == NULL)
+        {
+            font_init(8, 12, ASCII, BuildIn, ascii);
+            break;
+        }
+        font_init(width, high, UTF8, source_type, src_addr);
+    break;
     default:
     case Unicode:
     case GBK:
     case GB2312:
     case ASCII:
-      font_init(8, 12, ASCII, BuildIn, ascii);
-      break;
-  }
+        font_init(8, 12, ASCII, BuildIn, ascii);
+    break;
+    }
 }
 
 int font_get_utf8_size(const uint8_t pInput)
@@ -385,7 +378,7 @@ void imlib_draw_font(image_t *img, int x_off, int y_off, int c, float scale, uin
         uint8_t pos = fast_roundf(y / scale);
         uint16_t tmp = font[pos];
         if (8 < font_w && font_w <= 16) {
-            tmp <<= 8, tmp |= font[pos + font_h]; // font ↑ ↓ ← →
+            tmp <<= 8, tmp |= font[pos + font_h]; // font ↑ ↓ ↝ →
         }
         for (int x = 0, xx = fast_roundf(font_w * scale); x < xx; x++) {
             if (tmp & (1 << (font_w - 1 - fast_roundf(x / scale)))) {
@@ -428,8 +421,20 @@ void imlib_draw_utf8_string(image_t *img, int x_off, int y_off, mp_obj_t str, in
 
     uint8_t buffer[font_len];
     
-    file_seek_raise(font_config.this, offset * font_len, 0);
-    read_data_raise(font_config.this, buffer, font_len);
+    switch (font_config.source)
+    {
+        case FileIn:
+            file_seek_raise(font_config.this, offset * font_len, 0);
+            read_data_raise(font_config.this, buffer, font_len);
+            break;
+        case ArrayIn:
+            // printk("%d %p %p %p", font_len, buffer, font_config.this, &font_config.this[offset * font_len]);
+            // memcpy(buffer, &font_config.this[offset * font_len], font_len);
+            sys_spiffs_read(font_config.this + offset * font_len, font_len, buffer);
+            break;
+        default:
+            break;
+    }
 
     const uint8_t *font = buffer;
 

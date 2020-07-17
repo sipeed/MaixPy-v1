@@ -27,6 +27,8 @@
 #include "py/binary.h"
 //#include "sipeed_sys.h"
 
+#include "font.h"
+
 static const mp_obj_type_t py_image_type;
 
 //extern const char *ffs_strerror(FRESULT res);
@@ -6468,28 +6470,6 @@ mp_obj_t py_image_load_image(size_t n_args, const mp_obj_t *args, mp_map_t *kw_a
     bool from_bytes = py_helper_keyword_int(n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_from_bytes), 0) > 0 ? true : false;
 	py_helper_keyword_xy(NULL, n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_size), &xy);
     if (copy_to_fb) fb_update_jpeg_buffer();
-    // image_t image = {0};
-
-    // if (copy_to_fb) {
-    //    MAIN_FB()->w = 0;
-    //    MAIN_FB()->h = 0;
-    //    MAIN_FB()->bpp = 0;
-
-    //    mp_obj_t fp;
-    //    img_read_settings_t rs;
-    //    imlib_read_geometry(&fp, &image, path, &rs);//bbj打开文件头读取相关信�?
-    //    file_buffer_off(&fp);
-    //    file_close(&fp);
-
-    //    uint32_t size = image_size(&image);
-
-    //    PY_ASSERT_TRUE_MSG((size <= OMV_RAW_BUF_SIZE), "FB Overflow!");
-    //    MAIN_FB()->w = image.w;
-    //    MAIN_FB()->h = image.h;
-    //    MAIN_FB()->bpp = image.bpp;
-    //    image.data = MAIN_FB()->pixels;
-    // }
-
 
     image_t image = {0};
     memset(&image, 0, sizeof(image_t));
@@ -6552,14 +6532,55 @@ mp_obj_t py_image_load_image(size_t n_args, const mp_obj_t *args, mp_map_t *kw_a
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_load_image_obj, 0, py_image_load_image);
 
-#include "font.h"
-
 mp_obj_t py_image_font_load(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     mp_int_t index = mp_obj_get_int(args[0]);
     mp_int_t width = mp_obj_get_int(args[1]);
     mp_int_t high = mp_obj_get_int(args[2]);
-    font_load(index, width, high, args[3]);
+    
+    if (index == UTF8)
+    {
+        if(mp_obj_get_type(args[3]) == &mp_type_int)
+        {
+            mp_int_t font_addr = mp_obj_get_int(args[3]);
+            if(font_addr <= 0)
+            {
+                mp_raise_ValueError("[MAIXPY]image: font_addr must > 0 ");
+                return mp_const_false;
+            }
+            else
+            {
+                font_load(index, width, high, ArrayIn, (void *)font_addr);
+            }
+        }
+        else if(mp_obj_get_type(args[3]) == &mp_type_str)
+        {
+            const char *path = mp_obj_str_get_str(args[3]);
+            if( NULL != strstr(path,".Dzk") )
+            {
+                mp_obj_t fp;
+                FRESULT res;
+                
+                if ((res = file_read_open_raise(&fp, path)) == FR_OK) {
+                    font_load(index, width, high, FileIn, fp);
+                }
+                // File open or write error
+                if (res != FR_OK) {
+                    nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, ffs_strerror(res)));
+                }
+            }
+            else
+            {
+                mp_raise_ValueError("[MAIXPY]image: font format don't match, only supply .Dzk ");
+                return mp_const_false;
+            }
+        }
+    }
+    else
+    {
+        // Use default font
+        font_load(index, width, high, BuildIn, NULL);
+    }
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_font_load_obj, 4, py_image_font_load);

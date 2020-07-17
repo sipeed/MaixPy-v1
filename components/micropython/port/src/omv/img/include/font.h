@@ -25,11 +25,12 @@ enum FontIndex {
 
 enum FontSource {
     BuildIn,
-    File,
+    FileIn,
     StringIO,
+    ArrayIn,
 };
 
-void font_load(uint8_t index, uint8_t width, uint8_t high, void *source);
+void font_load(uint8_t index, uint8_t width, uint8_t high, uint8_t source_type, void *src_addr);
 void font_free();
 
 #endif // __FONT_H__
