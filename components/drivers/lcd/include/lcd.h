@@ -94,5 +94,11 @@ void lcd_set_offset(uint16_t offset_w, uint16_t offset_h);
 
 uint16_t lcd_get_width();
 uint16_t lcd_get_height();
+
+
+typedef void (*lcd_preinit_handler_t)(void);
+void lcd_preinit_register_handler(lcd_preinit_handler_t handler);
+void lcd_init_sequence_for_ili9486(void);
+
 #endif
 
