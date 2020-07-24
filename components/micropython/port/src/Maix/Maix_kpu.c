@@ -187,11 +187,15 @@ static char* get_kpu_err_str(int err)
     switch(err)
 	{
 	case SIPEED_KPU_ERR_NONE:
-		return "ERR_NONE:shouldn't come to here";
+		return "ERR_NONE";
 	case SIPEED_KPU_ERR_PARAM:
 		return "ERR_PARAM: please check param, load address or kmodel file name";
 	case SIPEED_KPU_ERR_KMODEL_VERSION:
+    #if CONFIG_MICROPYTHON_KMODEL_V4_SUPPORT
 		return "ERR_KMODEL_VERSION: only support kmodel V3/V4 now";
+    #else
+        return "ERR_KMODEL_VERSION: only support kmodel V3";
+    #endif
 	case SIPEED_KPU_ERR_KMODEL_FORMAT:
 		return "ERR_KMODEL_FORMAT: layer_header.body_size <=0";
 	case SIPEED_KPU_ERR_DECRYPT:
@@ -208,6 +212,8 @@ static char* get_kpu_err_str(int err)
 		return "ERR_MODELS_FULL: we only support load 5 models in the same time";
 	case SIPEED_KPU_ERR_PERMITION:
 		return "ERR_PERMITION";
+    case SIPEED_KPU_ERR_OUTPUTS_NODONE:
+        return "ERR_OUTPUTS_SET: need kpu.set_outputs() to set shape";
 	case SIPEED_KPU_ERR_UNKNOWN:
 	default:
 		return "ERR_UNKNOWN";
@@ -900,13 +906,10 @@ STATIC mp_obj_t py_kpu_class_run_yolo2(size_t n_args, const mp_obj_t *pos_args, 
 		/*************************************************************************************/
         g_ai_done_flag = 0;
         sipeed_kpu_err_t ret = sipeed_kpu_model_run(kpu_net->kmodel_ctx, arg_img->pix_ai, K210_DMA_CH_KPU, ai_done, NULL);
-		if (ret != 0)
+        if(ret != SIPEED_KPU_ERR_NONE)
         {
-            char* char_temp = m_new(char, 20);
-            if(!char_temp)
-                mp_raise_OSError(MP_ENOMEM);
-            snprintf(char_temp, 20, "run error: %d", ret);
-            mp_raise_msg(&mp_type_OSError, char_temp);
+            char* msg = get_kpu_err_str(ret);
+            mp_raise_msg(&mp_type_OSError, msg);
         }
         while (!g_ai_done_flag)
             ;
@@ -1313,11 +1316,11 @@ STATIC mp_obj_t py_kpu_forward(size_t n_args, const mp_obj_t *pos_args, mp_map_t
 		/*************************************************************************************/
 		g_ai_done_flag = 0;
         ret = sipeed_kpu_model_run(kpu_net->kmodel_ctx, arg_img->pix_ai, K210_DMA_CH_KPU, ai_done, NULL);
-        if (ret == SIPEED_KPU_ERR_RUN_MODEL){
-            mp_raise_msg(&mp_type_OSError, "Cannot run kmodel.\n");
-        } else if(ret == SIPEED_KPU_ERR_OUTPUTS_NODONE){
-			mp_raise_msg(&mp_type_OSError, "You haven't set all outputs shape!\n");
-		}
+        if(ret != SIPEED_KPU_ERR_NONE)
+        {
+            char* msg = get_kpu_err_str(ret);
+            mp_raise_msg(&mp_type_OSError, msg);
+        }
 		
 		while (!g_ai_done_flag){
 			//DIRTY!!!  dummy code for sync

@@ -221,8 +221,15 @@ mp_obj_t classifier_save(mp_obj_t self_in, mp_obj_t path_in){
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(classifier_save_obj, classifier_save);
 
-
-mp_obj_t classifier_load(mp_obj_t model_in, mp_obj_t path_in){
+/**
+ * @param model_in kpu model object
+ * @param path_in saved classifier model path
+ * @param class_num init object classnum, if not set, the same as saved model's
+ * @param sample_num ...
+ */
+mp_obj_t classifier_load(size_t n_args, const mp_obj_t *args){
+    mp_obj_t model_in = args[0];
+    mp_obj_t path_in = args[1];
     if(mp_obj_get_type(model_in) == &Maix_kpu_classifier_type){
         mp_raise_ValueError("must be class");
     }
@@ -236,11 +243,19 @@ mp_obj_t classifier_load(mp_obj_t model_in, mp_obj_t path_in){
     self->base.type = &Maix_kpu_classifier_type;
     self->obj = NULL;
     int class_num = 0, sample_num = 0;
+    if(n_args > 2)
+    {
+        class_num = mp_obj_get_int(args[2]);
+    }
+    if(n_args > 3)
+    {
+        sample_num = mp_obj_get_int(args[3]);
+    }
     load_trained_model(self, mp_obj_str_get_str(path_in), (py_kpu_net_obj_t*)model_in, &class_num, &sample_num);
     mp_obj_t* items[3] = {(mp_obj_t)self, mp_obj_new_int(class_num), mp_obj_new_int(sample_num)};
     return mp_obj_new_tuple(3, items);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(classifier_load_obj, classifier_load);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(classifier_load_obj, 2, 4, classifier_load);
     
     
 STATIC const mp_map_elem_t locals_dict_table[] = {
