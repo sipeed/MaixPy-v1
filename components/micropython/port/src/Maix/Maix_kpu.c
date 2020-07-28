@@ -389,7 +389,7 @@ STATIC mp_obj_t py_kpu_class_load(size_t n_args, const mp_obj_t *pos_args, mp_ma
 
         // }
         // else
-        if( (NULL != strstr(path,".kmodel")) || (NULL != strstr(path,".smodel")) )
+        if( (NULL != strstr(path,".kmodel")) || (NULL != strstr(path,".smodel")) || (NULL != strstr(path,".emodel")) )
         {
             int ret = sipeed_kpu_model_load(&o->kmodel_ctx, 0, path, &model_size);
             if(ret != SIPEED_KPU_ERR_NONE)
