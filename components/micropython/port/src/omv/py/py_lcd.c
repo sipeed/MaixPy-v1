@@ -44,6 +44,11 @@ static bool invert = false;
 static uint16_t screen_dir = DIR_YX_RLDU;
 // static bool backlight_init = false;
 
+static enum
+{
+    LCD_TYPE_ST7789 = 0,
+    LCD_TYPE_ILI9486 = 1,
+} lcd_type_t;
 typedef struct
 {
     // Hardward Interface config
@@ -54,6 +59,7 @@ typedef struct
     uint8_t clk_pin;
     uint32_t clk_rate; //
 
+
     // LCD parmater config
     uint16_t height;
     uint16_t width;
@@ -62,8 +68,10 @@ typedef struct
     uint16_t offset_y2;
     uint16_t offset_x2;
 
+    uint8_t lcd_type;
     uint8_t dir;
     bool invert;
+
 } py_lcd_config_t;
 
 // Send out 8-bit data using the SPI object.
@@ -152,6 +160,7 @@ void py_lcd_load_config(py_lcd_config_t *lcd_cfg)
         PY_LCD_CHECK_CONFIG(offset_x2, &lcd_cfg->offset_x2);
         PY_LCD_CHECK_CONFIG(offset_y2, &lcd_cfg->offset_y2);
         PY_LCD_CHECK_CONFIG(dir, &lcd_cfg->dir);
+        PY_LCD_CHECK_CONFIG(lcd_type, &lcd_cfg->lcd_type);
 
         // mp_printf(&mp_plat_print, "[%s]: rst=%d, dcx=%d, ss=%d, clk=%d\r\n",
         //           __func__, lcd_cfg->rst_pin, lcd_cfg->dcx_pin, lcd_cfg->cs_pin, lcd_cfg->clk_pin);
@@ -271,6 +280,15 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         fpioa_set_function(lcd_cfg.dcx_pin, FUNC_GPIOHS0 + DCX_GPIONUM);
         fpioa_set_function(lcd_cfg.cs_pin, FUNC_SPI0_SS0 + LCD_SPI_SLAVE_SELECT);
         fpioa_set_function(lcd_cfg.clk_pin, FUNC_SPI0_SCLK);
+
+        // mp_printf(&mp_plat_print, "[%d]: lcd_cfg.offset_x1=%d, offset_y1=%d, offset_x2=%d, offset_y2=%d 
+        //     width_curr=%d, height_curr=%d, invert=%d, lcd_type=%d\r\n", __LINE__, 
+        //     lcd_cfg.offset_x1, lcd_cfg.offset_y1, lcd_cfg.offset_x2, lcd_cfg.offset_y2,
+        //     width_curr, height_curr, invert, lcd_cfg.lcd_type);
+        if (lcd_cfg.lcd_type == LCD_TYPE_ILI9486)
+        {
+            lcd_preinit_register_handler(&lcd_init_sequence_for_ili9486);
+        }
         ret = lcd_init(args[ARG_freq].u_int, true, lcd_cfg.offset_x1, lcd_cfg.offset_y1,
                        lcd_cfg.offset_x2, lcd_cfg.offset_y2, invert, width_curr, height_curr);
         // ret = lcd_init(args[ARG_freq].u_int, true, offset_w, offset_h,
