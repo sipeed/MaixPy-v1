@@ -378,6 +378,7 @@ uint16_t sensro_gc_scan()
 
 int sensro_gc_detect(sensor_t *sensor, bool pwnd)
 {
+    mp_printf(&mp_plat_print, "[MAIXPY]: find gc sensor\n");
     if (pwnd)
         DCMI_PWDN_LOW(); //enable gc0328 要恢复 normal 工作模式，需将 PWDN pin 接入低电平即可，同时写入初始化寄存器即可
     DCMI_RESET_LOW();    //reset gc3028
@@ -393,7 +394,7 @@ int sensro_gc_detect(sensor_t *sensor, bool pwnd)
     mp_hal_delay_ms(30);
 
     /* Probe the ov sensor */
-    sensor->slv_addr = cambus_scan();
+    sensor->slv_addr = sensro_gc_scan();
     if (sensor->slv_addr == 0)
     {
         /* Sensor has been held in reset,
@@ -528,17 +529,20 @@ int sensor_init_dvp(mp_int_t freq, bool default_freq)
     DCMI_PWDN_LOW();
     mp_hal_delay_ms(10);
 
+    bool limit = sensor.choice_dev != 0;
+
     cambus_set_writeb_delay(10);
-    if (0 == sensro_ov_detect(&sensor))
+    if ((limit == false || sensor.choice_dev == 1) && 0 == sensro_ov_detect(&sensor))
     {
         // find ov sensor
         mp_printf(&mp_plat_print, "[MAIXPY]: find ov sensor\n");
     }
-    else if (0 == sensro_gc_detect(&sensor, true))
+    else if ((limit == false || sensor.choice_dev == 2) && 0 == sensro_gc_detect(&sensor, true))
+    // if ((limit == false || sensor.choice_dev == 2) && 0 == sensro_gc_detect(&sensor, true))
     {
         cambus_set_writeb_delay(2);
     }
-    else if (0 == sensro_mt_detect(&sensor, true))
+    else if ( (limit == false || sensor.choice_dev == 3) && 0 == sensro_mt_detect(&sensor, true))
     {
         //find mt sensor
         mp_printf(&mp_plat_print, "[MAIXPY]: find mt sensor\n");
@@ -549,6 +553,7 @@ int sensor_init_dvp(mp_int_t freq, bool default_freq)
         mp_printf(&mp_plat_print, "[MAIXPY]: no sensor\n");
         init_ret = -1;
     }
+    // mp_printf(&mp_plat_print, "[MAIXPY]: limit = %x sensor.choice_dev = %x \n", limit, sensor.choice_dev);
     if (default_freq && sensor.chip_id == OV7740_ID)
     {
         dvp_set_xclk_rate(22000000);
@@ -586,7 +591,7 @@ int sensor_init_irq()
     return 0;
 }
 
-int sensor_reset(mp_int_t freq, bool default_freq, bool set_regs, bool double_buff)
+int sensor_reset(mp_int_t freq, bool default_freq, bool set_regs, bool double_buff, uint8_t choice_dev)
 {
 #if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
     g_sensor_buff_index_out = 0;
@@ -596,6 +601,7 @@ int sensor_reset(mp_int_t freq, bool default_freq, bool set_regs, bool double_bu
     sensor.vflip = false;
     sensor.hmirror = false;
     sensor.double_buff = double_buff;
+    sensor.choice_dev = choice_dev;
     sensor_init_fb(); //init FB
     if (sensor_init_dvp(freq, default_freq) != 0)
     {

@@ -40,6 +40,7 @@ static mp_obj_t py_sensor_reset(size_t n_args, const mp_obj_t *args, mp_map_t *k
     bool default_freq = true;
     bool set_regs = true;
     bool dual_buff = false;
+    uint8_t choice = 0;
     if (kw_arg)
     {
         default_freq = false;
@@ -50,12 +51,17 @@ static mp_obj_t py_sensor_reset(size_t n_args, const mp_obj_t *args, mp_map_t *k
     {
         set_regs = mp_obj_is_true(kw_arg->value);
     }
+    kw_arg = mp_map_lookup(kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_choice), MP_MAP_LOOKUP);
+    if (kw_arg)
+    {
+        choice = mp_obj_get_int(kw_arg->value);
+    }
     kw_arg = mp_map_lookup(kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_dual_buff), MP_MAP_LOOKUP);
     if (kw_arg)
     {
         dual_buff = mp_obj_is_true(kw_arg->value);
     }
-    PY_ASSERT_FALSE_MSG(sensor_reset(freq, default_freq, set_regs, dual_buff) != 0, "Reset Failed");
+    PY_ASSERT_FALSE_MSG(sensor_reset(freq, default_freq, set_regs, dual_buff, choice) != 0, "Reset Failed");
     return mp_const_none;
 }
 
