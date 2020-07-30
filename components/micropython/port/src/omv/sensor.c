@@ -362,14 +362,8 @@ int sensro_ov_detect(sensor_t *sensor)
     return 0;
 }
 
-int sensro_gc_detect(sensor_t *sensor, bool pwnd)
+uint16_t sensro_gc_scan()
 {
-    if (pwnd)
-        DCMI_PWDN_LOW(); //enable gc0328 要恢复 normal 工作模式，需将 PWDN pin 接入低电平即可，同时写入初始化寄存器即可
-    DCMI_RESET_LOW();    //reset gc3028
-    mp_hal_delay_ms(10);
-    DCMI_RESET_HIGH();
-    mp_hal_delay_ms(10);
     uint16_t id = 0;
     if (cambus_scan_gc0328())
     {
@@ -379,6 +373,79 @@ int sensro_gc_detect(sensor_t *sensor, bool pwnd)
     {
         id = GC2145_ID;
     }
+    return id;
+}
+
+int sensro_gc_detect(sensor_t *sensor, bool pwnd)
+{
+    if (pwnd)
+        DCMI_PWDN_LOW(); //enable gc0328 要恢复 normal 工作模式，需将 PWDN pin 接入低电平即可，同时写入初始化寄存器即可
+    DCMI_RESET_LOW();    //reset gc3028
+    mp_hal_delay_ms(10);
+    DCMI_RESET_HIGH();
+    mp_hal_delay_ms(10);
+    
+    int init_ret = 0;
+    /* Reset the sensor */
+    DCMI_RESET_HIGH();
+    mp_hal_delay_ms(10);
+    DCMI_RESET_LOW();
+    mp_hal_delay_ms(30);
+
+    /* Probe the ov sensor */
+    sensor->slv_addr = cambus_scan();
+    if (sensor->slv_addr == 0)
+    {
+        /* Sensor has been held in reset,
+           so the reset line is active low */
+        sensor->reset_pol = ACTIVE_LOW;
+
+        /* Pull the sensor out of the reset state,systick_sleep() */
+        /* Need set PWDN and RST again for some sensor*/
+        DCMI_PWDN_HIGH();
+        mp_hal_delay_ms(10);
+        DCMI_PWDN_LOW();
+        mp_hal_delay_ms(10);
+        DCMI_RESET_HIGH();
+        mp_hal_delay_ms(30);
+
+        /* Probe again to set the slave addr */
+        sensor->slv_addr = sensro_gc_scan();
+        if (sensor->slv_addr == 0)
+        {
+            sensor->pwdn_pol = ACTIVE_LOW;
+            /* Need set PWDN and RST again for some sensor*/
+            DCMI_PWDN_HIGH();
+            mp_hal_delay_ms(10);
+            DCMI_RESET_LOW();
+            mp_hal_delay_ms(10);
+            DCMI_RESET_HIGH();
+            mp_hal_delay_ms(30);
+
+            sensor->slv_addr = sensro_gc_scan();
+            if (sensor->slv_addr == 0)
+            {
+                sensor->reset_pol = ACTIVE_HIGH;
+
+                /* Need set PWDN and RST again for some sensor*/
+                DCMI_PWDN_LOW();
+                mp_hal_delay_ms(10);
+                DCMI_PWDN_HIGH();
+                mp_hal_delay_ms(10);
+                DCMI_RESET_LOW();
+                mp_hal_delay_ms(30);
+
+                sensor->slv_addr = sensro_gc_scan();
+                if (sensor->slv_addr == 0)
+                {
+                    //should do something?
+                    return -2;
+                }
+            }
+        }
+    }
+
+    uint16_t id = sensor->slv_addr;
     if (0 == id)
     {
         return -3;
@@ -464,8 +531,8 @@ int sensor_init_dvp(mp_int_t freq, bool default_freq)
     cambus_set_writeb_delay(10);
     if (0 == sensro_ov_detect(&sensor))
     {
-        //find ov sensor
-        // mp_printf(&mp_plat_print, "[MAIXPY]: find ov sensor\n");
+        // find ov sensor
+        mp_printf(&mp_plat_print, "[MAIXPY]: find ov sensor\n");
     }
     else if (0 == sensro_gc_detect(&sensor, true))
     {
@@ -474,7 +541,7 @@ int sensor_init_dvp(mp_int_t freq, bool default_freq)
     else if (0 == sensro_mt_detect(&sensor, true))
     {
         //find mt sensor
-        mp_printf(&mp_plat_print, "[MAIXPY]: find mt9d111\n");
+        mp_printf(&mp_plat_print, "[MAIXPY]: find mt sensor\n");
         cambus_set_writeb_delay(2);
     }
     else
