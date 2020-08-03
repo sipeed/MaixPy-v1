@@ -177,11 +177,11 @@ void lcd_init_sequence_for_ili9486(void)
 
 }
 
-int lcd_init(uint32_t freq, bool oct, uint16_t offset_w, uint16_t offset_h, uint16_t offset_w1, uint16_t offset_h1, bool invert_color, uint16_t width, uint16_t height)
+int lcd_init(uint32_t freq, bool oct, uint16_t offset_w0, uint16_t offset_h0, uint16_t offset_w1, uint16_t offset_h1, bool invert_color, uint16_t width, uint16_t height)
 {
     uint8_t data = 0;
-    lcd_ctl.start_offset_w0 = offset_w;
-    lcd_ctl.start_offset_h0 = offset_h;
+    lcd_ctl.start_offset_w0 = offset_w0;
+    lcd_ctl.start_offset_h0 = offset_h0;
     lcd_ctl.start_offset_w1 = offset_w1;
     lcd_ctl.start_offset_h1 = offset_h1;
     if(g_lcd_w != width || g_lcd_h != height)

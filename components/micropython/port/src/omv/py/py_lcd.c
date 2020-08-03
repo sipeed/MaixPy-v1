@@ -63,10 +63,10 @@ typedef struct
     // LCD parmater config
     uint16_t height;
     uint16_t width;
-    uint16_t offset_y1;
-    uint16_t offset_x1;
-    uint16_t offset_y2;
-    uint16_t offset_x2;
+    uint16_t offset_h0;
+    uint16_t offset_w0;
+    uint16_t offset_h1;
+    uint16_t offset_w1;
 
     uint8_t lcd_type;
     uint8_t dir;
@@ -155,10 +155,10 @@ void py_lcd_load_config(py_lcd_config_t *lcd_cfg)
         PY_LCD_CHECK_CONFIG(height, &lcd_cfg->height);
         PY_LCD_CHECK_CONFIG(width, &lcd_cfg->width);
         PY_LCD_CHECK_CONFIG(invert, &lcd_cfg->invert);
-        PY_LCD_CHECK_CONFIG(offset_x1, &lcd_cfg->offset_x1);
-        PY_LCD_CHECK_CONFIG(offset_y1, &lcd_cfg->offset_y1);
-        PY_LCD_CHECK_CONFIG(offset_x2, &lcd_cfg->offset_x2);
-        PY_LCD_CHECK_CONFIG(offset_y2, &lcd_cfg->offset_y2);
+        PY_LCD_CHECK_CONFIG(offset_w0, &lcd_cfg->offset_w0);
+        PY_LCD_CHECK_CONFIG(offset_h0, &lcd_cfg->offset_h0);
+        PY_LCD_CHECK_CONFIG(offset_w1, &lcd_cfg->offset_w1);
+        PY_LCD_CHECK_CONFIG(offset_h1, &lcd_cfg->offset_h1);
         PY_LCD_CHECK_CONFIG(dir, &lcd_cfg->dir);
         PY_LCD_CHECK_CONFIG(lcd_type, &lcd_cfg->lcd_type);
 
@@ -172,7 +172,6 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
 {
     int ret = 0;
     uint16_t color = BLACK;
-    uint16_t offset_w = 0, offset_h = 0, offset_w2 = 0, offset_h2 = 0;
     py_lcd_deinit();
     enum
     {
@@ -182,10 +181,10 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         ARG_width,
         ARG_height,
         ARG_invert,
-        ARG_offset_width,
-        ARG_offset_height,
-        ARG_offset_width2,
-        ARG_offset_height2,
+        ARG_offset_w0,
+        ARG_offset_h0,
+        ARG_offset_w1,
+        ARG_offset_h1,
         ARG_rst,
         ARG_dcx,
         ARG_ss,
@@ -198,10 +197,10 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         {MP_QSTR_width, MP_ARG_INT, {.u_int = CONFIG_LCD_DEFAULT_WIDTH}},
         {MP_QSTR_height, MP_ARG_INT, {.u_int = CONFIG_LCD_DEFAULT_HEIGHT}},
         {MP_QSTR_invert, MP_ARG_INT, {.u_int = -1}},
-        {MP_QSTR_offset_width, MP_ARG_INT, {.u_int = -1}},
-        {MP_QSTR_offset_height, MP_ARG_INT, {.u_int = -1}},
-        {MP_QSTR_offset_width2, MP_ARG_INT, {.u_int = -1}},
-        {MP_QSTR_offset_height2, MP_ARG_INT, {.u_int = -1}},
+        {MP_QSTR_offset_w0, MP_ARG_INT, {.u_int = 0}},
+        {MP_QSTR_offset_h0, MP_ARG_INT, {.u_int = 0}},
+        {MP_QSTR_offset_w1, MP_ARG_INT, {.u_int = 0}},
+        {MP_QSTR_offset_h1, MP_ARG_INT, {.u_int = 0}},
         {MP_QSTR_rst, MP_ARG_INT, {.u_int = 37}},
         {MP_QSTR_dcx, MP_ARG_INT, {.u_int = 38}},
         {MP_QSTR_ss, MP_ARG_INT, {.u_int = 36}},
@@ -225,14 +224,6 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         }
     }
 
-    if (args[ARG_offset_width].u_int != -1)
-        offset_w = args[ARG_offset_width].u_int;
-    if (args[ARG_offset_height].u_int != -1)
-        offset_h = args[ARG_offset_height].u_int;
-    if (args[ARG_offset_width2].u_int != -1)
-        offset_w2 = args[ARG_offset_width2].u_int;
-    if (args[ARG_offset_height2].u_int != -1)
-        offset_h2 = args[ARG_offset_height2].u_int;
     switch (args[ARG_type].u_int)
     {
     case LCD_NONE:
@@ -264,6 +255,12 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         lcd_cfg.height = args[ARG_height].u_int;
         lcd_cfg.invert = args[ARG_invert].u_int;
         
+        lcd_cfg.offset_w0 = args[ARG_offset_w0].u_int;
+        lcd_cfg.offset_h0 = args[ARG_offset_h0].u_int;
+
+        lcd_cfg.offset_w1 = args[ARG_offset_w1].u_int;
+        lcd_cfg.offset_h1 = args[ARG_offset_h1].u_int;
+        
         lcd_cfg.dir = 0;
         lcd_cfg.invert = 0;
         py_lcd_load_config(&lcd_cfg);
@@ -289,10 +286,8 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         {
             lcd_preinit_register_handler(&lcd_init_sequence_for_ili9486);
         }
-        ret = lcd_init(args[ARG_freq].u_int, true, lcd_cfg.offset_x1, lcd_cfg.offset_y1,
-                       lcd_cfg.offset_x2, lcd_cfg.offset_y2, invert, width_curr, height_curr);
-        // ret = lcd_init(args[ARG_freq].u_int, true, offset_w, offset_h,
-        //     offset_w2, offset_h2, args[ARG_invert].u_int != 1 ? false : true, width_curr, height_curr);
+        ret = lcd_init(args[ARG_freq].u_int, true, lcd_cfg.offset_w0, lcd_cfg.offset_h0,
+                       lcd_cfg.offset_w1, lcd_cfg.offset_h1, invert, width_curr, height_curr);
         if (0 != lcd_cfg.dir)
         {
             lcd_set_direction(lcd_cfg.dir);
@@ -333,6 +328,7 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
     }
     case LCD_IPS_240X240:
     {
+        uint16_t offset_w0 = 0, offset_h0 = 0, offset_w1 = 0, offset_h1 = 0;
         width_conf = 240;
         height_conf = 240;
         width_curr = width_conf;
@@ -343,16 +339,16 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         fpioa_set_function(38, FUNC_GPIOHS0 + DCX_GPIONUM);
         fpioa_set_function(36, FUNC_SPI0_SS0 + LCD_SPI_SLAVE_SELECT);
         fpioa_set_function(39, FUNC_SPI0_SCLK);
-        if (args[ARG_offset_width].u_int == -1)
-            offset_w = 0;
-        if (args[ARG_offset_height].u_int == -1)
-            offset_h = 0;
-        if (args[ARG_offset_width2].u_int == -1)
-            offset_w2 = 80;
-        if (args[ARG_offset_height2].u_int == -1)
-            offset_h2 = 0;
-        ret = lcd_init(args[ARG_freq].u_int, true, offset_w, offset_h,
-                       offset_w2, offset_h2, args[ARG_invert].u_int == 0 ? false : true, width_curr, height_curr);
+        if (args[ARG_offset_w0].u_int == -1)
+            offset_w0 = 0;
+        if (args[ARG_offset_h0].u_int == -1)
+            offset_h0 = 0;
+        if (args[ARG_offset_w1].u_int == -1)
+            offset_w1 = 80;
+        if (args[ARG_offset_h1].u_int == -1)
+            offset_h1 = 0;
+        ret = lcd_init(args[ARG_freq].u_int, true, offset_w0, offset_h0,
+                       offset_w1, offset_h1, args[ARG_invert].u_int == 0 ? false : true, width_curr, height_curr);
         lcd_clear(color);
         break;
     }
