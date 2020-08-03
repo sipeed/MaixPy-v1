@@ -378,7 +378,7 @@ uint16_t sensro_gc_scan()
 
 int sensro_gc_detect(sensor_t *sensor, bool pwnd)
 {
-    mp_printf(&mp_plat_print, "[MAIXPY]: find gc sensor\n");
+    // mp_printf(&mp_plat_print, "[MAIXPY]: find gc sensor\n");
     if (pwnd)
         DCMI_PWDN_LOW(); //enable gc0328 要恢复 normal 工作模式，需将 PWDN pin 接入低电平即可，同时写入初始化寄存器即可
     DCMI_RESET_LOW();    //reset gc3028
