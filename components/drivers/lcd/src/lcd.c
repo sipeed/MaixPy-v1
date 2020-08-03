@@ -76,61 +76,7 @@ void lcd_preinit_register_handler(lcd_preinit_handler_t handler)
 
 void lcd_init_sequence_for_ili9486(void)
 {
-
     uint8_t t[15];
-    tft_write_command(0XF1); /* Unk */
-    t[0] = (0x36);
-    t[1] = (0x04);
-    t[2] = (0x00);
-    t[3] = (0x3C);
-    t[4] = (0X0F);
-    t[5] = (0x8F);
-    tft_write_byte(t, 6);
-
-    tft_write_command(0XF2); /* Unk */
-    t[0] = (0x18);
-    t[1] = (0xA3);
-    t[2] = (0x12);
-    t[3] = (0x02);
-    t[4] = (0XB2);
-    t[5] = (0x12);
-    t[6] = (0xFF);
-    t[7] = (0x10);
-    t[8] = (0x00);
-    tft_write_byte(t, 9);
-
-    tft_write_command(0XF8); /* Unk */
-    t[0] = (0x21);
-    t[1] = (0x04);
-    tft_write_byte(t, 2);
-
-    tft_write_command(0XF9); /* Unk */
-    t[0] = (0x00);
-    t[1] = (0x08);
-    tft_write_byte(t, 2);
-
-    tft_write_command(0x36); /* Memory Access Control */
-    t[0] = (0x28);
-    tft_write_byte(t, 1);
-
-    tft_write_command(0xB4); /* Display Inversion Control */
-    t[0] = (0x00);
-    tft_write_byte(t, 1);
-
-    tft_write_command(0xB6); /* Display Function Control */
-    t[0] = (0x02);
-    // t[1] = (0x22);
-    tft_write_byte(t, 1);
-
-    tft_write_command(0xC1); /* Power Control 2 */
-    t[0] = (0x41);
-    tft_write_byte(t, 1);
-    
-    tft_write_command(0xC5); /* Vcom Control */
-    t[0] = (0x00);
-    t[1] = (0x18);
-    tft_write_byte(t, 2);
-
     tft_write_command(0xE0); /* Positive Gamma Control */
     t[0] = (0x0F);
     t[1] = (0x1F);
@@ -166,15 +112,6 @@ void lcd_init_sequence_for_ili9486(void)
     t[13] = (0x20);
     t[14] = (0x00);
     tft_write_byte(t, 15);
-
-    tft_write_command(0x3A); /* Interface Pixel Format */
-    t[0] = (0x55);
-    tft_write_byte(t, 1);
-
-    tft_write_command(0x11); /* Sleep OUT */
-    msleep(120);
-    tft_write_command(0x29); /* Display ON */
-
 }
 
 int lcd_init(uint32_t freq, bool oct, uint16_t offset_w0, uint16_t offset_h0, uint16_t offset_w1, uint16_t offset_h1, bool invert_color, uint16_t width, uint16_t height)
