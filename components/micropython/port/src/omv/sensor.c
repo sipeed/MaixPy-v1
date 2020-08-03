@@ -26,6 +26,7 @@
 #include "ov7740.h"
 #include "mphalport.h"
 #include "ov3660.h"
+#include "Maix_config.h"
 
 extern volatile dvp_t *const dvp;
 
@@ -90,6 +91,61 @@ void _ndelay(uint32_t ns)
     {
         for (i = 0; i < 25; i++)
             __asm__ __volatile__("nop");
+    }
+}
+
+static struct sensor_config_t {
+    uint8_t cmos_pclk;
+    uint8_t cmos_xclk;
+    uint8_t cmos_href;
+    uint8_t cmos_pwdn;
+    uint8_t cmos_vsync;
+    uint8_t cmos_rst;
+
+    uint8_t reg_width;
+    uint8_t i2c_num;
+    uint8_t pin_clk;
+    uint8_t pin_sda;
+    uint8_t gpio_clk;
+    uint8_t gpio_sda;
+} sensor_config = {
+    47, 46, 45, 44, 43, 42,
+    8, 2, 41, 40, 0, 0
+};
+
+#define SENSOR_CHECK_CONFIG(GOAL, val)                                                                        \
+    {                                                                                                         \
+        const char key[] = #GOAL;                                                                             \
+        mp_map_elem_t *elem = mp_map_lookup(&self->map, mp_obj_new_str(key, sizeof(key) - 1), MP_MAP_LOOKUP); \
+        if (elem != NULL)                                                                                     \
+        {                                                                                                     \
+            *(val) = mp_obj_get_int(elem->value);                                                             \
+        }                                                                                                     \
+    }
+
+void sensor_load_config(struct sensor_config_t *sensor_cfg)
+{
+    const char cfg[] = "sensor";
+    mp_obj_t tmp = maix_config_get_value(mp_obj_new_str(cfg, sizeof(cfg) - 1), mp_const_none);
+    // mp_obj_print_helper(&mp_plat_print, tmp, PRINT_STR);
+    // mp_print_str(&mp_plat_print, "\r\n");
+    if (tmp != mp_const_none && mp_obj_is_type(tmp, &mp_type_dict))
+    {
+        mp_obj_dict_t *self = MP_OBJ_TO_PTR(tmp);
+
+        SENSOR_CHECK_CONFIG(cmos_pclk, &sensor_cfg->cmos_pclk);
+        SENSOR_CHECK_CONFIG(cmos_xclk, &sensor_cfg->cmos_xclk);
+        SENSOR_CHECK_CONFIG(cmos_href, &sensor_cfg->cmos_href);
+        SENSOR_CHECK_CONFIG(cmos_pwdn, &sensor_cfg->cmos_pwdn);
+        SENSOR_CHECK_CONFIG(cmos_vsync, &sensor_cfg->cmos_vsync);
+        SENSOR_CHECK_CONFIG(cmos_rst, &sensor_cfg->cmos_rst);
+
+        SENSOR_CHECK_CONFIG(reg_width, &sensor_cfg->reg_width);
+        SENSOR_CHECK_CONFIG(i2c_num, &sensor_cfg->i2c_num);
+        SENSOR_CHECK_CONFIG(pin_clk, &sensor_cfg->pin_clk);
+        SENSOR_CHECK_CONFIG(pin_sda, &sensor_cfg->pin_sda);
+        SENSOR_CHECK_CONFIG(gpio_clk, &sensor_cfg->gpio_clk);
+        SENSOR_CHECK_CONFIG(gpio_sda, &sensor_cfg->gpio_sda);
     }
 }
 
@@ -502,19 +558,28 @@ int sensor_init_dvp(mp_int_t freq, bool default_freq)
 {
     int init_ret = 0;
 
-    fpioa_set_function(47, FUNC_CMOS_PCLK);
-    fpioa_set_function(46, FUNC_CMOS_XCLK);
-    fpioa_set_function(45, FUNC_CMOS_HREF);
-    fpioa_set_function(44, FUNC_CMOS_PWDN);
-    fpioa_set_function(43, FUNC_CMOS_VSYNC);
-    fpioa_set_function(42, FUNC_CMOS_RST);
+    sensor_load_config(&sensor_config);
+
+    fpioa_set_function(sensor_config.cmos_pclk, FUNC_CMOS_PCLK);
+    fpioa_set_function(sensor_config.cmos_xclk, FUNC_CMOS_XCLK);
+    fpioa_set_function(sensor_config.cmos_href, FUNC_CMOS_HREF);
+    fpioa_set_function(sensor_config.cmos_pwdn, FUNC_CMOS_PWDN);
+    fpioa_set_function(sensor_config.cmos_vsync, FUNC_CMOS_VSYNC);
+    fpioa_set_function(sensor_config.cmos_rst, FUNC_CMOS_RST);
 
     // fpioa_set_function(41, FUNC_SCCB_SCLK);
     // fpioa_set_function(40, FUNC_SCCB_SDA);
 
     // Initialize the camera bus, 8bit reg
-    // cambus_init(8, -2, 41, 40, 0, 0);
-    cambus_init(8, 2, 41, 40, 0, 0);
+    cambus_init(
+        sensor_config.reg_width,
+        sensor_config.i2c_num,
+        sensor_config.pin_clk,
+        sensor_config.pin_sda,
+        sensor_config.gpio_clk,
+        sensor_config.gpio_sda
+    );
+
     // Initialize dvp interface
     dvp_set_xclk_rate(freq);
 
@@ -788,12 +853,14 @@ int binocular_sensor_scan()
 int binocular_sensor_reset(mp_int_t freq)
 {
     sensor_init_fb(); //init FB
-    fpioa_set_function(47, FUNC_CMOS_PCLK);
-    fpioa_set_function(46, FUNC_CMOS_XCLK);
-    fpioa_set_function(45, FUNC_CMOS_HREF);
-    fpioa_set_function(44, FUNC_CMOS_PWDN);
-    fpioa_set_function(43, FUNC_CMOS_VSYNC);
-    fpioa_set_function(42, FUNC_CMOS_RST);
+    sensor_load_config(&sensor_config);
+
+    fpioa_set_function(sensor_config.cmos_pclk, FUNC_CMOS_PCLK);
+    fpioa_set_function(sensor_config.cmos_xclk, FUNC_CMOS_XCLK);
+    fpioa_set_function(sensor_config.cmos_href, FUNC_CMOS_HREF);
+    fpioa_set_function(sensor_config.cmos_pwdn, FUNC_CMOS_PWDN);
+    fpioa_set_function(sensor_config.cmos_vsync, FUNC_CMOS_VSYNC);
+    fpioa_set_function(sensor_config.cmos_rst, FUNC_CMOS_RST);
 
     /* Do a power cycle */
     DCMI_PWDN_HIGH();
@@ -803,7 +870,14 @@ int binocular_sensor_reset(mp_int_t freq)
     mp_hal_delay_ms(10);
 
     // Initialize the camera bus, 8bit reg
-    cambus_init(8, 2, 41, 40, 0, 0);
+    cambus_init(
+        sensor_config.reg_width,
+        sensor_config.i2c_num,
+        sensor_config.pin_clk,
+        sensor_config.pin_sda,
+        sensor_config.gpio_clk,
+        sensor_config.gpio_sda
+    );
     // Initialize dvp interface
     dvp_set_xclk_rate(freq);
 
