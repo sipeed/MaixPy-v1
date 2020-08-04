@@ -14,6 +14,7 @@
 
 #define OV9650_ID       (0x96)
 #define OV2640_ID       (0x2642)
+#define OV5640_ID		(0x5640)
 #define OV7725_ID       (0x77)
 #define OV7740_ID       (0x7742)
 #define OV3660_ID       (0x3660)
