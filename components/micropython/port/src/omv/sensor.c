@@ -640,6 +640,7 @@ int sensor_init_dvp(mp_int_t freq, bool default_freq)
 #endif
     }
 
+    (sensor.pwdn_pol == ACTIVE_HIGH) ? (DCMI_PWDN_LOW()) : (DCMI_PWDN_HIGH());
     return init_ret;
 }
 int sensor_init_irq()
