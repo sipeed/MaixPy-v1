@@ -297,6 +297,46 @@ bool save_config_to_spiffs(config_data_t *config)
     return true;
 }
 
+// [test] try fix maixpy read config fail.
+STATIC mp_obj_t mod_os_flash_format(void) {
+
+    spiffs_user_mount_t* spiffs = NULL;
+    mp_vfs_mount_t *m = MP_STATE_VM(vfs_mount_table);
+    for(;NULL != m ; m = m->next)
+    {
+        if(0 == strcmp(m->str,"/flash"))
+        {
+            spiffs = MP_OBJ_TO_PTR(m->obj);
+            break;
+        }
+    }
+    SPIFFS_unmount(&spiffs->fs);
+    mp_printf(&mp_plat_print, "[MAIXPY]:Spiffs Unmount.\n");
+    mp_printf(&mp_plat_print, "[MAIXPY]:Spiffs Formating...\n");
+    uint32_t format_res=SPIFFS_format(&spiffs->fs);
+    mp_printf(&mp_plat_print, "[MAIXPY]:Spiffs Format %s \n",format_res?"failed":"successful");
+    if(0 != format_res)
+    {
+        return mp_const_false;
+    }
+    uint32_t res = 0;
+
+    res = SPIFFS_mount(&spiffs->fs,
+        &spiffs->cfg,
+        spiffs_work_buf,
+        spiffs_fds,
+        sizeof(spiffs_fds),
+        spiffs_cache_buf,
+        sizeof(spiffs_cache_buf),
+        0);
+    mp_printf(&mp_plat_print, "[MAIXPY]:Spiffs Mount %s \n", res?"failed":"successful");
+    if(!res)
+    {
+        return mp_const_true;
+    }
+    return mp_const_none;
+}
+
 void load_config_from_spiffs(config_data_t *config)
 {
     s32_t ret;
@@ -309,7 +349,7 @@ void load_config_from_spiffs(config_data_t *config)
         config->gc_heap_size = CONFIG_MAIXPY_GC_HEAP_SIZE;
         if (!save_config_to_spiffs(config)) {
             printk("maixpy save config fail\r\n");
-            SPIFFS_format(&spiffs_user_mount_handle.fs);
+            mod_os_flash_format();
         }
         return;
     }
@@ -320,7 +360,7 @@ void load_config_from_spiffs(config_data_t *config)
         if (ret <= 0)
         {
             printk("maixpy read config fail\r\n");
-            SPIFFS_format(&spiffs_user_mount_handle.fs);
+            mod_os_flash_format();
         }
         else
         {
