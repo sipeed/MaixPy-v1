@@ -514,15 +514,7 @@ void sd_preinit_config(sdcard_config_t *config)
         SDCARD_CHECK_CONFIG(mosi, &config->mosi_pin);
         SDCARD_CHECK_CONFIG(miso, &config->miso_pin);
         SDCARD_CHECK_CONFIG(cs, &config->cs_pin);
-        SDCARD_CHECK_CONFIG(cs, &config->cs_gpio_num);// cs_io_num and cs_fun_num same
-    }
-    else
-    {
-        config->sclk_pin = 27;
-        config->mosi_pin = 28;
-        config->miso_pin = 26;
-        config->cs_pin = 29;
-        config->cs_gpio_num = 29;
+        SDCARD_CHECK_CONFIG(cs_gpio, &config->cs_gpio_num);
     }
 }
 

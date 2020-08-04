@@ -55,12 +55,12 @@ int sd_version = 0;
 
 void SD_CS_HIGH(void)
 {
-    gpiohs_set_pin(config.cs_pin, GPIO_PV_HIGH);
+    gpiohs_set_pin(config.cs_gpio_num, GPIO_PV_HIGH);
 }
 
 void SD_CS_LOW(void)
 {
-    gpiohs_set_pin(config.cs_pin, GPIO_PV_LOW);
+    gpiohs_set_pin(config.cs_gpio_num, GPIO_PV_LOW);
 }
 
 void SD_HIGH_SPEED_ENABLE(void)
@@ -75,7 +75,7 @@ void SD_LOW_SPEED_ENABLE(void)
 
 static void sd_lowlevel_init(uint8_t spi_index)
 {
-    gpiohs_set_drive_mode(config.cs_pin, GPIO_DM_OUTPUT);
+    gpiohs_set_drive_mode(config.cs_gpio_num, GPIO_DM_OUTPUT);
     spi_set_clk_rate(SD_SPI_DEVICE, 200000); /*set clk rate*/
 }
 
@@ -429,20 +429,17 @@ uint8_t sd_init(void)
     config.sclk_pin = 30;
     config.mosi_pin = 33;
     config.miso_pin = 31;
-    config.cs_pin = SD_CS_PIN;
     config.cs_gpio_num = SD_CS_PIN;
+    config.cs_pin = SD_CS_PIN;
 
 #else
-    if (sd_preinit_handler == NULL)
-    {
-        // assert(sd_preinit_handler == NULL);
-        config.sclk_pin = 27;
-        config.mosi_pin = 28;
-        config.miso_pin = 26;
-        config.cs_pin = 29;
-        config.cs_gpio_num = SD_CS_PIN;
-    }
-    else
+    // assert(sd_preinit_handler == NULL);
+    config.sclk_pin = 27;
+    config.mosi_pin = 28;
+    config.miso_pin = 26;
+    config.cs_gpio_num = SD_CS_PIN;
+    config.cs_pin = 29;
+    if (sd_preinit_handler != NULL)
     {
         sd_preinit_handler(&config);
     }
