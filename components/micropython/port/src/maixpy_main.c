@@ -297,70 +297,28 @@ bool save_config_to_spiffs(config_data_t *config)
     return true;
 }
 
-// [test] try fix maixpy read config fail.
-STATIC mp_obj_t mod_os_flash_format(void) {
-
-    spiffs_user_mount_t* spiffs = NULL;
-    mp_vfs_mount_t *m = MP_STATE_VM(vfs_mount_table);
-    for(;NULL != m ; m = m->next)
-    {
-        if(0 == strcmp(m->str,"/flash"))
-        {
-            spiffs = MP_OBJ_TO_PTR(m->obj);
-            break;
-        }
-    }
-    SPIFFS_unmount(&spiffs->fs);
-    mp_printf(&mp_plat_print, "[MAIXPY]:Spiffs Unmount.\n");
-    mp_printf(&mp_plat_print, "[MAIXPY]:Spiffs Formating...\n");
-    uint32_t format_res=SPIFFS_format(&spiffs->fs);
-    mp_printf(&mp_plat_print, "[MAIXPY]:Spiffs Format %s \n",format_res?"failed":"successful");
-    if(0 != format_res)
-    {
-        return mp_const_false;
-    }
-    uint32_t res = 0;
-
-    res = SPIFFS_mount(&spiffs->fs,
-        &spiffs->cfg,
-        spiffs_work_buf,
-        spiffs_fds,
-        sizeof(spiffs_fds),
-        spiffs_cache_buf,
-        sizeof(spiffs_cache_buf),
-        0);
-    mp_printf(&mp_plat_print, "[MAIXPY]:Spiffs Mount %s \n", res?"failed":"successful");
-    if(!res)
-    {
-        return mp_const_true;
-    }
-    return mp_const_none;
-}
-
 void load_config_from_spiffs(config_data_t *config)
 {
-    s32_t ret;
+    s32_t ret, flash_error = 0;
     spiffs_file fd = SPIFFS_open(&spiffs_user_mount_handle.fs, FREQ_STORE_FILE_NAME, SPIFFS_O_RDONLY, 0);
+    // config init 
+    config->freq_cpu = FREQ_CPU_DEFAULT;
+    config->freq_pll1 = FREQ_PLL1_DEFAULT;
+    config->kpu_div = 1;
+    config->gc_heap_size = CONFIG_MAIXPY_GC_HEAP_SIZE;
     if (fd <= 0)
     {
-        config->freq_cpu = FREQ_CPU_DEFAULT;
-        config->freq_pll1 = FREQ_PLL1_DEFAULT;
-        config->kpu_div = 1;
-        config->gc_heap_size = CONFIG_MAIXPY_GC_HEAP_SIZE;
-        if (!save_config_to_spiffs(config)) {
-            printk("maixpy save config fail\r\n");
-            mod_os_flash_format();
-        }
-        return;
+        // init data;
+        flash_error = save_config_to_spiffs(config);
     }
     else
     {
-        memset(config, 0, sizeof(config_data_t));
+        // memset(config, 0, sizeof(config_data_t));
         ret = SPIFFS_read(&spiffs_user_mount_handle.fs, fd, config, sizeof(config_data_t));
         if (ret <= 0)
         {
-            printk("maixpy read config fail\r\n");
-            mod_os_flash_format();
+            printk("maixpy can't load freq.conf\t\r\n");
+            flash_error = false;
         }
         else
         {
@@ -377,74 +335,6 @@ void load_config_from_spiffs(config_data_t *config)
         }
     }
     SPIFFS_close(&spiffs_user_mount_handle.fs, fd);
-}
-
-void mp_load_system_config()
-{
-    if (mp_const_true == maix_config_init())
-    {
-
-        // get and set freq_cpu
-        {
-            const char key[] = "freq_cpu";
-            mp_obj_t tmp = maix_config_get_value(mp_obj_new_str(key, sizeof(key) - 1), mp_obj_new_int(FREQ_CPU_DEFAULT));
-            if (mp_obj_is_int(tmp))
-            {
-                mp_int_t value = mp_obj_get_int(tmp);
-                mp_printf(&mp_plat_print, "%s %lu\r\n", key, value);
-                // sysctl_cpu_set_freq(value);
-            }
-        }
-
-        // get and set freq_pll1
-        {
-            const char key[] = "freq_pll1";
-            mp_obj_t tmp = maix_config_get_value(mp_obj_new_str(key, sizeof(key) - 1), mp_obj_new_int(FREQ_PLL1_DEFAULT));
-            if (mp_obj_is_int(tmp))
-            {
-                mp_int_t value = mp_obj_get_int(tmp);
-                mp_printf(&mp_plat_print, "%s %lu\r\n", key, value);
-                // sysctl_pll_set_freq(SYSCTL_PLL1, value);
-            }
-        }
-
-        // get and set kpu_div
-        {
-            const char key[] = "kpu_div";
-            mp_obj_t tmp = maix_config_get_value(mp_obj_new_str(key, sizeof(key) - 1), mp_obj_new_int(1));
-            if (mp_obj_is_int(tmp))
-            {
-                mp_int_t value = mp_obj_get_int(tmp);
-                mp_printf(&mp_plat_print, "%s %lu\r\n", key, value);
-                // sysctl_clock_set_threshold(SYSCTL_THRESHOLD_AI, value - 1);
-            }
-        }
-
-        // get lcd dict key-value
-        {
-            const char key[] = "lcd";
-            mp_obj_t tmp = maix_config_get_value(mp_obj_new_str(key, sizeof(key) - 1), mp_obj_new_dict(0));
-            if (mp_obj_is_type(tmp, &mp_type_dict))
-            {
-                mp_obj_dict_t *self = MP_OBJ_TO_PTR(tmp);
-                size_t cur = 0;
-                mp_map_elem_t *next = NULL;
-                bool first = true;
-                while ((next = dict_iter_next(self, &cur)) != NULL)
-                {
-                    if (!first)
-                    {
-                        mp_print_str(&mp_plat_print, ", ");
-                    }
-                    first = false;
-                    mp_obj_print_helper(&mp_plat_print, next->key, PRINT_STR);
-                    mp_print_str(&mp_plat_print, ": ");
-                    mp_obj_print_helper(&mp_plat_print, next->value, PRINT_STR);
-                }
-                mp_printf(&mp_plat_print, "\r\n");
-            }
-        }
-    }
 }
 
 #if MICROPY_ENABLE_COMPILER
