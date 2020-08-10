@@ -100,6 +100,8 @@ See [Releases page](https://github.com/sipeed/MaixPy/releases)
 
 Get latest commit firmware: [master firmware](http://dl.sipeed.com/MAIX/MaixPy/release/master/)
 
+Custom your firmware, see [build](#build-from-source) or use [online custom tool](#use-online-compilation-tools-to-customize-firmware)
+
 ## Documentation
 
 Doc refer to [maixpy.sipeed.com](https://maixpy.sipeed.com)
@@ -119,7 +121,7 @@ The historic version see [historic branch](https://github.com/sipeed/MaixPy/tree
 Go to [maixhub.com](https://www.maixhub.com/compile.html) to use online compilation to customize the functions you need
 
 
-## Model hub
+## Model hub: Maixhub.com
 
 Find more models on [Maixhub.com](https://maixhub.com)
 
