@@ -51,7 +51,7 @@ menu "Micropython configurations"
 			bool "Minimum size OMV function (just disable omv advanced functions )"
 			default n
 		config MAIXPY_OMV_CONV_YUV_FAST
-			bool "Add YUV convert table, close this will reduce code but lower speed"
+			bool "Add YUV convert table, speed up convert but more code"
 			default y
 		config MAIXPY_OMV_DOUBLE_BUFF
 			bool "Set double buffer for sensor(camera)"

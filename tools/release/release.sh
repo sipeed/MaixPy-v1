@@ -70,7 +70,7 @@ cp build/maixpy.bin $release_dir/maixpy_${version}_minimum_with_ide_support.bin
 cp build/maixpy.elf $release_dir/elf/maixpy_${version}_minimum_with_ide_support.elf
 cd ..
 
-#
+# board M5StickV
 cd maixpy_m5stickv
 echo "-------------------"
 echo "build project maixpy_m5stickv"
@@ -80,6 +80,9 @@ python project.py build
 cp build/maixpy.bin $release_dir/maixpy_${version}_m5stickv.bin
 cp build/maixpy.elf $release_dir/elf/maixpy_${version}_m5stickv.elf
 cd ..
+
+# add readme.txt
+cp ../tools/release/readme.txt $release_dir/readme.txt
 
 cd $release_dir
 7z a elf_maixpy_${version}.7z elf/*
