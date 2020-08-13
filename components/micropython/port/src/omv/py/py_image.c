@@ -892,8 +892,13 @@ static mp_obj_t py_image_to_grayscale(size_t n_args, const mp_obj_t *args, mp_ma
         }
     }
 
-    if ((!copy) && is_img_data_in_main_fb(out.data)) {
-        MAIN_FB()->bpp = out.bpp;
+    if (!copy)
+    {
+        arg_img->bpp = out.bpp;
+        if(is_img_data_in_main_fb(out.data))
+        {
+            MAIN_FB()->bpp = out.bpp;
+        }
     }
 
     return py_image_from_struct(&out);
