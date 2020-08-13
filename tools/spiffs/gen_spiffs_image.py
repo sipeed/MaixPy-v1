@@ -76,7 +76,7 @@ if not os.path.exists(out_dir):
 dirs = os.listdir("mkspiffs")
 exe_path = None
 for dir in dirs:
-    if os.path.isfile(dir):
+    if os.path.isfile(os.path.join("mkspiffs", dir)):
         continue
     match = re.findall(r"{}(.*){}(.*)".format("mkspiffs", "maixpy"), dir)
     if len(match) > 0:
