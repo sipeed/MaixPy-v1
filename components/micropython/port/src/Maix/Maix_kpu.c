@@ -212,8 +212,14 @@ static char* get_kpu_err_str(int err)
 		return "ERR_MODELS_FULL: we only support load 5 models in the same time";
 	case SIPEED_KPU_ERR_PERMITION:
 		return "ERR_PERMITION";
+    case SIPEED_KPU_ERR_IDX_OUTRANGE:
+        return "SIPEED_KPU_ERR_IDX_OUTRANGE";
+    case SIPEED_KPU_ERR_SIZE_NOTMATCH:
+        return "SIPEED_KPU_ERR_SIZE_NOTMATCH";
     case SIPEED_KPU_ERR_OUTPUTS_NODONE:
         return "ERR_OUTPUTS_SET: need kpu.set_outputs() to set shape";
+    case SIPEED_KPU_ERR_NOT_IMPLEMENT:
+        return "ERR_NOT_IMPLEMENT";
 	case SIPEED_KPU_ERR_UNKNOWN:
 	default:
 		return "ERR_UNKNOWN";
