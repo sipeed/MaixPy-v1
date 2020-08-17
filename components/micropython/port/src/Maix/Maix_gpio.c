@@ -67,7 +67,7 @@ typedef struct _Maix_gpio_irq_obj_t {
     gpio_num_t id;
 } Maix_gpio_irq_obj_t;
 
-typedef enum __gpiohs_t{
+typedef enum __gpio_t{
     GPIO_NUM_0 = 0,
     GPIO_NUM_1,
     GPIO_NUM_2,
@@ -76,9 +76,9 @@ typedef enum __gpiohs_t{
     GPIO_NUM_5,
     GPIO_NUM_6,
     GPIO_NUM_7,
-}_gpiohs_t;
+}_gpio_t;
 
-typedef enum __gpio_t{
+typedef enum __gpiohs_t{
     GPIOHS_NUM_0 = 0,
     GPIOHS_NUM_1,
     GPIOHS_NUM_2,
@@ -111,7 +111,7 @@ typedef enum __gpio_t{
     GPIOHS_NUM_29,
     GPIOHS_NUM_30,
     GPIOHS_NUM_31,
-} _gpio_t;
+} _gpiohs_t;
 
 STATIC const Maix_gpio_obj_t Maix_gpio_obj[] = {
     {{&Maix_gpio_type}, 0, GPIOHS, GPIOHS_NUM_0, MP_OBJ_NULL, GPIO_DM_INPUT},
