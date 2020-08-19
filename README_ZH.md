@@ -54,13 +54,16 @@ Maixpy 的目的是让 AIOT 编程更简单， 基于 [Micropython](http://www.m
 > * 带硬件浮点运算的双核处理器
 > * 8MB(6MB+2MB) 内存
 > * 16MB 外置 Flash
-> * 芯片 CPU 最高可达 800MHz 主频 (开发板支持最高主频具体看开发板介绍)
+> * 芯片 CPU 最高可达 800MHz 主频 (开发板支持最高主频具体看开发板介绍, 通常400MHz)
 > * 麦克风阵列支持（8个麦克风）
 > * 硬件 AES SHA256 支持
 > * FPIOA (每个外设可以映射到任意引脚)
 > * 外设: I2C, SPI, I2S, WDT, TIMER, RTC, UART, GPIO 等等
 
 ![](assets/image/maix_bit.png)
+
+利用 MaixPy 可以做很多事情,具体参考 [这里](https://maixpy.sipeed.com/zh/others/what_maix_do.html)
+
 
 ## 简单易懂的代码
 
@@ -110,6 +113,15 @@ while True:
 参考 [构建文档](build.md)
 
 旧的构建版本请见 [historic 分支](https://github.com/sipeed/MaixPy/tree/historic) （不再维护，仅仅为了保留提交记录）
+
+## 使用在线编译工具定制固件
+
+到[Maixhub.com](https://www.maixhub.com/compile.html)使用在线编译定制自己需要的功能
+
+## Maixhub 模型平台
+
+到 [Maixhub.com] 获取更多模型
+
 
 ## 开源协议
 

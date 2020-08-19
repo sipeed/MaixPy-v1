@@ -36,4 +36,5 @@ jobs:
         - cd bin
         - firmware_dir=`ls`
         - sudo sh -c "echo StrictHostKeyChecking no >>/etc/ssh/ssh_config"
+        - chmod -R 777 $firmware_dir
         - sshpass -p ${USER_PASSWD} scp -r $firmware_dir ${SERVER_USER}@${SERVER_ADDR}:${SERVER_FOLDER_PATH}/${curr_branch}/

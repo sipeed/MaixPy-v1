@@ -54,13 +54,16 @@ Maixpy is designed to make AIOT programming easier, based on the [Micropython](h
 > * Dual core with FPU
 > * 8MB(6MB+2MB) RAM
 > * 16MB external Flash
-> * Max 800MHz CPU freq (see the dev board in detail)
+> * Max 800MHz CPU freq (see the dev board in detail, usually 400MHz)
 > * Microphone array(8 mics)
 > * Hardware AES SHA256
 > * FPIOA (Periphrals can map to any pins)
 > * Peripherals: I2C, SPI, I2S, WDT, TIMER, RTC, UART, GPIO etc.
 
 ![](assets/image/maix_bit.png)
+
+
+There are many things you can do with MaixPy, please refer to [here](https://maixpy.sipeed.com/en/others/what_maix_do.html)
 
 ## Simple code
 
@@ -97,6 +100,8 @@ See [Releases page](https://github.com/sipeed/MaixPy/releases)
 
 Get latest commit firmware: [master firmware](http://dl.sipeed.com/MAIX/MaixPy/release/master/)
 
+Custom your firmware, see [build](#build-from-source) or use [online custom tool](#use-online-compilation-tools-to-customize-firmware)
+
 ## Documentation
 
 Doc refer to [maixpy.sipeed.com](https://maixpy.sipeed.com)
@@ -110,6 +115,16 @@ Doc refer to [maixpy.sipeed.com](https://maixpy.sipeed.com)
 See [build doc](build.md)
 
 The historic version see [historic branch](https://github.com/sipeed/MaixPy/tree/historic) (No longer maintained, just keep commit history)
+
+## Use online compilation tools to customize firmware
+
+Go to [maixhub.com](https://www.maixhub.com/compile.html) to use online compilation to customize the functions you need
+
+
+## Model hub: Maixhub.com
+
+Find more models on [Maixhub.com](https://maixhub.com)
+
 
 ## License
 

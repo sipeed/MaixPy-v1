@@ -3,6 +3,8 @@ Build Maixpy from source code
 
 Only support Linux(recommend) and macOS
 
+And you can use online build tool here: https://www.maixhub.com/compile.html
+
 ## Get source code
 
 * Clone by https link
@@ -93,19 +95,14 @@ cd projects/maixpy_k210
 The default toolchain path is `/opt/kendryte-toolchain/bin`,
 and default toolchain pfrefix is `riscv64-unknown-elf-`.
 
-If you have copied toolchain to `/opt`, just use default.
+If you have copied toolchain to `/opt`, just use default, and it is highly recommend!!
 
 Or you can customsize your toolchain path by 
 
 ```
 python3 project.py --toolchain /opt/kendryte-toolchain/bin --toolchain-prefix riscv64-unknown-elf- config 
 ```
-
-And clean config to default by command
-
-```
-python3 project.py clean_conf
-```
+> Clean config to default by command `python3 project.py clean_conf`
 
 * Configure project
 

@@ -768,6 +768,43 @@ static const uint8_t qvga_config[][2] = { //k210
     {0x00, 0x00}
 };
 
+static const uint8_t B240X240_config[][2] = { //k210 
+    {0xfe , 0x00},
+    // window
+        //windowing mode
+	{0x09 , 0x00},
+    {0x0a , 0x00},
+	{0x0b , 0x00},
+	{0x0c , 0x00},
+    {0x0d , 0x01},
+	{0x0e , 0xe8},
+	{0x0f , 0x02},
+	{0x10 , 0x88},
+        //crop mode 
+    {0x50 , 0x01},
+    {0x51, 0x00},
+    {0x52, 0x00},
+    {0x53, 0x00},
+    {0x54, 0x28},
+    {0x55, 0x00},
+    {0x56, 0xf0},
+    {0x57, 0x00},
+    {0x58, 0xf0},
+    //subsample 1/2
+    {0x59, 0x22},
+    {0x5a, 0x00},
+    {0x5b, 0x00},
+    {0x5c, 0x00},
+    {0x5d, 0x00},
+    {0x5e, 0x00},
+    {0x5f, 0x00},
+    {0x60, 0x00},
+    {0x61, 0x00},
+    {0x62, 0x00},
+
+    {0x00, 0x00}
+};
+
 static const uint8_t vga_config[][2] = { //k210 
     {0xfe , 0x00},
     // window
@@ -836,6 +873,9 @@ static int gc0328_set_framesize(sensor_t *sensor, framesize_t framesize)
 	if(framesize == FRAMESIZE_QQVGA)
 	{
 		regs = qqvga_config;
+	}
+	else if (framesize == FRAMESIZE_240X240){
+		regs = B240X240_config;
 	}
     else if ((w <= 320) && (h <= 240)) {
         regs = qvga_config;
@@ -1056,6 +1096,23 @@ int gc0328_reset(sensor_t* sensor)
     return 0;
 }
 
+int gc0328_set_windowing(framesize_t framesize, int x, int y, int w, int h)
+{
+	if(framesize == FRAMESIZE_QVGA)
+	{
+		cambus_writeb(GC0328_ADDR, 0xfe, 0x00);
+		cambus_writeb(GC0328_ADDR, 0x51, (y>>8) & 0xff);
+		cambus_writeb(GC0328_ADDR, 0x52, y & 0xff);
+		cambus_writeb(GC0328_ADDR, 0x53, (x>>8) & 0xff);
+		cambus_writeb(GC0328_ADDR, 0x54, x & 0xff);
+		cambus_writeb(GC0328_ADDR, 0x55, (h>>8) & 0x01);
+		cambus_writeb(GC0328_ADDR, 0x56, h & 0xff);
+		cambus_writeb(GC0328_ADDR, 0x57, (w>>8) & 0x03);
+		cambus_writeb(GC0328_ADDR, 0x58, w & 0xff);
+	}
+	return 0;
+}
+
 int gc0328_init(sensor_t *sensor)
 {
     //Initialize sensor structure.
@@ -1080,6 +1137,7 @@ int gc0328_init(sensor_t *sensor)
     sensor->get_rgb_gain_db     = gc0328_get_rgb_gain_db;
     sensor->set_hmirror         = gc0328_set_hmirror;
     sensor->set_vflip           = gc0328_set_vflip;
+	sensor->set_windowing       = gc0328_set_windowing;
 
     // Set sensor flags
     SENSOR_HW_FLAGS_SET(sensor, SENSOR_HW_FLAGS_VSYNC, 0);

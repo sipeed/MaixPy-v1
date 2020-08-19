@@ -1291,7 +1291,7 @@ void imlib_edge_canny(image_t *src, rectangle_t *roi, int low_thresh, int high_t
 void imlib_find_hog(image_t *src, rectangle_t *roi, int cell_size);
 
 // Helper Functions
-void imlib_flood_fill_int(image_t *out, image_t *img, int x, int y,
+size_t imlib_flood_fill_int(image_t *out, image_t *img, int x, int y,
                           int seed_threshold, int floating_threshold,
                           flood_fill_call_back_t cb, void *data);
 // Drawing Functions
@@ -1304,7 +1304,7 @@ void imlib_draw_ellipse(image_t *img, int cx, int cy, int rx, int ry, int rotati
 void imlib_draw_font(image_t *img, int x_off, int y_off, int c, float scale, uint8_t font_h, uint8_t font_w, const uint8_t *font);
 void imlib_draw_string(image_t *img, int x_off, int y_off, mp_obj_t str, int c, float scale, int x_spacing, int y_spacing, bool mono_space);
 void imlib_draw_image(image_t *img, image_t *other, int x_off, int y_off, float x_scale, float y_scale, float alpha, image_t *mask);
-void imlib_flood_fill(image_t *img, int x, int y,
+size_t imlib_flood_fill(image_t *img, int x, int y,
                       float seed_threshold, float floating_threshold,
                       int c, bool invert, bool clear_background, image_t *mask);
 // Binary Functions

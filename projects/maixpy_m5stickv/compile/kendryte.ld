@@ -92,6 +92,16 @@ SECTIONS
 
   . = ALIGN(8);
 
+  /* Exception handling  */
+  .eh_frame :
+  {
+    KEEP (*(.eh_frame)) *(.eh_frame.*)
+    . = ALIGN(8);
+  } >ram AT>ram :ram_ro
+  .gnu_extab : { *(.gnu_extab) } >ram AT>ram :ram_ro
+  .gcc_except_table : { *(.gcc_except_table .gcc_except_table.*) } >ram AT>ram :ram_ro
+  .exception_ranges : { *(.exception_ranges .exception_ranges*) } >ram AT>ram :ram_ro
+
   /* Init array and fini array */
   .preinit_array :
   {

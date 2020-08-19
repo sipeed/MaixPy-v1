@@ -629,11 +629,11 @@ int sensor_init_dvp(mp_int_t freq, bool default_freq)
         dvp_set_xclk_rate(22000000);
     }
     dvp_set_image_format(DVP_CFG_YUV_FORMAT);
-    dvp_enable_burst();
-    dvp_disable_auto();
-    dvp_set_output_enable(0, 1); //enable to AI
-    dvp_set_output_enable(1, 1); //enable to lcd
-    if (sensor.size_set)
+    dvp_disable_burst();
+	dvp_disable_auto();
+	dvp_set_output_enable(0, 1);	//enable to AI
+	dvp_set_output_enable(1, 1);	//enable to lcd
+    if(sensor.size_set)
     {
         dvp_set_image_size(MAIN_FB()->w_max, MAIN_FB()->h_max);
 #if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
@@ -667,6 +667,7 @@ int sensor_reset(mp_int_t freq, bool default_freq, bool set_regs, bool double_bu
 #if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
     g_sensor_buff_index_out = 0;
     g_sensor_buff_index_in = 0;
+    buff_ready = false;
 #endif
     sensor.reset_set = false;
     sensor.vflip = false;
@@ -1203,7 +1204,12 @@ int sensor_set_windowing(int x, int y, int w, int h)
     MAIN_FB()->y = y;
     MAIN_FB()->w = MAIN_FB()->u = w;
     MAIN_FB()->h = MAIN_FB()->v = h;
-    dvp_set_image_size(w, h); //set QVGA default
+    if(sensor.set_windowing)
+    {
+        if(sensor.set_windowing(sensor.framesize, x, y, w, h) != 0)
+            return -1;
+    }
+	dvp_set_image_size(w, h);	//set QVGA default
 #if CONFIG_MAIXPY_OMV_DOUBLE_BUFF
     dvp_set_ai_addr((uint32_t)MAIN_FB()->pix_ai[g_sensor_buff_index_in], (uint32_t)(MAIN_FB()->pix_ai[g_sensor_buff_index_in] + MAIN_FB()->w * MAIN_FB()->h), (uint32_t)(MAIN_FB()->pix_ai[g_sensor_buff_index_in] + MAIN_FB()->w * MAIN_FB()->h * 2));
 #else

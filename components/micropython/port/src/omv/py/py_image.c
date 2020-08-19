@@ -894,8 +894,13 @@ static mp_obj_t py_image_to_grayscale(size_t n_args, const mp_obj_t *args, mp_ma
         }
     }
 
-    if ((!copy) && is_img_data_in_main_fb(out.data)) {
-        MAIN_FB()->bpp = out.bpp;
+    if (!copy)
+    {
+        arg_img->bpp = out.bpp;
+        if(is_img_data_in_main_fb(out.data))
+        {
+            MAIN_FB()->bpp = out.bpp;
+        }
     }
 
     return py_image_from_struct(&out);
@@ -5963,6 +5968,157 @@ static mp_obj_t py_image_cut(size_t n_args, const mp_obj_t *args)
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_image_cut_obj, 4, 5, py_image_cut);
 
+#ifndef OMV_MINIMUM
+//输入灰度图像，找出面积最大的连通域
+#define MAX_DOMAIN_CNT 254
+
+static void _get_hv_pixel(image_t* img, uint16_t* h0, uint16_t* h1, \
+						uint16_t* h2, uint16_t* v0, uint16_t* v1, uint16_t* v2){
+	uint8_t* data = img->pixels;
+	uint16_t w = img->w; 
+	uint16_t h = img->h;
+	
+	uint16_t minx=w;
+	uint16_t miny=h;
+	uint16_t maxx=0;
+	uint16_t maxy=0;
+	uint16_t _h1=0; uint16_t _h2=0; uint16_t _v1=0; uint16_t _v2=0;
+	
+	for (int y = 0, yy = img->h; y < yy; y++) {
+		//uint32_t *row_ptr = IMAGE_COMPUTE_BINARY_PIXEL_ROW_PTR(img, y);
+		uint32_t *img_row_ptr = IMAGE_COMPUTE_BINARY_PIXEL_ROW_PTR(img, y);
+		for (int x = 0, xx = img->w; x < xx; x++) {
+			if (IMAGE_GET_BINARY_PIXEL_FAST(img_row_ptr, x) ) {
+				if(y<miny) miny=y; else if(y>maxy) maxy=y; 
+				if(x<minx) minx=x; else if(x>maxx) maxx=x;
+				if(y==0) _h1+=1;   else if(y==h-1) _h2+=1;
+				if(x==0) _v1+=1;   else if(x==w-1) _v2+=1;
+			} 
+		}
+	}
+	
+	*h0 = maxx-minx+1;
+	*v0 = maxy-miny+1;
+	*h1 = _h1; *h2 = _h2;
+	*v1 = _v1; *v2 = _v2;
+	
+	return;
+}
+
+#define EDGE_GATE 0.7
+static mp_obj_t py_image_find_domain(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
+{
+    image_t *img = py_helper_arg_to_image_mutable(args[0]);
+	if(img->bpp != IMAGE_BPP_GRAYSCALE) 
+		mp_raise_msg(&mp_type_ValueError,"only support grayscale pic"); 
+	
+	float edge_gate = mp_obj_get_float(args[1]);
+	// printf("domain edge gate=%.3f\r\n", edge_gate);
+
+	uint16_t w = img->w;
+	uint16_t h = img->h;
+	uint8_t* pic = img->pixels;
+	
+	uint16_t domian_cnt[MAX_DOMAIN_CNT];
+	uint8_t p_x[MAX_DOMAIN_CNT];
+	uint8_t p_y[MAX_DOMAIN_CNT];
+	for(int i=0; i < MAX_DOMAIN_CNT; i++) {
+		domian_cnt[i] = 0;
+	}
+
+	uint8_t color_idx = 0;
+
+	for(int y=0; y<h; y++) { 
+		if(color_idx>=MAX_DOMAIN_CNT)
+			break;
+		for(int x=0; x<w; x++){
+			int oft = x+y*w;
+			if(pic[oft] > color_idx){
+				domian_cnt[color_idx] = imlib_flood_fill(img, x, y,0, 0,color_idx+1, 0, 0, NULL);
+				p_x[color_idx] = x;
+				p_y[color_idx] = y;
+				//printf("(%d, %d) -> %d, count=%d\r\n",x,y,color_idx+1,domian_cnt[color_idx]);
+				color_idx += 1;
+				
+			}
+		}
+	}
+	
+	int maxcnt = 0;
+	int maxidx = -1;
+	int max2cnt = 0;
+	int max2idx = -1;
+	for(int i=0; i< MAX_DOMAIN_CNT; i++){
+		if(domian_cnt[i]>maxcnt) {
+			max2cnt= maxcnt;
+			max2idx= maxidx;
+			maxcnt = domian_cnt[i];
+			maxidx = i;
+		} else if(domian_cnt[i]>max2cnt) {
+			max2cnt = domian_cnt[i];
+			max2idx = i;
+		}
+	}
+	//printf("max domain idx=%d, cnt=%d\r\n",maxidx, maxcnt);
+	if(maxcnt == 0) { //没有连通域
+		return mp_const_none;
+	} else if (max2cnt<w+h) { //只有一块连通域, 或者第二块连通域面积过小
+		image_t out;
+		out.w = img->w;
+		out.h = img->h;
+		out.bpp = IMAGE_BPP_BINARY;
+		uint8_t* data = xalloc(image_size(&out));
+		mp_obj_t image = py_image(w, h, IMAGE_BPP_BINARY, data);
+		imlib_flood_fill_int(&(((py_image_obj_t *)image)->_cobj), img, p_x[maxidx], p_y[maxidx], 0, 0, NULL, NULL);
+		return image;
+	} else { //有超过两块较大的连通域
+		image_t out0, out1;
+		out0.w = out1.w = img->w; 
+		out0.h = out1.h = img->h;
+		out0.bpp = out1.bpp = IMAGE_BPP_BINARY;
+		out0.data = fb_alloc0(image_size(&out0));
+		out1.data = fb_alloc0(image_size(&out1));
+		imlib_flood_fill_int(&out0, img, p_x[maxidx], p_y[maxidx], 0, 0, NULL, NULL);
+		imlib_flood_fill_int(&out1, img, p_x[max2idx], p_y[max2idx], 0, 0, NULL, NULL);
+		uint16_t r0_h0,r0_h1,r0_h2; //水平方向像素范围，上边界像素数，下边界像素数
+		uint16_t r0_v0,r0_v1,r0_v2; //
+		uint16_t r1_h0,r1_h1,r1_h2; //水平方向像素范围，上边界像素数，下边界像素数
+		uint16_t r1_v0,r1_v1,r1_v2; //
+		_get_hv_pixel(&out0, &r0_h0,&r0_h1,&r0_h2, &r0_v0,&r0_v1,&r0_v2);
+		_get_hv_pixel(&out1, &r1_h0,&r1_h1,&r1_h2, &r1_v0,&r1_v1,&r1_v2);
+		uint16_t r0_h, r0_v, r1_h, r1_v;
+		r0_h = r0_h1>r0_h2 ? r0_h1 : r0_h2;
+		r1_h = r1_h1>r1_h2 ? r1_h1 : r1_h2;
+		r0_v = r0_v1>r0_v2 ? r0_v1 : r0_v2;
+		r1_v = r1_v1>r1_v2 ? r1_v1 : r1_v2;
+		float r0_hrate, r0_vrate, r1_hrate, r1_vrate;
+		r0_hrate = 1.0*r0_h/r0_h0;	r0_vrate = 1.0*r0_v/r0_v0;
+		r1_hrate = 1.0*r1_h/r1_h0;	r1_vrate = 1.0*r1_v/r1_v0;
+		// printf("r0cnt=%04d; h0=%03d, h1=%03d, h2=%03d; v0=%03d, v1=%03d, v2=%03d; hrate=%.3f, vrate=%.3f\r\n",
+			//  maxcnt, r0_h0, r0_h1, r0_h2, r0_v0, r0_v1, r0_v2, r0_hrate, r0_vrate );
+		// printf("r1cnt=%04d; h0=%03d, h1=%03d, h2=%03d; v0=%03d, v1=%03d, v2=%03d; hrate=%.3f, vrate=%.3f\r\n",
+			//  max2cnt, r1_h0, r1_h1, r1_h2, r1_v0, r1_v1, r1_v2, r1_hrate, r1_vrate );
+		int r_flag = -1;
+		if(r0_hrate < edge_gate || r0_vrate < edge_gate) { //r0是线
+			r_flag = 0; //使用r0
+		} else if(r1_hrate < edge_gate || r1_vrate < edge_gate) { //r0不是线,r1是线
+			r_flag = 1;
+		} else { //两个都不是线，选面积大的
+			r_flag = 0;
+		}
+		// printf("rflag=%d\r\n\r\n", r_flag);
+		uint8_t* data = xalloc(image_size(&out0));
+		mp_obj_t image = py_image(w, h, IMAGE_BPP_BINARY, data);
+		memcpy(((py_image_obj_t *)image)->_cobj.data, r_flag?out1.data:out0.data, image_size(&out0));
+		fb_free();
+		fb_free();
+		return image;
+	}	
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_find_domain_obj, 2, py_image_find_domain);
+
+#endif // OMV_MINIMUM
+
 static const mp_rom_map_elem_t locals_dict_table[] = {
     /* Basic Methods */
     {MP_ROM_QSTR(MP_QSTR___del__),             MP_ROM_PTR(&py_image_del_obj)},
@@ -6145,6 +6301,7 @@ static const mp_rom_map_elem_t locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_find_eye),            MP_ROM_PTR(&py_image_find_eye_obj)},
     {MP_ROM_QSTR(MP_QSTR_find_lbp),            MP_ROM_PTR(&py_image_find_lbp_obj)},
     {MP_ROM_QSTR(MP_QSTR_find_keypoints),      MP_ROM_PTR(&py_image_find_keypoints_obj)},
+    {MP_ROM_QSTR(MP_QSTR_find_domain),    MP_ROM_PTR(&py_image_find_domain_obj)},
 #endif //OMV_MINIMUM
 #ifdef IMLIB_ENABLE_BINARY_OPS
     {MP_ROM_QSTR(MP_QSTR_find_edges),          MP_ROM_PTR(&py_image_find_edges_obj)},

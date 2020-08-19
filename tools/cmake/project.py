@@ -47,7 +47,7 @@ project_parser.add_argument('--toolchain-prefix',
                         metavar='PREFIX',
                         default="")
 project_parser.add_argument('--config_file',
-                        help='config file path, e.g. config_defaultd.mk',
+                        help='config file path, e.g. config_defaults.mk',
                         metavar='PATH',
                         default="{}/config_defaults.mk".format(project_path))
 project_parser.add_argument('--verbose',
@@ -80,7 +80,7 @@ config_content = header
 update_config = False
 if project_args.toolchain.strip() != "":
     if not os.path.exists(project_args.toolchain):
-        print("config toolchain path error:", project_args.toolchain)
+        print("config toolchain path error, not exitst:", project_args.toolchain)
         exit(1)
     update_config = True
     project_args.toolchain = project_args.toolchain.strip().replace("\\","/")
@@ -96,6 +96,34 @@ if update_config and config_content != config_content_old:
     if os.path.exists("build/config/global_config.mk"):
         os.remove("build/config/global_config.mk")
     print("generate config file at: {}".format(config_filename))
+
+def update_toolchain_path(tool_chain_config_path, config_path, out_path):
+    with open(tool_chain_config_path) as f:
+        toolchain = f.read()
+    toolchain = toolchain.split("\n")
+    toolchain_conf = {}
+    for t in toolchain:
+        if not t.startswith("CONFIG_"):
+            continue
+        t = t.split("=")
+        toolchain_conf[t[0]] = t[1][1:-1]
+    with open(config_path) as f:
+        configs = f.read().split("\n")
+    find_count = 0
+    for i, config in enumerate(configs):
+        config = config.strip()
+        if config.startswith("CONFIG_TOOLCHAIN_PATH"):
+            configs[i] = '{}="{}"'.format("CONFIG_TOOLCHAIN_PATH", toolchain_conf['CONFIG_TOOLCHAIN_PATH'])
+            find_count += 1
+        if config.startswith("CONFIG_TOOLCHAIN_PREFIX"):
+            configs[i] = '{}="{}"'.format("CONFIG_TOOLCHAIN_PREFIX", toolchain_conf['CONFIG_TOOLCHAIN_PREFIX'])
+            find_count += 1
+        if find_count == 2:
+            break
+    configs = "\n".join(configs)
+    with open(out_path, "w") as f:
+        f.write(configs)
+
 
 # config
 if project_args.cmd == "config":
@@ -114,6 +142,16 @@ elif project_args.cmd == "build" or project_args.cmd == "rebuild":
         if not os.path.exists(config_path):
             print("config file path error:{}".format(config_path))
             exit(1)
+        # udpate toolchain config from .config.mk config by --toolchain adn --toolchain_prefix arg 
+        new_config_path = None
+        config_filename = os.path.abspath(os.path.join("..", config_filename))
+        if os.path.exists(config_filename):
+            if not os.path.exists("config"):
+                os.makedirs("config")
+            new_config_path = os.path.abspath(os.path.join("config", "config.mk"))
+            update_toolchain_path(config_filename, config_path, new_config_path)
+        config_path = config_path if not new_config_path else new_config_path
+        # execute cmake command
         res = subprocess.call(["cmake", "-G", gen_project_type, "-DDEFAULT_CONFIG_FILE={}".format(config_path),  ".."])
         if res != 0:
             exit(1)
@@ -166,6 +204,16 @@ elif project_args.cmd == "menuconfig":
         if not os.path.exists(config_path):
             print("config file path error:{}".format(config_path))
             exit(1)
+        # udpate toolchain config from .config.mk config by --toolchain adn --toolchain_prefix arg 
+        new_config_path = None
+        config_filename = os.path.abspath(os.path.join("..", config_filename))
+        if os.path.exists(config_filename):
+            if not os.path.exists("config"):
+                os.makedirs("config")
+            new_config_path = os.path.abspath(os.path.join("config", "config.mk"))
+            update_toolchain_path(config_filename, config_path, new_config_path)
+        config_path = config_path if not new_config_path else new_config_path
+        # execute cmake command
         res = subprocess.call(["cmake", "-G", gen_project_type, "-DDEFAULT_CONFIG_FILE={}".format(config_path),  ".."])
         if res != 0:
             exit(1)

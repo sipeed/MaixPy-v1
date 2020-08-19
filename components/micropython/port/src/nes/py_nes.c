@@ -18,9 +18,6 @@
 #include "lcd.h"
 #include "sleep.h"
 
-/*****freeRTOS****/
-#include "FreeRTOS.h"
-#include "task.h"
 #include "InfoNES_System.h"
 #include "InfoNES.h"
 #include "sysctl.h"

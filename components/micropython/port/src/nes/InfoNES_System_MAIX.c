@@ -16,8 +16,6 @@
 #include "ps2.h"
 #include "machine_uart.h"
 
-#include "FreeRTOS.h"
-#include "task.h"
 #include "InfoNES_System.h"
 #include "InfoNES.h"
 #include "sysctl.h"
@@ -435,11 +433,11 @@ bool full=false;
 void InfoNES_SoundOutput(int samples, BYTE *wave1, BYTE *wave2, BYTE *wave3, BYTE *wave4, BYTE *wave5)
 {
     int i;
-    int16_t tmp;
+    uint16_t tmp;
     for (i = 0; i < samples; i++) 
     {
         tmp = (( (uint16_t)wave1[i] +(uint16_t)wave2[i] +(uint16_t)wave3[i] +(uint16_t)wave4[i] +(uint16_t)wave5[i] ) )<<(nes_volume);
-        final_wave[ waveptr ] = tmp<<16 | tmp;
+        final_wave[ waveptr ] = (uint32_t)tmp<<16 | ((uint32_t)tmp & 0xFFFF);
         waveptr++;
         if ( waveptr == g_samples_per_sync*2 ) 
         {
