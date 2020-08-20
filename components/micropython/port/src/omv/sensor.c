@@ -1047,8 +1047,12 @@ int sensor_set_pixformat(pixformat_t pixformat, bool set_regs)
     switch (pixformat)
     {
     case PIXFORMAT_RGB565:
-        dvp_set_image_format(DVP_CFG_RGB_FORMAT);
-        break;
+        // monkey patch about ide default sensor.set_pixformat(sensor.RGB565) but it need sensor.YUV422
+        if (sensor.chip_id != OV7740_ID && sensor.chip_id != GC0328_ID && sensor.chip_id != OV2640_ID) 
+        {
+            dvp_set_image_format(DVP_CFG_RGB_FORMAT);
+            break;
+        } // to next yuv422
     case PIXFORMAT_YUV422:
         dvp_set_image_format(DVP_CFG_YUV_FORMAT);
         break;
