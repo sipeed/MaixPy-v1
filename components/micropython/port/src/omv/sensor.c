@@ -562,6 +562,7 @@ int sensro_mt_detect(sensor_t *sensor, bool pwnd)
 int sensor_init_dvp(mp_int_t freq, bool default_freq)
 {
     int init_ret = 0;
+    int init_ret = 0, pwdn_lock = 0;
 
     sensor_load_config(&sensor_config);
 
@@ -606,6 +607,7 @@ int sensor_init_dvp(mp_int_t freq, bool default_freq)
     {
         // find ov sensor
         mp_printf(&mp_plat_print, "[MAIXPY]: find ov sensor\n");
+        pwdn_lock = 1;
     }
     else if ((limit == false || sensor.choice_dev == 2) && 0 == sensro_gc_detect(&sensor, true))
     // if ((limit == false || sensor.choice_dev == 2) && 0 == sensro_gc_detect(&sensor, true))
@@ -645,7 +647,7 @@ int sensor_init_dvp(mp_int_t freq, bool default_freq)
 #endif
     }
 
-    (sensor.pwdn_pol == ACTIVE_HIGH) ? (DCMI_PWDN_LOW()) : (DCMI_PWDN_HIGH());
+    if (pwdn_lock) (sensor.pwdn_pol == ACTIVE_HIGH) ? (DCMI_PWDN_LOW()) : (DCMI_PWDN_HIGH());
     return init_ret;
 }
 int sensor_init_irq()
