@@ -562,7 +562,7 @@ int sensro_mt_detect(sensor_t *sensor, bool pwnd)
 int sensor_init_dvp(mp_int_t freq, bool default_freq)
 {
     int init_ret = 0;
-    int init_ret = 0, pwdn_lock = 0;
+    int pwdn_lock = 0;
 
     sensor_load_config(&sensor_config);
 
