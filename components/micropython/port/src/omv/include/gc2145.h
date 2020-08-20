@@ -20,7 +20,7 @@
 #include "sensor.h"
 #include "i2c.h"
 
-#define GC2145_ID       (0x2145)
+#define GC2145_ID       0x45 // (0x2145)
 #define GC2145_ADDR     (0x78>>1)
 
 int gc2145_reset(sensor_t *sensor);
