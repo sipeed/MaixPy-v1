@@ -439,6 +439,7 @@ uint16_t sensro_gc_scan()
 
 int sensro_gc_detect(sensor_t *sensor, bool pwnd)
 {
+    uint16_t id = 0;
     // mp_printf(&mp_plat_print, "[MAIXPY]: find gc sensor\n");
     if (pwnd)
         DCMI_PWDN_LOW(); //enable gc0328 要恢复 normal 工作模式，需将 PWDN pin 接入低电平即可，同时写入初始化寄存器即可
@@ -455,8 +456,8 @@ int sensro_gc_detect(sensor_t *sensor, bool pwnd)
     mp_hal_delay_ms(30);
 
     /* Probe the ov sensor */
-    sensor->slv_addr = sensro_gc_scan();
-    if (sensor->slv_addr == 0)
+    id = sensro_gc_scan();
+    if (id == 0)
     {
         /* Sensor has been held in reset,
            so the reset line is active low */
@@ -472,8 +473,8 @@ int sensro_gc_detect(sensor_t *sensor, bool pwnd)
         mp_hal_delay_ms(30);
 
         /* Probe again to set the slave addr */
-        sensor->slv_addr = sensro_gc_scan();
-        if (sensor->slv_addr == 0)
+        id = sensro_gc_scan();
+        if (id == 0)
         {
             sensor->pwdn_pol = ACTIVE_LOW;
             /* Need set PWDN and RST again for some sensor*/
@@ -484,8 +485,8 @@ int sensro_gc_detect(sensor_t *sensor, bool pwnd)
             DCMI_RESET_HIGH();
             mp_hal_delay_ms(30);
 
-            sensor->slv_addr = sensro_gc_scan();
-            if (sensor->slv_addr == 0)
+            id = sensro_gc_scan();
+            if (id == 0)
             {
                 sensor->reset_pol = ACTIVE_HIGH;
 
@@ -497,8 +498,8 @@ int sensro_gc_detect(sensor_t *sensor, bool pwnd)
                 DCMI_RESET_LOW();
                 mp_hal_delay_ms(30);
 
-                sensor->slv_addr = sensro_gc_scan();
-                if (sensor->slv_addr == 0)
+                id = sensro_gc_scan();
+                if (id == 0)
                 {
                     //should do something?
                     return -2;
@@ -507,7 +508,6 @@ int sensro_gc_detect(sensor_t *sensor, bool pwnd)
         }
     }
 
-    uint16_t id = sensor->slv_addr;
     if (0 == id)
     {
         return -3;
