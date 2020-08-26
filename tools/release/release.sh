@@ -70,6 +70,17 @@ cp build/maixpy.bin $release_dir/maixpy_${version}_minimum_with_ide_support.bin
 cp build/maixpy.elf $release_dir/elf/maixpy_${version}_minimum_with_ide_support.elf
 cd ..
 
+# minimum with V4 kmodel support
+cd maixpy_k210_minimum
+echo "-------------------"
+echo "build project maixpy_k210_minimum_v4_kmodel_support"
+echo "-------------------"
+python project.py distclean
+python project.py build --config_file "config_defaults_kmodel_v4_support.mk"
+cp build/maixpy.bin $release_dir/maixpy_${version}_minimum_with_kmodel_v4_support.bin
+cp build/maixpy.elf $release_dir/elf/maixpy_${version}_minimum_with_kmodel_v4_support.elf
+cd ..
+
 # board M5StickV
 cd maixpy_m5stickv
 echo "-------------------"
@@ -83,6 +94,8 @@ cd ..
 
 # add readme.txt
 cp ../tools/release/readme.txt $release_dir/readme.txt
+cp ../tools/release/more_firmware.txt $release_dir/readme.txt
+
 
 cd $release_dir
 7z a elf_maixpy_${version}.7z elf/*
