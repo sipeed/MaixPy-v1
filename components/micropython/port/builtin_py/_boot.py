@@ -60,9 +60,12 @@ del I2C
 
 import gc
 import machine
-from board import board_info
-from fpioa_manager import fm
-from pye_mp import pye
+try:
+    from board import board_info
+    from fpioa_manager import fm
+    from pye_mp import pye
+except Exception:
+    pass
 from Maix import FPIOA, GPIO
 
 
