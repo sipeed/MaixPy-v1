@@ -374,13 +374,23 @@ int font_utf8_to_unicode(const uint8_t* pInput, uint64_t *Unic)
 
 void imlib_draw_font(image_t *img, int x_off, int y_off, int c, float scale, uint8_t font_h, uint8_t font_w, const uint8_t *font)
 {
+    // It will be replaced by *.SVG.
+    /* font ↑ ↓ ↝ →
+        01 02 03 04 
+        05 06 07 08
+        09 10 11 12
+        13 14 15 16
+        1. ↓ 01 05 09 13
+        2. → 01 02 03 04
+        3. Got it?
+    */
     for (int y = 0, yy = fast_roundf(font_h * scale); y < yy; y++) {
         uint8_t pos = fast_roundf(y / scale);
-        uint16_t tmp = font[pos];
-        if (8 < font_w && font_w <= 16) {
-            tmp <<= 8, tmp |= font[pos + font_h]; // font ↑ ↓ ↝ →
+        uint32_t tmp = font[pos];
+        for (uint8_t i = 1; i < font_h / 8; i++) {
+            tmp <<= 8, tmp |= font[pos + i * font_h];
         }
-        for (int x = 0, xx = fast_roundf(font_w * scale); x < xx; x++) {
+        for (uint8_t x = 0, xx = fast_roundf(font_w * scale); x < xx; x++) {
             if (tmp & (1 << (font_w - 1 - fast_roundf(x / scale)))) {
                 imlib_set_pixel(img, (x_off + x), (y_off + y), c);
             }

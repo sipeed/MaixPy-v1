@@ -1445,9 +1445,9 @@ STATIC mp_obj_t py_image_draw_font(size_t n_args, const mp_obj_t *args, mp_map_t
 
     mp_int_t font_len = mp_obj_get_int(mp_obj_len(arg_vec[4]));
 
-    PY_ASSERT_TRUE_MSG(arg_w_font % 8 == 0 && arg_w_font <= 16, "Error: font arg_w_font %% 8 == 0 && arg_w_font <= 16!");
+    PY_ASSERT_TRUE_MSG(arg_w_font % 8 == 0 && arg_w_font <= 32, "Error: font arg_w_font %% 8 == 0 && arg_w_font <= 32!");
 
-    PY_ASSERT_TRUE_MSG((arg_w_font / 8) * arg_h_font == font_len, "Error: font (arg_w_font / 8) * arg_h_font == font_len!");
+    PY_ASSERT_TRUE_MSG((arg_w_font / 8) * (arg_h_font / 8) * 8 == font_len, "Error: font (arg_w_font / 8) * (arg_h_font / 8) * 8 == font_len!");
 
     int arg_c =
         py_helper_keyword_color(arg_img, n_args, args, offset + 0, kw_args, -1); // White.
