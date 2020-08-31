@@ -201,8 +201,6 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
                         "core/extmod/machine_pulse.c"
                         "core/extmod/machine_i2c.c"
                         "core/extmod/machine_spi.c"
-                        "core/extmod/modussl_axtls.c"
-                        "core/extmod/modussl_mbedtls.c"
                         "core/extmod/modurandom.c"
                         "core/extmod/moduselect.c"
                         "core/extmod/moduwebsocket.c"
@@ -231,6 +229,13 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
                         "core/lib/oofatfs/ffunicode.c"
                     )
     set(MPY_FROZEN_SRC "${mpy_build_dir}/frozen_mpy.c")
+
+    if(CONFIG_MICROPY_SSL_ENABLE)
+        list(APPEND MPY_EXTMOD_SRCS
+        "core/extmod/modussl_axtls.c"
+        "core/extmod/modussl_mbedtls.c"
+        )
+    endif()
 
     list(APPEND ADD_SRCS    ${MPY_SRCS}
                             ${MPY_PORT_SRCS}
@@ -340,7 +345,7 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
         append_srcs_dir(ADD_SRCS "port/src/ulab/micropython-ulab/code")
     endif()
 
-    if(1 OR CONFIG_MICROPY_SSL_MBEDTLS)
+    if(CONFIG_MICROPY_SSL_ENABLE)
         list(APPEND ADD_INCLUDE "${mpy_core_dir}/lib/mbedtls/include")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMBEDTLS_CONFIG_FILE='\"${mpy_port_dir}/src/mbedtls/include/mbedtls_config.h\"'")
         # message(${CMAKE_C_FLAGS})
