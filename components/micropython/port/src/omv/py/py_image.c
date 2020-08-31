@@ -27,6 +27,8 @@
 #include "py/binary.h"
 //#include "sipeed_sys.h"
 
+#include "font.h"
+
 static const mp_obj_type_t py_image_type;
 
 //extern const char *ffs_strerror(FRESULT res);
@@ -1429,6 +1431,35 @@ STATIC mp_obj_t py_image_draw_ellipse(size_t n_args, const mp_obj_t *args, mp_ma
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_draw_ellipse_obj, 2, py_image_draw_ellipse);
 
+STATIC mp_obj_t py_image_draw_font(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
+{
+    image_t *arg_img = py_helper_arg_to_image_mutable(args[0]);
+
+    const mp_obj_t *arg_vec;
+    uint offset = py_helper_consume_array(n_args, args, 1, 5, &arg_vec);
+    int arg_x_off = mp_obj_get_int(arg_vec[0]);
+    int arg_y_off = mp_obj_get_int(arg_vec[1]);
+    int arg_w_font = mp_obj_get_int(arg_vec[2]);
+    int arg_h_font = mp_obj_get_int(arg_vec[3]);
+    const uint8_t *arg_font = mp_obj_str_get_str(arg_vec[4]);
+
+    mp_int_t font_len = mp_obj_get_int(mp_obj_len(arg_vec[4]));
+
+    PY_ASSERT_TRUE_MSG(arg_w_font % 8 == 0 && arg_w_font <= 32, "Error: font arg_w_font %% 8 == 0 && arg_w_font <= 32!");
+
+    PY_ASSERT_TRUE_MSG((arg_w_font / 8) * (arg_h_font / 8) * 8 == font_len, "Error: font (arg_w_font / 8) * (arg_h_font / 8) * 8 == font_len!");
+
+    int arg_c =
+        py_helper_keyword_color(arg_img, n_args, args, offset + 0, kw_args, -1); // White.
+    float arg_scale =
+        py_helper_keyword_float(n_args, args, offset + 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_scale), 1.0);
+    PY_ASSERT_TRUE_MSG(0 < arg_scale, "Error: 0 < scale!");
+    imlib_draw_font(arg_img, arg_x_off, arg_y_off,
+                      arg_c, arg_scale, arg_h_font, arg_w_font, arg_font);
+    return args[0];
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_draw_font_obj, 2, py_image_draw_font);
+
 STATIC mp_obj_t py_image_draw_string(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     image_t *arg_img = py_helper_arg_to_image_mutable(args[0]);
@@ -1437,8 +1468,8 @@ STATIC mp_obj_t py_image_draw_string(size_t n_args, const mp_obj_t *args, mp_map
     uint offset = py_helper_consume_array(n_args, args, 1, 3, &arg_vec);
     int arg_x_off = mp_obj_get_int(arg_vec[0]);
     int arg_y_off = mp_obj_get_int(arg_vec[1]);
-    const char *arg_str = mp_obj_str_get_str(arg_vec[2]);
-
+    // const char *arg_str = mp_obj_str_get_str(arg_vec[2]);
+    const mp_obj_t arg_str = arg_vec[2];
     int arg_c =
         py_helper_keyword_color(arg_img, n_args, args, offset + 0, kw_args, -1); // White.
     float arg_scale =
@@ -1447,9 +1478,9 @@ STATIC mp_obj_t py_image_draw_string(size_t n_args, const mp_obj_t *args, mp_map
     int arg_x_spacing =
         py_helper_keyword_int(n_args, args, offset + 2, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_x_spacing), 0);
     int arg_y_spacing =
-        py_helper_keyword_int(n_args, args, offset + 3, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_y_spacing), 0);
+        py_helper_keyword_int(n_args, args, offset + 3, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_y_spacing), 2);
     bool arg_mono_space =
-        py_helper_keyword_int(n_args, args, offset + 4, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_mono_space), true);
+        py_helper_keyword_int(n_args, args, offset + 4, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_mono_space), 0);
 
     imlib_draw_string(arg_img, arg_x_off, arg_y_off, arg_str,
                       arg_c, arg_scale, arg_x_spacing, arg_y_spacing,
@@ -6118,6 +6149,7 @@ static const mp_rom_map_elem_t locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_draw_rectangle),      MP_ROM_PTR(&py_image_draw_rectangle_obj)},
     {MP_ROM_QSTR(MP_QSTR_draw_circle),         MP_ROM_PTR(&py_image_draw_circle_obj)},
     {MP_ROM_QSTR(MP_QSTR_draw_ellipse),        MP_ROM_PTR(&py_image_draw_ellipse_obj)},
+    {MP_ROM_QSTR(MP_QSTR_draw_font),         MP_ROM_PTR(&py_image_draw_font_obj)},
     {MP_ROM_QSTR(MP_QSTR_draw_string),         MP_ROM_PTR(&py_image_draw_string_obj)},
     {MP_ROM_QSTR(MP_QSTR_draw_cross),          MP_ROM_PTR(&py_image_draw_cross_obj)},
     {MP_ROM_QSTR(MP_QSTR_draw_arrow),          MP_ROM_PTR(&py_image_draw_arrow_obj)},
@@ -6595,28 +6627,6 @@ mp_obj_t py_image_load_image(size_t n_args, const mp_obj_t *args, mp_map_t *kw_a
     bool from_bytes = py_helper_keyword_int(n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_from_bytes), 0) > 0 ? true : false;
 	py_helper_keyword_xy(NULL, n_args, args, 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_size), &xy);
     if (copy_to_fb) fb_update_jpeg_buffer();
-    // image_t image = {0};
-
-    // if (copy_to_fb) {
-    //    MAIN_FB()->w = 0;
-    //    MAIN_FB()->h = 0;
-    //    MAIN_FB()->bpp = 0;
-
-    //    mp_obj_t fp;
-    //    img_read_settings_t rs;
-    //    imlib_read_geometry(&fp, &image, path, &rs);//bbj打开文件头读取相关信�?
-    //    file_buffer_off(&fp);
-    //    file_close(&fp);
-
-    //    uint32_t size = image_size(&image);
-
-    //    PY_ASSERT_TRUE_MSG((size <= OMV_RAW_BUF_SIZE), "FB Overflow!");
-    //    MAIN_FB()->w = image.w;
-    //    MAIN_FB()->h = image.h;
-    //    MAIN_FB()->bpp = image.bpp;
-    //    image.data = MAIN_FB()->pixels;
-    // }
-
 
     image_t image = {0};
     memset(&image, 0, sizeof(image_t));
@@ -6678,6 +6688,66 @@ mp_obj_t py_image_load_image(size_t n_args, const mp_obj_t *args, mp_map_t *kw_a
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_load_image_obj, 0, py_image_load_image);
+
+mp_obj_t py_image_font_load(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
+{
+    mp_int_t index = mp_obj_get_int(args[0]);
+    mp_int_t width = mp_obj_get_int(args[1]);
+    mp_int_t high = mp_obj_get_int(args[2]);
+    
+    if (index == UTF8)
+    {
+        if(mp_obj_get_type(args[3]) == &mp_type_int)
+        {
+            mp_int_t font_addr = mp_obj_get_int(args[3]);
+            if(font_addr <= 0)
+            {
+                mp_raise_ValueError("[MAIXPY]image: font_addr must > 0 ");
+                return mp_const_false;
+            }
+            else
+            {
+                font_load(index, width, high, ArrayIn, (void *)font_addr);
+            }
+        }
+        else if(mp_obj_get_type(args[3]) == &mp_type_str)
+        {
+            const char *path = mp_obj_str_get_str(args[3]);
+            if( NULL != strstr(path,".Dzk") )
+            {
+                mp_obj_t fp;
+                FRESULT res;
+                
+                if ((res = file_read_open_raise(&fp, path)) == FR_OK) {
+                    font_load(index, width, high, FileIn, fp);
+                }
+                // File open or write error
+                if (res != FR_OK) {
+                    nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, ffs_strerror(res)));
+                }
+            }
+            else
+            {
+                mp_raise_ValueError("[MAIXPY]image: font format don't match, only supply .Dzk ");
+                return mp_const_false;
+            }
+        }
+    }
+    else
+    {
+        // Use default font
+        font_load(index, width, high, BuildIn, NULL);
+    }
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_font_load_obj, 4, py_image_font_load);
+
+mp_obj_t py_image_font_free(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
+{
+    font_free();
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_font_free_obj, 0, py_image_font_free);
 
 #ifndef OMV_MINIMUM
 mp_obj_t py_image_load_cascade(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
@@ -7049,6 +7119,11 @@ static const mp_rom_map_elem_t globals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_CODE93),              MP_ROM_INT(BARCODE_CODE93)},
     {MP_ROM_QSTR(MP_QSTR_CODE128),             MP_ROM_INT(BARCODE_CODE128)},
 #endif
+    {MP_ROM_QSTR(MP_QSTR_ASCII),               MP_ROM_INT(ASCII)},
+    {MP_ROM_QSTR(MP_QSTR_UTF8),                MP_ROM_INT(UTF8)},
+    {MP_ROM_QSTR(MP_QSTR_font_load),           MP_ROM_PTR(&py_image_font_load_obj)},
+    {MP_ROM_QSTR(MP_QSTR_font_free),           MP_ROM_PTR(&py_image_font_free_obj)},
+    {MP_ROM_QSTR(MP_QSTR_ImageWriter),         MP_ROM_PTR(&py_image_imagewriter_obj)},
     {MP_ROM_QSTR(MP_QSTR_Image),               MP_ROM_PTR(&py_image_load_image_obj)},
     {MP_ROM_QSTR(MP_QSTR_ImageWriter),         MP_ROM_PTR(&py_image_imagewriter_obj)},
     {MP_ROM_QSTR(MP_QSTR_ImageReader),         MP_ROM_PTR(&py_image_imagereader_obj)},

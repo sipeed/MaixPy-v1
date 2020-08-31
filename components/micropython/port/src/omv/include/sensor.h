@@ -14,6 +14,7 @@
 
 #define OV9650_ID       (0x96)
 #define OV2640_ID       (0x2642)
+#define OV5640_ID		(0x5640)
 #define OV7725_ID       (0x77)
 #define OV7740_ID       (0x7742)
 #define OV3660_ID       (0x3660)
@@ -116,6 +117,7 @@ typedef struct _sensor sensor_t;
 typedef struct _sensor {
     uint16_t chip_id;           // Sensor ID.
     uint8_t  slv_addr;          // Sensor I2C slave address.
+    uint8_t choice_dev;             // choice sensor device.
     uint16_t gs_bpp;            // Grayscale bytes per pixel.
     uint32_t hw_flags;          // Hardware flags (clock polarities/hw capabilities)
     bool     reset_set;         // reset called
@@ -177,7 +179,7 @@ int binocular_sensor_reset(mp_int_t freq);
 void sensor_init0();
 
 // Reset the sensor to its default state.
-int sensor_reset(mp_int_t freq, bool default_freq, bool set_regs, bool double_buff);
+int sensor_reset(mp_int_t freq, bool default_freq, bool set_regs, bool double_buff, uint8_t choice);
 
 // destroy resources created by sensor
 void sensor_deinit();

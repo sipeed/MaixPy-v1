@@ -28,15 +28,24 @@ STATIC mp_obj_t Maix_set_function(size_t n_args, const mp_obj_t *pos_args, mp_ma
 	enum {
 		ARG_pin,
 		ARG_func,
+		ARG_set_sl,
+		ARG_set_st,
+		ARG_set_io_driving
 	};
 	static const mp_arg_t allowed_args[] = {
 		{ MP_QSTR_pin, 	MP_ARG_INT, {.u_int = 0} },
 		{ MP_QSTR_func,	MP_ARG_INT, {.u_int = 0} },
+		{ MP_QSTR_set_sl,	MP_ARG_INT, {.u_int = -1} },
+		{ MP_QSTR_set_st,	MP_ARG_INT, {.u_int = -1} },
+		{ MP_QSTR_set_io_driving,	MP_ARG_INT, {.u_int = -1} },
 	};
 	mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args-1, pos_args+1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 	uint16_t pin_num = args[ARG_pin].u_int;
 	fpioa_function_t func_num = args[ARG_func].u_int;
+	int16_t set_sl = args[ARG_set_sl].u_int;
+	int16_t set_st = args[ARG_set_st].u_int;
+	int16_t set_io_driving = args[ARG_set_io_driving].u_int;
 	
 	if(pin_num > FPIOA_NUM_IO)		
 		mp_raise_ValueError("Don't have this Pin");
@@ -49,7 +58,23 @@ STATIC mp_obj_t Maix_set_function(size_t n_args, const mp_obj_t *pos_args, mp_ma
 		mp_printf(&mp_plat_print, "[Maix]:Opps!Can not set fpioa\n");
 		mp_raise_OSError(MP_EIO);
 	}
-    return mp_const_true;
+	
+	if (-1 != set_sl) {
+		fpioa_set_sl(pin_num, set_sl);
+	}
+
+	if (-1 != set_st) {
+		fpioa_set_st(pin_num, set_st);
+	}
+	
+	if(set_io_driving > FPIOA_DRIVING_MAX)
+		mp_raise_ValueError("set_io_driving > FPIOA_DRIVING_MAX");
+	
+	if (-1 != set_io_driving) {
+		fpioa_set_io_driving(pin_num, set_io_driving);
+	}
+
+	return mp_const_true;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(Maix_set_function_obj, 0,Maix_set_function);
 

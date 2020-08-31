@@ -96,7 +96,6 @@ cd ..
 cp ../tools/release/readme.txt $release_dir/readme.txt
 cp ../tools/release/more_firmware.txt $release_dir/readme.txt
 
-
 cd $release_dir
 7z a elf_maixpy_${version}.7z elf/*
 rm -rf elf

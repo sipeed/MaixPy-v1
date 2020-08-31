@@ -93,6 +93,10 @@ menu "Micropython configurations"
 			default n
 			select SPEECH_RECOGNIZER_ENABLE
 			
+		config MICROPY_SSL_ENABLE
+			bool "Enable Https SSL"
+			default n
+			
 	endmenu
 
 	menu "Builtin py modules configurations"
