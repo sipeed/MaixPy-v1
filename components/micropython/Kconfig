@@ -99,6 +99,19 @@ menu "Micropython configurations"
 			
 	endmenu
 
+	menu "Builtin py modules configurations"
+
+		config MAIXPY_BUILTIN_PY_PYE
+			bool "Enable builtin py module pye (about 17KiB)"
+			default y
+		config MAIXPY_BUILTIN_PY_BOARD
+			bool "Enable builtin py module board"
+			default y
+		config MAIXPY_BUILTIN_PY_FPIOA_MANAGER
+			bool "Enable builtin py module fpioa_manager"
+			default y
+	endmenu
+
 	menu "Debug configurations"
 		config MAIXPY_K210_UARTHS_DEBUG
 			bool "Use UARTHS to debug(pin9, pin10), UART2 to REPL(pin4, pin5)"

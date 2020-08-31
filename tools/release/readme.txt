@@ -28,6 +28,10 @@ maixpy_*_minimum.bin: minimum function firmware, including
     * no IDE support
     * more detail see: https://github.com/sipeed/MaixPy/blob/master/projects/maixpy_k210_minimum/config_defaults.mk
 
+maixpy_*_minimum_with_kmodel_v4_support: minimum function firmware, including
+    * the same as minimum.bin
+    * add kmodel v4 support
+
 maixpy_*_minimum_with_ide_support.bin: minimum function firmware, including
     * same as minimum
     * IDE support
