@@ -376,6 +376,17 @@ static mp_obj_t py_lcd_direction(mp_obj_t dir_obj)
     return mp_const_none;
 }
 
+static mp_obj_t py_lcd_write_register(mp_obj_t addr_obj, mp_obj_t data_obj)
+{
+    uint8_t addr = mp_obj_get_int(addr_obj);
+    tft_write_command(addr);
+    if (mp_obj_is_integer(data_obj)) {
+        uint8_t data = mp_obj_get_int(data_obj);
+        tft_write_byte(&data, 1);
+    }
+    return mp_const_none;
+}
+
 static mp_obj_t py_lcd_width()
 {
     if (type == LCD_NONE)
@@ -736,6 +747,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_lcd_get_backlight_obj, py_lcd_get_backlight)
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_lcd_display_obj, 1, py_lcd_display);
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_lcd_clear_obj, 0, py_lcd_clear);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_lcd_direction_obj, py_lcd_direction);
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(py_lcd_write_register_obj, py_lcd_write_register);
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_rotation_obj, 0, 1, py_lcd_rotation);
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_invert_obj, 0, 1, py_lcd_invert);
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_draw_string_obj, 3, 5, py_lcd_draw_string);
@@ -755,6 +767,7 @@ static const mp_map_elem_t globals_dict_table[] = {
     {MP_OBJ_NEW_QSTR(MP_QSTR_direction), (mp_obj_t)&py_lcd_direction_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_rotation), (mp_obj_t)&py_lcd_rotation_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_mirror), (mp_obj_t)&py_lcd_invert_obj},
+    {MP_OBJ_NEW_QSTR(MP_QSTR_debug), (mp_obj_t)&py_lcd_write_register_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_draw_string), (mp_obj_t)&py_lcd_draw_string_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_XY_RLUD), MP_OBJ_NEW_SMALL_INT(DIR_XY_RLUD)},
     {MP_OBJ_NEW_QSTR(MP_QSTR_YX_RLUD), MP_OBJ_NEW_SMALL_INT(DIR_YX_RLUD)},
