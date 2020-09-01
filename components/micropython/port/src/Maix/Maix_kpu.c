@@ -674,10 +674,16 @@ mp_obj_t py_kpu_calss_yolo2_deinit(mp_obj_t self_in)
         py_kpu_class_yolo_region_layer_arg_t *rl_arg = yolo_args->rl_args;
 
         if(rl_arg->anchor)
+        {
             free(rl_arg->anchor);
+            rl_arg->anchor = NULL;
+        }
 
         if(rl_arg)
+        {
             free(rl_arg);
+            rl_arg->anchor = NULL;
+        }
         return mp_const_true;
     }
     else
@@ -1009,6 +1015,9 @@ STATIC mp_obj_t py_kpu_deinit(size_t n_args, const mp_obj_t *pos_args, mp_map_t 
         if(kpu_net->net_deinit != mp_const_none && MP_OBJ_TO_PTR(kpu_net->net_deinit))
         {
             call_deinit(MP_OBJ_TO_PTR(kpu_net->net_deinit),kpu_net->net_args);
+            kpu_net->net_deinit = mp_const_none;
+            m_del_obj(py_kpu_class_yolo_args_obj_t, kpu_net->net_args);
+            kpu_net->net_args = mp_const_none;
         }
         return mp_const_true;
     }
