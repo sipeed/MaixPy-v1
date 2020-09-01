@@ -100,7 +100,7 @@ bool bmp_read_pixels(mp_obj_t fp, image_t *img, int line_start, int line_end, bm
             for (int i = line_start; i < line_end; i++) {
                 for (int j = 0; j < rs->bmp_row_bytes; j++) {
                     uint8_t pixel;
-                    if(!read_byte(fp, &pixel))
+                    if(read_byte(fp, &pixel))
                         return false;
                     if (j < img->w) {
                         if (rs->bmp_h < 0) { // vertical flip (BMP file perspective)
@@ -148,13 +148,16 @@ bool bmp_read_pixels(mp_obj_t fp, image_t *img, int line_start, int line_end, bm
         for (int i = line_start; i < line_end; i++) {
             for (int j = 0, jj = rs->bmp_row_bytes / 3; j < jj; j++) {
                 uint8_t r, g, b;
-                if(!read_byte(fp, &r))
+                if(read_byte(fp, &r)) {
                     return false;
-                if(!read_byte(fp, &g))
+                }
+                if(read_byte(fp, &g)) {
                     return false;
-                if(!read_byte(fp, &b))
+                }
+                if(read_byte(fp, &b)) {
                     return false;
-                uint16_t pixel = IM_RGB565(IM_R825(r), IM_G826(g), IM_B825(b));
+                }
+                uint16_t pixel = IM_RGB565(IM_R825(b), IM_G826(g), IM_B825(r));
                 if (j < img->w) {
                     if (rs->bmp_h < 0) { // vertical flip
                         if (rs->bmp_w < 0) { // horizontal flip
@@ -172,8 +175,9 @@ bool bmp_read_pixels(mp_obj_t fp, image_t *img, int line_start, int line_end, bm
                 }
             }
             for (int j = 0, jj = rs->bmp_row_bytes % 3; j < jj; j++) {
-                if(!read_byte_ignore(fp))
+                if(read_byte_ignore(fp)) {
                     return false;
+                }
             }
         }
     }
@@ -207,9 +211,9 @@ void bmp_read(image_t *img, const char *path)
 #else
         if(img->pixels != MAIN_FB()->pixels )
 #endif
-    {   
-        xfree(img->pixels);
-    }
+        {
+            xfree(img->pixels);
+        }
         vfs_internal_close(file, &err);
         mp_raise_OSError(MP_EIO);
     }

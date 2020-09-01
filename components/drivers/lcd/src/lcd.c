@@ -30,7 +30,7 @@ static uint16_t g_lcd_h = 0;
 static bool g_lcd_init = false;
 
 #if LCD_SWAP_COLOR_BYTES
-static uint16_t gray2rgb565[64]={
+static const uint16_t gray2rgb565[64]={
 0x0000, 0x0020, 0x0841, 0x0861, 0x1082, 0x10a2, 0x18c3, 0x18e3, 
 0x2104, 0x2124, 0x2945, 0x2965, 0x3186, 0x31a6, 0x39c7, 0x39e7, 
 0x4208, 0x4228, 0x4a49, 0x4a69, 0x528a, 0x52aa, 0x5acb, 0x5aeb, 
@@ -41,7 +41,7 @@ static uint16_t gray2rgb565[64]={
 0xe71c, 0xe73c, 0xef5d, 0xef7d, 0xf79e, 0xf7be, 0xffdf, 0xffff,
 };
 #else
-static uint16_t gray2rgb565[64]={
+static const uint16_t gray2rgb565[64]={
 0x0000, 0x2000, 0x4108, 0x6108, 0x8210, 0xa210, 0xc318, 0xe318, 
 0x0421, 0x2421, 0x4529, 0x6529, 0x8631, 0xa631, 0xc739, 0xe739, 
 0x0842, 0x2842, 0x494a, 0x694a, 0x8a52, 0xaa52, 0xcb5a, 0xeb5a, 
@@ -63,11 +63,120 @@ void lcd_interrupt_enable(void)
     lcd_ctl.mode = 1;
 }
 
-int lcd_init(uint32_t freq, bool oct, uint16_t offset_w, uint16_t offset_h, uint16_t offset_w1, uint16_t offset_h1, bool invert_color, uint16_t width, uint16_t height)
+
+lcd_preinit_handler_t lcd_preinit_handler = NULL;
+
+/**
+ * Register Pre-initialization handler for lcd
+ */
+void lcd_preinit_register_handler(lcd_preinit_handler_t handler)
+{
+    lcd_preinit_handler = handler;
+}
+
+void lcd_init_sequence_for_ili9486(void)
+{
+    uint8_t t[15];
+    tft_write_command(0XF1); /* Unk */
+    t[0] = (0x36);
+    t[1] = (0x04);
+    t[2] = (0x00);
+    t[3] = (0x3C);
+    t[4] = (0X0F);
+    t[5] = (0x8F);
+    tft_write_byte(t, 6);
+
+    tft_write_command(0XF2); /* Unk */
+    t[0] = (0x18);
+    t[1] = (0xA3);
+    t[2] = (0x12);
+    t[3] = (0x02);
+    t[4] = (0XB2);
+    t[5] = (0x12);
+    t[6] = (0xFF);
+    t[7] = (0x10);
+    t[8] = (0x00);
+    tft_write_byte(t, 9);
+
+    tft_write_command(0XF8); /* Unk */
+    t[0] = (0x21);
+    t[1] = (0x04);
+    tft_write_byte(t, 2);
+
+    tft_write_command(0XF9); /* Unk */
+    t[0] = (0x00);
+    t[1] = (0x08);
+    tft_write_byte(t, 2);
+
+    tft_write_command(0x36); /* Memory Access Control */
+    t[0] = (0x28);
+    tft_write_byte(t, 1);
+
+    tft_write_command(0xB4); /* Display Inversion Control */
+    t[0] = (0x00);
+    tft_write_byte(t, 1);
+
+    // tft_write_command(0xB6); /* Display Function Control */
+    // t[0] = (0x02);
+    // // t[1] = (0x22);
+    // tft_write_byte(t, 1);
+
+    tft_write_command(0xC1); /* Power Control 2 */
+    t[0] = (0x41);
+    tft_write_byte(t, 1);
+    
+    tft_write_command(0xC5); /* Vcom Control */
+    t[0] = (0x00);
+    t[1] = (0x18);
+    tft_write_byte(t, 2);
+
+    tft_write_command(0xE0); /* Positive Gamma Control */
+    t[0] = (0x0F);
+    t[1] = (0x1F);
+    t[2] = (0x1C);
+    t[3] = (0x0C);
+    t[4] = (0x0F);
+    t[5] = (0x08);
+    t[6] = (0x48);
+    t[7] = (0x98);
+    t[8] = (0x37);
+    t[9] = (0x0A);
+    t[10] = (0x13);
+    t[11] = (0x04);
+    t[12] = (0x11);
+    t[13] = (0x0D);
+    t[14] = (0x00);
+    tft_write_byte(t, 15);
+
+    tft_write_command(0xE1); /* Negative Gamma Control */
+    t[0] = (0x0F);
+    t[1] = (0x32);
+    t[2] = (0x2E);
+    t[3] = (0x0B);
+    t[4] = (0x0D);
+    t[5] = (0x05);
+    t[6] = (0x47);
+    t[7] = (0x75);
+    t[8] = (0x37);
+    t[9] = (0x06);
+    t[10] = (0x10);
+    t[11] = (0x03);
+    t[12] = (0x24);
+    t[13] = (0x20);
+    t[14] = (0x00);
+    tft_write_byte(t, 15);
+
+    tft_write_command(0x3A); /* Interface Pixel Format */
+    t[0] = (0x55);
+    tft_write_byte(t, 1);
+
+}
+
+int lcd_init(uint32_t freq, bool oct, uint16_t offset_w0, uint16_t offset_h0, uint16_t offset_w1, uint16_t offset_h1, bool invert_color, uint16_t width, uint16_t height)
 {
     uint8_t data = 0;
-    lcd_ctl.start_offset_w0 = offset_w;
-    lcd_ctl.start_offset_h0 = offset_h;
+    lcd_ctl.start_offset_w0 = offset_w0;
+    lcd_ctl.start_offset_h0 = offset_h0;
     lcd_ctl.start_offset_w1 = offset_w1;
     lcd_ctl.start_offset_h1 = offset_h1;
     if(g_lcd_w != width || g_lcd_h != height)
@@ -86,6 +195,11 @@ int lcd_init(uint32_t freq, bool oct, uint16_t offset_w, uint16_t offset_h, uint
     /*soft reset*/
     tft_write_command(SOFTWARE_RESET);
     msleep(150);
+    if (lcd_preinit_handler != NULL)
+    {
+        lcd_preinit_handler();
+    }
+
     /*exit sleep*/
     tft_write_command(SLEEP_OFF);
     msleep(500);
