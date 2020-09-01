@@ -235,9 +235,10 @@ void font_free()
   {
     case UTF8:
     case Unicode:
-    {
-      file_close(font_config.this);
-    }
+        if (font_config.source == FileIn)
+        {
+            file_close(font_config.this);
+        }
     case GBK:
     case GB2312:
     case ASCII:
