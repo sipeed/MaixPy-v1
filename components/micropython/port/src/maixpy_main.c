@@ -638,7 +638,7 @@ int maixpy_main()
     sysctl_set_power_mode(SYSCTL_POWER_BANK7, SYSCTL_POWER_V18);
     sysctl_enable_irq();
     rtc_init();
-    rtc_timer_set(2019, 1, 1, 0, 0, 0);
+    rtc_timer_set(2000, 1, 1, 0, 0, 0);
     flash_init(&manuf_id, &device_id);
     printk("[MAIXPY]Flash:0x%02x:0x%02x\r\n", manuf_id, device_id);
     /* Init SPI IO map and function settings */
