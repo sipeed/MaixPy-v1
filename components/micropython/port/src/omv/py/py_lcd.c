@@ -35,9 +35,9 @@ static uint16_t height_curr = 0, height_conf = 0;
 static enum {
     LCD_NONE,
     LCD_SHIELD,
+    LCD_IPS_240X240,
     LCD_M5STICK,
     LCD_TWATCH,
-    LCD_IPS_240X240
 } type = LCD_NONE;
 static uint8_t rotation = 0;
 static bool invert = false;
