@@ -55,22 +55,46 @@ STATIC void lib_mic_cb(void)
     mic_done = 1;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 STATIC mp_obj_t Maix_mic_array_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
+    enum {
+        ARG_i2s_d0,
+        ARG_i2s_d1,
+        ARG_i2s_d2,
+        ARG_i2s_d3,
+        ARG_i2s_ws,
+        ARG_i2s_sclk,
+
+        ARG_sk9822_dat,
+        ARG_sk9822_clk,
+    };
+
     // sysctl_pll_set_freq(SYSCTL_PLL2, PLL2_OUTPUT_FREQ); //如果使用i2s,必须设置PLL2
+    static const mp_arg_t allowed_args[]={
+        {MP_QSTR_i2s_d0,    MP_ARG_INT, {.u_int = 23}},
+        {MP_QSTR_i2s_d1,    MP_ARG_INT, {.u_int = 22}},
+        {MP_QSTR_i2s_d2,    MP_ARG_INT, {.u_int = 21}},
+        {MP_QSTR_i2s_d3,    MP_ARG_INT, {.u_int = 20}},
+        {MP_QSTR_i2s_ws,    MP_ARG_INT, {.u_int = 19}},
+        {MP_QSTR_i2s_sclk,  MP_ARG_INT, {.u_int = 18}},
+
+        {MP_QSTR_sk9822_dat, MP_ARG_INT, {.u_int = 24}},
+        {MP_QSTR_sk9822_clk, MP_ARG_INT, {.u_int = 25}},
+    };
+
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
     //evil code
-    fpioa_set_function(23, FUNC_I2S0_IN_D0);
-    fpioa_set_function(22, FUNC_I2S0_IN_D1);
-    fpioa_set_function(21, FUNC_I2S0_IN_D2);
-    fpioa_set_function(20, FUNC_I2S0_IN_D3);
-    fpioa_set_function(19, FUNC_I2S0_WS);
-    fpioa_set_function(18, FUNC_I2S0_SCLK);
-//TODO: optimize Soft SPI
-    fpioa_set_function(24, FUNC_GPIOHS0 + SK9822_DAT_GPIONUM);
-    fpioa_set_function(25, FUNC_GPIOHS0 + SK9822_CLK_GPIONUM);
+    fpioa_set_function(args[ARG_i2s_d0].u_int, FUNC_I2S0_IN_D0);
+    fpioa_set_function(args[ARG_i2s_d1].u_int, FUNC_I2S0_IN_D1);
+    fpioa_set_function(args[ARG_i2s_d2].u_int, FUNC_I2S0_IN_D2);
+    fpioa_set_function(args[ARG_i2s_d3].u_int, FUNC_I2S0_IN_D3);
+    fpioa_set_function(args[ARG_i2s_ws].u_int, FUNC_I2S0_WS);
+    fpioa_set_function(args[ARG_i2s_sclk].u_int, FUNC_I2S0_SCLK);
+    //TODO: optimize Soft SPI
+    fpioa_set_function(args[ARG_sk9822_dat].u_int, FUNC_GPIOHS0 + SK9822_DAT_GPIONUM);
+    fpioa_set_function(args[ARG_sk9822_clk].u_int, FUNC_GPIOHS0 + SK9822_CLK_GPIONUM);
 
     // init_colormap_parula_rect();
     sipeed_init_mic_array_led();
@@ -90,8 +114,6 @@ STATIC mp_obj_t Maix_mic_array_init(size_t n_args, const mp_obj_t *pos_args, mp_
 
 MP_DEFINE_CONST_FUN_OBJ_KW(Maix_mic_array_init_obj, 0, Maix_mic_array_init);
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 STATIC mp_obj_t Maix_mic_array_deinit(void)
 {
     if(lib_init_flag)
@@ -103,7 +125,6 @@ STATIC mp_obj_t Maix_mic_array_deinit(void)
 }
 
 MP_DEFINE_CONST_FUN_OBJ_0(Maix_mic_array_deinit_obj, Maix_mic_array_deinit);
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 STATIC mp_obj_t Maix_mic_array_get_map(void)
 {
@@ -221,7 +242,7 @@ STATIC mp_obj_t Maix_mic_array_set_led(size_t n_args, const mp_obj_t *pos_args, 
     for(index = 0; index < 3; index++)
         color[index] = mp_obj_get_int(items[index]);
 
-    //rgb 
+    //rgb
     uint32_t set_color = (color[2] << 16) | (color[1] << 8) | (color[0]);
 
     for (index = 0; index < 12; index++)
