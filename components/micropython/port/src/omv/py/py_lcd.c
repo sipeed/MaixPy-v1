@@ -384,6 +384,17 @@ static mp_obj_t py_lcd_write_register(mp_obj_t addr_obj, mp_obj_t data_obj)
         uint8_t data = mp_obj_get_int(data_obj);
         tft_write_byte(&data, 1);
     }
+    if(&mp_type_list == mp_obj_get_type(data_obj))
+    {
+        size_t len;
+        mp_obj_t *items;
+        mp_obj_list_get(data_obj, &len, &items);
+        for (mp_int_t i = 0; i < len; i++) {
+            mp_obj_t obj = items[i];
+            uint8_t data = mp_obj_get_int(obj);
+            tft_write_byte(&data, 1);
+        }
+    }
     return mp_const_none;
 }
 
