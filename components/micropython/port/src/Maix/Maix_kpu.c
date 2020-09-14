@@ -523,7 +523,7 @@ STATIC mp_obj_t py_kpu_class_set_outputs(size_t n_args, const mp_obj_t *pos_args
 			case SIPEED_KPU_ERR_PARAM:
 			default:
 				mp_printf(&mp_plat_print, \
-				"[MAIXPY]kpu: set_outputs ctx error, maybe init err\r\n");
+				"[MAIXPY]kpu: set_outputs ctx error, maybe init err:%d\r\n", res);
 				break;				
 			
 		}
