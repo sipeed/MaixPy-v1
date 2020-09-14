@@ -384,6 +384,17 @@ static mp_obj_t py_lcd_write_register(mp_obj_t addr_obj, mp_obj_t data_obj)
         uint8_t data = mp_obj_get_int(data_obj);
         tft_write_byte(&data, 1);
     }
+    if(&mp_type_list == mp_obj_get_type(data_obj))
+    {
+        size_t len;
+        mp_obj_t *items;
+        mp_obj_list_get(data_obj, &len, &items);
+        for (mp_int_t i = 0; i < len; i++) {
+            mp_obj_t obj = items[i];
+            uint8_t data = mp_obj_get_int(obj);
+            tft_write_byte(&data, 1);
+        }
+    }
     return mp_const_none;
 }
 
@@ -779,7 +790,7 @@ static const mp_map_elem_t globals_dict_table[] = {
     {MP_OBJ_NEW_QSTR(MP_QSTR_direction), (mp_obj_t)&py_lcd_direction_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_rotation), (mp_obj_t)&py_lcd_rotation_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_mirror), (mp_obj_t)&py_lcd_invert_obj},
-    {MP_OBJ_NEW_QSTR(MP_QSTR_debug), (mp_obj_t)&py_lcd_write_register_obj},
+    {MP_OBJ_NEW_QSTR(MP_QSTR_register), (mp_obj_t)&py_lcd_write_register_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_draw_string), (mp_obj_t)&py_lcd_draw_string_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_XY_RLUD), MP_OBJ_NEW_SMALL_INT(DIR_XY_RLUD)},
     {MP_OBJ_NEW_QSTR(MP_QSTR_YX_RLUD), MP_OBJ_NEW_SMALL_INT(DIR_YX_RLUD)},
