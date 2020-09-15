@@ -9,6 +9,9 @@ menu "Kendryte SDK configurations"
 		int "log level, 5:LOG_VERBOSE, 4:LOG_DEBUG, 3:LOG_INFO, 2:LOG_WARN, 1:LOG_ERROR, 0:LOG_NONE"
 		range 0 5
 		default 5
+	config SDK_LOCK_NUM
+		int "SDK LOCK number, one lock need 24B"
+		default 64
 	config FREERTOS_ENABLE
 		bool "Enable FreeRTOS"
 		default y

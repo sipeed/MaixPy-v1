@@ -35,6 +35,8 @@ if(CONFIG_COMPONENT_KENDRYTE_SDK_ENABLE)
         append_srcs_dir(ADD_SRCS "kendryte-standalone-sdk/lib/freertos/portable")
         list(REMOVE_ITEM ADD_SRCS "kendryte-standalone-sdk/lib/freertos/portable/heap_4.c")
         list(APPEND ADD_SRCS "src2/heap_4.c")
+        list(REMOVE_ITEM ADD_SRCS "kendryte-standalone-sdk/lib/freertos/locks.c")
+        list(APPEND ADD_SRCS "src2/locks.c")
         # asm with freerots support
         set(ADD_ASM_SRCS "kendryte-standalone-sdk/lib/bsp/crt.S"
                          "kendryte-standalone-sdk/lib/freertos/portable/portasm.S"

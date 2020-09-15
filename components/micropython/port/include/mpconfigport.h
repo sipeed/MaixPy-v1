@@ -235,8 +235,10 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_PY_MACHINE_PULSE            (1)
 #define MICROPY_PY_MACHINE_I2C              (0) // not use mpy internal soft i2c
 #define MICROPY_PY_MACHINE_HW_I2C           (1) // enable hardware i2c
-#define MICROPY_PY_MACHINE_SPI              (0) // disable soft spi
+#define MICROPY_PY_MACHINE_SW_I2C           (1) // enable software i2c
+// #define MICROPY_PY_MACHINE_SPI              (0) // disable soft spi
 #define MICROPY_PY_MACHINE_HW_SPI           (1) // enable hardware spi
+#define MICROPY_PY_MACHINE_SW_SPI           (1) // enable soft spi
 
 #if CONFIG_MICROPY_SSL_ENABLE
     #define MICROPY_PY_USSL                     (1)
