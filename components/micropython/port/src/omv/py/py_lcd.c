@@ -196,7 +196,7 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         {MP_QSTR_color, MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
         {MP_QSTR_width, MP_ARG_INT, {.u_int = CONFIG_LCD_DEFAULT_WIDTH}},
         {MP_QSTR_height, MP_ARG_INT, {.u_int = CONFIG_LCD_DEFAULT_HEIGHT}},
-        {MP_QSTR_invert, MP_ARG_INT, {.u_int = -1}},
+        {MP_QSTR_invert, MP_ARG_INT, {.u_int = 0}},
         {MP_QSTR_offset_w0, MP_ARG_INT, {.u_int = 0}},
         {MP_QSTR_offset_h0, MP_ARG_INT, {.u_int = 0}},
         {MP_QSTR_offset_w1, MP_ARG_INT, {.u_int = 0}},
@@ -230,19 +230,6 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         return mp_const_none;
     case LCD_SHIELD:
     {
-        /*
-        width_conf = args[ARG_width].u_int;
-        height_conf = args[ARG_height].u_int;
-        width_curr = width_conf;
-        height_curr = height_conf;
-        type = LCD_SHIELD;
-
-        int rst = args[ARG_rst].u_int;
-        int dcx = args[ARG_dcx].u_int;
-        int ss = args[ARG_ss].u_int;
-        int clk = args[ARG_clk].u_int;
-        py_lcd_load_config(&rst, &dcx, &ss, &clk);
-         */
         type = LCD_SHIELD;
 
         py_lcd_config_t lcd_cfg;
@@ -254,32 +241,31 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         lcd_cfg.width = args[ARG_width].u_int;
         lcd_cfg.height = args[ARG_height].u_int;
         lcd_cfg.invert = args[ARG_invert].u_int;
-        
+
         lcd_cfg.offset_w0 = args[ARG_offset_w0].u_int;
         lcd_cfg.offset_h0 = args[ARG_offset_h0].u_int;
 
         lcd_cfg.offset_w1 = args[ARG_offset_w1].u_int;
         lcd_cfg.offset_h1 = args[ARG_offset_h1].u_int;
-        
+
         lcd_cfg.dir = 0;
-        lcd_cfg.invert = 0;
         py_lcd_load_config(&lcd_cfg);
-      
 
         width_conf = lcd_cfg.width;
         height_conf = lcd_cfg.height;
         width_curr = width_conf;
         height_curr = height_conf;
-        invert = (lcd_cfg.invert != 1) ? false : true;
-        
+
+        invert = (lcd_cfg.invert == 1) ? true : false;
+
         // backlight_init = false;
         fpioa_set_function(lcd_cfg.rst_pin, FUNC_GPIOHS0 + RST_GPIONUM);
         fpioa_set_function(lcd_cfg.dcx_pin, FUNC_GPIOHS0 + DCX_GPIONUM);
         fpioa_set_function(lcd_cfg.cs_pin, FUNC_SPI0_SS0 + LCD_SPI_SLAVE_SELECT);
         fpioa_set_function(lcd_cfg.clk_pin, FUNC_SPI0_SCLK);
 
-        // mp_printf(&mp_plat_print, "[%d]: lcd_cfg.offset_x1=%d, offset_y1=%d, offset_x2=%d, offset_y2=%d 
-        //     width_curr=%d, height_curr=%d, invert=%d, lcd_type=%d\r\n", __LINE__, 
+        // mp_printf(&mp_plat_print, "[%d]: lcd_cfg.offset_x1=%d, offset_y1=%d, offset_x2=%d, offset_y2=%d
+        //     width_curr=%d, height_curr=%d, invert=%d, lcd_type=%d\r\n", __LINE__,
         //     lcd_cfg.offset_x1, lcd_cfg.offset_y1, lcd_cfg.offset_x2, lcd_cfg.offset_y2,
         //     width_curr, height_curr, invert, lcd_cfg.lcd_type);
         if (lcd_cfg.lcd_type == LCD_TYPE_ILI9486)
