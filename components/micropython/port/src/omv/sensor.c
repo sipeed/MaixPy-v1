@@ -443,11 +443,11 @@ int sensro_gc_detect(sensor_t *sensor, bool pwnd)
     // mp_printf(&mp_plat_print, "[MAIXPY]: find gc sensor\n");
     if (pwnd)
         DCMI_PWDN_LOW(); //enable gc0328 要恢复 normal 工作模式，需将 PWDN pin 接入低电平即可，同时写入初始化寄存器即可
-    DCMI_RESET_LOW();    //reset gc3028
+    DCMI_RESET_LOW();    //reset gc0328
     mp_hal_delay_ms(10);
     DCMI_RESET_HIGH();
     mp_hal_delay_ms(10);
-    
+
     int init_ret = 0;
     /* Reset the sensor */
     DCMI_RESET_HIGH();
@@ -522,7 +522,7 @@ int sensro_gc_detect(sensor_t *sensor, bool pwnd)
         {
         case GC0328_ID:
             sensor->slv_addr = GC0328_ADDR;
-            mp_printf(&mp_plat_print, "[MAIXPY]: find gc3028\n");
+            mp_printf(&mp_plat_print, "[MAIXPY]: find gc0328\n");
             gc0328_init(sensor);
             break;
         case GC2145_ID:
@@ -903,7 +903,7 @@ int binocular_sensor_reset(mp_int_t freq)
         if (0 == sensro_gc_detect(&sensor, false))
         {
             //find gc0328 sensor
-            mp_printf(&mp_plat_print, "[MAIXPY]: sensor1 find gc3028\n");
+            mp_printf(&mp_plat_print, "[MAIXPY]: sensor1 find gc0328\n");
             cambus_set_writeb_delay(2);
         }
         else
@@ -915,7 +915,7 @@ int binocular_sensor_reset(mp_int_t freq)
         if (0 == sensro_gc_detect(&sensor, false))
         {
             //find gc0328 sensor
-            mp_printf(&mp_plat_print, "[MAIXPY]: sensor2 find gc3028\n");
+            mp_printf(&mp_plat_print, "[MAIXPY]: sensor2 find gc0328\n");
             cambus_set_writeb_delay(2);
         }
         else
@@ -1050,7 +1050,7 @@ int sensor_set_pixformat(pixformat_t pixformat, bool set_regs)
     {
     case PIXFORMAT_RGB565:
         // monkey patch about ide default sensor.set_pixformat(sensor.RGB565) but it need sensor.YUV422
-        if (sensor.chip_id != OV7740_ID && sensor.chip_id != GC0328_ID && sensor.chip_id != OV2640_ID) 
+        if (sensor.chip_id != OV7740_ID && sensor.chip_id != GC0328_ID && sensor.chip_id != OV2640_ID)
         {
             dvp_set_image_format(DVP_CFG_RGB_FORMAT);
             break;
