@@ -1,0 +1,39 @@
+{
+    "config_name": "template",
+    "lcd": {
+        "rst" : 37,
+        "dcx" : 38,
+        "ss" : 36,
+        "clk" : 39,
+        "height": 240,
+        "width": 320,
+        "invert": 0,
+        "offset_x1": 0,
+        "offset_y1": 0,
+        "offset_x2": 0,
+        "offset_y2": 0,
+        "dir": 96
+    },
+    "freq_cpu": 416000000,
+    "freq_pll1": 400000000,
+    "kpu_div": 1,
+    "sensor": {
+        "cmos_pclk":40,
+        "cmos_xclk":41,
+        "cmos_href":42,
+        "cmos_pwdn":43,
+        "cmos_vsync":44,
+        "cmos_rst":45,
+        "reg_width":16,
+        "i2c_num":2,
+        "pin_clk":46,
+        "pin_sda":47
+    },
+    "sdcard":{
+        "sclk":29,
+        "mosi":30,
+        "miso":31,
+        "cs":29,
+        "cs_gpio":32
+    }
+}
