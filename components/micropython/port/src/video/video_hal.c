@@ -66,7 +66,7 @@ uint64_t inline video_hal_ticks_us(void)
 }
 
 
-static int on_irq_dma3(void *ctx)
+static int on_irq_dma4(void *ctx)
 {
     avi_t* avi = (avi_t*)ctx;
 
@@ -99,7 +99,7 @@ int video_hal_audio_init(avi_t* avi)
         );
     /* uint32_t ret = */i2s_set_sample_rate(I2S_DEVICE_0, avi->audio_sample_rate);//TODO: /2 ?
 
-    dmac_set_irq(DMAC_CHANNEL3, on_irq_dma3, (void*)avi, 1);
+    dmac_set_irq(DMAC_CHANNEL4, on_irq_dma4, (void*)avi, 1);
     avi->audio_buf[0].buf = (uint8_t*)malloc(avi->audio_buf_size+8);
     if( !avi->audio_buf[0].buf )
         return ENOMEM;

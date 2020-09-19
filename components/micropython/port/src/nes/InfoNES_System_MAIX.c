@@ -372,7 +372,7 @@ void InfoNES_SoundInit( void )
 {                  
 }
 
-static int on_irq_dma3(void *ctx)
+static int on_irq_dma4(void *ctx)
 {
     i2s_idle = true;
     return 0;
@@ -404,7 +404,7 @@ int InfoNES_SoundOpen( int samples_per_sync, int sample_rate )
     }
     g_samples_per_sync = samples_per_sync;
     i2s_set_sample_rate(I2S_DEVICE_0, sample_rate);    
-    dmac_set_irq(DMAC_CHANNEL3, on_irq_dma3, NULL, 1);
+    dmac_set_irq(DMAC_CHANNEL4, on_irq_dma4, NULL, 1);
     /* Successful */
     is_exit_to_menu = false;
     return 1;
