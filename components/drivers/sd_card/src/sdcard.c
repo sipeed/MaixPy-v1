@@ -689,7 +689,7 @@ uint8_t sd_read_sector_dma(uint8_t *data_buff, uint32_t sector, uint32_t count)
         if (sd_get_response() != SD_START_DATA_SINGLE_BLOCK_READ)
             break;
         /*!< Read the SD block data : read NumByteToRead data */
-        sd_read_data(data_buff, 512); // sd_read_data_dma(data_buff); // close recv dma
+        sd_read_data_dma(data_buff); // close recv dma
         /*!< Get CRC bytes (not really needed by us, but required by SD) */
         sd_read_data(frame, 2);
         data_buff += 512;
