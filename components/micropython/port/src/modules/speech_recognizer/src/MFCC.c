@@ -106,7 +106,7 @@ uint32_t *mfcc_fft(int16_t *dat_buf, uint16_t buf_len)
     fft_data_t fft_in_buf[512];
     memset(fft_in_buf, 0, sizeof(fft_in_buf));
     fft_sync_data(fft_in, FFT_512, fft_in_buf);
-    fft_complex_uint16_dma(DMAC_CHANNEL0, DMAC_CHANNEL1, 0x1ff, FFT_DIR_FORWARD, (uint64_t *)fft_in_buf, 512, fft_out_data);
+    fft_complex_uint16_dma(DMAC_CHANNEL3, DMAC_CHANNEL4, 0x1ff, FFT_DIR_FORWARD, (uint64_t *)fft_in_buf, 512, fft_out_data);
 
     for (i = 0; i < frq_max / 2; i++)
     {
