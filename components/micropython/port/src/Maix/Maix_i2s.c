@@ -285,15 +285,15 @@ STATIC mp_obj_t Maix_i2s_record(size_t n_args, const mp_obj_t *pos_args, mp_map_
     }
 
     //record 
-    i2s_receive_data_dma(self->i2s_num, audio_obj->audio.buf, audio_obj->audio.points , DMAC_CHANNEL5);
-    // dmac_wait_idle(DMAC_CHANNEL5);//wait to finish recv
+    i2s_receive_data_dma(self->i2s_num, audio_obj->audio.buf, audio_obj->audio.points , DMAC_CHANNEL3);
+    // dmac_wait_idle(DMAC_CHANNEL3);//wait to finish recv
     return MP_OBJ_FROM_PTR(audio_obj);
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(Maix_i2s_record_obj,1,Maix_i2s_record);
 
 STATIC mp_obj_t Maix_i2s_wait_record(void*self_)
 {
-    dmac_wait_idle(DMAC_CHANNEL5);//wait to finish recv
+    dmac_wait_idle(DMAC_CHANNEL3);//wait to finish recv
     return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_1(Maix_i2s_wait_record_obj, Maix_i2s_wait_record);

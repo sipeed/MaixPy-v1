@@ -29,8 +29,8 @@ Finally, the data chunk contains the sample data:
 
 #include "stdint.h"
 
-#define WAV_PLAY_DMA_CHANNEL DMAC_CHANNEL5
-#define WAV_RECORD_DMA_CHANNEL DMAC_CHANNEL5
+#define WAV_PLAY_DMA_CHANNEL DMAC_CHANNEL4
+#define WAV_RECORD_DMA_CHANNEL DMAC_CHANNEL3
 
 //---------------------------------decode-----------------------------
 

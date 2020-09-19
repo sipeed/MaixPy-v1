@@ -335,7 +335,7 @@ STATIC mp_obj_t Maix_audio_record(mp_obj_t self_in, mp_obj_t record_in) {
     switch(audio->format)
     {
         case AUDIO_WAV_FMT:
-            wav_record(audio,DMAC_CHANNEL5);
+            wav_record(audio, DMAC_CHANNEL3);
             break;
         default:
             break;
