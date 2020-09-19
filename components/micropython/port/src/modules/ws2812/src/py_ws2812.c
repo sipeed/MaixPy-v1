@@ -43,7 +43,7 @@ mp_obj_t modules_ws2812_make_new(const mp_obj_type_t *type, size_t n_args, size_
 
         { MP_QSTR_i2s_num,              MP_ARG_INT, {.u_int = I2S_DEVICE_2} },
         { MP_QSTR_i2s_chn,              MP_ARG_INT, {.u_int = I2S_CHANNEL_3} },
-        { MP_QSTR_i2s_dma_chn,          MP_ARG_INT, {.u_int = DMAC_CHANNEL1} },
+        { MP_QSTR_i2s_dma_chn,          MP_ARG_INT, {.u_int = DMAC_CHANNEL2} },
     };
 
     modules_ws2812_obj_t *self = m_new_obj_with_finaliser(modules_ws2812_obj_t);
