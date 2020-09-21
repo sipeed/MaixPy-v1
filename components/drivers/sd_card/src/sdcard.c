@@ -430,7 +430,7 @@ uint8_t sd_init(void)
     config.mosi_pin = 33;
     config.miso_pin = 31;
     config.cs_gpio_num = SD_CS_PIN;
-    config.cs_pin = SD_CS_PIN;
+    config.cs_pin = 32;
 
 #else
     // assert(sd_preinit_handler == NULL);
