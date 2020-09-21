@@ -143,33 +143,53 @@ mp_obj_t py_nes_init(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 		}
 	}
 
-	lcd_set_direction(DIR_YX_RLDU|0x08);  //RLDU
+	// lcd_set_direction(DIR_YX_RLDU|0x08);  //RLDU
 	//we DO NOT initialize here for we want user to set in python layer
 	lcd_clear(BLACK);
 
     return mp_const_none;
 }
 
-static mp_obj_t py_nes_run(mp_obj_t path_obj)
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_nes_init_obj, 1, py_nes_init);
+
+static mp_obj_t py_nes_load(mp_obj_t path_obj)
 {
     const char *path = mp_obj_str_get_str(path_obj);
     mp_printf(&mp_plat_print, "path: %s\n", path);
 	if(InfoNES_Load(path) == 0)
 	{
-		InfoNES_Main();
-	}	
-	
+		// Initialize InfoNES
+		InfoNES_Init();
+	}
     return mp_const_none;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_nes_init_obj, 1, py_nes_init);
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_nes_run_obj, py_nes_run);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_nes_load_obj, py_nes_load);
+
+static mp_obj_t py_nes_loop()
+{
+    InfoNES_Cycle();
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_nes_loop_obj, py_nes_loop);
+
+static mp_obj_t py_nes_free()
+{
+	// Completion treatment
+	InfoNES_Fin();
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_nes_free_obj, py_nes_free);
 
 
 static const mp_map_elem_t globals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_nes) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_init),   (mp_obj_t)&py_nes_init_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_run),   (mp_obj_t)&py_nes_run_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_load),   (mp_obj_t)&py_nes_load_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_loop),   (mp_obj_t)&py_nes_loop_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_free),   (mp_obj_t)&py_nes_free_obj },
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_JOYSTICK),   MP_ROM_INT(1) },
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_KEYBOARD),   MP_ROM_INT(0) },
 };

@@ -604,7 +604,7 @@ void InfoNES_Cycle()
 #endif
 
   // Emulation loop
-  for (;;)
+  // for (;;)
   {    
     int nStep;
 
@@ -652,7 +652,7 @@ void InfoNES_Cycle()
       return;  // To the menu screen
 
     // HSYNC Wait
-    InfoNES_Wait();
+    // InfoNES_Wait();
   }
 }
 
