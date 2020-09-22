@@ -25,11 +25,11 @@
 #include "ps2.h"
 
 
+extern int nes_stick;
+extern int nes_volume;
+extern int nes_cycle_us;
+extern int repeat_n;
 
-int nes_stick=0;
-int nes_volume=5;  //0~8
-int nes_cycle_us=0;  //60fps,  63us per cycle
-int repeat_n = 16;
 
 mp_obj_t py_nes_init(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
@@ -62,7 +62,7 @@ mp_obj_t py_nes_init(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 	repeat_n  = args_parsed[ARG_repeat].u_int;
 	nes_volume = args_parsed[ARG_vol].u_int;
 
-	if(nes_stick == 1)
+	if(nes_stick == 2)
 	{
 		cs_num = args_parsed[ARG_CS].u_int;
 		if(cs_num == -1 || cs_num > FUNC_GPIOHS31 || cs_num < FUNC_GPIOHS0)
@@ -183,6 +183,16 @@ static mp_obj_t py_nes_free()
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_nes_free_obj, py_nes_free);
 
+extern NES_DWORD PAD1_Latch, PAD2_Latch, PAD_System;
+static mp_obj_t py_nes_input(mp_obj_t KeyPad1, mp_obj_t KeyPad2, mp_obj_t KeySystem)
+{
+    PAD1_Latch = mp_obj_get_int(KeyPad1);
+    PAD2_Latch = mp_obj_get_int(KeyPad2);
+    PAD_System = mp_obj_get_int(KeySystem);
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(py_nes_input_obj, py_nes_input);
 
 static const mp_map_elem_t globals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_nes) },
@@ -190,8 +200,10 @@ static const mp_map_elem_t globals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_load),   (mp_obj_t)&py_nes_load_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_loop),   (mp_obj_t)&py_nes_loop_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_free),   (mp_obj_t)&py_nes_free_obj },
-	{ MP_OBJ_NEW_QSTR(MP_QSTR_JOYSTICK),   MP_ROM_INT(1) },
-	{ MP_OBJ_NEW_QSTR(MP_QSTR_KEYBOARD),   MP_ROM_INT(0) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_input),   (mp_obj_t)&py_nes_input_obj },
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_INPUT),   MP_ROM_INT(0) },
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_KEYBOARD),   MP_ROM_INT(1) },
+	{ MP_OBJ_NEW_QSTR(MP_QSTR_JOYSTICK),   MP_ROM_INT(2) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(globals_dict, globals_dict_table);

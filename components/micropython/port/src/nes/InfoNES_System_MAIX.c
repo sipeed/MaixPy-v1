@@ -24,10 +24,13 @@
 
 #define MAX_SAMPLES_PER_SYNC 750
 
-extern NES_DWORD * FrameBuffer;
+// extern NES_DWORD * FrameBuffer;
 
-extern int nes_cycle_us;
-extern int nes_volume;
+int nes_stick=0;
+int nes_volume=5;  //0~8
+int nes_cycle_us=0;  //60fps,  63us per cycle
+int repeat_n = 16;
+
 uint32_t final_wave[MAX_SAMPLES_PER_SYNC*2];
 int waveptr=0;
 int wavflag=0;
@@ -186,148 +189,148 @@ void InfoNES_LoadFrame()
 #define CRO_MASK    (1<<6)
 #define REC_MASK    (1<<7)
 
-extern int nes_stick;
-
 NES_DWORD dwKeyPad1;
 NES_DWORD dwKeyPad2;
 NES_DWORD dwKeySystem;
 static int state[8]={0};
 
-extern int repeat_n ;
 void InfoNES_PadState( NES_DWORD *pdwPad1, NES_DWORD *pdwPad2, NES_DWORD *pdwSystem )
 {
-    int ch;
-    dwKeyPad1=0;
-    dwKeyPad2=0;
-    dwKeySystem=0;
-    if(nes_stick==0)
+    if(nes_stick != 0)
     {
-        while((ch=uart_rx_char(MP_STATE_PORT(Maix_stdio_uart)))!=-1)
+        dwKeyPad1=0;
+        dwKeyPad2=0;
+        dwKeySystem=0;
+        if(nes_stick==1)
         {
-            switch((char)ch)
+            int ch;
+            while((ch=uart_rx_char(MP_STATE_PORT(Maix_stdio_uart)))!=-1)
             {
-            case 'd':    //right
-              dwKeyPad1 |= ( 1 << 7 );state[7]=repeat_n;
-              break;
-
-            case 'a':    //left
-              dwKeyPad1 |= ( 1 << 6 );state[6]=repeat_n;
-              break;
-
-            case 's':    //down
-              dwKeyPad1 |= ( 1 << 5 );state[5]=repeat_n;
-              break;
-              
-            case 'w':    //up
-              dwKeyPad1 |= ( 1 << 4 );state[4]=repeat_n;
-              break;
-            case 0x0d: // Enter
-                dwKeyPad1 |= ( 1 << 3 );state[3]=0;
-                break;
-            case 'm':    //start
-                dwKeyPad1 |= ( 1 << 3 );state[3]=0;
-                break;
-            case 0x5c: // "\"
-                dwKeyPad1 |= ( 1 << 2 );state[2]=0;
-                break;
-            case 'n':    //select
-                dwKeyPad1 |= ( 1 << 2 );state[2]=0;
+                switch((char)ch)
+                {
+                case 'd':    //right
+                dwKeyPad1 |= ( 1 << 7 );state[7]=repeat_n;
                 break;
 
-            case 'j':   // 'A'
-                dwKeyPad1 |= ( 1 << 1 );state[1]=repeat_n;
+                case 'a':    //left
+                dwKeyPad1 |= ( 1 << 6 );state[6]=repeat_n;
                 break;
 
-            case 'k':     // 'B' 
-              dwKeyPad1 |= ( 1 << 0 );state[0]=repeat_n;
-              break;
-            /**********************/
-            case 'r':
+                case 's':    //down
+                dwKeyPad1 |= ( 1 << 5 );state[5]=repeat_n;
+                break;
+                
+                case 'w':    //up
+                dwKeyPad1 |= ( 1 << 4 );state[4]=repeat_n;
+                break;
+                case 0x0d: // Enter
+                    dwKeyPad1 |= ( 1 << 3 );state[3]=0;
+                    break;
+                case 'm':    //start
+                    dwKeyPad1 |= ( 1 << 3 );state[3]=0;
+                    break;
+                case 0x5c: // "\"
+                    dwKeyPad1 |= ( 1 << 2 );state[2]=0;
+                    break;
+                case 'n':    //select
+                    dwKeyPad1 |= ( 1 << 2 );state[2]=0;
+                    break;
+
+                case 'j':   // 'A'
+                    dwKeyPad1 |= ( 1 << 1 );state[1]=repeat_n;
+                    break;
+
+                case 'k':     // 'B' 
+                dwKeyPad1 |= ( 1 << 0 );state[0]=repeat_n;
+                break;
+                /**********************/
+                case 'r':
+                    nes_cycle_us++;
+                    mp_printf(&mp_plat_print, "cycle_us:%d\r\n",nes_cycle_us);
+                    break;
+                case 'f':
+                    nes_cycle_us--;
+                    if(nes_cycle_us<0)nes_cycle_us=0;
+                    mp_printf(&mp_plat_print, "cycle_us:%d\r\n",nes_cycle_us);
+                    break;
+                case '=':
+                    nes_volume++;
+                    if(nes_volume>8)nes_volume=8;
+                    mp_printf(&mp_plat_print, "volume:%d\r\n",nes_volume);
+                    break;
+                case '-':
+                    nes_volume--;
+                    if(nes_volume<0)nes_volume=0;
+                    mp_printf(&mp_plat_print, "volume:%d\r\n",nes_volume);
+                    break;
+                case 0x1b:   //ESC
+                    mp_printf(&mp_plat_print, "exit\r\n");
+                    dwKeySystem |= PAD_SYS_QUIT;
+                    is_exit_to_menu = true;
+                    break;
+                default:
+                    break;
+                }
+            }
+            for(int i=0;i<8;i++)
+            {
+                if(state[i])
+                {
+                    state[i]--;
+                    dwKeyPad1 |= (1<<i);
+                }
+            }
+        }
+        else if(nes_stick==2)
+        {
+            uint8_t select,start,up,right,down,left;
+            uint8_t l2,r2,l1,r1,cro,rec;
+
+            PS2X_read_gamepad(0,0);
+
+            select =    PS2X_Button(PSB_SELECT);
+            start =     PS2X_Button(PSB_START);
+            up =        PS2X_Button(PSB_PAD_UP);
+            right =     PS2X_Button(PSB_PAD_RIGHT);
+            down =      PS2X_Button(PSB_PAD_DOWN);
+            left =      PS2X_Button(PSB_PAD_LEFT);
+            l2 =        PS2X_Button(PSB_L2);
+            r2 =        PS2X_Button(PSB_R2);
+            l1 =        PS2X_Button(PSB_L1);
+            r1 =        PS2X_Button(PSB_R1);
+            cro =       PS2X_Button(PSB_CROSS);
+            rec =       PS2X_Button(PSB_SQUARE);
+
+            //                B         A         sel         start         up         down     left         right
+            dwKeyPad1 = (cro<<0)|(rec<<1)|(select<<2)|(start<<3)|(up<<4)|(down<<5)|(left<<6)|(right<<7);
+            
+            if(l1){
                 nes_cycle_us++;
                 mp_printf(&mp_plat_print, "cycle_us:%d\r\n",nes_cycle_us);
-                break;
-            case 'f':
+            }
+
+            if(l2){
                 nes_cycle_us--;
                 if(nes_cycle_us<0)nes_cycle_us=0;
                 mp_printf(&mp_plat_print, "cycle_us:%d\r\n",nes_cycle_us);
-                break;
-            case '=':
+            }
+
+            if(r1){
                 nes_volume++;
                 if(nes_volume>8)nes_volume=8;
                 mp_printf(&mp_plat_print, "volume:%d\r\n",nes_volume);
-                break;
-            case '-':
+            }
+            
+            if(r2){
                 nes_volume--;
                 if(nes_volume<0)nes_volume=0;
                 mp_printf(&mp_plat_print, "volume:%d\r\n",nes_volume);
-                break;
-            case 0x1b:   //ESC
-                mp_printf(&mp_plat_print, "exit\r\n");
-                dwKeySystem |= PAD_SYS_QUIT;
-                is_exit_to_menu = true;
-                break;
-            default:
-                break;
             }
         }
-        for(int i=0;i<8;i++)
-        {
-            if(state[i])
-            {
-                state[i]--;
-                dwKeyPad1 |= (1<<i);
-            }
-        }
+        *pdwPad1   = dwKeyPad1;
+        *pdwPad2   = dwKeyPad2;
+        *pdwSystem = dwKeySystem;
     }
-    else if(nes_stick==1)
-    {
-        uint8_t select,start,up,right,down,left;
-        uint8_t l2,r2,l1,r1,cro,rec;
-
-        PS2X_read_gamepad(0,0);
-
-        select =    PS2X_Button(PSB_SELECT);
-        start =     PS2X_Button(PSB_START);
-        up =        PS2X_Button(PSB_PAD_UP);
-        right =     PS2X_Button(PSB_PAD_RIGHT);
-        down =      PS2X_Button(PSB_PAD_DOWN);
-        left =      PS2X_Button(PSB_PAD_LEFT);
-        l2 =        PS2X_Button(PSB_L2);
-        r2 =        PS2X_Button(PSB_R2);
-        l1 =        PS2X_Button(PSB_L1);
-        r1 =        PS2X_Button(PSB_R1);
-        cro =       PS2X_Button(PSB_CROSS);
-        rec =       PS2X_Button(PSB_SQUARE);
-
-        //                B         A         sel         start         up         down     left         right
-        dwKeyPad1 = (cro<<0)|(rec<<1)|(select<<2)|(start<<3)|(up<<4)|(down<<5)|(left<<6)|(right<<7);
-        
-        if(l1){
-            nes_cycle_us++;
-            mp_printf(&mp_plat_print, "cycle_us:%d\r\n",nes_cycle_us);
-        }
-
-        if(l2){
-            nes_cycle_us--;
-            if(nes_cycle_us<0)nes_cycle_us=0;
-            mp_printf(&mp_plat_print, "cycle_us:%d\r\n",nes_cycle_us);
-        }
-
-        if(r1){
-            nes_volume++;
-            if(nes_volume>8)nes_volume=8;
-            mp_printf(&mp_plat_print, "volume:%d\r\n",nes_volume);
-        }
-        
-        if(r2){
-            nes_volume--;
-            if(nes_volume<0)nes_volume=0;
-            mp_printf(&mp_plat_print, "volume:%d\r\n",nes_volume);
-        }
-    }
-    *pdwPad1   = dwKeyPad1;
-    *pdwPad2   = dwKeyPad2;
-    *pdwSystem = dwKeySystem;
     return;
 }
 
@@ -384,16 +387,6 @@ int InfoNES_SoundOpen( int samples_per_sync, int sample_rate )
       waveptr = 0;
       wavflag = 0;
 
-    //speaker's dac
-    fpioa_set_function(34, FUNC_I2S0_OUT_D0);
-    fpioa_set_function(35, FUNC_I2S0_SCLK);
-    fpioa_set_function(33, FUNC_I2S0_WS);    
-    //dmac_init();
-    i2s_init(I2S_DEVICE_0, I2S_TRANSMITTER, 0x03); //mask of ch
-    i2s_tx_channel_config(I2S_DEVICE_0, I2S_CHANNEL_0,
-                          RESOLUTION_16_BIT, SCLK_CYCLES_32,
-                          /*TRIGGER_LEVEL_1*/ TRIGGER_LEVEL_4,
-                          RIGHT_JUSTIFYING_MODE);
     mp_printf(&mp_plat_print, "samples_per_sync=%d, sample_rate=%d\r\n", samples_per_sync, sample_rate);
     if(nes_stick==0)
         mp_printf(&mp_plat_print, "key: WASD, JK, -=, \\, Enter, ESC\r\n");
@@ -403,7 +396,7 @@ int InfoNES_SoundOpen( int samples_per_sync, int sample_rate )
         return 0;
     }
     g_samples_per_sync = samples_per_sync;
-    i2s_set_sample_rate(I2S_DEVICE_0, sample_rate);    
+     
     dmac_set_irq(DMAC_CHANNEL4, on_irq_dma4, NULL, 1);
     /* Successful */
     is_exit_to_menu = false;
@@ -456,7 +449,7 @@ void InfoNES_SoundOutput(int samples, BYTE *wave1, BYTE *wave2, BYTE *wave3, BYT
     {
         i2s_idle = false;
         full = false;
-        i2s_play(I2S_DEVICE_0, DMAC_CHANNEL3, final_wave+g_samples_per_sync*play_index, g_samples_per_sync*4,1024, 16, 2);
+        i2s_play(I2S_DEVICE_0, DMAC_CHANNEL4, final_wave+g_samples_per_sync*play_index, g_samples_per_sync*4,1024, 16, 2);
         if(wavflag == 1)
             play_index = 1;
         else if(wavflag == 2)

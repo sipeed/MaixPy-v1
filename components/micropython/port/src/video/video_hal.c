@@ -165,7 +165,7 @@ int video_hal_audio_deinit(avi_t* avi)
 
 int video_hal_audio_play(uint8_t* data, uint32_t len, uint8_t channels)
 {
-    i2s_play(I2S_DEVICE_0, DMAC_CHANNEL3, data, len, 1024, 16, channels);
+    i2s_play(I2S_DEVICE_0, DMAC_CHANNEL4, data, len, 1024, 16, channels);
     return 0;
 }
 
