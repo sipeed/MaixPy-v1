@@ -90,15 +90,14 @@ int video_hal_display_init()
 
 int video_hal_audio_init(avi_t* avi)
 {
-    //TODO:optimize
-    i2s_init(I2S_DEVICE_0, I2S_TRANSMITTER, 0x0C);
-    i2s_tx_channel_config(I2S_DEVICE_0, I2S_CHANNEL_1,
-        RESOLUTION_16_BIT, SCLK_CYCLES_32,
-        /*TRIGGER_LEVEL_1*/TRIGGER_LEVEL_4,
-        RIGHT_JUSTIFYING_MODE
-        );
-    /* uint32_t ret = */i2s_set_sample_rate(I2S_DEVICE_0, avi->audio_sample_rate);//TODO: /2 ?
-
+    // //TODO:optimize
+    // i2s_init(I2S_DEVICE_0, I2S_TRANSMITTER, 0x0C);
+    // i2s_tx_channel_config(I2S_DEVICE_0, I2S_CHANNEL_1,
+    //     RESOLUTION_16_BIT, SCLK_CYCLES_32,
+    //     /*TRIGGER_LEVEL_1*/TRIGGER_LEVEL_4,
+    //     RIGHT_JUSTIFYING_MODE
+    //     );
+    i2s_set_sample_rate(I2S_DEVICE_0, avi->audio_sample_rate);
     dmac_set_irq(DMAC_CHANNEL4, on_irq_dma4, (void*)avi, 1);
     avi->audio_buf[0].buf = (uint8_t*)malloc(avi->audio_buf_size+8);
     if( !avi->audio_buf[0].buf )
