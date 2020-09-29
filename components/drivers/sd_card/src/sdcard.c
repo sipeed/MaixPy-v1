@@ -48,7 +48,13 @@
 #define SD_CMD58 58  /*!< CMD58 = 0x58 */
 #define SD_CMD59 59  /*!< CMD59 = 0x59 */
 
-sdcard_config_t config;
+sdcard_config_t config = { // see struct sdcard_config_t
+#ifdef CONFIG_BOARD_M5STICK
+    33, 31, 30, 32, SD_CS_PIN,
+#else
+    28, 26, 27, 29, SD_CS_PIN,
+#endif
+};
 
 SD_CardInfo cardinfo;
 int sd_version = 0;
@@ -403,16 +409,6 @@ static uint8_t sd_get_cardinfo(SD_CardInfo *cardinfo)
     return 0;
 }
 
-sd_preinit_handler_t sd_preinit_handler = NULL;
-
-/**
- * Register Pre-initialization handler for sd_card
- */
-void sd_preinit_register_handler(sd_preinit_handler_t handler)
-{
-    sd_preinit_handler = handler;
-}
-
 /*
  * @brief  Initializes the SD/SD communication.
  * @param  None
@@ -425,25 +421,6 @@ uint8_t sd_init(void)
     uint8_t frame[10], index, result;
     cardinfo.active = 0;
 
-#ifdef CONFIG_BOARD_M5STICK
-    config.sclk_pin = 30;
-    config.mosi_pin = 33;
-    config.miso_pin = 31;
-    config.cs_gpio_num = SD_CS_PIN;
-    config.cs_pin = 32;
-
-#else
-    // assert(sd_preinit_handler == NULL);
-    config.sclk_pin = 27;
-    config.mosi_pin = 28;
-    config.miso_pin = 26;
-    config.cs_gpio_num = SD_CS_PIN;
-    config.cs_pin = 29;
-    if (sd_preinit_handler != NULL)
-    {
-        sd_preinit_handler(&config);
-    }
-#endif
     fpioa_set_function(config.sclk_pin, FUNC_SPI1_SCLK);
     fpioa_set_function(config.mosi_pin, FUNC_SPI1_D0);
     fpioa_set_function(config.miso_pin, FUNC_SPI1_D1);

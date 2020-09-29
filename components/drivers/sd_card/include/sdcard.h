@@ -25,8 +25,6 @@ extern "C"
         int sclk_pin;
         int cs_pin;
         int cs_gpio_num;
-        int chip_select_num;
-        int spi_device_num;
 
     } sdcard_config_t;
 
@@ -107,7 +105,6 @@ extern "C"
     extern SD_CardInfo cardinfo;
 
     uint8_t sd_init(void);
-    void sd_preinit_register_handler(sd_preinit_handler_t handler);
     uint8_t sd_read_sector(uint8_t *data_buff, uint32_t sector, uint32_t count);
     uint8_t sd_write_sector(uint8_t *data_buff, uint32_t sector, uint32_t count);
     uint8_t sd_read_sector_dma(uint8_t *data_buff, uint32_t sector, uint32_t count);
