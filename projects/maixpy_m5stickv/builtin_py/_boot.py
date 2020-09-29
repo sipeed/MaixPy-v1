@@ -38,7 +38,10 @@ import gc, uos, sys
 import machine
 from board import board_info
 from fpioa_manager import fm
-from pye_mp import pye
+try:
+    from pye_mp import pye
+except:
+    pass
 from Maix import FPIOA, GPIO
 
 banner = '''
