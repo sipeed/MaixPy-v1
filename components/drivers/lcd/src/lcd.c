@@ -194,7 +194,7 @@ int lcd_init(uint32_t freq, bool oct, uint16_t offset_w0, uint16_t offset_h0, ui
     tft_hard_init(freq, oct);
     /*soft reset*/
     tft_write_command(SOFTWARE_RESET);
-    msleep(150);
+    msleep(50);
     if (lcd_preinit_handler != NULL)
     {
         lcd_preinit_handler();
@@ -202,7 +202,7 @@ int lcd_init(uint32_t freq, bool oct, uint16_t offset_w0, uint16_t offset_h0, ui
 
     /*exit sleep*/
     tft_write_command(SLEEP_OFF);
-    msleep(500);
+    msleep(120);
     /*pixel format*/
     tft_write_command(PIXEL_FORMAT_SET);
     data = 0x55;
@@ -221,7 +221,7 @@ int lcd_init(uint32_t freq, bool oct, uint16_t offset_w0, uint16_t offset_h0, ui
     msleep(10);
     /*display on*/
     tft_write_command(DISPALY_ON);
-    msleep(100);
+    // msleep(100);
     lcd_polling_enable();
     return 0;
 }
