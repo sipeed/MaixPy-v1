@@ -390,8 +390,10 @@ void pyexec_str(vstr_t *str)
         }                                                                                                     \
     }
 
-void sd_preinit_config(sdcard_config_t *config)
+
+void sd_preinit_config()
 {
+    extern sdcard_config_t config;
     // printk("[%d:%s]\r\n", __LINE__, __FUNCTION__);
 
     const char cfg[] = "sdcard";
@@ -400,12 +402,86 @@ void sd_preinit_config(sdcard_config_t *config)
     {
         mp_obj_dict_t *self = MP_OBJ_TO_PTR(tmp);
 
-        SDCARD_CHECK_CONFIG(sclk, &config->sclk_pin);
-        SDCARD_CHECK_CONFIG(mosi, &config->mosi_pin);
-        SDCARD_CHECK_CONFIG(miso, &config->miso_pin);
-        SDCARD_CHECK_CONFIG(cs, &config->cs_pin);
-        SDCARD_CHECK_CONFIG(cs_gpio, &config->cs_gpio_num);
+        SDCARD_CHECK_CONFIG(sclk, &config.sclk_pin);
+        SDCARD_CHECK_CONFIG(mosi, &config.mosi_pin);
+        SDCARD_CHECK_CONFIG(miso, &config.miso_pin);
+        SDCARD_CHECK_CONFIG(cs, &config.cs_pin);
+        SDCARD_CHECK_CONFIG(cs_gpio, &config.cs_gpio_num);
     }
+}
+
+bool maixpy_sdcard_loading = true;
+int sd_preload(int core)
+{
+    bool mounted_sdcard = false;
+    sd_preinit_config();
+    sd_init(); // will wait 3s for sd
+    bool sd_is_ready = sdcard_is_present();
+    if (sd_is_ready)
+    {
+        // spiffs_stat fno;
+        // if there is a file in the flash called "SKIPSD", then we don't mount the SD card
+        // if (!mounted_flash || SPIFFS_stat(&spiffs_user_mount_handle.fs, "SKIPSD", &fno) != SPIFFS_OK)
+        {
+            mounted_sdcard = init_sdcard_fs();
+            for (int r = 0; r < 4; r++) 
+            {
+                if (!mounted_sdcard) mounted_sdcard = init_sdcard_fs(); // fail try again mounted_sdcard.
+                // msleep(50);
+            }
+        }
+    }
+
+    // for maix amigo shit code.
+    if (!sd_is_ready && !mounted_sdcard)
+    {
+        extern sdcard_config_t config;
+        sdcard_config_t amigo = { 10, 6, 11, 26, SD_CS_PIN };
+        config = amigo;
+        sd_init(); // will wait 3s for sd
+        if (sdcard_is_present())
+        {
+            // spiffs_stat fno;
+            // if there is a file in the flash called "SKIPSD", then we don't mount the SD card
+            // if (!mounted_flash || SPIFFS_stat(&spiffs_user_mount_handle.fs, "SKIPSD", &fno) != SPIFFS_OK)
+            {
+                mounted_sdcard = init_sdcard_fs();
+                for (int r = 0; r < 4; r++)
+                {
+                    if (!mounted_sdcard) mounted_sdcard = init_sdcard_fs(); // fail try again mounted_sdcard.
+                    // msleep(50);
+                }
+            }
+        }
+    }
+    maixpy_sdcard_loading = false;
+    return 0;
+}
+
+typedef int (*dual_func_t)(int);
+corelock_t lock;
+volatile dual_func_t dual_func = 0;
+void *arg_list[16];
+
+void core2_task(void *arg)
+{
+    while (1)
+    {
+        if (dual_func)
+        { //corelock_lock(&lock);
+            (*dual_func)(1);
+            dual_func = 0;
+            //corelock_unlock(&lock);
+        }
+
+        //usleep(1);
+    }
+}
+int core1_function(void *ctx)
+{
+    // vTaskStartScheduler();
+    core2_task(NULL);
+    return 0;
 }
 
 void mp_task(void *pvParameter)
@@ -487,7 +563,6 @@ soft_reset:
 #endif
     peripherals_init();
     // initialise peripherals
-    bool mounted_sdcard = false;
     bool mounted_flash = false;
     mounted_flash = mpy_mount_spiffs(&spiffs_user_mount_handle); //init spiffs of flash
     if (mounted_flash)
@@ -495,25 +570,9 @@ soft_reset:
         maix_config_init();
     }
 
-    sd_preinit_register_handler(sd_preinit_config);
-    sd_init();
-    if (sdcard_is_present())
-    {
-        spiffs_stat fno;
-        // if there is a file in the flash called "SKIPSD", then we don't mount the SD card
-        if (!mounted_flash || SPIFFS_stat(&spiffs_user_mount_handle.fs, "SKIPSD", &fno) != SPIFFS_OK)
-        {
-            mounted_sdcard = init_sdcard_fs();
-            for (int r = 0; r < 4; r++) 
-            {
-                if (!mounted_sdcard) mounted_sdcard = init_sdcard_fs(); // fail try again mounted_sdcard.
-                msleep(50);
-            }
-        }
-    }
-    if (mounted_sdcard)
-    {
-    }
+    // Speed up the system
+    dual_func = sd_preload;
+
     // mp_printf(&mp_plat_print, "[MaixPy] init end\r\n"); // for maixpy ide
     // run boot-up scripts
     mp_hal_set_interrupt_char(CHAR_CTRL_C);
@@ -582,32 +641,6 @@ soft_reset:
     msleep(10);
     goto soft_reset;
     // sysctl->soft_reset.soft_reset = 1;
-}
-
-typedef int (*dual_func_t)(int);
-corelock_t lock;
-volatile dual_func_t dual_func = 0;
-void *arg_list[16];
-
-void core2_task(void *arg)
-{
-    while (1)
-    {
-        if (dual_func)
-        { //corelock_lock(&lock);
-            (*dual_func)(1);
-            dual_func = 0;
-            //corelock_unlock(&lock);
-        }
-
-        //usleep(1);
-    }
-}
-int core1_function(void *ctx)
-{
-    // vTaskStartScheduler();
-    core2_task(NULL);
-    return 0;
 }
 
 int maixpy_main()
