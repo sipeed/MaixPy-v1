@@ -84,8 +84,8 @@
 #define DIGITAL_GAMMA_CTL2      0xE3
 #define INTERFACE_CTL           0xF6
 
-#define DCX_GPIONUM             (31)
-#define RST_GPIONUM             (30)
+#define DCX_GPIONUM             (5) // 31
+#define RST_GPIONUM             (4) // 30
 
 #define SPI_CHANNEL             0
 #define SPI_DMA_CH				DMAC_CHANNEL1
