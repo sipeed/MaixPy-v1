@@ -27,7 +27,7 @@
 // extern NES_DWORD * FrameBuffer;
 
 int nes_stick=0;
-int nes_volume=5;  //0~8
+int nes_volume=8;  //0~8
 int nes_cycle_us=0;  //60fps,  63us per cycle
 int repeat_n = 16;
 
@@ -107,6 +107,9 @@ int InfoNES_ReadRom( const char *pszFileName )
 
   // Clear SRAM 
   memset( SRAM, 0, SRAM_SIZE );
+
+  // Close file.
+  vfs_internal_close(file, &err);
 
   // If trainer presents Read Triner at 0x7000-0x71ff 
   if ( NesHeader.byInfo1 & 4 )
@@ -429,7 +432,8 @@ void InfoNES_SoundOutput(int samples, BYTE *wave1, BYTE *wave2, BYTE *wave3, BYT
     uint16_t tmp;
     for (i = 0; i < samples; i++) 
     {
-        tmp = (( (uint16_t)wave1[i] +(uint16_t)wave2[i] +(uint16_t)wave3[i] +(uint16_t)wave4[i] +(uint16_t)wave5[i] ) )<<(nes_volume);
+        // todo temp close wave1
+        tmp = (( /*(uint16_t)wave1[i] +*/(uint16_t)wave2[i] +(uint16_t)wave3[i] +(uint16_t)wave4[i] +(uint16_t)wave5[i] ) )<<(nes_volume);
         final_wave[ waveptr ] = (uint32_t)tmp<<16 | ((uint32_t)tmp & 0xFFFF);
         waveptr++;
         if ( waveptr == g_samples_per_sync*2 ) 
