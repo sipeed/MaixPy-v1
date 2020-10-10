@@ -516,7 +516,7 @@ soft_reset:
 #endif
 #if MICROPY_ENABLE_GC
     gc_init(gc_heap, gc_heap + config->gc_heap_size);
-    printk("gc heap=%p-%p(%d)\r\n", gc_heap, gc_heap + config->gc_heap_size, config->gc_heap_size);
+    printk("[MaixPy] gc heap=%p-%p(%d)\r\n", gc_heap, gc_heap + config->gc_heap_size, config->gc_heap_size);
 #endif
     mp_init();
     mp_obj_list_init(mp_sys_path, 0);
@@ -665,11 +665,11 @@ int maixpy_main()
     uarths_init();
     uarths_config(115200, 1);
     printk("\r\n");
-    printk("[MAIXPY]Pll0:freq:%d\r\n", sysctl_clock_get_freq(SYSCTL_CLOCK_PLL0));
-    printk("[MAIXPY]Pll1:freq:%d\r\n", sysctl_clock_get_freq(SYSCTL_CLOCK_PLL1));
-    printk("[MAIXPY]Pll2:freq:%d\r\n", sysctl_clock_get_freq(SYSCTL_CLOCK_PLL2));
-    printk("[MAIXPY]cpu:freq:%d\r\n", sysctl_clock_get_freq(SYSCTL_CLOCK_CPU));
-    printk("[MAIXPY]kpu:freq:%d\r\n", sysctl_clock_get_freq(SYSCTL_CLOCK_AI));
+    printk("[MAIXPY] Pll0:freq:%d\r\n", sysctl_clock_get_freq(SYSCTL_CLOCK_PLL0));
+    printk("[MAIXPY] Pll1:freq:%d\r\n", sysctl_clock_get_freq(SYSCTL_CLOCK_PLL1));
+    printk("[MAIXPY] Pll2:freq:%d\r\n", sysctl_clock_get_freq(SYSCTL_CLOCK_PLL2));
+    printk("[MAIXPY] cpu:freq:%d\r\n", sysctl_clock_get_freq(SYSCTL_CLOCK_CPU));
+    printk("[MAIXPY] kpu:freq:%d\r\n", sysctl_clock_get_freq(SYSCTL_CLOCK_AI));
     sysctl_clock_enable(SYSCTL_CLOCK_AI);
     sysctl_set_power_mode(SYSCTL_POWER_BANK6, SYSCTL_POWER_V18);
     sysctl_set_power_mode(SYSCTL_POWER_BANK7, SYSCTL_POWER_V18);
@@ -677,11 +677,11 @@ int maixpy_main()
     rtc_init();
     rtc_timer_set(2000, 1, 1, 0, 0, 0);
     flash_init(&manuf_id, &device_id);
-    printk("[MAIXPY]Flash:0x%02x:0x%02x\r\n", manuf_id, device_id);
+    printk("[MAIXPY] Flash:0x%02x:0x%02x\r\n", manuf_id, device_id);
     /* Init SPI IO map and function settings */
     sysctl_set_spi0_dvp_data(1);
     /* open core 1 */
-    printk("open second core...\r\n");
+    // printk("open second core...\r\n");
     register_core1(core1_function, 0);
 
 #if MICROPY_PY_THREAD

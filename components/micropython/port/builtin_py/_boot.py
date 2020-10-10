@@ -11,6 +11,7 @@ if "sd" in devices:
 else:
     os.chdir("/flash")
 sys.path.append('/flash')
+del devices
 
 print("[MaixPy] init end") # for IDE
 for i in range(200):
@@ -23,6 +24,7 @@ ide = True
 try:
     f = open(ide_mode_conf)
     f.close()
+    del f
 except Exception:
     ide = False
 
@@ -34,23 +36,12 @@ if ide:
     repl = UART.repl_uart()
     repl.init(1500000, 8, None, 1, read_buf_len=2048, ide=True, from_ide=False)
     sys.exit()
-
-
-import gc
-import machine
-try:
-    from board import board_info
-    from fpioa_manager import fm
-    from pye_mp import pye
-except Exception:
-    pass
-from Maix import FPIOA, GPIO
-
+del ide, ide_mode_conf
 
 # detect boot.py
 main_py = '''
 try:
-    import os, Maix, lcd, image
+    import gc, lcd, image
     gc.collect()
     lcd.init()
     loading = image.Image(size=(lcd.width(), lcd.height()))
@@ -61,8 +52,9 @@ try:
     vers = 'V{}.{}.{} : maixpy.sipeed.com'.format(v[0],v[1],v[2])
     loading.draw_string(int(lcd.width()//2 - len(info) * 6), (lcd.height())//3 + 20, vers, color=(255, 255, 255), scale=1, mono_space=1)
     lcd.display(loading)
-finally:
     del loading, v, info, vers
+    gc.collect()
+finally:
     gc.collect()
 '''
 
@@ -71,6 +63,7 @@ if not "main.py" in flash_ls:
     f = open("main.py", "wb")
     f.write(main_py)
     f.close()
+    del f
 del main_py
 
 flash_ls = os.listdir("/flash")
