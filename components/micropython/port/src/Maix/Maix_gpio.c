@@ -282,7 +282,10 @@ STATIC mp_obj_t Maix_gpio_call(mp_obj_t self_in, size_t n_args, size_t n_kw, con
         if(self->gpio_type == GPIO){
             return MP_OBJ_NEW_SMALL_INT(gpio_get_pin((uint8_t)self->id));
         }else{
-            return MP_OBJ_NEW_SMALL_INT(gpiohs_get_pin((uint8_t)self->id));
+            gpiohs_set_drive_mode((uint8_t)self->id, GPIO_DM_INPUT);
+            int value = gpiohs_get_pin((uint8_t)self->id);
+            gpiohs_set_drive_mode((uint8_t)self->id, GPIO_DM_OUTPUT);
+            return MP_OBJ_NEW_SMALL_INT(value);
         }
         
     } else {
