@@ -505,7 +505,7 @@ void lcd_draw_picture(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height,
     uint32_t i;
     uint16_t* p = (uint16_t*)ptr;
     bool odd = false;
-    extern bool maixpy_sdcard_loading;
+    extern volatile bool maixpy_sdcard_loading;
 
     lcd_set_area(x1, y1, x1 + width - 1, y1 + height - 1);
     g_pixs_draw_pic_size = width*height;

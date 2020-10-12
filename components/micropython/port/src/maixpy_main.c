@@ -410,7 +410,33 @@ void sd_preinit_config()
     }
 }
 
-bool maixpy_sdcard_loading = true;
+typedef int (*dual_func_t)(int);
+corelock_t lock;
+volatile dual_func_t dual_func = 0;
+void *arg_list[16];
+
+void core2_task(void *arg)
+{
+    while (1)
+    {
+        if (dual_func)
+        { //corelock_lock(&lock);
+            (*dual_func)(1);
+            dual_func = 0;
+            //corelock_unlock(&lock);
+        }
+
+        //usleep(1);
+    }
+}
+int core1_function(void *ctx)
+{
+    // vTaskStartScheduler();
+    core2_task(NULL);
+    return 0;
+}
+
+volatile bool maixpy_sdcard_loading = true; // There may be deadlocks.
 int sd_preload(int core)
 {
     bool mounted_sdcard = false;
@@ -454,33 +480,8 @@ int sd_preload(int core)
             }
         }
     }
+    dual_func = NULL; // remove task
     maixpy_sdcard_loading = false;
-    return 0;
-}
-
-typedef int (*dual_func_t)(int);
-corelock_t lock;
-volatile dual_func_t dual_func = 0;
-void *arg_list[16];
-
-void core2_task(void *arg)
-{
-    while (1)
-    {
-        if (dual_func)
-        { //corelock_lock(&lock);
-            (*dual_func)(1);
-            dual_func = 0;
-            //corelock_unlock(&lock);
-        }
-
-        //usleep(1);
-    }
-}
-int core1_function(void *ctx)
-{
-    // vTaskStartScheduler();
-    core2_task(NULL);
     return 0;
 }
 
