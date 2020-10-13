@@ -11,6 +11,8 @@ class fm:
 
   def register(pin, function, force=False):
     pin_used = __class__.get_pin_by_function(function)
+    if pin_used == pin:
+      return 
     if None != pin_used:
       info = "[Warning] function is used by %s(pin:%d)" % (
           fm.str_function(function), pin_used)
