@@ -55,7 +55,9 @@ int avi_init(uint8_t* buf, uint32_t size, avi_t* avi)
 		avi->height=bmp_header->bmi_header.height; 
 		buf+=list_header->block_size+8;
 		list_header=(list_header_t*)(buf);
-		if(list_header->list_id!=AVI_LIST_ID)
+		
+		// if(list_header->list_id!=AVI_LIST_ID)
+		if(list_header->list_type!=AVI_STRL_ID)
 		{
 			avi->audio_sample_rate=0;
 			avi->audio_channels=0;
@@ -63,7 +65,7 @@ int avi_init(uint8_t* buf, uint32_t size, avi_t* avi)
 			
 		}else
 		{			
-			if(list_header->list_type!=AVI_STRL_ID)return AVI_STATUS_ERR_STRL;
+			// if(list_header->list_type!=AVI_STRL_ID)return AVI_STATUS_ERR_STRL;
 			strh_header=(strh_header_t*)(buf+12);
 			if(strh_header->block_id!=AVI_STRH_ID)return AVI_STATUS_ERR_STRH;
 			if(strh_header->stream_type!=AVI_AUDS_STREAM)return AVI_STATUS_ERR_FORMAT;
@@ -93,7 +95,7 @@ int avi_init(uint8_t* buf, uint32_t size, avi_t* avi)
 		if(bmp_header->block_id!=AVI_STRF_ID)return AVI_STATUS_ERR_STRF;
 		if(bmp_header->bmi_header.compression!=AVI_FORMAT_MJPG)return AVI_STATUS_ERR_FORMAT;
 		avi->width=bmp_header->bmi_header.width;
-		avi->height=bmp_header->bmi_header.height; 	
+		avi->height=bmp_header->bmi_header.height;
 	}
 	offset=avi_srarch_id(buf_start,size,(uint8_t*)"movi");
 	if(offset==0)
