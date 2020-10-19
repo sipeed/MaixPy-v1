@@ -63,8 +63,8 @@ void noise_atap(const uint16_t *noise, uint16_t n_len, atap_tag *atap)
 	atap->n_thl = max_sum*n_thl_ratio;
 	atap->s_thl = s_thl_ratio(abs_sum);
 	atap->z_thl = z_thl_ratio(FRAME_LEN)/n_thl_ratio;
-	printf("VAD sum=%d ", atap->s_thl);
-	printf("VAD zero=%d\n", atap->z_thl);
+	// printf("VAD sum=%d ", atap->s_thl);
+	// printf("VAD zero=%d\n", atap->z_thl);
 }
 #define	v_durmin_t	200	//有效语音最短时间门限 ms
 #define	v_durmin_f	v_durmin_t/(frame_time-frame_mov_t)	//有效语音最短帧数
@@ -226,15 +226,16 @@ uint8_t VAD2(const uint16_t *vc, valid_tag *valid_voice, atap_tag *atap_arg)
 	if (FRAME_LEN + (FRAME_LEN-frame_mov) * frm_n > VcBuf_Len - (FRAME_LEN - frame_mov)) {//over frame length
 		cur_stus = 0; //进入无声段
 		frm_n = 0;
-		printf("I am here\n");
+		// printf("I am here\n");
 		return 0;
 	}
 	if ((frm_sum > (atap_arg->s_thl)) || (frm_zero > (atap_arg->z_thl))) {
 	//至少有一个参数超过其门限值
-		if (frm_sum > (atap_arg->s_thl))
-			printf("frm_sum ok\n");
+		if (frm_sum > (atap_arg->s_thl)) {
+			// printf("frm_sum ok\n");
+		}
 		else
-			printf("frm_zero ok\n");
+			// printf("frm_zero ok\n");
 		if (cur_stus == 0) {//如果当前是无声段
 			cur_stus = 1; //进入前端过渡段
 			front_duration = 1; //前端过渡段持续帧数置1 第一帧

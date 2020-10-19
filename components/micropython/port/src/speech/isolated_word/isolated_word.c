@@ -194,15 +194,18 @@ void iw_load(i2s_device_number_t device_num, dmac_channel_number_t channel_num, 
     }
 }
 
-void iw_free(dmac_channel_number_t channel_num)
+void iw_free()
 {
-    dmac_irq_unregister(channel_num);
     if (iw_state != Init)
     {
         g_index = 0;
         iw_state = Init;
         i2s_recv_flag = NONE;
         i2s_start_flag = 0;
+        dmac_wait_done(dma_channel);
+        //sysctl_disable_irq();
+        dmac_channel_disable(dma_channel);
+        dmac_free_irq(dma_channel);
     }
 }
 

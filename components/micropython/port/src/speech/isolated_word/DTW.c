@@ -373,7 +373,7 @@ uint32_t get_mdl(v_ftr_tag *ftr_in1, v_ftr_tag *ftr_in2, v_ftr_tag *ftr_mdl)
 	mdl_frm_num = ftr_in2->frm_num;
 
 	if ((in_frm_num > (mdl_frm_num*2)) || ((2*in_frm_num) < mdl_frm_num)) {
-		printf("in_frm_num= %d, mdl_frm_num= %d\n", in_frm_num, mdl_frm_num);
+		// printf("in_frm_num= %d, mdl_frm_num= %d\n", in_frm_num, mdl_frm_num);
 		return dis_err;
 	} else {
 		// 计算约束平行四边形顶点值
@@ -426,7 +426,7 @@ uint32_t get_mdl(v_ftr_tag *ftr_in1, v_ftr_tag *ftr_in2, v_ftr_tag *ftr_mdl)
 
 		//	printf("x=%d y=%d\r\n", x, y);
 		} while ((x < in_frm_num) && (y < mdl_frm_num));
-		printf("step=%d\r\n", step);
+		// printf("step=%d\r\n", step);
 		ftr_mdl->frm_num = step;
 	}
 	return (dis/step); //步长归一化

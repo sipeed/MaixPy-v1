@@ -161,7 +161,7 @@ void get_mfcc(valid_tag *valid, v_ftr_tag *v_ftr, atap_tag *atap_arg)
     //USART1_printf("start=%d end=%d",(uint32_t)(valid->start),(uint32_t)(valid->end));
     v_frm_num = (((uint32_t)(valid->end)-(uint32_t)(valid->start))/2-FRAME_LEN)/(FRAME_LEN-frame_mov)+1;
     if (v_frm_num > vv_frm_max) {
-        printf("frm_num=%d ", v_frm_num);
+        // printf("frm_num=%d ", v_frm_num);
         v_ftr->frm_num = 0;
     } else {
         mid = (int32_t)atap_arg->mid_val;
@@ -241,7 +241,7 @@ int16_t avg(int16_t *mfcc_p, uint16_t frm_num)
     int i, j;
     double sum = 0.0f;
 
-    printf("frm_num = %d, mfcc_num = %d\n", frm_num, mfcc_num);
+    // printf("frm_num = %d, mfcc_num = %d\n", frm_num, mfcc_num);
     for (i = 0; i < frm_num; i++)
         for (j = 0; j < mfcc_num; j++) {
             sum += mfcc_p[i * mfcc_num + j];
@@ -267,7 +267,7 @@ void normalize(int16_t *mfcc_p, uint16_t frm_num)
     int16_t avg1 = avg(mfcc_p, frm_num);
     int16_t stdev1 = stdev(mfcc_p, avg1, frm_num);
 
-    printf("avg1 = %d, stdev1 = %d\n", avg1, stdev1);
+    // printf("avg1 = %d, stdev1 = %d\n", avg1, stdev1);
     for (i = 0; i < frm_num; i++)
         for (j = 0; j < mfcc_num; j++)
             mfcc_p[i * mfcc_num + j] = (mfcc_p[i * mfcc_num + j] - avg1) * 100 / stdev1;

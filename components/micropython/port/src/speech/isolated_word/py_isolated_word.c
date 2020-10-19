@@ -81,7 +81,7 @@ STATIC mp_obj_t speech_isolated_word_make_del(mp_obj_t self_in){
         isolated_word_obj_t *self = MP_OBJ_TO_PTR(self_in);
         // mp_printf(&mp_plat_print, "%s __del__\r\n", __func__);
         if (self->mfcc_dats != NULL) {
-            iw_free(self->channel_num);
+            iw_free();
             m_del(v_ftr_tag, self->mfcc_dats, self->size);
             self->mfcc_dats = NULL;
         }
