@@ -22,12 +22,9 @@
 #include <string.h>
 #include "syslog.h"
 
-#include "flash.h"
-
 #include "VAD.h"
 #include "MFCC.h"
 #include "DTW.h"
-#include "flash.h"
 #include "ADC.h"
 #include "i2s.h"
 #include "Maix_i2s.h"

@@ -87,6 +87,7 @@ CONFIG_MAIXPY_OMV_DOUBLE_BUFF=y
 # CONFIG_MAIXPY_SPEECH_RECOGNIZER_ENABLE is not set
 # CONFIG_MICROPY_SSL_ENABLE is not set
 # end of Modules configurations
+CONFIG_MAIXPY_SPEECH_RECOGNIZER_ENABLE=y
 
 #
 # Builtin py modules configurations
