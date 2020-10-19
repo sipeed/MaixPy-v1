@@ -9,7 +9,7 @@ class fm:
   def get_pin_by_function(function):
     return __class__.fpioa.get_Pin_num(function)
 
-  def register(pin, function, force=False):
+  def register(pin, function, force=True):
     pin_used = __class__.get_pin_by_function(function)
     if pin_used == pin:
       return 
