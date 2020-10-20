@@ -32,7 +32,8 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
                             "${mpy_port_dir}/src/Maix/include"
                             "${mpy_port_dir}/src/modules/include"
                             "${mpy_port_dir}/src/modules/ultrasonic/include"
-                            "${mpy_port_dir}/src/modules/speech_recognizer/include"
+                            "${mpy_port_dir}/src/speech/include"
+                            "${mpy_port_dir}/src/speech/isolated_word/include"
                             "${mpy_port_dir}/src/omv/include"
                             "${mpy_port_dir}/src/omv/boards/MAIX"
                             "${mpy_port_dir}/src/omv/img/include"
@@ -55,7 +56,8 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     endif()
     append_srcs_dir(MPY_PORT_SRCS "port/src/modules")
     append_srcs_dir(MPY_PORT_SRCS "port/src/modules/ultrasonic/src")
-    append_srcs_dir(MPY_PORT_SRCS "port/src/modules/speech_recognizer/src")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/speech/")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/speech/isolated_word")
     append_srcs_dir(MPY_PORT_SRCS "port/src/modules/ws2812/src")
     append_srcs_dir(MPY_PORT_SRCS "port/src/modules/htpa/src")
     append_srcs_dir(MPY_PORT_SRCS "port/src/omv")
