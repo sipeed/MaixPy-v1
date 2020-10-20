@@ -28,6 +28,10 @@ void iw_free();
 
 void iw_atap_tag(uint16_t n_thl, uint16_t z_thl, uint32_t s_thl);
 
+void iw_set_state(IwState state);
+
 IwState iw_get_state();
+
+v_ftr_tag *iw_get_ftr();
 
 #endif

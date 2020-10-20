@@ -17,7 +17,7 @@ extern "C" {
 #pragma pack(1)
 typedef struct {
 	uint32_t mid_val;	//语音段中值 相当于有符号的0值 用于短时过零率计算
-	uint16_t	n_thl;		//噪声阈值，用于短时过零率计算
+	uint16_t n_thl;		//噪声阈值，用于短时过零率计算
 	uint16_t z_thl;		//短时过零率阈值，超过此阈值，视为进入过渡段。
 	uint32_t s_thl;		//短时累加和阈值，超过此阈值，视为进入过渡段。
 } atap_tag;			//自适应参数

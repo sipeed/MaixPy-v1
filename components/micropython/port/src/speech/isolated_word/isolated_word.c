@@ -1,19 +1,20 @@
 
 #include "isolated_word.h"
 
-// #include "printf.h"
+#include "printf.h"
 
 // 音频算法部分，单例模式，主要解决音频的背景录入与识别处理。
 v_ftr_tag ftr_curr; // 当前识别结果
 
-static uint32_t atap_tag_mid_val;       //语音段中值 相当于有符号的0值 用于短时过零率计算
-static uint16_t atap_tag_n_thl = 10000; //噪声阈值，用于短时过零率计算
+static uint32_t atap_tag_mid_val = 0;       //语音段中值 相当于有符号的0值 用于短时过零率计算
+static uint16_t atap_tag_n_thl = 0; //噪声阈值，用于短时过零率计算
 static uint16_t atap_tag_z_thl = 0;     //短时过零率阈值，超过此阈值，视为进入过渡段。
-static uint32_t atap_tag_s_thl = 0;     //短时累加和阈值，超过此阈值，视为进入过渡段。
+static uint32_t atap_tag_s_thl = 10000;     //短时累加和阈值，超过此阈值，视为进入过渡段。
 
 static atap_tag atap_arg;
 void iw_atap_tag(uint16_t n_thl, uint16_t z_thl, uint32_t s_thl)
 {
+    // printk("iw_atap_tag n_thl: %d z_thl: %d s_thl: %d > ", n_thl, z_thl, s_thl);
     atap_tag_n_thl = n_thl, atap_tag_z_thl = z_thl, atap_tag_s_thl = s_thl;
 }
 
@@ -28,6 +29,21 @@ static volatile enum I2sFlag {
     SECOND
 } i2s_recv_flag = NONE;
 static uint8_t i2s_device = 0, dma_channel = 2;
+
+void iw_set_state(IwState state)
+{
+    iw_state = state;
+}
+
+IwState iw_get_state()
+{
+    return iw_state;
+}
+
+v_ftr_tag *iw_get_ftr()
+{
+    return &ftr_curr;
+}
 
 int iw_i2s_dma_irq(void *ctx)
 {
@@ -104,8 +120,8 @@ int iw_i2s_dma_irq(void *ctx)
     case MaybeNoise: // 噪音判断
     {
         noise_atap(v_dat, atap_len, &atap_arg);
-        // printk("s: %d > ", atap_arg.s_thl);
-        if (atap_arg.s_thl > atap_tag_n_thl)
+        // printk("s_thl: %d > ", atap_arg.s_thl);
+        if (atap_arg.s_thl > atap_tag_s_thl)
         {
             // printk("get noise again...\n");
             iw_state = Idle;
@@ -161,7 +177,7 @@ int iw_i2s_dma_irq(void *ctx)
             }
             else
             {
-                // printk("mfcc ok\n");
+                // printk("MFCC ok\n");
                 iw_state = Done;
                 break;
             }
@@ -171,6 +187,7 @@ int iw_i2s_dma_irq(void *ctx)
     }
     case Done: // 完成
     {
+        // iw_state = Idle; // debug
         break; // other
     }
     }
@@ -188,9 +205,9 @@ void iw_load(i2s_device_number_t device_num, dmac_channel_number_t channel_num, 
     if (iw_state != Idle)
     {
         g_index = 0;
-        iw_state = Idle;
         i2s_recv_flag = NONE;
         i2s_start_flag = 1;
+        iw_state = Idle;
     }
 }
 
@@ -199,19 +216,14 @@ void iw_free()
     if (iw_state != Init)
     {
         g_index = 0;
-        iw_state = Init;
         i2s_recv_flag = NONE;
         i2s_start_flag = 0;
+        iw_state = Init;
         dmac_wait_done(dma_channel);
         //sysctl_disable_irq();
         dmac_channel_disable(dma_channel);
         dmac_free_irq(dma_channel);
     }
-}
-
-IwState iw_get_state()
-{
-    return iw_state;
 }
 
 #ifdef UNIT_TEST

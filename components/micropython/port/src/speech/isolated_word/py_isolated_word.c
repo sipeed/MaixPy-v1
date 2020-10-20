@@ -13,6 +13,10 @@
 #include "Maix_i2s.h"
 
 #include "isolated_word.h"
+#define mfcc_dats_mask 12345
+// #include "voice_model.h"
+
+// #include "printf.h"
 
 // extern const mp_obj_type_t Maix_i2s_type;
 const mp_obj_type_t speech_isolated_word_type;
@@ -27,6 +31,13 @@ typedef struct _isolated_word_obj_t
     v_ftr_tag *mfcc_dats;
 } isolated_word_obj_t;
 
+void speech_set_word(v_ftr_tag *mfcc_dats, uint8_t model_num, const int16_t *voice_model, uint16_t frame_num)
+{
+    mfcc_dats[model_num].save_sign = mfcc_dats_mask;
+    mfcc_dats[model_num].frm_num = frame_num;
+    memcpy(mfcc_dats[model_num].mfcc_dat, voice_model, sizeof(mfcc_dats[model_num].mfcc_dat));
+}
+
 STATIC mp_obj_t speech_isolated_word_init_helper(isolated_word_obj_t *self_in, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
     isolated_word_obj_t *self = MP_OBJ_TO_PTR(self_in);
@@ -40,10 +51,10 @@ STATIC mp_obj_t speech_isolated_word_init_helper(isolated_word_obj_t *self_in, s
         ARG_priority,
     };
     static const mp_arg_t allowed_args[] = {
-        {MP_QSTR_size, MP_ARG_INT, {.u_int = 10}},
-        {MP_QSTR_i2s, MP_ARG_INT, {.u_int = I2S_DEVICE_0}},
-        {MP_QSTR_dmac, MP_ARG_INT, {.u_int = DMAC_CHANNEL2}},
-        {MP_QSTR_priority, MP_ARG_INT, {.u_int = 3}},
+        { MP_QSTR_size, MP_ARG_INT, {.u_int = 10}},
+        { MP_QSTR_i2s, MP_ARG_INT, {.u_int = I2S_DEVICE_0}},
+        { MP_QSTR_dmac, MP_ARG_INT, {.u_int = DMAC_CHANNEL2}},
+        { MP_QSTR_priority, MP_ARG_INT, {.u_int = 3}},
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -56,6 +67,15 @@ STATIC mp_obj_t speech_isolated_word_init_helper(isolated_word_obj_t *self_in, s
     self->device_num = args[ARG_i2s].u_int;
     self->channel_num = args[ARG_dmac].u_int;
     iw_load(args[ARG_i2s].u_int, args[ARG_dmac].u_int, args[ARG_priority].u_int);
+
+    // speech_set_word(self->mfcc_dats, 0, hey_friday_0, fram_num_hey_friday_0);
+    // speech_set_word(self->mfcc_dats, 1, hey_friday_1, fram_num_hey_friday_1);
+    // speech_set_word(self->mfcc_dats, 2, hey_friday_2, fram_num_hey_friday_2);
+    // speech_set_word(self->mfcc_dats, 3, hey_friday_3, fram_num_hey_friday_3);
+    // speech_set_word(self->mfcc_dats, 4, hey_jarvis_0, fram_num_hey_jarvis_0);
+    // speech_set_word(self->mfcc_dats, 5, hey_jarvis_1, fram_num_hey_jarvis_1);
+    // speech_set_word(self->mfcc_dats, 6, hey_jarvis_2, fram_num_hey_jarvis_2);
+    // speech_set_word(self->mfcc_dats, 7, hey_jarvis_3, fram_num_hey_jarvis_3);
 
     return mp_const_none;
 }
@@ -160,29 +180,89 @@ STATIC mp_obj_t speech_isolated_word_result(mp_obj_t self) {
 }
 MP_DEFINE_CONST_FUN_OBJ_1(speech_isolated_word_result_obj, speech_isolated_word_result);
 
-STATIC mp_obj_t speech_isolated_word_recognize(mp_obj_t self) {
+STATIC mp_obj_t speech_isolated_word_reset(mp_obj_t self) {
+    iw_set_state(Idle);
     return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_1(speech_isolated_word_reset_obj, speech_isolated_word_reset);
+
+STATIC mp_obj_t speech_isolated_word_recognize(mp_obj_t self_in) {
+    isolated_word_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    
+    if (iw_get_state() == Done)
+    {
+        int16_t min_comm = -1;
+        uint32_t min_dis = dis_max;
+        // uint32_t cycle0 = read_csr(mcycle);
+        for (uint32_t ftr_num = 0; ftr_num < self->size; ftr_num += 1)
+        {
+            //  ftr_mdl=(v_ftr_tag*)ftr_num;
+            v_ftr_tag *ftr_mdl = (v_ftr_tag *)(&self->mfcc_dats[ftr_num]);
+            if ((ftr_mdl->save_sign) == mfcc_dats_mask)
+            {
+                printk("no. %d, ftr_mdl->frm_num %d, ", ftr_num, ftr_mdl->frm_num);
+                
+                uint32_t cur_dis = dtw(ftr_mdl, &ftr_curr);
+                printk("cur_dis %d, ftr_curr.frm_num %d\n", cur_dis, ftr_curr.frm_num);
+            
+                if (cur_dis < min_dis)
+                {
+                    min_dis = cur_dis;
+                    min_comm = ftr_num;
+                    printk("min_comm: %d >\r\n", min_comm);
+                }
+            }
+        }
+        // uint32_t cycle1 = read_csr(mcycle) - cycle0;
+        // printk("[INFO] recg cycle = 0x%08x\n", cycle1);
+        //printk("recg end ");
+        printk("min_comm: %d >\r\n", min_comm);
+        iw_set_state(Idle);
+        return Done;
+    }
+    return mp_obj_new_int(iw_get_state());
 }
 MP_DEFINE_CONST_FUN_OBJ_1(speech_isolated_word_recognize_obj, speech_isolated_word_recognize);
 
-STATIC mp_obj_t speech_isolated_word_record(mp_obj_t self, mp_obj_t pos_in) {
-    return mp_const_none;
+STATIC mp_obj_t speech_isolated_word_record(mp_obj_t self_in, mp_obj_t pos_in) {
+    isolated_word_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    int pos = mp_obj_get_int(pos_in);
+    if (iw_get_state() == Done)
+    {
+        v_ftr_tag *tmp = iw_get_ftr();
+        if (tmp->frm_num < self->size)
+        {
+            speech_set_word(self->mfcc_dats, pos, tmp->mfcc_dat, tmp->frm_num);
+            iw_set_state(Idle);
+            return Done;
+        }
+    }
+    return mp_obj_new_int(iw_get_state());
 }
 MP_DEFINE_CONST_FUN_OBJ_2(speech_isolated_word_record_obj, speech_isolated_word_record);
 
 STATIC const mp_rom_map_elem_t mp_module_isolated_word_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__),        MP_OBJ_NEW_QSTR(MP_QSTR_isolated_word) },
 
-    {MP_ROM_QSTR(MP_QSTR_set_threshold), MP_ROM_PTR(&speech_isolated_word_set_threshold_obj)},
-    {MP_ROM_QSTR(MP_QSTR_size), MP_ROM_PTR(&speech_isolated_word_size_obj)},
-    {MP_ROM_QSTR(MP_QSTR_set), MP_ROM_PTR(&speech_isolated_word_set_obj)},
-    {MP_ROM_QSTR(MP_QSTR_get), MP_ROM_PTR(&speech_isolated_word_get_obj)},
-    {MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&speech_isolated_word_del_obj)},
+    { MP_ROM_QSTR(MP_QSTR_set_threshold), MP_ROM_PTR(&speech_isolated_word_set_threshold_obj)},
+    { MP_ROM_QSTR(MP_QSTR_size), MP_ROM_PTR(&speech_isolated_word_size_obj)},
+    { MP_ROM_QSTR(MP_QSTR_set), MP_ROM_PTR(&speech_isolated_word_set_obj)},
+    { MP_ROM_QSTR(MP_QSTR_get), MP_ROM_PTR(&speech_isolated_word_get_obj)},
+    { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&speech_isolated_word_del_obj)},
 
-    {MP_ROM_QSTR(MP_QSTR_record), MP_ROM_PTR(&speech_isolated_word_record_obj)},
-    {MP_ROM_QSTR(MP_QSTR_recognize), MP_ROM_PTR(&speech_isolated_word_recognize_obj)},
-    {MP_ROM_QSTR(MP_QSTR_state), MP_ROM_PTR(&speech_isolated_word_state_obj)},
-    {MP_ROM_QSTR(MP_QSTR_result), MP_ROM_PTR(&speech_isolated_word_result_obj)},
+    { MP_ROM_QSTR(MP_QSTR_record), MP_ROM_PTR(&speech_isolated_word_record_obj)},
+    { MP_ROM_QSTR(MP_QSTR_recognize), MP_ROM_PTR(&speech_isolated_word_recognize_obj)},
+    { MP_ROM_QSTR(MP_QSTR_state), MP_ROM_PTR(&speech_isolated_word_state_obj)},
+    { MP_ROM_QSTR(MP_QSTR_result), MP_ROM_PTR(&speech_isolated_word_result_obj)},
+    { MP_ROM_QSTR(MP_QSTR_reset), MP_ROM_PTR(&speech_isolated_word_reset_obj)},
+
+    { MP_ROM_QSTR(MP_QSTR_Init), MP_ROM_INT(Init) },
+    { MP_ROM_QSTR(MP_QSTR_Idle), MP_ROM_INT(Idle) },
+    { MP_ROM_QSTR(MP_QSTR_Ready), MP_ROM_INT(Ready) },
+    { MP_ROM_QSTR(MP_QSTR_MaybeNoise), MP_ROM_INT(MaybeNoise) },
+    { MP_ROM_QSTR(MP_QSTR_Restrain), MP_ROM_INT(Restrain) },
+    { MP_ROM_QSTR(MP_QSTR_Speek), MP_ROM_INT(Speek) },
+    { MP_ROM_QSTR(MP_QSTR_Done), MP_ROM_INT(Done) },
 };
 
 MP_DEFINE_CONST_DICT(mp_module_isolated_word_locals_dict, mp_module_isolated_word_locals_dict_table);
@@ -194,203 +274,3 @@ const mp_obj_type_t speech_isolated_word_type = {
     .make_new = speech_isolated_word_make_new,
     .locals_dict = (mp_obj_dict_t *)&mp_module_isolated_word_locals_dict,
 };
-
-
-// STATIC mp_obj_t speech_isolated_word_record(size_t n_args, const mp_obj_t *args)
-// {
-//     mp_printf(&mp_plat_print, "speech_isolated_word_record\r\n");
-
-//     mp_int_t keyword_num = mp_obj_get_int(args[1]);
-//     mp_int_t model_num = mp_obj_get_int(args[2]);
-//     if (keyword_num > 10)
-//     {
-//         mp_printf(&mp_plat_print, "[MaixPy] keyword_num>10\n");
-//         return mp_const_false;
-//     }
-//     if (model_num > 4)
-//     {
-//         mp_printf(&mp_plat_print, "[MaixPy] keyword_num>4\n");
-//         return mp_const_false;
-//     }
-//     mp_printf(&mp_plat_print, "[MAIXPY]: record[%d:%d]\n", keyword_num, model_num);
-//     // isolated_word_record(keyword_num, model_num);
-//     return mp_const_true;
-// }
-// MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(speech_isolated_word_record_obj, 3, 3, speech_isolated_word_record);
-
-// STATIC mp_obj_t speech_isolated_word_get_model_data_info(size_t n_args, const mp_obj_t *args)
-// {
-//     isolated_word_obj_t *self = MP_OBJ_TO_PTR(args[0]);
-//     mp_int_t keyword_num = mp_obj_get_int(args[1]);
-//     mp_int_t model_num = mp_obj_get_int(args[2]);
-
-//     mp_obj_t list = mp_obj_new_list(0, NULL);
-//     mp_obj_list_append(list, MP_OBJ_NEW_SMALL_INT(self->frm_num));
-//     return list;
-// }
-// MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(speech_isolated_word_get_model_data_info_obj, 3, 3, speech_isolated_word_get_model_data_info);
-
-// STATIC mp_obj_t speech_isolated_word_print_model(size_t n_args, const mp_obj_t *args)
-// {
-//     isolated_word_obj_t *self = MP_OBJ_TO_PTR(args[0]);
-//     mp_int_t keyword_num = mp_obj_get_int(args[1]);
-//     mp_int_t model_num = mp_obj_get_int(args[2]);
-//     if (keyword_num > 10)
-//     {
-//         mp_printf(&mp_plat_print, "[MaixPy] keyword_num>10\n");
-//         return mp_const_false;
-//     }
-//     if (model_num > 4)
-//     {
-//         mp_printf(&mp_plat_print, "[MaixPy] keyword_num>4\n");
-//         return mp_const_false;
-//     }
-
-//     mp_obj_array_t *sr_array = m_new_obj(mp_obj_array_t);
-//     sr_array->base.type = &mp_type_bytearray;
-//     sr_array->typecode = BYTEARRAY_TYPECODE;
-//     sr_array->free = 0;
-//     sr_array->len = self->voice_model_len;
-//     sr_array->items = self->p_mfcc_data;
-
-//     mp_printf(&mp_plat_print, "[MaixPy] [(%d,%d)|frm_num:%d]\n", keyword_num, model_num, self->frm_num);
-
-//     printf("\r\n[%s]-----------------\r\n", __FUNCTION__);
-//     int16_t *pbuf_16 = (int16_t *)sr_array->items;
-//     for (int i = 0; i < (sr_array->len); i++)
-//     {
-//         if (((i + 1) % 20) == 0)
-//         {
-//             printf("%4d  \n", pbuf_16[i]);
-//             msleep(2);
-//         }
-//         else
-//             printf("%4d  ", pbuf_16[i]);
-//     }
-//     printf("\r\n-----------------#\r\n");
-
-//     return mp_const_true;
-// }
-// MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(speech_isolated_word_print_model_obj, 3, 3, speech_isolated_word_print_model);
-
-// // -----------------------------------------------------------------------------
-// STATIC mp_obj_t speech_isolated_word_get_model_data(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
-// {
-//     isolated_word_obj_t *self = MP_OBJ_TO_PTR(args[0]);
-//     mp_int_t keyword_num = mp_obj_get_int(args[1]);
-//     mp_int_t model_num = mp_obj_get_int(args[2]);
-//     if (keyword_num > 10)
-//     {
-//         mp_printf(&mp_plat_print, "[MaixPy] keyword_num>10\n");
-//         return mp_const_false;
-//     }
-//     if (model_num > 4)
-//     {
-//         mp_printf(&mp_plat_print, "[MaixPy] model_num>4\n");
-//         return mp_const_false;
-//     }
-
-//     mp_printf(&mp_plat_print, "[MaixPy] [(%d,%d)|frm_num:%d]\n", keyword_num, model_num, self->frm_num);
-
-//     mp_obj_array_t *sr_array = m_new_obj(mp_obj_array_t);
-//     sr_array->base.type = &mp_type_bytearray;
-//     sr_array->typecode = BYTEARRAY_TYPECODE;
-//     sr_array->free = 0;
-//     sr_array->len = self->voice_model_len;
-//     sr_array->items = self->p_mfcc_data;
-
-//     return sr_array;
-// }
-// MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(speech_isolated_word_get_model_data_obj, 3, 3, speech_isolated_word_get_model_data);
-
-// STATIC mp_obj_t speech_isolated_word_set_threshold(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
-// {
-//     isolated_word_obj_t *self = MP_OBJ_TO_PTR(args[0]);
-//     mp_int_t n_thl = mp_obj_get_int(args[1]);
-//     mp_int_t z_thl = mp_obj_get_int(args[2]);
-//     mp_int_t s_thl = mp_obj_get_int(args[3]);
-
-//     // isolated_word_set_Threshold(n_thl, z_thl, s_thl);
-//     return mp_const_true;
-// }
-// MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(speech_isolated_word_set_threshold_obj, 2, 4, speech_isolated_word_set_threshold);
-
-// STATIC mp_obj_t speech_isolated_word_add_voice_model(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
-// {
-//     isolated_word_obj_t *self = MP_OBJ_TO_PTR(args[0]);
-//     mp_int_t keyword_num = mp_obj_get_int(args[1]);
-//     mp_int_t model_num = mp_obj_get_int(args[2]);
-//     mp_int_t frm_num = mp_obj_get_int(args[3]);
-//     mp_obj_array_t *sr_array = MP_OBJ_TO_PTR(args[4]);
-//     self->p_mfcc_data = (int16_t *)sr_array->items;
-//     self->voice_model_len = sr_array->len;
-//     self->frm_num = frm_num;
-//     if (keyword_num > 10)
-//     {
-//         mp_printf(&mp_plat_print, "[MaixPy] keyword_num>10\n");
-//         return mp_const_false;
-//     }
-//     if (model_num > 4)
-//     {
-//         mp_printf(&mp_plat_print, "[MaixPy] keyword_num>4\n");
-//         return mp_const_false;
-//     }
-//     mp_printf(&mp_plat_print, "[MaixPy] add_voice_model[%d:%d]\n", keyword_num, model_num);
-//     mp_printf(&mp_plat_print, "[MaixPy] model[frm_num:%d:len:%d]\n", self->frm_num, sr_array->len);
-//     // mp_printf(&mp_plat_print, "[MaixPy] self[p:0x%X:len:%d]\n", self->p_mfcc_data, self->voice_model_len);
-//     // mp_printf(&mp_plat_print, "[MaixPy] sr_array[p:0x%X:len:%d]\n", sr_array->items, sr_array->len);
-
-//     return mp_const_true;
-// }
-// MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(speech_isolated_word_add_voice_model_obj, 5, 5, speech_isolated_word_add_voice_model);
-
-// STATIC mp_obj_t speech_isolated_word_init(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
-// {
-//     return speech_isolated_word_init_helper(args[0], n_args - 1, args + 1, kw_args);
-// }
-// MP_DEFINE_CONST_FUN_OBJ_KW(speech_isolated_word_init_obj, 1, speech_isolated_word_init);
-
-// STATIC mp_obj_t speech_isolated_word_get_result(mp_obj_t self_in)
-// {
-//     int res = 0;
-//     return mp_obj_new_int(res);
-// }
-// MP_DEFINE_CONST_FUN_OBJ_KW(speech_isolated_word_get_result_obj, 1, speech_isolated_word_get_result);
-
-// STATIC mp_obj_t speech_isolated_word_finish(mp_obj_t self_in)
-// {
-//     return mp_const_true;
-// }
-// MP_DEFINE_CONST_FUN_OBJ_KW(speech_isolated_word_finish_obj, 1, speech_isolated_word_finish);
-
-// STATIC mp_obj_t speech_isolated_word_recognize(mp_obj_t self_in)
-// {
-//     // mp_printf(&mp_plat_print, "[MaixPy] recognize...\r\n");
-//     isolated_word_obj_t *self = MP_OBJ_TO_PTR(self_in);
-//     mp_int_t rev_val = 0;
-//     return mp_obj_new_int(rev_val);
-// }
-// MP_DEFINE_CONST_FUN_OBJ_1(speech_isolated_word_recognize_obj, speech_isolated_word_recognize);
-
-
-// STATIC mp_obj_t speech_isolated_word_get_status(mp_obj_t self_in)
-// {
-//     mp_int_t status_val = 0;
-//     return mp_obj_new_int(status_val);
-// }
-// MP_DEFINE_CONST_FUN_OBJ_KW(speech_isolated_word_get_status_obj, 1, speech_isolated_word_get_status);
-
-
-
-
-// STATIC mp_obj_t speech_isolated_word_set_threshold(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
-// {
-//     isolated_word_obj_t *self = MP_OBJ_TO_PTR(args[0]);
-//     mp_int_t n_thl = mp_obj_get_int(args[1]);
-//     mp_int_t z_thl = mp_obj_get_int(args[2]);
-//     mp_int_t s_thl = mp_obj_get_int(args[3]);
-
-//     // isolated_word_set_Threshold(n_thl, z_thl, s_thl);
-//     return mp_const_none;
-// }
-// MP_DEFINE_CONST_FUN_OBJ_KW(speech_isolated_word_set_threshold_obj, 3, speech_isolated_word_set_threshold);

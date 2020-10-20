@@ -220,8 +220,8 @@ uint8_t VAD2(const uint16_t *vc, valid_tag *valid_voice, atap_tag *atap_arg)
 		}
 	}
 
-//	printf("frm_sum=%d\n",frm_sum);
-//	printf("frm_zero=%d ",frm_zero);
+	// printf("frm_sum=%d\n",frm_sum);
+	// printf("frm_zero=%d ",frm_zero);
 
 	if (FRAME_LEN + (FRAME_LEN-frame_mov) * frm_n > VcBuf_Len - (FRAME_LEN - frame_mov)) {//over frame length
 		cur_stus = 0; //进入无声段
@@ -233,9 +233,9 @@ uint8_t VAD2(const uint16_t *vc, valid_tag *valid_voice, atap_tag *atap_arg)
 	//至少有一个参数超过其门限值
 		if (frm_sum > (atap_arg->s_thl)) {
 			// printf("frm_sum ok\n");
-		}
-		else
+		} else {
 			// printf("frm_zero ok\n");
+		}
 		if (cur_stus == 0) {//如果当前是无声段
 			cur_stus = 1; //进入前端过渡段
 			front_duration = 1; //前端过渡段持续帧数置1 第一帧

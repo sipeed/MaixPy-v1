@@ -2,7 +2,7 @@
 #define __VOICE_MODEL_H
 
 #include <stdint.h>
-#include "util/MFCC.h"
+#include "MFCC.h"
 
 #ifdef __cplusplus
 extern "C" {
