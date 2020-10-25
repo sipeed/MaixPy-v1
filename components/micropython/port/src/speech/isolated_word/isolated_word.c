@@ -144,9 +144,9 @@ int iw_i2s_dma_irq(void *ctx)
             for (i = 0; i < frame_mov; i++)
                 v_dat[i + frame_mov] = rx_buf[i + frame_mov];
         }
-        iw_state = Speek;
+        iw_state = Speak;
     }
-    case Speek: // 录音识别
+    case Speak: // 录音识别
     {
         if (i2s_recv_flag == FIRST)
         {

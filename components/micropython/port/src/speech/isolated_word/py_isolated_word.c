@@ -323,7 +323,7 @@ STATIC const mp_rom_map_elem_t mp_module_isolated_word_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_Ready), MP_ROM_INT(Ready) },
     { MP_ROM_QSTR(MP_QSTR_MaybeNoise), MP_ROM_INT(MaybeNoise) },
     { MP_ROM_QSTR(MP_QSTR_Restrain), MP_ROM_INT(Restrain) },
-    { MP_ROM_QSTR(MP_QSTR_Speek), MP_ROM_INT(Speek) },
+    { MP_ROM_QSTR(MP_QSTR_Speak), MP_ROM_INT(Speak) },
     { MP_ROM_QSTR(MP_QSTR_Done), MP_ROM_INT(Done) },
 };
 

@@ -16,7 +16,7 @@ typedef enum __iw_state {
   Ready,
   MaybeNoise,
   Restrain,
-  Speek,
+  Speak,
   Done,
 } IwState;
 
