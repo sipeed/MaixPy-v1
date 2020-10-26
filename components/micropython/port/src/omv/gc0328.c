@@ -981,8 +981,8 @@ static int gc0328_set_auto_exposure(sensor_t *sensor, int enable, int exposure_u
 		if(exposure_us != -1)
 		{
 			cambus_writeb(sensor->slv_addr, 0xfe, 0x01);
-			cambus_writeb(sensor->slv_addr,0x2b, (uint8_t)(((uint16_t)exposure_us)>>8));
-			cambus_writeb(sensor->slv_addr,0x2c, (uint8_t)(((uint16_t)exposure_us)));
+			cambus_writeb(sensor->slv_addr,0x2f, (uint8_t)(((uint16_t)exposure_us)>>8));
+			cambus_writeb(sensor->slv_addr,0x30, (uint8_t)(((uint16_t)exposure_us)));
 		}
 	}
 	else
@@ -991,8 +991,8 @@ static int gc0328_set_auto_exposure(sensor_t *sensor, int enable, int exposure_u
 		if(exposure_us != -1)
 		{
 			cambus_writeb(sensor->slv_addr, 0xfe, 0x01);
-			cambus_writeb(sensor->slv_addr,0x2b, (uint8_t)(((uint16_t)exposure_us)>>8));
-			cambus_writeb(sensor->slv_addr,0x2c, (uint8_t)(((uint16_t)exposure_us)));
+			cambus_writeb(sensor->slv_addr,0x2f, (uint8_t)(((uint16_t)exposure_us)>>8));
+			cambus_writeb(sensor->slv_addr,0x30, (uint8_t)(((uint16_t)exposure_us)));
 		}
 	}
     return ret;
