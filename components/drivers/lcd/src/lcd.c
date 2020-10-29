@@ -172,9 +172,10 @@ void lcd_init_sequence_for_ili9486(void)
 
 }
 
-int lcd_init(uint32_t freq, bool oct, uint16_t offset_w0, uint16_t offset_h0, uint16_t offset_w1, uint16_t offset_h1, bool invert_color, uint16_t width, uint16_t height)
+int lcd_init(uint32_t freq, bool oct, uint16_t offset_w0, uint16_t offset_h0, uint16_t offset_w1, uint16_t offset_h1, bool invert_color, uint8_t dir, uint16_t width, uint16_t height)
 {
     uint8_t data = 0;
+    lcd_ctl.dir = dir;
     lcd_ctl.width = width, lcd_ctl.height = height;
     lcd_ctl.start_offset_w0 = offset_w0;
     lcd_ctl.start_offset_h0 = offset_h0;
@@ -249,13 +250,14 @@ uint16_t lcd_get_height()
     return g_lcd_h;
 }
 
+#include "printf.h"
 
 void lcd_set_direction(lcd_dir_t dir)
 {
     if(!g_lcd_init)
         return;
     //dir |= 0x08;  //excahnge RGB
-    lcd_ctl.dir = dir;
+    dir = ((lcd_ctl.dir & DIR_RGB2BRG) == DIR_RGB2BRG) ? (dir | DIR_RGB2BRG) : dir;
 
 #if defined(CONFIG_BOARD_TWATCH)
     lcd_ctl.width = g_lcd_w - 1;
