@@ -578,6 +578,8 @@ STATIC mp_obj_t machine_i2c_init_helper(machine_hard_i2c_obj_t* self, mp_uint_t 
         || self->i2c == (i2c_device_number_t)I2C_DEVICE_4 
         || self->i2c == (i2c_device_number_t)I2C_DEVICE_5) {
         self->mode = MACHINE_I2C_MODE_MASTER_SOFT;
+        if( mp_obj_get_int(args[ARG_scl].u_obj) >= 32 || mp_obj_get_int(args[ARG_sda].u_obj) >= 32)
+            mp_raise_ValueError("[MAIXPY]SW_I2C: pin(scl/sda) < GPIOHS_MAX_PINNO(32)!"); 
     }
 #endif
 
