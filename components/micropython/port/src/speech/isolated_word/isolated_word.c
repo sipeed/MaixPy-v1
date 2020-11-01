@@ -196,8 +196,9 @@ int iw_i2s_dma_irq(void *ctx)
     return 0;
 }
 
-void iw_load(i2s_device_number_t device_num, dmac_channel_number_t channel_num, uint32_t priority)
+void iw_run(i2s_device_number_t device_num, dmac_channel_number_t channel_num, uint32_t priority)
 {
+    iw_stop();
     i2s_device = device_num;
     dma_channel = channel_num;
     dmac_irq_register(channel_num, iw_i2s_dma_irq, NULL, priority);
@@ -211,7 +212,7 @@ void iw_load(i2s_device_number_t device_num, dmac_channel_number_t channel_num, 
     }
 }
 
-void iw_free()
+void iw_stop()
 {
     if (iw_state != Init)
     {
@@ -246,7 +247,7 @@ void iw_begin()
 
     dmac_init();
 
-    iw_load(i2s_device, dma_channel, 3);
+    iw_run(i2s_device, dma_channel, 3);
 
     /* Enable the machine interrupt */
     sysctl_enable_irq();
