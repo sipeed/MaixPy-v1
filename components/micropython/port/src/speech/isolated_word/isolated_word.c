@@ -28,7 +28,7 @@ static volatile enum I2sFlag {
     FIRST,
     SECOND
 } i2s_recv_flag = NONE;
-static uint8_t i2s_device = 0, dma_channel = 2;
+static uint8_t i2s_device = 0, dma_channel = 2, __lr_shift = 0;
 
 void iw_set_state(IwState state)
 {
@@ -57,7 +57,7 @@ int iw_i2s_dma_irq(void *ctx)
             g_index = 0;
             for (i = 0; i < frame_mov; i++)
             {
-                s_tmp = (int16_t)(g_rx_dma_buf[2 * i] & 0xffff); //g_rx_dma_buf[2 * i + 1] Low left
+                s_tmp = (int16_t)(g_rx_dma_buf[2 * i + __lr_shift] & 0xffff); //g_rx_dma_buf[2 * i + 1] Low left
                 rx_buf[i] = s_tmp + 32768;
             }
             i2s_recv_flag = FIRST;
@@ -68,7 +68,7 @@ int iw_i2s_dma_irq(void *ctx)
             g_index = frame_mov * 2;
             for (i = frame_mov; i < frame_mov * 2; i++)
             {
-                s_tmp = (int16_t)(g_rx_dma_buf[2 * i] & 0xffff); //g_rx_dma_buf[2 * i + 1] Low left
+                s_tmp = (int16_t)(g_rx_dma_buf[2 * i + __lr_shift] & 0xffff); //g_rx_dma_buf[2 * i + 1] Low left
                 rx_buf[i] = s_tmp + 32768;
             }
             i2s_recv_flag = SECOND;
@@ -196,11 +196,12 @@ int iw_i2s_dma_irq(void *ctx)
     return 0;
 }
 
-void iw_run(i2s_device_number_t device_num, dmac_channel_number_t channel_num, uint32_t priority)
+void iw_run(i2s_device_number_t device_num, dmac_channel_number_t channel_num, uint8_t lr_shift, uint32_t priority)
 {
     iw_stop();
     i2s_device = device_num;
     dma_channel = channel_num;
+    __lr_shift = lr_shift;
     dmac_irq_register(channel_num, iw_i2s_dma_irq, NULL, priority);
     i2s_receive_data_dma(device_num, &g_rx_dma_buf[0], frame_mov * 2, channel_num);
     if (iw_state != Idle)

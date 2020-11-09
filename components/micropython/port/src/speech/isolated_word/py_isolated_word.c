@@ -29,7 +29,8 @@ typedef struct _isolated_word_obj_t
     int16_t min_comm;
     uint16_t min_frm;
     uint16_t cur_frm;
-    uint16_t size;
+    uint16_t size:14;
+    uint16_t shift:2;
     i2s_device_number_t device_num;
     dmac_channel_number_t channel_num;
     v_ftr_tag *mfcc_dats;
@@ -53,12 +54,14 @@ STATIC mp_obj_t speech_isolated_word_init_helper(isolated_word_obj_t *self_in, s
         ARG_i2s,
         ARG_dmac,
         ARG_priority,
+        ARG_shift,
     };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_size, MP_ARG_INT, {.u_int = 10}},
         { MP_QSTR_i2s, MP_ARG_INT, {.u_int = I2S_DEVICE_0}},
         { MP_QSTR_dmac, MP_ARG_INT, {.u_int = DMAC_CHANNEL2}},
         { MP_QSTR_priority, MP_ARG_INT, {.u_int = 3}},
+        { MP_QSTR_shift, MP_ARG_INT, {.u_int = 0}},
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -70,7 +73,8 @@ STATIC mp_obj_t speech_isolated_word_init_helper(isolated_word_obj_t *self_in, s
     self->size = args[ARG_size].u_int;
     self->device_num = args[ARG_i2s].u_int;
     self->channel_num = args[ARG_dmac].u_int;
-    iw_run(self->device_num, self->channel_num, self->size);
+    self->shift = args[ARG_shift].u_int;
+    iw_run(self->device_num, self->channel_num, self->shift, self->size);
 
     // speech_set_word(self->mfcc_dats, 0, hey_friday_0, fram_num_hey_friday_0);
     // speech_set_word(self->mfcc_dats, 1, hey_friday_1, fram_num_hey_friday_1);
@@ -218,7 +222,7 @@ MP_DEFINE_CONST_FUN_OBJ_1(speech_isolated_word_reset_obj, speech_isolated_word_r
 
 STATIC mp_obj_t speech_isolated_word_run(mp_obj_t self_in) {
     isolated_word_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    iw_run(self->device_num, self->channel_num, self->size);
+    iw_run(self->device_num, self->channel_num, self->shift, self->size);
     return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_1(speech_isolated_word_run_obj, speech_isolated_word_run);
