@@ -12,6 +12,7 @@
 STATIC const mp_map_elem_t speech_recognizer_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_speech_recognizer) },
     { MP_ROM_QSTR(MP_QSTR_isolated_word),  MP_ROM_PTR(&speech_isolated_word_type) },
+    { MP_ROM_QSTR(MP_QSTR_asr),  MP_ROM_PTR(&speech_asr_type) },
 };
 
 STATIC MP_DEFINE_CONST_DICT (
