@@ -15,15 +15,13 @@
 
 #define GET_GPIOHS_VALX(io) (((*(volatile uint32_t *)0x38001000U) >> (io)) & 1)
 
-uint8_t cs_num = 0, rst_num = 0, rdy_num = 0;
-
 static uint8_t _mosi_num = -1;
 static uint8_t _miso_num = -1;
 static uint8_t _sclk_num = -1;
 
 /* SPI端口初始化 */
 //should check io value
-void esp32_spi_config_io(uint8_t cs, uint8_t rst, uint8_t rdy, uint8_t mosi, uint8_t miso, uint8_t sclk)
+void esp32_spi_config_io(uint8_t mosi, uint8_t miso, uint8_t sclk)
 {
     //clk
     gpiohs_set_drive_mode(sclk, GPIO_DM_OUTPUT);
@@ -37,10 +35,6 @@ void esp32_spi_config_io(uint8_t cs, uint8_t rst, uint8_t rdy, uint8_t mosi, uin
     _mosi_num = mosi;
     _miso_num = miso;
     _sclk_num = sclk;
-
-    cs_num = cs;
-    rdy_num = rdy;
-    rst_num = rst; //if rst <0, use soft reset
 }
 
 uint8_t soft_spi_rw(uint8_t data)
@@ -250,12 +244,10 @@ static void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip
 }
 
 /* SPI端口初始化 */
-void soft_spi_init(void)
+// void soft_spi_init(void)
+void esp32_spi_config_io(uint8_t mosi, uint8_t miso, uint8_t sclk)
 {
     printf("hard spi\r\n");
-    //cs
-    gpiohs_set_drive_mode(ESP32_SPI_CSX_HS_NUM, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(ESP32_SPI_CSX_HS_NUM, 1);
     //init SPI_DEVICE_1
     spi_init(SPI_DEVICE_1, SPI_WORK_MODE_0, SPI_FF_STANDARD, 8, 0);
     printf("set spi clk:%d\r\n", spi_set_clk_rate(SPI_DEVICE_1, 1000000 * 8)); /*set clk rate*/

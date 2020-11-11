@@ -245,9 +245,8 @@ STATIC void esp32_make_new_helper(esp32_nic_obj_t *self, size_t n_args, const mp
         mp_raise_ValueError("gpiohs sclk value error!");
     }
 
-    esp32_spi_config_io(cs - FUNC_GPIOHS0, rst, rdy - FUNC_GPIOHS0,
-                        mosi - FUNC_GPIOHS0, miso - FUNC_GPIOHS0, sclk - FUNC_GPIOHS0);
-    esp32_spi_init();
+    esp32_spi_config_io(mosi - FUNC_GPIOHS0, miso - FUNC_GPIOHS0, sclk - FUNC_GPIOHS0);
+    esp32_spi_init(cs - FUNC_GPIOHS0, rst, rdy - FUNC_GPIOHS0);
     char* version = m_new(char, 32);
     char* ret = esp32_spi_firmware_version(version);
     if(ret == NULL)
@@ -464,8 +463,8 @@ STATIC mp_uint_t esp32_socket_recv(mod_network_socket_obj_t *socket, byte *buf, 
                 break;
             if( mp_hal_ticks_ms() - start_time > ((uint32_t)socket->timeout*1000) )
             {
-                *_errno = MP_ETIMEDOUT;
-                return MP_STREAM_ERROR;
+                // *_errno = MP_ETIMEDOUT;
+                return read_len;
             }
         }
         if(socket->u_param.type == MOD_NETWORK_SOCK_STREAM)

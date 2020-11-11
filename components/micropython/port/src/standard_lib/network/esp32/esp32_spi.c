@@ -14,6 +14,8 @@
 char ssid[32] = {0};
 uint8_t mac[32] = {0};
 esp32_spi_net_t net_dat;
+uint8_t cs_num, rst_num, rdy_num;
+
 
 static void esp32_spi_reset(void);
 static void delete_esp32_spi_params(void *arg);
@@ -22,8 +24,9 @@ static esp32_spi_params_t *esp32_spi_params_alloc_1param(uint32_t len, uint8_t *
 static esp32_spi_params_t *esp32_spi_params_alloc_2param(uint32_t len_0, uint8_t *buf_0, uint32_t len_1, uint8_t *buf_1);
 static int8_t esp32_spi_send_command(uint8_t cmd, esp32_spi_params_t *params, uint8_t param_len_16);
 
-void esp32_spi_init(void)
+void esp32_spi_init(uint8_t t_cs_num, uint8_t t_rst_num, uint8_t t_rdy_num)
 {
+    cs_num = t_cs_num, rst_num = t_rst_num, rdy_num = t_rdy_num;
     //cs
     gpiohs_set_drive_mode(cs_num, GPIO_DM_OUTPUT);
     gpiohs_set_pin(cs_num, 1);
