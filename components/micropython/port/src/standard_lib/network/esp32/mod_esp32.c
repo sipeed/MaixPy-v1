@@ -226,27 +226,6 @@ STATIC void esp32_make_new_helper(esp32_nic_obj_t *self, size_t n_args, const mp
         mp_raise_ValueError("gpiohs rdy value error!");
     }
 
-    //mosi
-    mosi = args_parsed[ARG_mosi].u_int;
-    if (mosi == -1 || mosi > FUNC_GPIOHS31 || mosi < FUNC_GPIOHS0)
-    {
-        mp_raise_ValueError("gpiohs mosi value error!");
-    }
-
-    //miso
-    miso = args_parsed[ARG_miso].u_int;
-    if (miso == -1 || miso > FUNC_GPIOHS31 || miso < FUNC_GPIOHS0)
-    {
-        mp_raise_ValueError("gpiohs miso value error!");
-    }
-
-    //sclk
-    sclk = args_parsed[ARG_sclk].u_int;
-    if (sclk == -1 || sclk > FUNC_GPIOHS31 || sclk < FUNC_GPIOHS0)
-    {
-        mp_raise_ValueError("gpiohs sclk value error!");
-    }
-
     //hard_spi
     spi = args_parsed[ARG_spi].u_int;
     if (spi > 0)
@@ -257,6 +236,28 @@ STATIC void esp32_make_new_helper(esp32_nic_obj_t *self, size_t n_args, const mp
     else
     {
         mp_printf(&mp_plat_print, "[esp32_spi] use soft spi\r\n");
+        
+        //mosi
+        mosi = args_parsed[ARG_mosi].u_int;
+        if (mosi == -1 || mosi > FUNC_GPIOHS31 || mosi < FUNC_GPIOHS0)
+        {
+            mp_raise_ValueError("gpiohs mosi value error!");
+        }
+
+        //miso
+        miso = args_parsed[ARG_miso].u_int;
+        if (miso == -1 || miso > FUNC_GPIOHS31 || miso < FUNC_GPIOHS0)
+        {
+            mp_raise_ValueError("gpiohs miso value error!");
+        }
+
+        //sclk
+        sclk = args_parsed[ARG_sclk].u_int;
+        if (sclk == -1 || sclk > FUNC_GPIOHS31 || sclk < FUNC_GPIOHS0)
+        {
+            mp_raise_ValueError("gpiohs sclk value error!");
+        }
+
         soft_spi_config_io(mosi - FUNC_GPIOHS0, miso - FUNC_GPIOHS0, sclk - FUNC_GPIOHS0);
     }
 
