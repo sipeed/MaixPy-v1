@@ -172,6 +172,39 @@ void py_helper_keyword_int_array(size_t n_args, const mp_obj_t *args, uint arg_i
     }
 }
 
+
+float *py_helper_keyword_corner_array(uint n_args, const mp_obj_t *args, uint arg_index,
+                                      mp_map_t *kw_args, mp_obj_t kw)
+{
+    mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, kw, MP_MAP_LOOKUP);
+
+    if (kw_arg) {
+        mp_obj_t *arg_array;
+        mp_obj_get_array_fixed_n(kw_arg->value, 4, &arg_array);
+        float *corners = xalloc(sizeof(float) * 8);
+        for (int i = 0; i < 4; i++) {
+            mp_obj_t *arg_point;
+            mp_obj_get_array_fixed_n(arg_array[i], 2, &arg_point);
+            corners[(i*2)+0] = mp_obj_get_float(arg_point[0]);
+            corners[(i*2)+1] = mp_obj_get_float(arg_point[1]);
+        }
+        return corners;
+    } else if (n_args > arg_index) {
+        mp_obj_t *arg_array;
+        mp_obj_get_array_fixed_n(args[arg_index], 4, &arg_array);
+        float *corners = xalloc(sizeof(float) * 8);
+        for (int i = 0; i < 4; i++) {
+            mp_obj_t *arg_point;
+            mp_obj_get_array_fixed_n(arg_array[i], 2, &arg_point);
+            corners[(i*2)+0] = mp_obj_get_float(arg_point[0]);
+            corners[(i*2)+1] = mp_obj_get_float(arg_point[1]);
+        }
+        return corners;
+    }
+
+    return NULL;
+}
+
 void py_helper_keyword_float_array(size_t n_args, const mp_obj_t *args, uint arg_index,
                                    mp_map_t *kw_args, mp_obj_t kw, float *x, int size)
 {

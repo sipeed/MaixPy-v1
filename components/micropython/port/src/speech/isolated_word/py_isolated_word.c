@@ -27,7 +27,10 @@ typedef struct _isolated_word_obj_t
 
     uint32_t min_dis;
     int16_t min_comm;
-    uint16_t size;
+    uint16_t min_frm;
+    uint16_t cur_frm;
+    uint16_t size:14;
+    uint16_t shift:2;
     i2s_device_number_t device_num;
     dmac_channel_number_t channel_num;
     v_ftr_tag *mfcc_dats;
@@ -51,12 +54,14 @@ STATIC mp_obj_t speech_isolated_word_init_helper(isolated_word_obj_t *self_in, s
         ARG_i2s,
         ARG_dmac,
         ARG_priority,
+        ARG_shift,
     };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_size, MP_ARG_INT, {.u_int = 10}},
         { MP_QSTR_i2s, MP_ARG_INT, {.u_int = I2S_DEVICE_0}},
         { MP_QSTR_dmac, MP_ARG_INT, {.u_int = DMAC_CHANNEL2}},
         { MP_QSTR_priority, MP_ARG_INT, {.u_int = 3}},
+        { MP_QSTR_shift, MP_ARG_INT, {.u_int = 0}},
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -68,7 +73,8 @@ STATIC mp_obj_t speech_isolated_word_init_helper(isolated_word_obj_t *self_in, s
     self->size = args[ARG_size].u_int;
     self->device_num = args[ARG_i2s].u_int;
     self->channel_num = args[ARG_dmac].u_int;
-    iw_load(args[ARG_i2s].u_int, args[ARG_dmac].u_int, args[ARG_priority].u_int);
+    self->shift = args[ARG_shift].u_int;
+    iw_run(self->device_num, self->channel_num, self->shift, self->size);
 
     // speech_set_word(self->mfcc_dats, 0, hey_friday_0, fram_num_hey_friday_0);
     // speech_set_word(self->mfcc_dats, 1, hey_friday_1, fram_num_hey_friday_1);
@@ -103,7 +109,7 @@ STATIC mp_obj_t speech_isolated_word_make_del(mp_obj_t self_in){
         isolated_word_obj_t *self = MP_OBJ_TO_PTR(self_in);
         // mp_printf(&mp_plat_print, "%s __del__\r\n", __func__);
         if (self->mfcc_dats != NULL) {
-            iw_free();
+            iw_stop();
             m_del(v_ftr_tag, self->mfcc_dats, self->size);
             self->mfcc_dats = NULL;
         }
@@ -196,11 +202,13 @@ MP_DEFINE_CONST_FUN_OBJ_2(speech_isolated_word_get_obj, speech_isolated_word_get
 STATIC mp_obj_t speech_isolated_word_result(mp_obj_t self_in) {
     isolated_word_obj_t *self = MP_OBJ_TO_PTR(self_in);
     if (self->min_comm != -1) {
-        mp_obj_t tuple[2] = {
+        mp_obj_t tuple[4] = {
             mp_obj_new_int(self->min_comm),
             mp_obj_new_int(self->min_dis),
+            mp_obj_new_int(self->cur_frm),
+            mp_obj_new_int(self->min_frm),
         };
-        return mp_obj_new_tuple(2, tuple);
+        return mp_obj_new_tuple(4, tuple);
     }
     return mp_const_none;
 }
@@ -212,7 +220,20 @@ STATIC mp_obj_t speech_isolated_word_reset(mp_obj_t self_in) {
 }
 MP_DEFINE_CONST_FUN_OBJ_1(speech_isolated_word_reset_obj, speech_isolated_word_reset);
 
-STATIC mp_obj_t speech_isolated_word_dts(mp_obj_t self_in, mp_obj_t tuple_in)
+STATIC mp_obj_t speech_isolated_word_run(mp_obj_t self_in) {
+    isolated_word_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    iw_run(self->device_num, self->channel_num, self->shift, self->size);
+    return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_1(speech_isolated_word_run_obj, speech_isolated_word_run);
+
+STATIC mp_obj_t speech_isolated_word_stop(mp_obj_t self_in) {
+    iw_stop();
+    return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_1(speech_isolated_word_stop_obj, speech_isolated_word_stop);
+
+STATIC mp_obj_t speech_isolated_word_dtw(mp_obj_t self_in, mp_obj_t tuple_in)
 {
     isolated_word_obj_t *self = MP_OBJ_TO_PTR(self_in);
     uint32_t result = 0;
@@ -245,7 +266,7 @@ STATIC mp_obj_t speech_isolated_word_dts(mp_obj_t self_in, mp_obj_t tuple_in)
     }
     return mp_obj_new_int(result);
 }
-MP_DEFINE_CONST_FUN_OBJ_2(speech_isolated_word_dts_obj, speech_isolated_word_dts);
+MP_DEFINE_CONST_FUN_OBJ_2(speech_isolated_word_dtw_obj, speech_isolated_word_dtw);
 
 STATIC mp_obj_t speech_isolated_word_recognize(mp_obj_t self_in) {
     isolated_word_obj_t *self = MP_OBJ_TO_PTR(self_in);
@@ -261,16 +282,18 @@ STATIC mp_obj_t speech_isolated_word_recognize(mp_obj_t self_in) {
             v_ftr_tag *ftr_mdl = (v_ftr_tag *)(&self->mfcc_dats[ftr_num]);
             if ((ftr_mdl->save_sign) == mfcc_dats_mask)
             {
-                printk("no. %d, ftr_mdl->frm_num %d, ", ftr_num, ftr_mdl->frm_num);
+                printk("NO. %d, ftr_mdl->frm_num %d, ", ftr_num, ftr_mdl->frm_num);
                 
                 uint32_t cur_dis = dtw(ftr_mdl, &ftr_curr);
-                printk("cur_dis %d, ftr_curr.frm_num %d\n", cur_dis, ftr_curr.frm_num);
+                printk("cur_dis %d, ftr_curr.frm_num %d\r\n", cur_dis, ftr_curr.frm_num);
             
                 if (cur_dis < self->min_dis)
                 {
-                    self->min_dis = cur_dis;
                     self->min_comm = ftr_num;
-                    printk("min_comm: %d >\r\n", self->min_comm);
+                    self->min_dis = cur_dis;
+                    self->cur_frm = ftr_curr.frm_num;
+                    self->min_frm = ftr_mdl->frm_num;
+                    printk("min_comm: %d \r\n", self->min_comm);
                 }
             }
         }
@@ -311,7 +334,9 @@ STATIC const mp_rom_map_elem_t mp_module_isolated_word_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_get), MP_ROM_PTR(&speech_isolated_word_get_obj)},
     { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&speech_isolated_word_del_obj)},
 
-    { MP_ROM_QSTR(MP_QSTR_dts), MP_ROM_PTR(&speech_isolated_word_dts_obj)},
+    { MP_ROM_QSTR(MP_QSTR_run), MP_ROM_PTR(&speech_isolated_word_run_obj)},
+    { MP_ROM_QSTR(MP_QSTR_stop), MP_ROM_PTR(&speech_isolated_word_stop_obj)},
+    { MP_ROM_QSTR(MP_QSTR_dtw), MP_ROM_PTR(&speech_isolated_word_dtw_obj)},
     { MP_ROM_QSTR(MP_QSTR_record), MP_ROM_PTR(&speech_isolated_word_record_obj)},
     { MP_ROM_QSTR(MP_QSTR_recognize), MP_ROM_PTR(&speech_isolated_word_recognize_obj)},
     { MP_ROM_QSTR(MP_QSTR_state), MP_ROM_PTR(&speech_isolated_word_state_obj)},
@@ -331,7 +356,7 @@ MP_DEFINE_CONST_DICT(mp_module_isolated_word_locals_dict, mp_module_isolated_wor
 
 const mp_obj_type_t speech_isolated_word_type = {
     .base = {&mp_type_type},
-    .name = MP_QSTR_SpeechRecognizer,
+    .name = MP_QSTR_isolated_word,
     .print = speech_isolated_word_print,
     .make_new = speech_isolated_word_make_new,
     .locals_dict = (mp_obj_dict_t *)&mp_module_isolated_word_locals_dict,

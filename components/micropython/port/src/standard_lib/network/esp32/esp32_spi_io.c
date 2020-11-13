@@ -8,14 +8,12 @@
 #include "spi.h"
 #include "esp32_spi.h"
 
-#if 1 /* ESP32_SOFT_SPI */
+#include "fpioa.h"
 
 #define GPIOHS_OUT_HIGH(io) (*(volatile uint32_t *)0x3800100CU) |= (1 << (io))
 #define GPIOHS_OUT_LOWX(io) (*(volatile uint32_t *)0x3800100CU) &= ~(1 << (io))
 
 #define GET_GPIOHS_VALX(io) (((*(volatile uint32_t *)0x38001000U) >> (io)) & 1)
-
-uint8_t cs_num = 0, rst_num = 0, rdy_num = 0;
 
 static uint8_t _mosi_num = -1;
 static uint8_t _miso_num = -1;
@@ -23,7 +21,7 @@ static uint8_t _sclk_num = -1;
 
 /* SPI端口初始化 */
 //should check io value
-void esp32_spi_config_io(uint8_t cs, uint8_t rst, uint8_t rdy, uint8_t mosi, uint8_t miso, uint8_t sclk)
+void soft_spi_config_io(uint8_t mosi, uint8_t miso, uint8_t sclk)
 {
     //clk
     gpiohs_set_drive_mode(sclk, GPIO_DM_OUTPUT);
@@ -37,14 +35,11 @@ void esp32_spi_config_io(uint8_t cs, uint8_t rst, uint8_t rdy, uint8_t mosi, uin
     _mosi_num = mosi;
     _miso_num = miso;
     _sclk_num = sclk;
-
-    cs_num = cs;
-    rdy_num = rdy;
-    rst_num = rst; //if rst <0, use soft reset
 }
 
 uint8_t soft_spi_rw(uint8_t data)
 {
+    // uint8_t tmp = data;
     uint8_t i;
     uint8_t temp = 0;
     for (i = 0; i < 8; i++)
@@ -75,11 +70,27 @@ uint8_t soft_spi_rw(uint8_t data)
         asm volatile("nop");
         asm volatile("nop");
     }
+    // printf("soft_spi_rw %02X:%02X \r\n", tmp, temp);
     return temp;
 }
 
 void soft_spi_rw_len(uint8_t *send, uint8_t *recv, uint32_t len)
 {
+    // printf("soft_spi_rw_len\r\n");
+    // printf("\r\nsend %p %d", send, len);
+    // if (send != NULL) {
+    //     for (int i = 0; i < len; i++) {
+    //         printf(" %02X", send[i]);
+    //     }
+    // }
+    // printf("\r\nrecv %p %d", recv, len);
+    // if (recv != NULL) {
+    //     for (int i = 0; i < len; i++) {
+    //         printf(" %02X", recv[i]);
+    //     }
+    // }
+    // printf("\r\n");
+
     if (send == NULL && recv == NULL)
     {
         printf(" buffer is null\r\n");
@@ -129,7 +140,6 @@ void soft_spi_rw_len(uint8_t *send, uint8_t *recv, uint32_t len)
 #endif
 }
 
-#else
 
 static spi_transfer_width_t sipeed_spi_get_frame_size(size_t data_bit_length)
 {
@@ -140,7 +150,7 @@ static spi_transfer_width_t sipeed_spi_get_frame_size(size_t data_bit_length)
     return SPI_TRANS_INT;
 }
 
-static void sipeed_spi_set_tmod(uint8_t spi_num, uint32_t tmod)
+static void hard_spi_set_tmod(uint8_t spi_num, uint32_t tmod)
 {
     configASSERT(spi_num < SPI_DEVICE_MAX && spi_num != 2);
     volatile spi_t *spi_handle = spi[spi_num];
@@ -162,14 +172,14 @@ static void sipeed_spi_set_tmod(uint8_t spi_num, uint32_t tmod)
     set_bit(&spi_handle->ctrlr0, 3 << tmod_offset, tmod << tmod_offset);
 }
 
-static void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select_t chip_select, const uint8_t *tx_buff, uint8_t *rx_buff, size_t len)
+static void hard_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select_t chip_select, const uint8_t *tx_buff, size_t tx_len, uint8_t *rx_buff, size_t rx_len)
 {
     configASSERT(spi_num < SPI_DEVICE_MAX && spi_num != 2);
-    configASSERT(len > 0);
+    configASSERT(tx_len > 0);
     size_t index, fifo_len;
-    size_t rx_len = len;
-    size_t tx_len = rx_len;
-    sipeed_spi_set_tmod(spi_num, SPI_TMOD_TRANS_RECV);
+    // size_t rx_len = tx_len;
+    // size_t tx_len = rx_len;
+    hard_spi_set_tmod(spi_num, SPI_TMOD_TRANS_RECV);
 
     volatile spi_t *spi_handle = spi[spi_num];
 
@@ -250,26 +260,51 @@ static void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip
 }
 
 /* SPI端口初始化 */
-void soft_spi_init(void)
+// void soft_spi_init(void)
+void hard_spi_config_io()
 {
     printf("hard spi\r\n");
-    //cs
-    gpiohs_set_drive_mode(ESP32_SPI_CSX_HS_NUM, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(ESP32_SPI_CSX_HS_NUM, 1);
     //init SPI_DEVICE_1
-    spi_init(SPI_DEVICE_1, SPI_WORK_MODE_0, SPI_FF_STANDARD, 8, 0);
-    printf("set spi clk:%d\r\n", spi_set_clk_rate(SPI_DEVICE_1, 1000000 * 8)); /*set clk rate*/
+    // spi_init(SPI_DEVICE_1, SPI_WORK_MODE_0, SPI_FF_STANDARD, 8, 0);
+    printf("esp32 set hard spi clk:%d\r\n", spi_set_clk_rate(SPI_DEVICE_1, 1000000 * 9)); /*set clk rate*/
+
+    // fpioa_set_function(27, FUNC_SPI1_SCLK);
+    // fpioa_set_function(28, FUNC_SPI1_D0);
+    // fpioa_set_function(26, FUNC_SPI1_D1);
+
 }
 
-uint8_t soft_spi_rw(uint8_t data)
+uint8_t hard_spi_rw(uint8_t data)
 {
     uint8_t c;
-    sipeed_spi_transfer_data_standard(SPI_DEVICE_1, SPI_CHIP_SELECT_0, &data, &c, 1);
+    spi_init(SPI_DEVICE_1, SPI_WORK_MODE_0, SPI_FF_STANDARD, 8, 0);
+    hard_spi_transfer_data_standard(SPI_DEVICE_1, SPI_CHIP_SELECT_0, &data, 1, &c, 1);
     return c;
 }
 
-void soft_spi_rw_len(uint8_t *send, uint8_t *recv, uint32_t len)
+void hard_spi_rw_len(uint8_t *send, uint8_t *recv, uint32_t len)
 {
+    // if (send != NULL) {
+    //     for (int i = 0; i < len; i++) {
+    //         printf("%02X ", send[i]);
+    //     }
+    // }
+    // printf("hard_spi_rw_len\r\n");
+    // printf("\r\nsend %p %d", send, len);
+    // if (send != NULL) {
+    //     for (int i = 0; i < len; i++) {
+    //         printf(" %02X", send[i]);
+    //     }
+    // }
+    // printf("\r\nrecv %p %d", recv, len);
+    // if (recv != NULL) {
+    //     for (int i = 0; i < len; i++) {
+    //         printf(" %02X", recv[i]);
+    //     }
+    // }
+    // printf("\r\n");
+
+    // printf("soft_spi_rw_len %p %p %d\r\n", send, recv, len);
     if (send == NULL && recv == NULL)
     {
         printf(" buffer is null\r\n");
@@ -297,13 +332,13 @@ void soft_spi_rw_len(uint8_t *send, uint8_t *recv, uint32_t len)
     //send and recv
     if (send && recv)
     {
-        sipeed_spi_transfer_data_standard(SPI_DEVICE_1, SPI_CHIP_SELECT_0, send, recv, len);
+        hard_spi_transfer_data_standard(SPI_DEVICE_1, SPI_CHIP_SELECT_0, send, len, recv, len);
         return;
     }
     return;
 }
 
-#endif
+
 
 uint64_t get_millis(void)
 {
