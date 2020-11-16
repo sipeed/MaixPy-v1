@@ -176,7 +176,7 @@ err:
 
 STATIC void esp32_make_new_helper(esp32_nic_obj_t *self, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
-    int cs, rst, rdy, mosi, miso, sclk;
+    int cs, rst, rdy, mosi, miso, sclk, spi;
 
     enum
     {
@@ -186,6 +186,7 @@ STATIC void esp32_make_new_helper(esp32_nic_obj_t *self, size_t n_args, const mp
         ARG_mosi,
         ARG_miso,
         ARG_sclk,
+        ARG_spi,
     };
 
     static const mp_arg_t allowed_args[] = {
@@ -195,6 +196,7 @@ STATIC void esp32_make_new_helper(esp32_nic_obj_t *self, size_t n_args, const mp
         {MP_QSTR_mosi, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1}},
         {MP_QSTR_miso, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1}},
         {MP_QSTR_sclk, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1}},
+        {MP_QSTR_spi, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1}},
     };
 
     mp_arg_val_t args_parsed[MP_ARRAY_SIZE(allowed_args)];
@@ -224,30 +226,42 @@ STATIC void esp32_make_new_helper(esp32_nic_obj_t *self, size_t n_args, const mp
         mp_raise_ValueError("gpiohs rdy value error!");
     }
 
-    //mosi
-    mosi = args_parsed[ARG_mosi].u_int;
-    if (mosi == -1 || mosi > FUNC_GPIOHS31 || mosi < FUNC_GPIOHS0)
+    //hard_spi
+    spi = args_parsed[ARG_spi].u_int;
+    if (spi > 0)
     {
-        mp_raise_ValueError("gpiohs mosi value error!");
+        mp_printf(&mp_plat_print, "[esp32_spi] use hard spi(%d)\r\n", spi);
+        hard_spi_config_io();
+    }
+    else
+    {
+        mp_printf(&mp_plat_print, "[esp32_spi] use soft spi\r\n");
+        
+        //mosi
+        mosi = args_parsed[ARG_mosi].u_int;
+        if (mosi == -1 || mosi > FUNC_GPIOHS31 || mosi < FUNC_GPIOHS0)
+        {
+            mp_raise_ValueError("gpiohs mosi value error!");
+        }
+
+        //miso
+        miso = args_parsed[ARG_miso].u_int;
+        if (miso == -1 || miso > FUNC_GPIOHS31 || miso < FUNC_GPIOHS0)
+        {
+            mp_raise_ValueError("gpiohs miso value error!");
+        }
+
+        //sclk
+        sclk = args_parsed[ARG_sclk].u_int;
+        if (sclk == -1 || sclk > FUNC_GPIOHS31 || sclk < FUNC_GPIOHS0)
+        {
+            mp_raise_ValueError("gpiohs sclk value error!");
+        }
+
+        soft_spi_config_io(mosi - FUNC_GPIOHS0, miso - FUNC_GPIOHS0, sclk - FUNC_GPIOHS0);
     }
 
-    //miso
-    miso = args_parsed[ARG_miso].u_int;
-    if (miso == -1 || miso > FUNC_GPIOHS31 || miso < FUNC_GPIOHS0)
-    {
-        mp_raise_ValueError("gpiohs miso value error!");
-    }
-
-    //sclk
-    sclk = args_parsed[ARG_sclk].u_int;
-    if (sclk == -1 || sclk > FUNC_GPIOHS31 || sclk < FUNC_GPIOHS0)
-    {
-        mp_raise_ValueError("gpiohs sclk value error!");
-    }
-
-    esp32_spi_config_io(cs - FUNC_GPIOHS0, rst, rdy - FUNC_GPIOHS0,
-                        mosi - FUNC_GPIOHS0, miso - FUNC_GPIOHS0, sclk - FUNC_GPIOHS0);
-    esp32_spi_init();
+    esp32_spi_init(cs - FUNC_GPIOHS0, rst, rdy - FUNC_GPIOHS0, spi > 0);
     char* version = m_new(char, 32);
     char* ret = esp32_spi_firmware_version(version);
     if(ret == NULL)
@@ -264,7 +278,7 @@ STATIC void esp32_make_new_helper(esp32_nic_obj_t *self, size_t n_args, const mp
 //network.ESP32_SPI(cs=1,rst=2,rdy=3,mosi=4,miso=5,sclk=6)
 STATIC mp_obj_t esp32_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args)
 {
-    if (n_args != 0 || n_kw != 6)
+    if (n_args != 0 || n_kw > 7)
     {
         mp_raise_ValueError("error argument");
         return mp_const_none;
@@ -464,8 +478,8 @@ STATIC mp_uint_t esp32_socket_recv(mod_network_socket_obj_t *socket, byte *buf, 
                 break;
             if( mp_hal_ticks_ms() - start_time > ((uint32_t)socket->timeout*1000) )
             {
-                *_errno = MP_ETIMEDOUT;
-                return MP_STREAM_ERROR;
+                // *_errno = MP_ETIMEDOUT;
+                return read_len;
             }
         }
         if(socket->u_param.type == MOD_NETWORK_SOCK_STREAM)

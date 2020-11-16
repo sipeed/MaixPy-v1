@@ -273,7 +273,7 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
             lcd_preinit_register_handler(&lcd_init_sequence_for_ili9486);
         }
         ret = lcd_init(args[ARG_freq].u_int, true, lcd_cfg.offset_w0, lcd_cfg.offset_h0,
-                       lcd_cfg.offset_w1, lcd_cfg.offset_h1, invert, width_curr, height_curr);
+                       lcd_cfg.offset_w1, lcd_cfg.offset_h1, invert, lcd_cfg.dir, width_curr, height_curr);
         if (0 != lcd_cfg.dir)
         {
             lcd_set_direction(lcd_cfg.dir);
@@ -293,7 +293,7 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         fpioa_set_function(22, FUNC_SPI0_SS0 + LCD_SPI_SLAVE_SELECT);
         fpioa_set_function(19, FUNC_SPI0_SCLK);
         fpioa_set_function(18, FUNC_SPI0_D0);
-        ret = lcd_init(args[ARG_freq].u_int, false, 52, 40, 40, 52, true, width_curr, height_curr);
+        ret = lcd_init(args[ARG_freq].u_int, false, 52, 40, 40, 52, true, 0, width_curr, height_curr);
         lcd_clear(color);
         break;
     }
@@ -308,7 +308,7 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         fpioa_set_function(38, FUNC_GPIOHS0 + DCX_GPIONUM);
         fpioa_set_function(36, FUNC_SPI0_SS0 + LCD_SPI_SLAVE_SELECT);
         fpioa_set_function(39, FUNC_SPI0_SCLK);
-        ret = lcd_init(args[ARG_freq].u_int, true, 0, 0, 0, 0, true, width_curr, height_curr);
+        ret = lcd_init(args[ARG_freq].u_int, true, 0, 0, 0, 0, true, 0, width_curr, height_curr);
         lcd_clear(color);
         break;
     }
@@ -334,7 +334,7 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         if (args[ARG_offset_h1].u_int == -1)
             offset_h1 = 0;
         ret = lcd_init(args[ARG_freq].u_int, true, offset_w0, offset_h0,
-                       offset_w1, offset_h1, args[ARG_invert].u_int == 0 ? false : true, width_curr, height_curr);
+                       offset_w1, offset_h1, args[ARG_invert].u_int == 0 ? false : true, 0, width_curr, height_curr);
         lcd_clear(color);
         break;
     }

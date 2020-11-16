@@ -100,6 +100,12 @@ static mp_obj_t py_sensor_snapshot(size_t n_args, const mp_obj_t *args, mp_map_t
         update_jb = mp_obj_is_true(kw_arg->value);
     }
 
+    if (sensor.reset == false)
+    {
+        mp_raise_TypeError("not found sensor");
+        return mp_const_none;
+    }
+    
     // Sanity checks
     PY_ASSERT_TRUE_MSG((sensor.pixformat != PIXFORMAT_JPEG), "Operation not supported on JPEG");
     int ret = sensor.snapshot(&sensor, (image_t *)py_image_cobj(image), NULL, update_jb);

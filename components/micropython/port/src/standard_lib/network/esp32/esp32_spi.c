@@ -14,6 +14,8 @@
 char ssid[32] = {0};
 uint8_t mac[32] = {0};
 esp32_spi_net_t net_dat;
+uint8_t cs_num, rst_num, rdy_num, is_hard_spi;
+
 
 static void esp32_spi_reset(void);
 static void delete_esp32_spi_params(void *arg);
@@ -22,8 +24,9 @@ static esp32_spi_params_t *esp32_spi_params_alloc_1param(uint32_t len, uint8_t *
 static esp32_spi_params_t *esp32_spi_params_alloc_2param(uint32_t len_0, uint8_t *buf_0, uint32_t len_1, uint8_t *buf_1);
 static int8_t esp32_spi_send_command(uint8_t cmd, esp32_spi_params_t *params, uint8_t param_len_16);
 
-void esp32_spi_init(void)
+void esp32_spi_init(uint8_t t_cs_num, uint8_t t_rst_num, uint8_t t_rdy_num, uint8_t t_hard_spi)
 {
+    cs_num = t_cs_num, rst_num = t_rst_num, rdy_num = t_rdy_num, is_hard_spi = t_hard_spi;
     //cs
     gpiohs_set_drive_mode(cs_num, GPIO_DM_OUTPUT);
     gpiohs_set_pin(cs_num, 1);
@@ -211,7 +214,11 @@ static int8_t esp32_spi_send_command(uint8_t cmd, esp32_spi_params_t *params, ui
         return -1;
     }
 
-    soft_spi_rw_len(sendbuf, NULL, packet_len);
+    if (is_hard_spi) {
+        hard_spi_rw_len(sendbuf, NULL, packet_len);
+    } else {
+        soft_spi_rw_len(sendbuf, NULL, packet_len);
+    }
     gpiohs_set_pin(cs_num, 1);
 
 #if (ESP32_SPI_DEBUG >= 3)
@@ -239,8 +246,11 @@ static int8_t esp32_spi_send_command(uint8_t cmd, esp32_spi_params_t *params, ui
 uint8_t esp32_spi_read_byte(void)
 {
     uint8_t read = 0x0;
-
-    read = soft_spi_rw(0xff);
+    if (is_hard_spi) {
+        read = hard_spi_rw(0xff);
+    } else {
+        read = soft_spi_rw(0xff);
+    }
 
 #if (ESP32_SPI_DEBUG >= 3)
     printk("\t\tRead:%02x\r\n", read);
@@ -252,7 +262,11 @@ uint8_t esp32_spi_read_byte(void)
 ///Read many bytes from SPI
 void esp32_spi_read_bytes(uint8_t *buffer, uint32_t len)
 {
-    soft_spi_rw_len(NULL, buffer, len);
+    if (is_hard_spi) {
+        hard_spi_rw_len(NULL, buffer, len);
+    } else {
+        soft_spi_rw_len(NULL, buffer, len);
+    }
 
 #if (ESP32_SPI_DEBUG >= 3)
     if (len < 100)

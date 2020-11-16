@@ -327,6 +327,16 @@ extern const struct _mp_obj_module_t nes_module;
 #define MAIXPY_PY_NES_DEF 
 #endif
 
+// speech_recognizer
+#ifndef CONFIG_MAIXPY_SPEECH_RECOGNIZER_ENABLE
+#endif //CONFIG_MAIXPY_SPEECH_RECOGNIZER_ENABLE
+#if CONFIG_MAIXPY_SPEECH_RECOGNIZER_ENABLE
+extern const struct _mp_obj_module_t mp_module_speech_recognizer;
+#define MAIXPY_PY_SPEECH_RECOGNIZER_DEF \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_speech_recognizer), (mp_obj_t)&mp_module_speech_recognizer },
+#else
+#define MAIXPY_PY_SPEECH_RECOGNIZER_DEF 
+#endif
 // lvgl GUI lib
 
 #if CONFIG_MAIXPY_LVGL_ENABLE
@@ -390,6 +400,8 @@ extern const struct _mp_obj_module_t mp_module_touchscreen;
     { MP_OBJ_NEW_QSTR(MP_QSTR_uhashlib), (mp_obj_t)&mp_module_uhashlib_maix }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_ucryptolib), (mp_obj_t)&mp_module_ucryptolib }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_modules), (mp_obj_t)&mp_module_modules }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_modules), (mp_obj_t)&mp_module_modules }, \
+    MAIXPY_PY_SPEECH_RECOGNIZER_DEF \
     MAIXPY_PY_NES_DEF \
     MAIXPY_PY_VIDEO_DEF \
     MAIXPY_PY_LVGL_DEF \

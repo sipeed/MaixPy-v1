@@ -46,6 +46,15 @@ MP_DEFINE_CONST_FUN_OBJ_0(py_heap_free_obj, py_heap_free);
 // STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_free_obj, py_free);
 
 
+// STATIC mp_obj_t py_flash_write(mp_obj_t addr, mp_obj_t data_in) {
+//     mp_buffer_info_t bufinfo;
+//     mp_get_buffer_raise(data_in, &bufinfo, MP_BUFFER_READ);
+//     w25qxx_status_t status = w25qxx_write_data_dma(mp_obj_get_int(addr), bufinfo.buf, (uint32_t)bufinfo.len);
+//     return mp_obj_new_int(status); // (status != W25QXX_OK)
+// }
+
+// STATIC MP_DEFINE_CONST_FUN_OBJ_2(py_flash_write_obj, py_flash_write);
+
 STATIC mp_obj_t py_flash_read(mp_obj_t addr, mp_obj_t len_in) {
     size_t length = mp_obj_get_int(len_in);
     byte* data = m_new(byte, length);
@@ -66,6 +75,7 @@ static const mp_map_elem_t locals_dict_table[] = {
     // { MP_ROM_QSTR(MP_QSTR_malloc),    (mp_obj_t)(&py_malloc_obj) },
     // { MP_ROM_QSTR(MP_QSTR_free),    (mp_obj_t)(&py_free_obj) },
     { MP_ROM_QSTR(MP_QSTR_flash_read),    (mp_obj_t)(&py_flash_read_obj) },
+    // { MP_ROM_QSTR(MP_QSTR_flash_write),    (mp_obj_t)(&py_flash_write_obj) },
 };
 STATIC MP_DEFINE_CONST_DICT(locals_dict, locals_dict_table);
 
