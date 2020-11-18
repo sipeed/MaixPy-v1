@@ -612,7 +612,7 @@ int32_t WIZCHIP_EXPORT(sendto)(uint8_t sn, uint8_t *buf, uint16_t len,
 #if _WIZCHIP_ < 5500  // M20150401 : for WIZCHIP Errata #4, #5 (ARP errata)
       if (taddr) setSUBR((uint8_t *)&taddr);
 #endif
-      return -MP_ETIMEDOUT;
+      return SOCKERR_TIMEOUT;
     }
     ////////////
   }

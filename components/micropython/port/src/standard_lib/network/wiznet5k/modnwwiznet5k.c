@@ -67,7 +67,7 @@ typedef struct _wiznet5k_obj_t {
   mp_obj_t spi;
   uint8_t cs;
   uint8_t socket_used;
-  uint8_t dhcp_ip_assign_fl;
+  volatile uint8_t dhcp_ip_assign_fl;
 } wiznet5k_obj_t;
 
 STATIC wiznet5k_obj_t wiznet5k_obj;
@@ -424,7 +424,7 @@ static void dhcp_ip_assign(void) {
 /* The handler of ip update */
 static void dhcp_ip_update(void) {
 #ifdef _DHCP_DEBUG_
-  mp_printf(&mp_plat_print, "get ip update");
+  mp_printf(&mp_plat_print, "get ip update\r\n");
 #endif
   return;
 }
@@ -432,7 +432,7 @@ static void dhcp_ip_update(void) {
 /* The handler of ip conflict */
 static void dhcp_ip_conflict(void) {
 #ifdef _DHCP_DEBUG_
-  mp_printf(&mp_plat_print, "ip conflict");
+  printf("ip conflict\r\n");
 #endif
   return;
 }
@@ -517,6 +517,7 @@ STATIC mp_obj_t wiznet5k_dhclient(mp_obj_t self_in) {
     // dhcp
     reg_dhcp_cbfunc(dhcp_ip_assign, dhcp_ip_update, dhcp_ip_conflict);
     DHCP_init(wiznet5k_obj.socket_used, &dhcp_msg);
+    printf("init dhcp\r\n");
   }
 
   return wiznet5k_obj.dhcp_ip_assign_fl ? mp_const_true : mp_const_false;

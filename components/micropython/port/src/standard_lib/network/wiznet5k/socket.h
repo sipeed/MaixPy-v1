@@ -122,7 +122,7 @@ extern "C" {
 #define SOCKERR_ARG (SOCK_ERROR - 10)        ///< Invalid argument.
 #define SOCKERR_PORTZERO (SOCK_ERROR - 11)   ///< Port number is zero
 #define SOCKERR_IPINVALID (SOCK_ERROR - 12)  ///< Invalid IP address
-#define SOCKERR_TIMEOUT (SOCK_ERROR - 13)    ///< Timeout occurred
+#define SOCKERR_TIMEOUT (SOCK_ERROR - 110)    ///< Timeout occurred 
 #define SOCKERR_DATALEN \
   (SOCK_ERROR - 14)  ///< Data length is zero or greater than buffer max size.
 #define SOCKERR_BUFFER \
