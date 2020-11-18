@@ -80,6 +80,11 @@ menu "Micropython configurations"
 			default n
 			select HTPA_ENABLE
 
+		config MAIXPY_AMG88XX_ENABLE
+			bool "Enable AMG88XX thermal sensor"
+			default n
+			select AMG88XX_ENABLE
+
 		config MICROPYTHON_ULAB_ENALBE
 			bool "Enable ulab module(a numpy-like fast vector module)"
 			default y
