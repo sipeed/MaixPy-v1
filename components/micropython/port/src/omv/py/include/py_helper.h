@@ -26,6 +26,8 @@ int py_helper_keyword_int(size_t n_args, const mp_obj_t *args, uint arg_index,
                           mp_map_t *kw_args, mp_obj_t kw, int default_val);
 float py_helper_keyword_float(size_t n_args, const mp_obj_t *args, uint arg_index,
                               mp_map_t *kw_args, mp_obj_t kw, float default_val);
+float *py_helper_keyword_corner_array(uint n_args, const mp_obj_t *args, uint arg_index,
+                                      mp_map_t *kw_args, mp_obj_t kw);
 void py_helper_keyword_int_array(size_t n_args, const mp_obj_t *args, uint arg_index,
                                  mp_map_t *kw_args, mp_obj_t kw, int *x, int size);
 void py_helper_keyword_float_array(size_t n_args, const mp_obj_t *args, uint arg_index,

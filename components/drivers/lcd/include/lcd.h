@@ -74,7 +74,7 @@ typedef struct _lcd_ctl
 
 void lcd_polling_enable(void);
 void lcd_interrupt_enable(void);
-int lcd_init(uint32_t freq, bool oct, uint16_t offset_w, uint16_t offset_h, uint16_t offset_w1, uint16_t offset_h1, bool invert_color, uint16_t width, uint16_t height);
+int lcd_init(uint32_t freq, bool oct, uint16_t offset_w, uint16_t offset_h, uint16_t offset_w1, uint16_t offset_h1, bool invert_color, uint8_t dir, uint16_t width, uint16_t height);
 void lcd_destroy();
 void lcd_clear(uint16_t color);
 void lcd_set_freq(uint32_t freq);

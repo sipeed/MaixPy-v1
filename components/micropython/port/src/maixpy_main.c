@@ -572,6 +572,7 @@ soft_reset:
     }
 
     // Speed up the system
+    maixpy_sdcard_loading = true;
     dual_func = sd_preload;
 
     // mp_printf(&mp_plat_print, "[MaixPy] init end\r\n"); // for maixpy ide

@@ -70,6 +70,17 @@ cp build/maixpy.bin $release_dir/maixpy_${version}_minimum_with_ide_support.bin
 cp build/maixpy.elf $release_dir/elf/maixpy_${version}_minimum_with_ide_support.elf
 cd ..
 
+# minimum with IDE support
+cd maixpy_k210_minimum
+echo "-------------------"
+echo "build project maixpy_k210_minimum_speech"
+echo "-------------------"
+python project.py distclean
+python project.py build --config_file "config_defaults_speech_with_ide_support.mk"
+cp build/maixpy.bin $release_dir/maixpy_${version}_minimum_speech_with_ide_support.bin
+cp build/maixpy.elf $release_dir/elf/maixpy_${version}_minimum_speech_with_ide_support.elf
+cd ..
+
 # minimum with V4 kmodel support
 cd maixpy_k210_minimum
 echo "-------------------"
@@ -81,6 +92,17 @@ cp build/maixpy.bin $release_dir/maixpy_${version}_minimum_with_kmodel_v4_suppor
 cp build/maixpy.elf $release_dir/elf/maixpy_${version}_minimum_with_kmodel_v4_support.elf
 cd ..
 
+# openmv with V4 kmodel & IDE support
+cd maixpy_k210_minimum
+echo "-------------------"
+echo "build project maixpy_k210_openmv_kmodel_v4_with_ide_support"
+echo "-------------------"
+python project.py distclean
+python project.py build --config_file "config_defaults_openmv_kmodel_v4_with_ide_support.mk"
+cp build/maixpy.bin $release_dir/maixpy_${version}_openmv_kmodel_v4_with_ide_support.bin
+cp build/maixpy.elf $release_dir/elf/maixpy_${version}_openmv_kmodel_v4_with_ide_support.elf
+cd ..
+
 # board M5StickV
 cd maixpy_m5stickv
 echo "-------------------"
@@ -90,6 +112,27 @@ python project.py distclean
 python project.py build
 cp build/maixpy.bin $release_dir/maixpy_${version}_m5stickv.bin
 cp build/maixpy.elf $release_dir/elf/maixpy_${version}_m5stickv.elf
+cd ..
+
+# board Maix Amigo
+cd maixpy_amigo
+echo "-------------------"
+echo "build project maixpy_amigo config_defaults"
+echo "-------------------"
+python project.py distclean
+python project.py build --config_file "config_defaults.mk"
+cp build/maixpy.bin $release_dir/maixpy_${version}_amigo_defaults.bin
+cp build/maixpy.elf $release_dir/elf/maixpy_${version}_amigo_defaults.elf
+cd ..
+
+cd maixpy_amigo
+echo "-------------------"
+echo "build project maixpy_amigo config_minimum"
+echo "-------------------"
+python project.py distclean
+python project.py build --config_file "config_minimum.mk"
+cp build/maixpy.bin $release_dir/maixpy_${version}_amigo_minimum.bin
+cp build/maixpy.elf $release_dir/elf/maixpy_${version}_amigo_minimum.elf
 cd ..
 
 # add readme.txt
