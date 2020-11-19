@@ -66,7 +66,7 @@ static int check_img_format(image_t* arg_img, uint16_t w, uint16_t h, uint16_t c
 		mp_printf(&mp_plat_print, "[MAIXPY]kpu: pix_ai is NULL!\r\n");
 		return -1;
 	}
-	if(abs(kmodel_type)==3){ 
+	if(abs(kmodel_type)==3 || abs(kmodel_type)==4){ 
 		if(arg_img->w != w || arg_img->h != h) 
 		{
 			mp_printf(&mp_plat_print, "[MAIXPY]kpu: img w=%d,h=%d, but model w=%d,h=%d\r\n",\
@@ -890,7 +890,7 @@ STATIC mp_obj_t py_kpu_class_run_yolo2(size_t n_args, const mp_obj_t *pos_args, 
         //PY_ASSERT_TRUE_MSG(IM_IS_MUTABLE(arg_img), "Image format is not supported.");
 		uint16_t w0=0;uint16_t h0=0;uint16_t ch0=0;
 		int kmodel_type=sipeed_kpu_model_get_type(kpu_net->kmodel_ctx);
-		if(abs(kmodel_type)==3){
+		if(abs(kmodel_type)==3 || abs(kmodel_type)==4){
 			if(sipeed_kpu_model_get_input_shape(kpu_net->kmodel_ctx, &w0, &h0, &ch0) != SIPEED_KPU_ERR_NONE)
 			{
 				mp_raise_ValueError("[MAIXPY]kpu: first layer not conv layer!\r\n");
