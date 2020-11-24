@@ -11,7 +11,7 @@
 #include "sysctl.h"
 #include "printf.h"
 
-const mp_obj_type_t maixduino_onewire_type;
+const mp_obj_type_t modules_onewire_type;
 typedef void (*set_pin_func_t)(uint8_t gpio, gpio_pin_value_t value);
 typedef gpio_pin_value_t (*get_pin_func_t)(uint8_t gpio);
 typedef void (*set_mode_func_t)(uint8_t gpio, gpio_drive_mode_t mode);
@@ -22,10 +22,10 @@ typedef struct {
     set_pin_func_t        set_pin;
     get_pin_func_t        get_pin;
     set_mode_func_t       set_mode;
-} maixduino_onewire_obj_t;
+} modules_onewire_obj_t;
 
 /******************************************************************************/
-STATIC int onewire_bus_reset(maixduino_onewire_obj_t *self) {
+STATIC int onewire_bus_reset(modules_onewire_obj_t *self) {
 	uint8_t retries = 125;
     sysctl_disable_irq();
     self->set_mode(self->gpio, GPIO_DM_INPUT);
@@ -48,7 +48,7 @@ STATIC int onewire_bus_reset(maixduino_onewire_obj_t *self) {
     return status;
 }
 
-STATIC int onewire_bus_readbit(maixduino_onewire_obj_t *self) {
+STATIC int onewire_bus_readbit(modules_onewire_obj_t *self) {
     sysctl_disable_irq();
     self->set_mode(self->gpio, GPIO_DM_OUTPUT);
     self->set_pin(self->gpio, GPIO_PV_LOW);
@@ -61,7 +61,7 @@ STATIC int onewire_bus_readbit(maixduino_onewire_obj_t *self) {
     return value;
 }
 
-STATIC void onewire_bus_writebit(maixduino_onewire_obj_t *self, int value) {
+STATIC void onewire_bus_writebit(modules_onewire_obj_t *self, int value) {
     if (value) {
         sysctl_disable_irq();
         self->set_mode(self->gpio, GPIO_DM_OUTPUT);
@@ -81,13 +81,13 @@ STATIC void onewire_bus_writebit(maixduino_onewire_obj_t *self, int value) {
     }
 }
 
-STATIC void onewire_bus_depower(maixduino_onewire_obj_t *self) {
+STATIC void onewire_bus_depower(modules_onewire_obj_t *self) {
     sysctl_disable_irq();
     self->set_mode(self->gpio, GPIO_DM_INPUT);
     sysctl_enable_irq();
 }
 
-STATIC int onewire_bus_search(maixduino_onewire_obj_t *self, uint8_t* l_rom, int* diff) {
+STATIC int onewire_bus_search(modules_onewire_obj_t *self, uint8_t* l_rom, int* diff) {
     int i = 64;
     uint8_t rom[8];
     int next_diff = 0;
@@ -130,9 +130,9 @@ STATIC int onewire_bus_search(maixduino_onewire_obj_t *self, uint8_t* l_rom, int
 
 /******************************************************************************/
 // MicroPython bindings
-mp_obj_t maixduino_onewire_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
-    maixduino_onewire_obj_t *self = m_new_obj(maixduino_onewire_obj_t);
-    self->base.type = &maixduino_onewire_type;
+mp_obj_t modules_onewire_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
+    modules_onewire_obj_t *self = m_new_obj(modules_onewire_obj_t);
+    self->base.type = &modules_onewire_type;
     enum {
         ARG_gpio
     };
@@ -169,19 +169,19 @@ mp_obj_t maixduino_onewire_make_new(const mp_obj_type_t *type, size_t n_args, si
 }
 
 STATIC mp_obj_t onewire_reset(mp_obj_t self_in) {
-    maixduino_onewire_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    modules_onewire_obj_t *self = MP_OBJ_TO_PTR(self_in);
     return mp_obj_new_bool(onewire_bus_reset(self));
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(onewire_reset_obj, onewire_reset);
 
 STATIC mp_obj_t onewire_readbit(mp_obj_t self_in) {
-    maixduino_onewire_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    modules_onewire_obj_t *self = MP_OBJ_TO_PTR(self_in);
     return MP_OBJ_NEW_SMALL_INT(onewire_bus_readbit(self));
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(onewire_readbit_obj, onewire_readbit);
 
 STATIC mp_obj_t onewire_readbyte(mp_obj_t self_in) {
-    maixduino_onewire_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    modules_onewire_obj_t *self = MP_OBJ_TO_PTR(self_in);
     uint8_t value = 0;
     for (int i = 0; i < 8; ++i) {
         value |= onewire_bus_readbit(self) << i;
@@ -191,7 +191,7 @@ STATIC mp_obj_t onewire_readbyte(mp_obj_t self_in) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(onewire_readbyte_obj, onewire_readbyte);
 
 STATIC mp_obj_t onewire_readbuffer(mp_obj_t self_in, mp_obj_t count_in) {
-    maixduino_onewire_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    modules_onewire_obj_t *self = MP_OBJ_TO_PTR(self_in);
     mp_int_t count = mp_obj_get_int(count_in);
     uint8_t data[count];
     for (int i = 0; i < count; ++i) {
@@ -206,7 +206,7 @@ STATIC mp_obj_t onewire_readbuffer(mp_obj_t self_in, mp_obj_t count_in) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(onewire_readbuffer_obj, onewire_readbuffer);
 
 STATIC mp_obj_t onewire_writebit(mp_obj_t self_in, mp_obj_t value_in) {
-    maixduino_onewire_obj_t* self = MP_OBJ_TO_PTR(self_in);
+    modules_onewire_obj_t* self = MP_OBJ_TO_PTR(self_in);
     mp_int_t value = mp_obj_get_int(value_in);
     onewire_bus_writebit(self, value);
     return mp_const_none;
@@ -214,7 +214,7 @@ STATIC mp_obj_t onewire_writebit(mp_obj_t self_in, mp_obj_t value_in) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(onewire_writebit_obj, onewire_writebit);
 
 STATIC mp_obj_t onewire_writebyte(mp_obj_t self_in, mp_obj_t value_in) {
-    maixduino_onewire_obj_t* self = MP_OBJ_TO_PTR(self_in);
+    modules_onewire_obj_t* self = MP_OBJ_TO_PTR(self_in);
     mp_int_t value = mp_obj_get_int(value_in);
     for (int i = 0; i < 8; ++i) {
         onewire_bus_writebit(self, value & 1);
@@ -226,7 +226,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(onewire_writebyte_obj, onewire_writebyte);
 
 STATIC mp_obj_t onewire_writebuffer(mp_obj_t self_in, mp_obj_t data_in) {
     mp_buffer_info_t bufinfo;
-    maixduino_onewire_obj_t* self = MP_OBJ_TO_PTR(self_in);
+    modules_onewire_obj_t* self = MP_OBJ_TO_PTR(self_in);
     mp_get_buffer_raise(data_in, &bufinfo, MP_BUFFER_READ);
     for (size_t i = 0; i < bufinfo.len; ++i) {
         uint8_t byte = ((uint8_t*)bufinfo.buf)[i];
@@ -242,7 +242,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(onewire_writebuffer_obj, onewire_writebuffer);
 STATIC mp_obj_t onewire_select(mp_obj_t self_in, mp_obj_t rom_in) {
     mp_int_t match_rom = 0x55;
     mp_buffer_info_t bufinfo;
-    maixduino_onewire_obj_t* self = MP_OBJ_TO_PTR(self_in);
+    modules_onewire_obj_t* self = MP_OBJ_TO_PTR(self_in);
     mp_get_buffer_raise(rom_in, &bufinfo, MP_BUFFER_READ);
     onewire_reset(self_in);
     for (int i = 0; i < 8; ++i) {
@@ -261,7 +261,7 @@ STATIC mp_obj_t onewire_select(mp_obj_t self_in, mp_obj_t rom_in) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(onewire_select_obj, onewire_select);
 
 STATIC mp_obj_t onewire_search(mp_obj_t self_in, mp_obj_t diff_in) {
-    maixduino_onewire_obj_t* self = MP_OBJ_TO_PTR(self_in);
+    modules_onewire_obj_t* self = MP_OBJ_TO_PTR(self_in);
     mp_int_t diff = mp_obj_get_int(diff_in);
     uint8_t rom[8];
     mp_obj_t roms[diff];
@@ -279,7 +279,7 @@ STATIC mp_obj_t onewire_search(mp_obj_t self_in, mp_obj_t diff_in) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(onewire_search_obj, onewire_search);
 
 STATIC mp_obj_t onewire_skip(mp_obj_t self_in) {
-    maixduino_onewire_obj_t* self = MP_OBJ_TO_PTR(self_in);
+    modules_onewire_obj_t* self = MP_OBJ_TO_PTR(self_in);
     mp_int_t skip_rom = 0xCC;
     for (int i = 0; i < 8; ++i) {
         onewire_bus_writebit(self, skip_rom & 1);
@@ -317,12 +317,12 @@ STATIC mp_obj_t onewire_crc8(mp_obj_t self_in, mp_obj_t data_in) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(onewire_crc8_obj, onewire_crc8);
 
-STATIC void maixduino_onewire_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
-    maixduino_onewire_obj_t *self = MP_OBJ_TO_PTR(self_in);
+STATIC void modules_onewire_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
+    modules_onewire_obj_t *self = MP_OBJ_TO_PTR(self_in);
     mp_printf(print, "[Maixduino]onewire:(%p) gpio=%d\r\n", self, self->gpio);
 }
 
-STATIC const mp_rom_map_elem_t mp_maixduino_onewire_locals_dict_table[] = {
+STATIC const mp_rom_map_elem_t mp_modules_onewire_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_onewire) },
 
     { MP_ROM_QSTR(MP_QSTR_reset), MP_ROM_PTR(&onewire_reset_obj) },
@@ -339,12 +339,12 @@ STATIC const mp_rom_map_elem_t mp_maixduino_onewire_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_crc8), MP_ROM_PTR(&onewire_crc8_obj) },
 };
 
-MP_DEFINE_CONST_DICT(mp_maixduino_onewire_locals_dict, mp_maixduino_onewire_locals_dict_table);
+MP_DEFINE_CONST_DICT(mp_modules_onewire_locals_dict, mp_modules_onewire_locals_dict_table);
 
-const mp_obj_type_t maixduino_onewire_type = {
+const mp_obj_type_t modules_onewire_type = {
     { &mp_type_type },
     .name = MP_QSTR_onewire,
-    .print = maixduino_onewire_print,
-    .make_new = maixduino_onewire_make_new,
-    .locals_dict = (mp_obj_dict_t*)&mp_maixduino_onewire_locals_dict,
+    .print = modules_onewire_print,
+    .make_new = modules_onewire_make_new,
+    .locals_dict = (mp_obj_dict_t*)&mp_modules_onewire_locals_dict,
 };

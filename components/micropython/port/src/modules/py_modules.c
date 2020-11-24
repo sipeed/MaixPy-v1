@@ -13,6 +13,7 @@
 STATIC const mp_map_elem_t modules_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_modules) },
     { MP_ROM_QSTR(MP_QSTR_ultrasonic),  MP_ROM_PTR(&modules_ultrasonic_type) },
+    { MP_ROM_QSTR(MP_QSTR_onewire),  MP_ROM_PTR(&modules_onewire_type) },
 #if CONFIG_MAIXPY_WS2812_ENABLE
     { MP_ROM_QSTR(MP_QSTR_ws2812),  MP_ROM_PTR(&modules_ws2812_type) },
 #endif
@@ -22,7 +23,6 @@ STATIC const mp_map_elem_t modules_globals_table[] = {
 #if CONFIG_MAIXPY_AMG88XX_ENABLE
     { MP_ROM_QSTR(MP_QSTR_amg88xx),  MP_ROM_PTR(&modules_amg88xx_type) },
 #endif
-    { MP_ROM_QSTR(MP_QSTR_onewire),  MP_ROM_PTR(&maixduino_onewire_type) }
 };
 
 STATIC MP_DEFINE_CONST_DICT (
