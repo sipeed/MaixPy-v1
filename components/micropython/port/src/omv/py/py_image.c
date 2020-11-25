@@ -1256,7 +1256,7 @@ static mp_obj_t py_image_copy(size_t n_args, const mp_obj_t *args, mp_map_t *kw_
 #endif
     } else {
        image.data = xalloc(image_size(&image));
-       image.pix_ai = xalloc(image.w*image.h*3);
+       image.pix_ai = NULL;//xalloc(image.w*image.h*3);
     }
 
     switch(arg_img->bpp) {
