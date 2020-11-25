@@ -101,7 +101,12 @@ menu "Micropython configurations"
 		config MICROPY_SSL_ENABLE
 			bool "Enable Https SSL"
 			default n
-			
+
+		config MICROPY_PY_WIZNET5K
+			int "Enable WIZNET5K"
+			default 0 
+			select WIZNET5K_ENABLE
+
 	endmenu
 
 	menu "Builtin py modules configurations"
