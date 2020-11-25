@@ -321,7 +321,7 @@ STATIC mp_obj_t socket_setblocking(mp_obj_t self_in, mp_obj_t blocking) {
 	mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
     if(mp_obj_is_true(blocking))
     {
-        self->timeout = 3.402823466e+38F;// float max
+        self->timeout = UINT64_MAX;
     }
     else
     {
@@ -404,7 +404,7 @@ STATIC mp_obj_t socket_make_new(const mp_obj_type_t *type, size_t n_args, size_t
     {
         mp_raise_OSError(MP_ENOMEM);
     }
-    s->timeout = 3.402823466e+38F; // default timeout: 3.402823466e+38F
+    s->timeout = 10; // default timeout: 10s
     s->peer_closed = false;
 	if (n_args >= 1) {
         s->u_param.domain = mp_obj_get_int(args[0]);
