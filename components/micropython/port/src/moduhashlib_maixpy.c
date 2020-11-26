@@ -23,6 +23,7 @@
 
 typedef struct _mp_obj_hash_t {
     mp_obj_base_t base;
+    size_t total_len;
     char state[0];
 } mp_obj_hash_t;
 
@@ -35,7 +36,8 @@ STATIC mp_obj_t uhashlib_sha256_make_new(const mp_obj_type_t *type, size_t n_arg
     mp_arg_check_num(n_args, n_kw, 0, 1, false);
     mp_obj_hash_t *o = m_new_obj_var(mp_obj_hash_t, char, sizeof(sha256_context_t));
     o->base.type = type;
-    sha256_init((sha256_context_t*)o->state, 0xffffffff);//This number can be bigger
+    o->total_len = 0;
+    sha256_init((sha256_context_t*)o->state, 64);
     if (n_args == 1) {
         uhashlib_sha256_update(MP_OBJ_FROM_PTR(o), args[0]);
     }
@@ -46,6 +48,8 @@ STATIC mp_obj_t uhashlib_sha256_update(mp_obj_t self_in, mp_obj_t arg) {
     mp_obj_hash_t *self = MP_OBJ_TO_PTR(self_in);
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(arg, &bufinfo, MP_BUFFER_READ);
+    self->total_len += bufinfo.len;
+    sha256_update_length(self->total_len);
     sha256_update((sha256_context_t*)self->state, bufinfo.buf, bufinfo.len);
     return mp_const_none;
 }
