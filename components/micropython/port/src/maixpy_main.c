@@ -501,8 +501,14 @@ void mp_task(void *pvParameter)
     if (!gc_heap)
     {
         printk("GC heap size too large\r\n");
-        while (1)
-            ;
+        void *gc_heap = malloc(128*1024); // 128KiB
+        if (!gc_heap)
+        {
+            printk("can't malloc 128k, check firmware size\r\n");
+            while(1){};
+        }else{
+            printk("GC size 128k\r\n");
+        }
     }
 #endif
 
