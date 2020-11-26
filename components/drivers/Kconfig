@@ -24,5 +24,10 @@ menu "Drivers configuration"
 			bool "Enable HTPA thermal sensor"
 			default n
 	endmenu
+	menu "AMG88XX thermal sensor"
+		config AMG88XX_ENABLE
+			bool "Enable AMG88XX thermal sensor"
+			default n
+	endmenu
 endmenu
 

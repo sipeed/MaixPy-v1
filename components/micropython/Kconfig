@@ -80,6 +80,11 @@ menu "Micropython configurations"
 			default n
 			select HTPA_ENABLE
 
+		config MAIXPY_AMG88XX_ENABLE
+			bool "Enable AMG88XX thermal sensor"
+			default n
+			select AMG88XX_ENABLE
+
 		config MICROPYTHON_ULAB_ENALBE
 			bool "Enable ulab module(a numpy-like fast vector module)"
 			default y
@@ -96,7 +101,12 @@ menu "Micropython configurations"
 		config MICROPY_SSL_ENABLE
 			bool "Enable Https SSL"
 			default n
-			
+
+		config MICROPY_PY_WIZNET5K
+			int "Enable WIZNET5K"
+			default 0 
+			select WIZNET5K_ENABLE
+
 	endmenu
 
 	menu "Builtin py modules configurations"
