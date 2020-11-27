@@ -102,9 +102,9 @@ menu "Micropython configurations"
 			bool "Enable Https SSL"
 			default n
 
-		config MICROPY_PY_WIZNET5K
-			int "Enable WIZNET5K"
-			default 0 
+		config MAIXPY_WIZNET5K_ENABLE
+			bool "Enable WIZNET5K"
+			default n
 			select WIZNET5K_ENABLE
 
 	endmenu
