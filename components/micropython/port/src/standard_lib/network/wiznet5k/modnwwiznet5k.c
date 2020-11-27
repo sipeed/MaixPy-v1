@@ -43,7 +43,7 @@
 #include "timer.h"
 #include "lib/netutils/netutils.h"
 
-#if CONFIG_MICROPY_PY_WIZNET5K
+#if CONFIG_MAIXPY_WIZNET5K_ENABLE
 
 #include "dhcp/dhcp.h"
 #include "dns/dns.h"
@@ -532,7 +532,7 @@ STATIC mp_obj_t wiznet5k_regs(mp_obj_t self_in) {
     if (i % 16 == 0) {
       printf("\n  %04x:", i);
     }
-#if CONFIG_MICROPY_PY_WIZNET5K == 5200
+#if _WIZCHIP_ == 5200
     uint32_t reg = i;
 #else
     uint32_t reg = _W5500_IO_BASE_ | i << 8;
@@ -545,7 +545,7 @@ STATIC mp_obj_t wiznet5k_regs(mp_obj_t self_in) {
       if (i % 16 == 0) {
         printf("\n  %04x:", i);
       }
-#if CONFIG_MICROPY_PY_WIZNET5K == 5200
+#if _WIZCHIP_ == 5200
       uint32_t reg = WIZCHIP_SREG_ADDR(sn, i);
 #else
       uint32_t reg = _W5500_IO_BASE_ | i << 8 | WIZCHIP_SREG_BLOCK(sn) << 3;
@@ -627,4 +627,4 @@ const mod_network_nic_type_t mod_network_nic_type_wiznet5k = {
     .ioctl = wiznet5k_socket_ioctl,
 };
 
-#endif  // MICROPY_PY_WIZNET5K && !MICROPY_PY_LWIP
+#endif  // CONFIG_MAIXPY_WIZNET5K_ENABLE
