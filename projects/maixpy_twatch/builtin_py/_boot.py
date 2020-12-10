@@ -29,7 +29,7 @@ if ide:
     os.remove(ide_mode_conf)
     from machine import UART
     import lcd
-    lcd.init(color=lcd.PINK)
+    lcd.init(type=4,color=lcd.PINK)
     repl = UART.repl_uart()
     repl.init(1500000, 8, None, 1, read_buf_len=2048, ide=True, from_ide=False)
     sys.exit()    
@@ -41,7 +41,6 @@ from fpioa_manager import fm
 from Maix import FPIOA, GPIO
 from machine import I2C
 import axp202
-
 
 i2c = I2C(I2C.I2C0, freq=400000, scl=30, sda=31)
 p = None
@@ -55,6 +54,7 @@ else:
     p.enablePower(axp202.AXP192_LDO2)
     p.enablePower(6);
     p.setLDO3Mode(1)
+
 
 banner = '''
  __  __              _____  __   __  _____   __     __
@@ -91,7 +91,7 @@ test_pin=16
 fpioa = FPIOA()
 fpioa.set_function(test_pin,FPIOA.GPIO7)
 test_gpio=GPIO(GPIO.GPIO7,GPIO.IN)
-lcd.init(freq=15000000,color=(255,0,0))
+lcd.init(type=4,freq=15000000,color=(255,0,0))
 fm.register(board_info.PIN17,fm.fpioa.GPIO0)
 led=GPIO(GPIO.GPIO0,GPIO.OUT)
 led.value(1)
