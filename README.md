@@ -1,43 +1,43 @@
-<img width=205 src="assets/image/maixpy.png">
+<img height=230 src="assets/image/maixpy.png">
 
 <br />
-<br />
-
 
 <div class="title_pic">
-    <img src="assets/image/micropython.png"><img src="assets/image/icon_sipeed2.png"  height="60">
+    <img src="assets/image/sipeed_logo.svg"  style="margin-right: 10px;" height=45> <img src="assets/image/micropython.png" height=50>
 </div>
 
 <br />
+<br />
 
 <a href="https://travis-ci.org/sipeed/MaixPy">
-    <img src="https://travis-ci.org/sipeed/MaixPy.svg?branch=master" alt="Master branch build status" />
+    <img src="https://img.shields.io/github/workflow/status/sipeed/maixpy/compile%20test%20and%20publish?style=for-the-badge" alt="Master branch build status" />
 </a>
 <a href="http://dl.sipeed.com/MAIX/MaixPy/release/master/">
-    <img src="https://img.shields.io/badge/build-master-ff69b4.svg" alt="master build firmware" />
+    <img src="https://img.shields.io/badge/download-master-ff69b4.svg?style=for-the-badge" alt="master build firmware" />
 </a>
 <a href="https://github.com/sipeed/MaixPy/releases">
-    <img src="https://img.shields.io/github/release/sipeed/maixpy.svg" alt="Latest release version" />
+    <img src="https://img.shields.io/github/release/sipeed/maixpy.svg?style=for-the-badge" alt="Latest release version" />
 </a>
 <a href="https://github.com/sipeed/MaixPy/blob/master/LICENSE.md">
-    <img src="https://img.shields.io/badge/license-Apache%20v2.0-orange.svg" alt="License" />
+    <img src="https://img.shields.io/badge/license-Apache%20v2.0-orange.svg?style=for-the-badge" alt="License" />
 </a>
 
 <br />
 
 <a href="https://github.com/sipeed/MaixPy/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3A%22good+first+issue%22">
-    <img src="https://img.shields.io/github/issues/sipeed/maixpy/good%20first%20issue.svg" alt="Good first issues" />
+    <img src="https://img.shields.io/github/issues/sipeed/maixpy/good%20first%20issue.svg?style=for-the-badge" alt="Good first issues" />
 </a>
 <a href="https://github.com/sipeed/MaixPy/issues?q=is%3Aopen+is%3Aissue+label%3Abug">
-    <img src="https://img.shields.io/github/issues/sipeed/maixpy/bug.svg" alt="Bug issues" />
+    <img src="https://img.shields.io/github/issues/sipeed/maixpy/bug.svg?style=for-the-badge" alt="Bug issues" />
 </a>
 <a href="https://github.com/sipeed/MaixPy/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement">
-    <img src="https://img.shields.io/github/issues/sipeed/maixpy/enhancement.svg" alt="Enhancement issues" />
+    <img src="https://img.shields.io/github/issues/sipeed/maixpy/enhancement.svg?style=for-the-badge" alt="Enhancement issues" />
 </a>
 
 
 
-<br />
+<br/>
+<br/>
 
 [中文](README_ZH.md)
 
@@ -49,8 +49,11 @@
 **MaixPy, makes AIOT easier!**
 
 Maixpy is designed to make AIOT programming easier, based on the [Micropython](http://www.micropython.org) syntax, running on a very powerful embedded AIOT chip [K210](https://kendryte.com).
+
+There are many things you can do with MaixPy, please refer to [here](https://maixpy.sipeed.com/en/others/what_maix_do.html)
+
 > K210 brief: 
-> * Image Recognition with hardware acceleration
+> * Image Recognition with hardware AI acceleration
 > * Dual core with FPU
 > * 8MB(6MB+2MB) RAM
 > * 16MB external Flash
@@ -60,10 +63,8 @@ Maixpy is designed to make AIOT programming easier, based on the [Micropython](h
 > * FPIOA (Periphrals can map to any pins)
 > * Peripherals: I2C, SPI, I2S, WDT, TIMER, RTC, UART, GPIO etc.
 
-![](assets/image/maix_bit.png)
+<img src="assets/image/maix_bit.png" height=500 alt="maix bit"/>
 
-
-There are many things you can do with MaixPy, please refer to [here](https://maixpy.sipeed.com/en/others/what_maix_do.html)
 
 ## Simple code
 
@@ -93,6 +94,24 @@ while True:
     img=sensor.snapshot()
     lcd.display(img)
 ```
+
+Use AI model to recognize object:
+```python
+import KPU as kpu
+import sensor
+
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.set_windowing((224, 224))
+
+model = kpu.load("/sd/mobilenet.kmodel")  # load model
+while(True):
+    img = sensor.snapshot()               # take picture by camera
+    out = kpu.forward(task, img)[:]       # inference, get one-hot output
+    print(max(out))                       # print max probability object ID
+```
+> please read doc before run it
 
 ## Release
 
