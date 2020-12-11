@@ -26,6 +26,10 @@ if(CONFIG_COMPONENT_DRIVERS_ENABLE)
 	list(APPEND ADD_SRCS ${AMG88XX_SRCS})
     endif()
 
+    list(APPEND ADD_INCLUDE "hub75e/include")
+	aux_source_directory("hub75e/src"  HUB75E_SRCS)
+	list(APPEND ADD_SRCS ${HUB75E_SRCS})
+
     list(APPEND ADD_SRCS ${FLASH_SRCS}
                         ${JOYSTICK_SRCS}
                         ${LCD_SRCS}

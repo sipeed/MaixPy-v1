@@ -23,6 +23,7 @@ STATIC const mp_map_elem_t modules_globals_table[] = {
 #if CONFIG_MAIXPY_AMG88XX_ENABLE
     { MP_ROM_QSTR(MP_QSTR_amg88xx),  MP_ROM_PTR(&modules_amg88xx_type) },
 #endif
+    { MP_ROM_QSTR(MP_QSTR_hub75e),  MP_ROM_PTR(&modules_hub75e_type) },
 };
 
 STATIC MP_DEFINE_CONST_DICT (

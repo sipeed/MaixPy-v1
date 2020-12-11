@@ -8,6 +8,7 @@ extern const mp_obj_type_t modules_ws2812_type;
 extern const mp_obj_type_t modules_htpa_type;
 extern const mp_obj_type_t modules_amg88xx_type;
 extern const mp_obj_type_t modules_onewire_type;
+extern const mp_obj_type_t modules_hub75e_type;
 
 #endif
 
