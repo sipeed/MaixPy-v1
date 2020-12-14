@@ -709,7 +709,7 @@ int sensor_reset(mp_int_t freq, bool default_freq, bool set_regs, bool double_bu
     {
         sensor_run(1);
     }
-    // mp_printf(&mp_plat_print, "[MAIXPY]: exit sensor_reset\n");
+   // mp_printf(&mp_plat_print, "[MAIXPY]: exit sensor_reset\n");
     return 0;
 }
 
@@ -1511,6 +1511,7 @@ static int reverse_u32pixel_2(int core)
     return 0;
 }
 
+extern volatile int hub75e_display_lock;
 int reverse_u32pixel(uint32_t *addr, uint32_t length)
 {
     if (NULL == addr)
@@ -1520,17 +1521,18 @@ int reverse_u32pixel(uint32_t *addr, uint32_t length)
     g_pixs_size = length / 2;
     uint32_t *pend = addr + g_pixs_size;
     g_pixs = pend;
-    dual_func = reverse_u32pixel_2;
+    if(hub75e_display_lock == 0) 
+        dual_func = reverse_u32pixel_2;
     for (; addr < pend; addr++)
     {
         data = *(addr);
         *(addr) = ((data & 0x000000FF) << 24) | ((data & 0x0000FF00) << 8) |
                   ((data & 0x00FF0000) >> 8) | ((data & 0xFF000000) >> 24);
     } //1.7ms
-    while (dual_func)
-    {
-    }
-
+    if(hub75e_display_lock == 0) 
+        while (dual_func){}
+    else 
+        reverse_u32pixel_2(1);
     return 0;
 }
 

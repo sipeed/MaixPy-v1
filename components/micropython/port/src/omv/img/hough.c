@@ -202,7 +202,7 @@ int find_lines_grayscale(int ps)
     return 0;
 }
 
-
+extern volatile int hub75e_display_lock;
 void imlib_find_lines(list_t *out, image_t *ptr, rectangle_t *roi, unsigned int x_stride, unsigned int y_stride,
                       uint32_t threshold, unsigned int theta_margin, unsigned int rho_margin)
 {
@@ -288,16 +288,24 @@ DBG_TIME  //1.5ms
         case IMAGE_BPP_GRAYSCALE:
         {   
             find_lines_grayscale_init();
-            dual_func = find_lines_grayscale;
+            if(hub75e_display_lock == 0)
+                dual_func = find_lines_grayscale;
             find_lines_grayscale(0);
-            while(dual_func){};
+            if(hub75e_display_lock == 0)
+                while(dual_func){}
+            else
+                find_lines_grayscale(1);
             break;
         }
         case IMAGE_BPP_RGB565: {
 			find_lines_565_init();
-			dual_func=&find_lines_565;
+            if(hub75e_display_lock == 0)
+                dual_func=&find_lines_565;
 			find_lines_565(0);DBG_TIME
-			while(dual_func){};DBG_TIME
+            if(hub75e_display_lock == 0)
+                while(dual_func){}DBG_TIME
+            else
+                find_lines_565(1);
             break;
         }
         default: {
@@ -875,10 +883,14 @@ void imlib_find_circles(list_t *out, image_t *ptr, rectangle_t *roi, unsigned in
     uint16_t *magnitude_acc = fb_alloc0(sizeof(uint16_t) * roi->w * roi->h);
     list_init(out, sizeof(find_circles_list_lnk_data_t));
     find_circles_param_init();
-    dual_func = find_circles;
+    if(hub75e_display_lock == 0)
+        dual_func = find_circles;
     find_circles(0);
-    while(dual_func){}
-    
+    if(hub75e_display_lock == 0)
+        while(dual_func){}
+    else
+        find_circles(1);  
+         
     for (int r = r_min, rr = r_max; r < rr; r += r_step) { // ignore r = 0/1
         int a_size, b_size, hough_divide = 1; // divides a and b accumulators
         int w_size = roi->w - (2 * r);
@@ -892,9 +904,13 @@ void imlib_find_circles(list_t *out, image_t *ptr, rectangle_t *roi, unsigned in
         }
     uint32_t *acc = fb_alloc0(sizeof(uint32_t) * a_size * b_size);
     find_circles_param_init2();
-    dual_func = find_circles_subproccess;
+    if(hub75e_display_lock == 0)
+        dual_func = find_circles_subproccess;
     find_circles_subproccess(0);
-    while(dual_func){}
+    if(hub75e_display_lock == 0)
+        while(dual_func){}
+    else
+        find_circles_subproccess(1);
         for (int y = 1, yy = b_size - 1; y < yy; y++) {
             uint32_t *row_ptr = acc + (a_size * y);
 

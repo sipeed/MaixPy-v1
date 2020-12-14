@@ -1080,6 +1080,7 @@ void jpg_bpp2_end(jpeg_buf_t*  jpeg_buf0, jpeg_buf_t*  jpeg_buf1)
 	return;
 }
 
+extern volatile int hub75e_display_lock;
 volatile static uint64_t _t0,_t1;
 #define DBG_TIME //{_t1=read_cycle();printf("%d: %ld us\r\n", __LINE__, ((_t1-_t0)/6000*10*2UL)); _t0=read_cycle();};
 
@@ -1159,30 +1160,42 @@ _t0=read_cycle();
             case JPEG_SUBSAMPLE_1x1: {
 				jpg_bpp2_init();
                 DBG_TIME
-				dual_func=&jpg_bpp2_1x1;DBG_TIME
+                if(hub75e_display_lock == 0)
+				    dual_func=&jpg_bpp2_1x1;DBG_TIME
 				jpg_bpp2_1x1(0);DBG_TIME
 				//jpg_bpp2_1x1(1);DBG_TIME
-				while(dual_func){};DBG_TIME
+                if(hub75e_display_lock == 0)
+				    while(dual_func){}
+                else
+                    jpg_bpp2_1x1(1);DBG_TIME
 				jpg_bpp2_end(&jpeg_buf, &jpeg_buf1);DBG_TIME
                 break;
             }
             case JPEG_SUBSAMPLE_2x1: {
 				jpg_bpp2_init();
                 DBG_TIME
-				dual_func=&jpg_bpp2_2x1;DBG_TIME
+                if(hub75e_display_lock == 0)
+                    dual_func=&jpg_bpp2_2x1;DBG_TIME
 				jpg_bpp2_2x1(0);DBG_TIME
 				//jpg_bpp2_2x1(1);DBG_TIME
-				while(dual_func){};DBG_TIME
+                if(hub75e_display_lock == 0)
+                    while(dual_func){}
+                else
+                    jpg_bpp2_2x1(1);DBG_TIME
 				jpg_bpp2_end(&jpeg_buf, &jpeg_buf1);DBG_TIME
                 break;
             }
             case JPEG_SUBSAMPLE_2x2: {
 				jpg_bpp2_init();
                 DBG_TIME
-				dual_func=&jpg_bpp2_2x2;DBG_TIME
+                if(hub75e_display_lock == 0)
+                    dual_func=&jpg_bpp2_2x2;DBG_TIME
 				jpg_bpp2_2x2(0);DBG_TIME
 				//jpg_bpp2_2x2(1);DBG_TIME
-				while(dual_func){};DBG_TIME
+                if(hub75e_display_lock == 0)
+                    while(dual_func){}DBG_TIME
+                else
+                    jpg_bpp2_2x2(1);DBG_TIME
 				jpg_bpp2_end(&jpeg_buf, &jpeg_buf1);DBG_TIME
                 break;
             }

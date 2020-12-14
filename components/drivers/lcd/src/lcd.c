@@ -509,6 +509,7 @@ void lcd_draw_picture(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height,
     uint16_t* p = (uint16_t*)ptr;
     bool odd = false;
     extern volatile bool maixpy_sdcard_loading;
+    extern volatile int hub75e_display_lock;
 
     lcd_set_area(x1, y1, x1 + width - 1, y1 + height - 1);
     g_pixs_draw_pic_size = width*height;
@@ -544,7 +545,8 @@ void lcd_draw_picture(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height,
             g_pixs_draw_pic_half_size = g_pixs_draw_pic_size/2;
             g_pixs_draw_pic_half_size = (g_pixs_draw_pic_half_size%2) ? (g_pixs_draw_pic_half_size+1) : g_pixs_draw_pic_half_size;
             g_pixs_draw_pic = p+g_pixs_draw_pic_half_size;
-            dual_func = swap_pixs_half;
+            if(hub75e_display_lock == 0)
+                dual_func = swap_pixs_half;
             for(i=0; i< g_pixs_draw_pic_half_size; i+=2)
             {
                 #if LCD_SWAP_COLOR_BYTES
@@ -556,7 +558,10 @@ void lcd_draw_picture(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height,
                 #endif
                 p+=2;
             }
-            while(dual_func){}
+            if(hub75e_display_lock == 0)
+                while(dual_func){}
+            else
+                swap_pixs_half(1);
         }
         tft_write_word((uint32_t*)g_lcd_display_buff, g_pixs_draw_pic_size / 2);
     }

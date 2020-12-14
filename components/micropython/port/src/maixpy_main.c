@@ -415,11 +415,16 @@ corelock_t lock;
 volatile dual_func_t dual_func = 0;
 void *arg_list[16];
 
+extern volatile int hub75e_display_lock;
 void core2_task(void *arg)
 {
     while (1)
     {
-        if (dual_func)
+        if(hub75e_display_lock == 1)
+        {
+            if(dual_func) (*dual_func)(1);
+        }
+        else if (dual_func)
         { //corelock_lock(&lock);
             (*dual_func)(1);
             dual_func = 0;

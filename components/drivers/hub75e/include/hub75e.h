@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "colorTable.h"
+#include "color_table.h"
 #include "dmac.h"
 #include "fpioa.h"
 #include "gpio.h"
@@ -52,6 +52,6 @@ typedef struct
 #define HUB75E_FUN_SPIxDv(x,v) FUNC_SPI##x##_D##v
 
 void hub75e_init(hub75e_t* hub75e_obj);
-void hub75e_display(hub75e_t* hub75e_obj, uint16_t image[][HORIZONTAL_PIXELS]);
-
+void hub75e_display_start(hub75e_t* cur_hub75e_obj, uint16_t *cur_image);
+void hub75e_display_stop(void);
 #endif
