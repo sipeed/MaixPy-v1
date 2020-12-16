@@ -27,6 +27,7 @@ jobs:
       - name: sync shell cmd
         run: |
           curr_branch=master
+          git fetch --unshallow
           git submodule update --init --recursive
           wget https://github.com/kendryte/kendryte-gnu-toolchain/releases/download/v8.2.0-20190409/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz
           sudo tar -Jxf kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz -C /opt

@@ -10,8 +10,8 @@
 <br />
 <br />
 
-<a href="https://travis-ci.org/sipeed/MaixPy">
-    <img src="https://img.shields.io/github/workflow/status/sipeed/maixpy/compile%20test%20and%20publish?style=for-the-badge" alt="Master branch build status" />
+<a href="https://github.com/sipeed/MaixPy/actions">
+    <img src="https://img.shields.io/github/workflow/status/Sipeed/MaixPy/compile%20test%20and%20publish?style=for-the-badge" alt="Master branch build status" />
 </a>
 <a href="http://dl.sipeed.com/MAIX/MaixPy/release/master/">
     <img src="https://img.shields.io/badge/download-master-ff69b4.svg?style=for-the-badge" alt="master build firmware" />
