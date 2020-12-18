@@ -16,7 +16,7 @@
 	url = https://github.com/igrr/mkspiffs.git
 [submodule "components/micropython/port/src/ulab/micropython-ulab"]
 	path = components/micropython/port/src/ulab/micropython-ulab
-	url = https://github.com/Neutree/micropython-ulab.git
+	url = https://github.com/v923z/micropython-ulab.git
 [submodule "components/micropython/core"]
 	path = components/micropython/core
 	url = https://github.com/micropython/micropython.git
