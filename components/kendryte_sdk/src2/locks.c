@@ -1,8 +1,10 @@
 #include <stdlib.h>
 #include <sys/lock.h>
 #include "bsp.h"
+#include "global_config.h"
+#include "printf.h"
 
-#define LOCK_MAX_NUM (1024)
+#define LOCK_MAX_NUM (CONFIG_SDK_LOCK_NUM)
 
 typedef long _lock_t;
 

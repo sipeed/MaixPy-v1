@@ -32,6 +32,9 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
                             "${mpy_port_dir}/src/Maix/include"
                             "${mpy_port_dir}/src/modules/include"
                             "${mpy_port_dir}/src/modules/ultrasonic/include"
+                            "${mpy_port_dir}/src/speech/include"
+                            "${mpy_port_dir}/src/speech/maix_asr/include"
+                            "${mpy_port_dir}/src/speech/isolated_word/include"
                             "${mpy_port_dir}/src/omv/include"
                             "${mpy_port_dir}/src/omv/boards/MAIX"
                             "${mpy_port_dir}/src/omv/img/include"
@@ -54,8 +57,14 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     endif()
     append_srcs_dir(MPY_PORT_SRCS "port/src/modules")
     append_srcs_dir(MPY_PORT_SRCS "port/src/modules/ultrasonic/src")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/modules/onewire")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/speech/")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/speech/maix_asr")
+    list(APPEND ADD_STATIC_LIB "port/src/speech/maix_asr/libmaix_asr.a") # append_srcs_dir(MPY_PORT_SRCS "port/src/speech/maix_asr/src")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/speech/isolated_word")
     append_srcs_dir(MPY_PORT_SRCS "port/src/modules/ws2812/src")
     append_srcs_dir(MPY_PORT_SRCS "port/src/modules/htpa/src")
+    append_srcs_dir(MPY_PORT_SRCS "port/src/modules/amg88xx/src")
     append_srcs_dir(MPY_PORT_SRCS "port/src/omv")
     append_srcs_dir(MPY_PORT_SRCS "port/src/omv/img")
     append_srcs_dir(MPY_PORT_SRCS "port/src/omv/py")
@@ -63,6 +72,12 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network")
     append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network/esp32")
     append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network/esp8285")
+    if(CONFIG_MAIXPY_WIZNET5K_ENABLE)
+        append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network/wiznet5k")
+        append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network/wiznet5k/w5500")
+        append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network/wiznet5k/dns")
+        append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network/wiznet5k/dhcp")
+    endif()
     append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/socket")
     append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/uos")
     append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/utime")
@@ -199,8 +214,6 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
                         "core/extmod/machine_pulse.c"
                         "core/extmod/machine_i2c.c"
                         "core/extmod/machine_spi.c"
-                        "core/extmod/modussl_axtls.c"
-                        "core/extmod/modussl_mbedtls.c"
                         "core/extmod/modurandom.c"
                         "core/extmod/moduselect.c"
                         "core/extmod/moduwebsocket.c"
@@ -230,6 +243,13 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
                         "core/lib/oofatfs/ffunicode.c"
                     )
     set(MPY_FROZEN_SRC "${mpy_build_dir}/frozen_mpy.c")
+
+    if(CONFIG_MICROPY_SSL_ENABLE)
+        list(APPEND MPY_EXTMOD_SRCS
+        "core/extmod/modussl_axtls.c"
+        "core/extmod/modussl_mbedtls.c"
+        )
+    endif()
 
     list(APPEND ADD_SRCS    ${MPY_SRCS}
                             ${MPY_PORT_SRCS}
@@ -262,6 +282,12 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
         append_srcs_dir(ADD_SRCS "port/src/touchscreen")
         if(CONFIG_MAIXPY_TOUCH_SCREEN_DRIVER_NS2009)
             list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/touchscreen/ns2009/include")
+            append_srcs_dir(ADD_SRCS "port/src/touchscreen/ns2009")
+        endif()
+        if(CONFIG_MAIXPY_TOUCH_SCREEN_DRIVER_FT52XX)
+            list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/touchscreen/ft52xx"
+                                    "${mpy_port_dir}/src/touchscreen/ns2009/include")
+            append_srcs_dir(ADD_SRCS "port/src/touchscreen/ft52xx")
             append_srcs_dir(ADD_SRCS "port/src/touchscreen/ns2009")
         endif()
     endif()
@@ -332,6 +358,16 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
         list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/ulab/micropython-ulab/code")
         append_srcs_dir(ADD_SRCS "port/src/ulab/micropython-ulab/code")
     endif()
+
+    if(CONFIG_MICROPY_SSL_ENABLE)
+        list(APPEND ADD_INCLUDE "${mpy_core_dir}/lib/mbedtls/include")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMBEDTLS_CONFIG_FILE='\"${mpy_port_dir}/src/mbedtls/include/mbedtls_config.h\"'")
+        # message(${CMAKE_C_FLAGS})
+        append_srcs_dir(ADD_SRCS "port/src/mbedtls")
+        append_srcs_dir(ADD_SRCS "core/lib/mbedtls/library")
+        list(REMOVE_ITEM ADD_SRCS "${mpy_core_dir}/lib/mbedtls/library/net_sockets.c")
+    endif()
+
     #############################################
 
     ################## FLAGS ####################
@@ -452,6 +488,15 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
                 )
     
     file(GLOB frozen_py "${mpy_frozen_py_dir}/*.py")
+    if(NOT CONFIG_MAIXPY_BUILTIN_PY_PYE)
+        list(REMOVE_ITEM frozen_py "${mpy_frozen_py_dir}/pye_mp.py")
+    endif()
+    if(NOT CONFIG_MAIXPY_BUILTIN_PY_BOARD)
+        list(REMOVE_ITEM frozen_py "${mpy_frozen_py_dir}/board.py")
+    endif()
+    if(NOT CONFIG_MAIXPY_BUILTIN_PY_FPIOA_MANAGER)
+        list(REMOVE_ITEM frozen_py "${mpy_frozen_py_dir}/fpioa_manager.py")
+    endif()
     foreach(py ${frozen_py})
         get_filename_component(py_name ${py} NAME)
         string(REPLACE ".py" "" py_name ${py_name})

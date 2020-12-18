@@ -43,14 +43,16 @@ menu "Micropython configurations"
 			depends on MAIXPY_TOUCH_SCREEN_ENABLE
 			config MAIXPY_TOUCH_SCREEN_DRIVER_NS2009
 				bool "Select ns2009 touch screen driver"
+			config MAIXPY_TOUCH_SCREEN_DRIVER_FT52XX
+				bool "Select ft52xx touch screen driver"
 		endchoice
 
 		config MAIXPY_OMV_MINIMUM
 			bool "Minimum size OMV function (just disable omv advanced functions )"
 			default n
 		config MAIXPY_OMV_CONV_YUV_FAST
-			bool "Add YUV convert table, close this will reduce code but lower speed"
-			default y
+			bool "Add YUV convert table, speed up convert but more code"
+			default n
 		config MAIXPY_OMV_DOUBLE_BUFF
 			bool "Set double buffer for sensor(camera)"
 			default y
@@ -72,12 +74,51 @@ menu "Micropython configurations"
 			bool "Enable Ws2812"
 			default n
 			select WS2812_ENABLE
+
 		config MAIXPY_HTPA_ENABLE
 			bool "Enable HTPA thermal sensor"
 			default n
 			select HTPA_ENABLE
+
+		config MAIXPY_AMG88XX_ENABLE
+			bool "Enable AMG88XX thermal sensor"
+			default n
+			select AMG88XX_ENABLE
+
 		config MICROPYTHON_ULAB_ENALBE
 			bool "Enable ulab module(a numpy-like fast vector module)"
+			default y
+
+		config MICROPYTHON_KMODEL_V4_SUPPORT
+			bool "support v4 kmodel"
+			default n
+
+		config MAIXPY_SPEECH_RECOGNIZER_ENABLE
+			bool "Enable Speech Recognizer"
+			default n
+			select SPEECH_RECOGNIZER_ENABLE
+			
+		config MICROPY_SSL_ENABLE
+			bool "Enable Https SSL"
+			default n
+
+		config MAIXPY_WIZNET5K_ENABLE
+			bool "Enable WIZNET5K"
+			default n
+			select WIZNET5K_ENABLE
+
+	endmenu
+
+	menu "Builtin py modules configurations"
+
+		config MAIXPY_BUILTIN_PY_PYE
+			bool "Enable builtin py module pye (about 17KiB)"
+			default y
+		config MAIXPY_BUILTIN_PY_BOARD
+			bool "Enable builtin py module board"
+			default y
+		config MAIXPY_BUILTIN_PY_FPIOA_MANAGER
+			bool "Enable builtin py module fpioa_manager"
 			default y
 	endmenu
 

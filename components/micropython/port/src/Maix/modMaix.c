@@ -31,6 +31,7 @@ STATIC const mp_rom_map_elem_t maix_module_globals_table[] = {
 #endif
     { MP_ROM_QSTR(MP_QSTR_freq),  MP_ROM_PTR(&cpufreq_type) },
     { MP_ROM_QSTR(MP_QSTR_utils),  MP_ROM_PTR(&Maix_utils_type) },
+    { MP_ROM_QSTR(MP_QSTR_config),  MP_ROM_PTR(&Maix_config_type) },
 };
 
 STATIC MP_DEFINE_CONST_DICT (

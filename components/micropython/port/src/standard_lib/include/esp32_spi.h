@@ -141,7 +141,7 @@ typedef struct
     uint8_t gatewayIp[32];
 } esp32_spi_net_t;
 
-void esp32_spi_init(void);
+void esp32_spi_init(uint8_t cs_num, uint8_t rst_num, uint8_t rdy_num, uint8_t is_hard_spi);
 int8_t esp32_spi_status(void);
 char *esp32_spi_firmware_version(char* fw_version);
 uint8_t *esp32_spi_MAC_address(void);

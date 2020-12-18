@@ -95,6 +95,7 @@ typedef struct _machine_hw_spi_obj_t {
     mp_obj_base_t      base;
     spi_device_num_t   id;
     machine_spi_mode_t mode;
+    uint32_t           delay_half; // microsecond delay for half SCK period
     uint32_t           baudrate;
     uint8_t            polarity;
     uint8_t            phase;
@@ -110,6 +111,98 @@ typedef struct _machine_hw_spi_obj_t {
     } state;
 } machine_hw_spi_obj_t;
 
+#if MICROPY_PY_MACHINE_SW_SPI
+
+#include "gpiohs.h"
+
+#define mp_hal_delay_us_fast(s) mp_hal_delay_us(s)
+
+#define mp_spi_pin_output(pin) gpiohs_set_drive_mode(pin, GPIO_DM_OUTPUT)
+
+#define mp_spi_pin_input(pin) gpiohs_set_drive_mode(pin, GPIO_DM_INPUT)
+
+#define MICROPY_HW_SOFTSPI_MIN_DELAY 0
+
+#define SPI_SOFTWARE SPI_DEVICE_MAX
+
+STATIC void mp_spi_pin_write(uint8_t pin, uint8_t val)
+{
+    gpiohs_set_pin(pin, val);
+    mp_spi_pin_output(pin);
+    mp_spi_pin_input(pin);
+}
+
+STATIC int mp_spi_pin_read(uint8_t pin)
+{
+    mp_spi_pin_input(pin);
+    return gpiohs_get_pin(pin);
+}
+
+void mp_soft_spi_transfer(void *self_in, size_t len, const uint8_t *src, uint8_t *dest) {
+    machine_hw_spi_obj_t *self = (machine_hw_spi_obj_t*)self_in;
+    uint32_t delay_half = self->delay_half;
+
+    // printk("%s %d %d %d\r\n", __func__, self->pin_sck, self->pin_d[0], self->pin_d[1]);
+
+    // only MSB transfer is implemented
+
+    // If a port defines MICROPY_HW_SOFTSPI_MIN_DELAY, and the configured
+    // delay_half is equal to this value, then the software SPI implementation
+    // will run as fast as possible, limited only by CPU speed and GPIO time.
+    // #ifdef MICROPY_HW_SOFTSPI_MIN_DELAY
+    if (delay_half == MICROPY_HW_SOFTSPI_MIN_DELAY) {
+        for (size_t i = 0; i < len; ++i) {
+            uint8_t data_out = src[i];
+            uint8_t data_in = 0;
+            for (int j = 0; j < 8; ++j, data_out <<= 1) {
+                mp_spi_pin_write(self->pin_d[0], (data_out >> 7) & 1);
+                mp_spi_pin_write(self->pin_sck, 1 - self->polarity);
+                if (self->pin_d[1] != -1)
+                {
+                    data_in = (data_in << 1) | mp_spi_pin_read(self->pin_d[1]);
+                }
+                mp_spi_pin_write(self->pin_sck, self->polarity);
+            }
+            if (dest != NULL) {
+                dest[i] = data_in;
+            }
+        }
+        return;
+    }
+    // #endif
+
+    for (size_t i = 0; i < len; ++i) {
+        uint8_t data_out = src[i];
+        uint8_t data_in = 0;
+        for (int j = 0; j < 8; ++j, data_out <<= 1) {
+            mp_spi_pin_write(self->pin_d[0], (data_out >> 7) & 1);
+            if (self->phase == 0) {
+                mp_hal_delay_us_fast(delay_half);
+                mp_spi_pin_write(self->pin_sck, 1 - self->polarity);
+            } else {
+                mp_spi_pin_write(self->pin_sck, 1 - self->polarity);
+                mp_hal_delay_us_fast(delay_half);
+            }
+            if (self->pin_d[1] != -1)
+            {
+                data_in = (data_in << 1) | mp_spi_pin_read(self->pin_d[1]);
+            }
+            if (self->phase == 0) {
+                mp_hal_delay_us_fast(delay_half);
+                mp_spi_pin_write(self->pin_sck, self->polarity);
+            } else {
+                mp_spi_pin_write(self->pin_sck, self->polarity);
+                mp_hal_delay_us_fast(delay_half);
+            }
+        }
+        if (dest != NULL) {
+            dest[i] = data_in;
+        }
+    }
+}
+
+#endif
+
 STATIC void machine_hw_spi_deinit_internal(machine_hw_spi_obj_t *self) {
     sipeed_spi_deinit(self->id);
 }
@@ -118,6 +211,9 @@ STATIC void machine_hw_spi_deinit(mp_obj_base_t *self_in) {
     machine_hw_spi_obj_t *self = (machine_hw_spi_obj_t *) self_in;
     if (self->state == MACHINE_HW_SPI_STATE_INIT) {
         self->state = MACHINE_HW_SPI_STATE_DEINIT;
+#if MICROPY_PY_MACHINE_SW_SPI
+        if(self->id == SPI_SOFTWARE) return;
+#endif
         machine_hw_spi_deinit_internal(self);
     }
 }
@@ -129,6 +225,13 @@ STATIC void machine_hw_spi_transfer(mp_obj_base_t *self_in, size_t len, const ui
         mp_raise_msg(&mp_type_OSError, "[MAIXPY]SPI: transfer on deinitialized SPI");
         return;
     }
+#if MICROPY_PY_MACHINE_SW_SPI
+    if(self->id == SPI_SOFTWARE)
+    {
+        mp_soft_spi_transfer(self, len, src, dest);
+        return;
+    }
+#endif
     if(dest==NULL)
         sipeed_spi_transfer_data_standard(self->id, cs, src, NULL, len, 0);
     else
@@ -223,8 +326,8 @@ STATIC void machine_hw_spi_init(mp_obj_base_t *self_in, size_t n_args, const mp_
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args),
                      allowed_args, args);
     //check args
-    if(args[ARG_id].u_int >= SPI_DEVICE_3 || args[ARG_id].u_int<0)
-        mp_raise_ValueError("[MAIXPY]SPI: spi id error(0~2)");
+    if(args[ARG_id].u_int == SPI_DEVICE_3 || args[ARG_id].u_int < 0)
+        mp_raise_ValueError("[MAIXPY]SPI: spi id error( > 0 & !=3 )");
     if(args[ARG_id].u_int == SPI_DEVICE_2) //TODO: slave mode support
         mp_raise_NotImplementedError("[MAIXPY]SPI: SPI2 only for slave mode");
     if(args[ARG_mode].u_int < MACHINE_SPI_MODE_MASTER || args[ARG_mode].u_int>=MACHINE_SPI_MODE_MAX)
@@ -316,7 +419,26 @@ STATIC void machine_hw_spi_init(mp_obj_base_t *self_in, size_t n_args, const mp_
         self->pin_cs[i] = cs[i];
     for( uint8_t i=0; i<8; ++i)
         self->pin_d[i] = d[i];
-    
+
+#if MICROPY_PY_MACHINE_SW_SPI
+    if(self->id == SPI_SOFTWARE)// standard soft-spi mode
+    {
+        if (self->baudrate > 1000*1000) {
+            self->delay_half = 0;
+        }
+
+        fpioa_set_function(self->pin_sck, FUNC_GPIOHS0 + self->pin_sck);
+        fpioa_set_function(self->pin_d[0], FUNC_GPIOHS0 + self->pin_d[0]);
+        mp_spi_pin_write(self->pin_sck, self->polarity);
+        mp_spi_pin_output(self->pin_sck);
+        mp_spi_pin_output(self->pin_d[0]);
+        if (self->pin_d[1] != -1)
+        {
+            fpioa_set_function(self->pin_d[1], FUNC_GPIOHS0 + self->pin_d[1]);
+            mp_spi_pin_input(self->pin_d[1]);
+        }
+    } else 
+#endif
     // Init SPI
     if(  self->mode == MACHINE_SPI_MODE_MASTER)// standard spi mode
     {
@@ -562,6 +684,9 @@ STATIC const mp_rom_map_elem_t machine_spi_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_SPI0), MP_ROM_INT(SPI_DEVICE_0) },
     { MP_ROM_QSTR(MP_QSTR_SPI1), MP_ROM_INT(SPI_DEVICE_1) },
     { MP_ROM_QSTR(MP_QSTR_SPI2), MP_ROM_INT(SPI_DEVICE_2) },
+#if MICROPY_PY_MACHINE_SW_SPI
+    { MP_ROM_QSTR(MP_QSTR_SPI_SOFT), MP_ROM_INT(SPI_SOFTWARE) },
+#endif
     //not support SPI3 currently for SPI3 used by flash
     // { MP_ROM_QSTR(MP_QSTR_SPI3), MP_ROM_INT(SPI_DEVICE_3) },
     //firstbit

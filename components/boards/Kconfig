@@ -9,6 +9,8 @@ menu "Board config"
 
 		config BOARD_M5STICK
 			bool "Select board m5stick"
+		config BOARD_TWATCH
+			bool "Select board TWatch"
 	endchoice
 
 	config LCD_DEFAULT_WIDTH
@@ -26,5 +28,8 @@ menu "Board config"
 	config SENSOR_FREQ
 		int "Sensor clock(xclk) frequency"
 		default 24000000
+	config CPU_DEFAULT_FREQ
+		int "CPU clock default frequency, can be overwrite by config file in file system"
+		default 400000000
 endmenu
 

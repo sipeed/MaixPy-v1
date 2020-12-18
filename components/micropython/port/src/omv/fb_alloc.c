@@ -93,7 +93,7 @@ void *fb_alloc(uint64_t size)
     void* p = malloc(size);
     if(!p)
     {
-        printk("fb alloc %d fail,errno:%d\r\n", size);
+        mp_printf(&mp_plat_print, "fb alloc %d fail,errno:%d\r\n", size);
         fb_alloc_fail();
     }
 

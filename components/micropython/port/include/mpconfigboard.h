@@ -7,17 +7,18 @@
 #include "py/mphal.h"
 #include "uart.h"
 #include "uarths.h"
+#include "global_config.h"
 
 /***********Uart module**************/
 #define MAIX_UART_BUF 2048
 #define MICROPY_UARTHS_DEVICE 4
 /***********net mod**************/
-#define ESP8285_BUF_SIZE 4096 
+#define ESP8285_BUF_SIZE 40960
 #define MICROPY_UART_NIC 1
 /***********freq mod******************/
 #define FREQ_STORE_FILE_NAME "/freq.conf" //must start with '/'
 #define FREQ_PLL0_MAX        1200000000UL //1800MHz max
-#define FREQ_PLL0_DEFAULT    832000000UL
+#define FREQ_PLL0_DEFAULT    (CONFIG_CPU_DEFAULT_FREQ*2)
 #define FREQ_PLL0_MIN        52000000UL
 #define FREQ_PLL1_MAX        1200000000UL //1800MHz max
 #define FREQ_PLL1_DEFAULT    400000000UL
@@ -26,7 +27,7 @@
 
 
 #define FREQ_CPU_MAX     600000000UL
-#define FREQ_CPU_DEFAULT (FREQ_PLL0_DEFAULT/2)
+#define FREQ_CPU_DEFAULT (CONFIG_CPU_DEFAULT_FREQ)
 #define FREQ_CPU_MIN     (FREQ_PLL0_MIN/2)
 #define FREQ_KPU_MAX     600000000UL
 #define FREQ_KPU_DEFAULT FREQ_PLL1_DEFAULT

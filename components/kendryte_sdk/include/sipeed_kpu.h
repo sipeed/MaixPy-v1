@@ -6,19 +6,19 @@
 typedef enum{
     SIPEED_KPU_ERR_NONE    =  0,
     SIPEED_KPU_ERR_PARAM   =  2001,
-    SIPEED_KPU_ERR_KMODEL_VERSION,
-    SIPEED_KPU_ERR_KMODEL_FORMAT,
-    SIPEED_KPU_ERR_DECRYPT,
-    SIPEED_KPU_ERR_READ_FILE,
-    SIPEED_KPU_ERR_NO_MEM,
+    SIPEED_KPU_ERR_KMODEL_VERSION = 2002,
+    SIPEED_KPU_ERR_KMODEL_FORMAT = 2003,
+    SIPEED_KPU_ERR_DECRYPT = 2004,
+    SIPEED_KPU_ERR_READ_FILE = 2005,
+    SIPEED_KPU_ERR_NO_MEM = 2006,
     SIPEED_KPU_ERR_GET_CONV_LAYER,
     SIPEED_KPU_ERR_RUN_MODEL,
     SIPEED_KPU_ERR_MODELS_FULL,
     SIPEED_KPU_ERR_PERMITION,
-	SIPEED_KPU_ERR_IDX_OUTRANGE,
-	SIPEED_KPU_ERR_SIZE_NOTMATCH,
-	SIPEED_KPU_ERR_OUTPUTS_NODONE,
-	SIPEED_KPU_ERR_NOT_IMPLEMENT,
+    SIPEED_KPU_ERR_IDX_OUTRANGE,
+    SIPEED_KPU_ERR_SIZE_NOTMATCH,
+    SIPEED_KPU_ERR_OUTPUTS_NODONE,
+    SIPEED_KPU_ERR_NOT_IMPLEMENT,
     SIPEED_KPU_ERR_UNKNOWN,
 } sipeed_kpu_err_t;
 
@@ -46,7 +46,7 @@ sipeed_kpu_err_t sipeed_kpu_set_outputs_shape(void* ctx, uint16_t idx, uint16_t 
 sipeed_kpu_err_t sipeed_kpu_get_outputs_shape(void* ctx, uint16_t idx, uint16_t* w, uint16_t* h, uint16_t* ch);
 //Add for Flash loader
 sipeed_kpu_err_t sipeed_kpu_model_load_flash(void** ctx, uint32_t flash_addr, uint32_t is_dual_buf, uint32_t batch_size, uint32_t spi_speed, uint32_t* size);
-
+void sipeed_kpu_use_dma(int);
 
 /**
  * @brief       Kpu run for AI( V1 API)

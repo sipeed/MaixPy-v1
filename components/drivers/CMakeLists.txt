@@ -20,7 +20,12 @@ if(CONFIG_COMPONENT_DRIVERS_ENABLE)
         aux_source_directory("htpa/src"  HTPA_SRCS)
         list(APPEND ADD_SRCS ${HTPA_SRCS})
     endif()
-    
+    if(CONFIG_AMG88XX_ENABLE)
+        list(APPEND ADD_INCLUDE "amg88xx/include")
+	aux_source_directory("amg88xx/src"  AMG88XX_SRCS)
+	list(APPEND ADD_SRCS ${AMG88XX_SRCS})
+    endif()
+
     list(APPEND ADD_SRCS ${FLASH_SRCS}
                         ${JOYSTICK_SRCS}
                         ${LCD_SRCS}

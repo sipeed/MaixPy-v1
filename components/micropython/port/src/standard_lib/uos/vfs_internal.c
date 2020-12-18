@@ -184,7 +184,7 @@ mp_obj_t vfs_internal_open(const char* path, const char* mode, int* error_code)
     *error_code = 0;
     mp_vfs_mount_t *vfs = mp_vfs_lookup_path(path, &real_path);
     if (vfs == MP_VFS_NONE || vfs == MP_VFS_ROOT) {
-        *error_code = MP_EINVAL;
+        *error_code = MP_ENOENT;
         return MP_OBJ_NULL;
     }
     fs_info_t* fs = (fs_info_t*)vfs->obj;

@@ -11,6 +11,7 @@ if "sd" in devices:
 else:
     os.chdir("/flash")
 sys.path.append('/flash')
+del devices
 
 print("[MaixPy] init end") # for IDE
 for i in range(200):
@@ -23,6 +24,7 @@ ide = True
 try:
     f = open(ide_mode_conf)
     f.close()
+    del f
 except Exception:
     ide = False
 
@@ -34,66 +36,26 @@ if ide:
     repl = UART.repl_uart()
     repl.init(1500000, 8, None, 1, read_buf_len=2048, ide=True, from_ide=False)
     sys.exit()
-
-
-# MaixCube PMU AXP173
-from machine import I2C
-i2c_bus = I2C(I2C.I2C0, freq=400000, scl=30, sda=31)
-axp173_addr = 0x34
-dev_list = i2c_bus.scan()
-
-if axp173_addr in dev_list:
-    # print("I2C:" + str(i2c_bus.scan()))
-    i2c_bus.writeto_mem(axp173_addr, 0x46, 0xFF)  # Clear the interrupts
-    i2c_bus.writeto_mem(axp173_addr, 0x33, 0xC1)  # set target voltage and current of battery(axp173 datasheet PG.)
-
-    # REG 10H: EXTEN & DC-DC2 control
-    reg = (i2c_bus.readfrom_mem(axp173_addr, 0x10, 1))[0] # read reg value
-    i2c_bus.writeto_mem(axp173_addr, 0x10, reg & 0xFC)
-    del reg
-
-del dev_list
-del axp173_addr
-del i2c_bus
-del I2C
-
-
-import gc
-import machine
-from board import board_info
-from fpioa_manager import fm
-from pye_mp import pye
-from Maix import FPIOA, GPIO
-
+del ide, ide_mode_conf
 
 # detect boot.py
 main_py = '''
-from fpioa_manager import *
-import os, Maix, lcd, image
-from Maix import FPIOA, GPIO
-
-test_pin=16
-fm.fpioa.set_function(test_pin,FPIOA.GPIO7)
-test_gpio=GPIO(GPIO.GPIO7,GPIO.PULL_UP)
-lcd.init(color=(255,0,0))
-lcd.draw_string(lcd.width()//2-68,lcd.height()//2-24, "Welcome to MaixPy", lcd.WHITE, lcd.RED)
-v = sys.implementation.version
-lcd.draw_string(lcd.width()//2-70,lcd.height()//2+12, 'V{}.{}.{} : maixpy.io'.format(v[0],v[1],v[2]), lcd.WHITE, lcd.RED)
-del v
-if test_gpio.value() == 0:
-    print('PIN 16 pulled down, enter test mode')
-    lcd.clear(lcd.PINK)
-    lcd.draw_string(lcd.width()//2-68,lcd.height()//2-4, "Test Mode, wait ...", lcd.WHITE, lcd.PINK)
-    import sensor
-    import image
-    sensor.reset()
-    sensor.set_pixformat(sensor.RGB565)
-    sensor.set_framesize(sensor.QVGA)
-    sensor.run(1)
-    lcd.freq(16000000)
-    while True:
-        img=sensor.snapshot()
-        lcd.display(img)
+try:
+    import gc, lcd, image, sys
+    gc.collect()
+    lcd.init()
+    loading = image.Image(size=(lcd.width(), lcd.height()))
+    loading.draw_rectangle((0, 0, lcd.width(), lcd.height()), fill=True, color=(255, 0, 0))
+    info = "Welcome to MaixPy"
+    loading.draw_string(int(lcd.width()//2 - len(info) * 5), (lcd.height())//4, info, color=(255, 255, 255), scale=2, mono_space=0)
+    v = sys.implementation.version
+    vers = 'V{}.{}.{} : maixpy.sipeed.com'.format(v[0],v[1],v[2])
+    loading.draw_string(int(lcd.width()//2 - len(info) * 6), (lcd.height())//3 + 20, vers, color=(255, 255, 255), scale=1, mono_space=1)
+    lcd.display(loading)
+    del loading, v, info, vers
+    gc.collect()
+finally:
+    gc.collect()
 '''
 
 flash_ls = os.listdir()
@@ -101,6 +63,7 @@ if not "main.py" in flash_ls:
     f = open("main.py", "wb")
     f.write(main_py)
     f.close()
+    del f
 del main_py
 
 flash_ls = os.listdir("/flash")

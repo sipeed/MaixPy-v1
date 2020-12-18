@@ -69,6 +69,8 @@ vstr_t*  ide_dbg_get_script();
 bool      ide_dbg_need_save_file();
 void      ide_save_file(); 
 bool     is_ide_dbg_mode();
+bool     ide_dbg_interrupt_main();
+void     ide_dbg_on_script_end();
 
 #else // CONFIG_MAIXPY_IDE_SUPPORT
 
@@ -84,6 +86,8 @@ vstr_t*   ide_dbg_get_script();
 bool      ide_dbg_need_save_file();
 void      ide_save_file();      
 bool      is_ide_dbg_mode();
+bool      ide_dbg_interrupt_main();
+void      ide_dbg_on_script_end();
 #endif
 
 #endif /* __USBDBG_H__ */

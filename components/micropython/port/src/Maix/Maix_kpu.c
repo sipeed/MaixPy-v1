@@ -66,7 +66,7 @@ static int check_img_format(image_t* arg_img, uint16_t w, uint16_t h, uint16_t c
 		mp_printf(&mp_plat_print, "[MAIXPY]kpu: pix_ai is NULL!\r\n");
 		return -1;
 	}
-	if(abs(kmodel_type)==3){ 
+	if(abs(kmodel_type)==3 || abs(kmodel_type)==4){ 
 		if(arg_img->w != w || arg_img->h != h) 
 		{
 			mp_printf(&mp_plat_print, "[MAIXPY]kpu: img w=%d,h=%d, but model w=%d,h=%d\r\n",\
@@ -128,10 +128,11 @@ static void py_kpu_net_obj_print(const mp_print_t *print, mp_obj_t self_in, mp_p
                 );
 }
 
+STATIC mp_obj_t py_kpu_deinit(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args);
 mp_obj_t py_kpu_net_del(mp_obj_t self_in)
 {
     mp_printf(&mp_plat_print, "kpu_net __del__\r\n");
-    sipeed_kpu_model_destroy(&((py_kpu_net_obj_t *)self_in)->kmodel_ctx);
+    py_kpu_deinit(1, &self_in, NULL);
     return mp_const_none;
 }
 mp_obj_t py_kpu_net_model_addr(mp_obj_t self_in) { return ((py_kpu_net_obj_t *)self_in)->model_addr; }
@@ -186,11 +187,15 @@ static char* get_kpu_err_str(int err)
     switch(err)
 	{
 	case SIPEED_KPU_ERR_NONE:
-		return "ERR_NONE:shouldn't come to here";
+		return "ERR_NONE";
 	case SIPEED_KPU_ERR_PARAM:
 		return "ERR_PARAM: please check param, load address or kmodel file name";
 	case SIPEED_KPU_ERR_KMODEL_VERSION:
+    #if CONFIG_MICROPYTHON_KMODEL_V4_SUPPORT
 		return "ERR_KMODEL_VERSION: only support kmodel V3/V4 now";
+    #else
+        return "ERR_KMODEL_VERSION: only support kmodel V3";
+    #endif
 	case SIPEED_KPU_ERR_KMODEL_FORMAT:
 		return "ERR_KMODEL_FORMAT: layer_header.body_size <=0";
 	case SIPEED_KPU_ERR_DECRYPT:
@@ -207,6 +212,14 @@ static char* get_kpu_err_str(int err)
 		return "ERR_MODELS_FULL: we only support load 5 models in the same time";
 	case SIPEED_KPU_ERR_PERMITION:
 		return "ERR_PERMITION";
+    case SIPEED_KPU_ERR_IDX_OUTRANGE:
+        return "SIPEED_KPU_ERR_IDX_OUTRANGE";
+    case SIPEED_KPU_ERR_SIZE_NOTMATCH:
+        return "SIPEED_KPU_ERR_SIZE_NOTMATCH";
+    case SIPEED_KPU_ERR_OUTPUTS_NODONE:
+        return "ERR_OUTPUTS_SET: need kpu.set_outputs() to set shape";
+    case SIPEED_KPU_ERR_NOT_IMPLEMENT:
+        return "ERR_NOT_IMPLEMENT";
 	case SIPEED_KPU_ERR_UNKNOWN:
 	default:
 		return "ERR_UNKNOWN";
@@ -382,7 +395,7 @@ STATIC mp_obj_t py_kpu_class_load(size_t n_args, const mp_obj_t *pos_args, mp_ma
 
         // }
         // else
-        if( (NULL != strstr(path,".kmodel")) || (NULL != strstr(path,".smodel")) )
+        if( (NULL != strstr(path,".kmodel")) || (NULL != strstr(path,".smodel")) || (NULL != strstr(path,".emodel")) )
         {
             int ret = sipeed_kpu_model_load(&o->kmodel_ctx, 0, path, &model_size);
             if(ret != SIPEED_KPU_ERR_NONE)
@@ -510,7 +523,7 @@ STATIC mp_obj_t py_kpu_class_set_outputs(size_t n_args, const mp_obj_t *pos_args
 			case SIPEED_KPU_ERR_PARAM:
 			default:
 				mp_printf(&mp_plat_print, \
-				"[MAIXPY]kpu: set_outputs ctx error, maybe init err\r\n");
+				"[MAIXPY]kpu: set_outputs ctx error, maybe init err:%d\r\n", res);
 				break;				
 			
 		}
@@ -661,10 +674,16 @@ mp_obj_t py_kpu_calss_yolo2_deinit(mp_obj_t self_in)
         py_kpu_class_yolo_region_layer_arg_t *rl_arg = yolo_args->rl_args;
 
         if(rl_arg->anchor)
+        {
             free(rl_arg->anchor);
+            rl_arg->anchor = NULL;
+        }
 
         if(rl_arg)
+        {
             free(rl_arg);
+            rl_arg->anchor = NULL;
+        }
         return mp_const_true;
     }
     else
@@ -676,13 +695,14 @@ mp_obj_t py_kpu_calss_yolo2_deinit(mp_obj_t self_in)
 
 STATIC mp_obj_t py_kpu_class_init_yolo2(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
-    enum { ARG_kpu_net, ARG_threshold, ARG_nms_value, ARG_anchor_number, ARG_anchor};
+    enum { ARG_kpu_net, ARG_threshold, ARG_nms_value, ARG_anchor_number, ARG_anchor, ARG_dma};
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_kpu_net,              MP_ARG_OBJ, {.u_obj = mp_const_none} },
         { MP_QSTR_threshold,            MP_ARG_OBJ, {.u_obj = mp_const_none} },
         { MP_QSTR_nms_value,            MP_ARG_OBJ, {.u_obj = mp_const_none} },
         { MP_QSTR_anchor_number,        MP_ARG_INT, {.u_int = 0x0}           },
         { MP_QSTR_anchor,               MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        { MP_QSTR_dma, 		        	MP_ARG_INT, {.u_int = -1} },
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -692,6 +712,7 @@ STATIC mp_obj_t py_kpu_class_init_yolo2(size_t n_args, const mp_obj_t *pos_args,
         float threshold, nms_value, *anchor = NULL;
         int anchor_number;
 
+        sipeed_kpu_use_dma(args[ARG_dma].u_int);
         threshold = mp_obj_get_float(args[ARG_threshold].u_obj);
         if(!(threshold >= 0.0 && threshold <= 1.0))
         {
@@ -869,7 +890,7 @@ STATIC mp_obj_t py_kpu_class_run_yolo2(size_t n_args, const mp_obj_t *pos_args, 
         //PY_ASSERT_TRUE_MSG(IM_IS_MUTABLE(arg_img), "Image format is not supported.");
 		uint16_t w0=0;uint16_t h0=0;uint16_t ch0=0;
 		int kmodel_type=sipeed_kpu_model_get_type(kpu_net->kmodel_ctx);
-		if(abs(kmodel_type)==3){
+		if(abs(kmodel_type)==3 || abs(kmodel_type)==4){
 			if(sipeed_kpu_model_get_input_shape(kpu_net->kmodel_ctx, &w0, &h0, &ch0) != SIPEED_KPU_ERR_NONE)
 			{
 				mp_raise_ValueError("[MAIXPY]kpu: first layer not conv layer!\r\n");
@@ -897,13 +918,10 @@ STATIC mp_obj_t py_kpu_class_run_yolo2(size_t n_args, const mp_obj_t *pos_args, 
 		/*************************************************************************************/
         g_ai_done_flag = 0;
         sipeed_kpu_err_t ret = sipeed_kpu_model_run(kpu_net->kmodel_ctx, arg_img->pix_ai, K210_DMA_CH_KPU, ai_done, NULL);
-		if (ret != 0)
+        if(ret != SIPEED_KPU_ERR_NONE)
         {
-            char* char_temp = m_new(char, 20);
-            if(!char_temp)
-                mp_raise_OSError(MP_ENOMEM);
-            snprintf(char_temp, 20, "run error: %d", ret);
-            mp_raise_msg(&mp_type_OSError, char_temp);
+            char* msg = get_kpu_err_str(ret);
+            mp_raise_msg(&mp_type_OSError, msg);
         }
         while (!g_ai_done_flag)
             ;
@@ -993,10 +1011,12 @@ STATIC mp_obj_t py_kpu_deinit(size_t n_args, const mp_obj_t *pos_args, mp_map_t 
 
         if(kpu_net->kmodel_ctx)
             sipeed_kpu_model_destroy(&kpu_net->kmodel_ctx);
-
         if(kpu_net->net_deinit != mp_const_none && MP_OBJ_TO_PTR(kpu_net->net_deinit))
         {
             call_deinit(MP_OBJ_TO_PTR(kpu_net->net_deinit),kpu_net->net_args);
+            kpu_net->net_deinit = mp_const_none;
+            m_del_obj(py_kpu_class_yolo_args_obj_t, kpu_net->net_args);
+            kpu_net->net_args = mp_const_none;
         }
         return mp_const_true;
     }
@@ -1273,60 +1293,87 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(py_kpu_set_layers_obj, py_kpu_set_layers);
 
 STATIC mp_obj_t py_kpu_forward(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
-	enum { ARG_kpu_net, ARG_img, ARG_out_index};
+	enum { ARG_kpu_net, ARG_img, ARG_out_index, ARG_dma};
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_kpu_net,              MP_ARG_OBJ, {.u_obj = mp_const_none} },
 		{ MP_QSTR_img,              	MP_ARG_OBJ, {.u_obj = mp_const_none} },
 		{ MP_QSTR_out_index, 			MP_ARG_INT, {.u_int = 0x0} },
+        { MP_QSTR_dma, 		        	MP_ARG_INT, {.u_int = -1} },
     };	//type
     char char_temp[30];
+    bool need_free_data_in = false;
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
     if(mp_obj_get_type(args[ARG_kpu_net].u_obj) == &py_kpu_net_obj_type)
     {
-		py_kpu_net_obj_t *kpu_net = MP_OBJ_TO_PTR(args[ARG_kpu_net].u_obj);
-		image_t *arg_img = py_image_cobj(args[ARG_img].u_obj);
         sipeed_kpu_err_t ret;
+		py_kpu_net_obj_t *kpu_net = MP_OBJ_TO_PTR(args[ARG_kpu_net].u_obj);
+        sipeed_kpu_use_dma(args[ARG_dma].u_int);
 
-		int out_index = args[ARG_out_index].u_int;		//which output you want, defaultly index 0
-		uint16_t w0=0;uint16_t h0=0;uint16_t ch0=0;
-		int kmodel_type=sipeed_kpu_model_get_type(kpu_net->kmodel_ctx);
-		if(abs(kmodel_type)==3){
-			if(sipeed_kpu_model_get_input_shape(kpu_net->kmodel_ctx, &w0, &h0, &ch0) != SIPEED_KPU_ERR_NONE)
-			{
-				mp_raise_ValueError("[MAIXPY]kpu: first layer not conv layer!\r\n");
+        int kmodel_type=sipeed_kpu_model_get_type(kpu_net->kmodel_ctx);
+		uint8_t* data_in;
+        if(py_image_obj_is_image(args[ARG_img].u_obj))
+        {
+            uint16_t w0=0, h0=0, ch0=0;
+            image_t *arg_img = py_image_cobj(args[ARG_img].u_obj);
+            data_in = arg_img->pix_ai;
+            // check V3 model input shape
+            if(abs(kmodel_type)==3 || abs(kmodel_type)==4){
+                if(sipeed_kpu_model_get_input_shape(kpu_net->kmodel_ctx, &w0, &h0, &ch0) != SIPEED_KPU_ERR_NONE)
+                {
+                    mp_raise_ValueError("[MAIXPY]kpu: first layer not conv layer!\r\n");
+                    return mp_const_none;
+                }
+                
+            }
+            if(check_img_format(arg_img, w0, h0, ch0, kmodel_type))
+            {
+                mp_raise_ValueError("[MAIXPY]kpu: check img format err!\r\n");
+                return mp_const_none;
+            }
+        }
+        else if(MP_OBJ_IS_TYPE(args[ARG_img].u_obj, &mp_type_list))
+        {
+            mp_uint_t arg_list_len;
+			mp_obj_t *arg_list_obj;
+			mp_obj_get_array(args[ARG_img].u_obj, &arg_list_len, &arg_list_obj);
+			if (!arg_list_len) {
+				mp_raise_ValueError("[MAIXPY]kpu: check input list format err!\r\n");
 				return mp_const_none;
 			}
 			
-		}
-		
-		if(check_img_format(arg_img, w0, h0, ch0, kmodel_type))
-		{
-			mp_raise_ValueError("[MAIXPY]kpu: check img format err!\r\n");
-			return mp_const_none;
-		}
+			data_in = malloc(arg_list_len*sizeof(float));
+			if(data_in == NULL) {
+				mp_raise_ValueError("[MAIXPY]kpu: alloc list mem err!\r\n");
+				return mp_const_none;
+			}
+            need_free_data_in = true;
+			float* float_in = (float*)data_in;	//理论上malloc申请的地址肯定是4字节对齐的
+			for(mp_uint_t i = 0; i < arg_list_len; i++) {
+				float_in[i] = mp_obj_get_float(arg_list_obj[i]);
+			}
+        }
+        else
+        {
+            mp_raise_ValueError("input not support");
+        }
+		int out_index = args[ARG_out_index].u_int;		//which output you want, defaultly index 0
 		/*************************************************************************************/
 		g_ai_done_flag = 0;
-        ret = sipeed_kpu_model_run(kpu_net->kmodel_ctx, arg_img->pix_ai, K210_DMA_CH_KPU, ai_done, NULL);
-        if (ret == SIPEED_KPU_ERR_RUN_MODEL){
-            mp_raise_msg(&mp_type_OSError, "Cannot run kmodel.\n");
-        } else if(ret == SIPEED_KPU_ERR_OUTPUTS_NODONE){
-			mp_raise_msg(&mp_type_OSError, "You haven't set all outputs shape!\n");
-		}
+        ret = sipeed_kpu_model_run(kpu_net->kmodel_ctx, data_in, K210_DMA_CH_KPU, ai_done, NULL);
+        if(ret != SIPEED_KPU_ERR_NONE)
+        {
+            char* msg = get_kpu_err_str(ret);
+            mp_raise_msg(&mp_type_OSError, msg);
+        }
 		
 		while (!g_ai_done_flag){
-			//DIRTY!!!  dummy code for sync
-			//maybe need change pix_ai's malloc method
-			//use iomem_malloc(xxx) instead
-			/*volatile uint8_t* features;
-			volatile size_t count;
-			ret = sipeed_kpu_get_output(kpu_net->kmodel_ctx, 0, &features, &count);
-			float val;
-			memcpy(&val, features, 4);
-			printf("%c", val>0?'.':' ');*/
 		};
         g_ai_done_flag = 0;
+        if(need_free_data_in) { 
+			free(data_in);
+		}
 
 		/*************************************************************************************/
 		if(abs(kmodel_type)==3) {

@@ -45,7 +45,7 @@
 #define MICROPY_HW_UART_REPL                (1)
 // MCU definition
 #define MP_ENDIANNESS_LITTLE                (1)
-#define MICROPY_NO_ALLOCA                   (1)
+#define MICROPY_NO_ALLOCA                   (0)
 
 
 // optimisations
@@ -71,7 +71,7 @@
 #define MICROPY_ENABLE_SCHEDULER            (1)
 #define MICROPY_SCHEDULER_DEPTH             (8)
 
-#define MICROPY_STACK_CHECK                 (0)
+#define MICROPY_STACK_CHECK                 (1)
 #define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF (1)
 #define MICROPY_KBD_EXCEPTION               (1)
 #define MICROPY_REPL_EMACS_KEYS             (1)
@@ -235,11 +235,17 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_PY_MACHINE_PULSE            (1)
 #define MICROPY_PY_MACHINE_I2C              (0) // not use mpy internal soft i2c
 #define MICROPY_PY_MACHINE_HW_I2C           (1) // enable hardware i2c
-#define MICROPY_PY_MACHINE_SPI              (0) // disable soft spi
+#define MICROPY_PY_MACHINE_SW_I2C           (1) // enable software i2c
+// #define MICROPY_PY_MACHINE_SPI              (0) // disable soft spi
 #define MICROPY_PY_MACHINE_HW_SPI           (1) // enable hardware spi
-#define MICROPY_PY_USSL                     (0)
-#define MICROPY_SSL_MBEDTLS                 (0)
-#define MICROPY_PY_USSL_FINALISER           (0)
+#define MICROPY_PY_MACHINE_SW_SPI           (1) // enable soft spi
+
+#if CONFIG_MICROPY_SSL_ENABLE
+    #define MICROPY_PY_USSL                     (1)
+    #define MICROPY_SSL_MBEDTLS                 (1)
+    #define MICROPY_PY_USSL_FINALISER           (1)
+#endif // CONFIG_MICROPY_SSL_ENABLE
+
 #define MICROPY_PY_WEBSOCKET                (1)
 #define MICROPY_PY_WEBREPL                  (1)
 #define MICROPY_PY_FRAMEBUF                 (0)
@@ -321,6 +327,16 @@ extern const struct _mp_obj_module_t nes_module;
 #define MAIXPY_PY_NES_DEF 
 #endif
 
+// speech_recognizer
+#ifndef CONFIG_MAIXPY_SPEECH_RECOGNIZER_ENABLE
+#endif //CONFIG_MAIXPY_SPEECH_RECOGNIZER_ENABLE
+#if CONFIG_MAIXPY_SPEECH_RECOGNIZER_ENABLE
+extern const struct _mp_obj_module_t mp_module_speech_recognizer;
+#define MAIXPY_PY_SPEECH_RECOGNIZER_DEF \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_speech_recognizer), (mp_obj_t)&mp_module_speech_recognizer },
+#else
+#define MAIXPY_PY_SPEECH_RECOGNIZER_DEF 
+#endif
 // lvgl GUI lib
 
 #if CONFIG_MAIXPY_LVGL_ENABLE
@@ -384,6 +400,8 @@ extern const struct _mp_obj_module_t mp_module_touchscreen;
     { MP_OBJ_NEW_QSTR(MP_QSTR_uhashlib), (mp_obj_t)&mp_module_uhashlib_maix }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_ucryptolib), (mp_obj_t)&mp_module_ucryptolib }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_modules), (mp_obj_t)&mp_module_modules }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_modules), (mp_obj_t)&mp_module_modules }, \
+    MAIXPY_PY_SPEECH_RECOGNIZER_DEF \
     MAIXPY_PY_NES_DEF \
     MAIXPY_PY_VIDEO_DEF \
     MAIXPY_PY_LVGL_DEF \

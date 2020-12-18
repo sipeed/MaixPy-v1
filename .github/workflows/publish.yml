@@ -1,0 +1,48 @@
+# This is a basic workflow to help you get started with Actions
+
+name: compile test and publish
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+# on: [push, pull_request]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  compile_publish:
+    name: compile test and publish
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: checkout code from github
+        uses: actions/checkout@v2
+
+      # Runs a set of commands using the runners shell
+      - name: sync shell cmd
+        run: |
+          curr_branch=master
+          git fetch --unshallow
+          git submodule update --init --recursive
+          wget https://github.com/kendryte/kendryte-gnu-toolchain/releases/download/v8.2.0-20190409/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz
+          sudo tar -Jxf kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz -C /opt
+          rm -f kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz
+          cd tools/release
+          chmod +x release.sh && ./release.sh
+          time_now=$(date "+%Y_%m_%d_%H_%M_%S")
+          cd bin
+          firmware_dir=`ls`
+          SSHPATH="$HOME/.ssh"
+          rm -rf "$SSHPATH"
+          mkdir -p "$SSHPATH"
+          echo "${{ secrets.ACCESSS_KEY }}" > "$SSHPATH/id_rsa"
+          chmod 600 "$SSHPATH/id_rsa"
+          sudo sh -c "echo StrictHostKeyChecking no >>/etc/ssh/ssh_config"
+          chmod -R 777 $firmware_dir
+          rsync -av --progress $firmware_dir ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_ADDR }}:${{ secrets.SERVER_FOLDER_PATH }}/${curr_branch}/
+

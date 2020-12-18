@@ -130,7 +130,7 @@ int uart_rx_irq(void *ctx)
 	if (ctx_self->read_buf_len != 0) {
 		if(ctx_self->attached_to_repl)
 		{
-#if  !defined(OMV_MINIMUM)|| CONFIG_MAIXPY_IDE_SUPPORT
+#if  CONFIG_MAIXPY_IDE_SUPPORT
 			if(ctx_self->ide_debug_mode)
 			{
 				int read_ret = 0; 

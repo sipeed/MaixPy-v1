@@ -608,13 +608,14 @@ void imlib_find_blobs(list_t *out, image_t *ptr, rectangle_t *roi, unsigned int 
     }
 }
 
-void imlib_flood_fill_int(image_t *out, image_t *img, int x, int y,
+size_t imlib_flood_fill_int(image_t *out, image_t *img, int x, int y,
                           int seed_threshold, int floating_threshold,
                           flood_fill_call_back_t cb, void *data)
 {
     lifo_t lifo;
     size_t lifo_len;
     lifo_alloc_all(&lifo, &lifo_len, sizeof(xylf_t));
+	size_t count = 0;
 
     switch(img->bpp) {
         case IMAGE_BPP_BINARY: {
@@ -749,6 +750,7 @@ void imlib_flood_fill_int(image_t *out, image_t *img, int x, int y,
                 for (int i = left; i <= right; i++) {
                     IMAGE_SET_BINARY_PIXEL_FAST(out_row, i);
                 }
+				count += (right-left+1);
 
                 bool break_out = false;
                 for(;;) {
@@ -944,6 +946,7 @@ void imlib_flood_fill_int(image_t *out, image_t *img, int x, int y,
     }
 
     lifo_free(&lifo);
+	return count;
 }
 
 #endif //OMV_MINIMUM

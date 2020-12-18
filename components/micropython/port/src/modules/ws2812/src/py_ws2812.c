@@ -43,7 +43,7 @@ mp_obj_t modules_ws2812_make_new(const mp_obj_type_t *type, size_t n_args, size_
 
         { MP_QSTR_i2s_num,              MP_ARG_INT, {.u_int = I2S_DEVICE_2} },
         { MP_QSTR_i2s_chn,              MP_ARG_INT, {.u_int = I2S_CHANNEL_3} },
-        { MP_QSTR_i2s_dma_chn,          MP_ARG_INT, {.u_int = DMAC_CHANNEL1} },
+        { MP_QSTR_i2s_dma_chn,          MP_ARG_INT, {.u_int = DMAC_CHANNEL2} },
     };
 
     modules_ws2812_obj_t *self = m_new_obj_with_finaliser(modules_ws2812_obj_t);
@@ -182,10 +182,17 @@ STATIC mp_obj_t modules_ws2812_dis(mp_obj_t self_in) {
 }
 MP_DEFINE_CONST_FUN_OBJ_1(modules_ws2812_dis_obj, modules_ws2812_dis);
 
+STATIC mp_obj_t modules_ws2812_num(mp_obj_t self_in) {
+    modules_ws2812_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    return mp_obj_new_int(self->dat->ws_num);
+}
+MP_DEFINE_CONST_FUN_OBJ_1(modules_ws2812_num_obj, modules_ws2812_num);
+
 STATIC const mp_rom_map_elem_t mp_modules_ws2812_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&modules_ws2812_del_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_led), MP_ROM_PTR(&modules_ws2812_set_led_obj) },
     { MP_ROM_QSTR(MP_QSTR_display), MP_ROM_PTR(&modules_ws2812_dis_obj) },
+    { MP_ROM_QSTR(MP_QSTR_ws_num), MP_ROM_PTR(&modules_ws2812_num_obj) },
 };
 
 MP_DEFINE_CONST_DICT(mp_modules_ws2812_locals_dict, mp_modules_ws2812_locals_dict_table);

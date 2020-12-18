@@ -4,11 +4,11 @@ mainmenu "C/CPP CMake project framework Kconfig configuration"
 menu "Toolchain configuration"
 	config TOOLCHAIN_PATH
 		string "toolchain path"
-		default ""
+		default "/opt/kendryte-toolchain/bin"
 	
 	config TOOLCHAIN_PREFIX
 		string "toolchain prefix"
-		default ""
+		default "riscv64-unknown-elf-"
 endmenu
 
 menu "Components configuration"

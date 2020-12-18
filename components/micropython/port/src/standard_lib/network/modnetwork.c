@@ -54,21 +54,20 @@ u32_t sys_now(void) {
 
 void mod_network_init(void) {
 
-	MP_STATE_PORT(modnetwork_nic) = NULL;
+      MP_STATE_PORT(modnetwork_nic) = NULL;
 }
 
 void mod_network_deinit(void) {
 }
- 
 void mod_network_register_nic(mp_obj_t nic) {
-	MP_STATE_PORT(modnetwork_nic) = MP_OBJ_TO_PTR(nic);
+      MP_STATE_PORT(modnetwork_nic) = MP_OBJ_TO_PTR(nic);
 }
 
 mp_obj_t mod_network_find_nic(const uint8_t *ip) {
     //TODO: find a NIC that is suited to given IP address
-	if(MP_STATE_PORT(modnetwork_nic) != NULL)
+      if(MP_STATE_PORT(modnetwork_nic) != NULL)
     {
-		return MP_OBJ_FROM_PTR(MP_STATE_PORT(modnetwork_nic));
+              return MP_OBJ_FROM_PTR(MP_STATE_PORT(modnetwork_nic));
     }
     nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "no available NIC"));
 }
@@ -80,11 +79,12 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(network_route_obj, network_route);
 
 STATIC const mp_rom_map_elem_t mp_module_network_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_network) },
-    
     { MP_ROM_QSTR(MP_QSTR_ESP8285), MP_ROM_PTR(&mod_network_nic_type_esp8285) },
 
     { MP_ROM_QSTR(MP_QSTR_ESP32_SPI), MP_ROM_PTR(&mod_network_nic_type_esp32) },
-
+#if CONFIG_MAIXPY_WIZNET5K_ENABLE
+    { MP_ROM_QSTR(MP_QSTR_WIZNET5K), MP_ROM_PTR(&mod_network_nic_type_wiznet5k) },
+#endif
     { MP_ROM_QSTR(MP_QSTR_route), MP_ROM_PTR(&network_route_obj) },
 };
 

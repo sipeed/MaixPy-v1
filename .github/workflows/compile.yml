@@ -1,0 +1,37 @@
+# This is a basic workflow to help you get started with Actions
+
+name: compile test and publish
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ master ]
+# on: [push, pull_request]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  compile_publish:
+    name: compile test
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: checkout code from github
+        uses: actions/checkout@v2
+
+      # Runs a set of commands using the runners shell
+      - name: sync shell cmd
+        run: |
+          git submodule update --init --recursive
+          wget https://github.com/kendryte/kendryte-gnu-toolchain/releases/download/v8.2.0-20190409/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz
+          sudo tar -Jxf kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz -C /opt
+          rm -f kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz
+          cd tools/release
+          chmod +x release.sh && ./release.sh
+

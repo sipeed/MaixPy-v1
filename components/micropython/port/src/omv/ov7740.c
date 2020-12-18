@@ -150,7 +150,6 @@ static int ov7740_sleep(sensor_t *sensor, int enable)
     {
         DCMI_PWDN_LOW();
     }
-    
     return 0;
 }
 
@@ -170,7 +169,7 @@ static int write_reg(sensor_t *sensor, uint8_t reg_addr, uint16_t reg_data)
 
 static int set_pixformat(sensor_t *sensor, pixformat_t pixformat)
 {
-    return 0; 
+    return 0;
 }
 
 static int set_framesize(sensor_t *sensor, framesize_t framesize)
@@ -199,7 +198,7 @@ static int set_framesize(sensor_t *sensor, framesize_t framesize)
         ret |= cambus_writeb(sensor->slv_addr, 0x31, 0x28);
         ret |= cambus_writeb(sensor->slv_addr, 0x32, 0x3c);
         ret |= cambus_writeb(sensor->slv_addr, 0x82, 0x3F);
-    }    
+    }
 
     return ret;
 }
@@ -450,13 +449,15 @@ static int get_rgb_gain_db(sensor_t *sensor, float *r_gain_db, float *g_gain_db,
 
 static int set_hmirror(sensor_t *sensor, int enable)
 {
-    // uint8_t reg;
-    // int ret = cambus_readb(sensor->slv_addr, 0x0C, &reg);
-    // ret |= cambus_writeb(sensor->slv_addr, 0x0C, OV7740_SET_MIRROR(reg, enable)) ;
+    uint8_t reg;
+    int ret = cambus_readb(sensor->slv_addr, 0x0C, &reg);
+    ret |= cambus_writeb(sensor->slv_addr, 0x0C, OV7740_SET_MIRROR(reg, enable)) ;
 
-    // return ret;
-    //TODO: there's hmirror bug, so we use soft hmirror in sensor.c
-    return 0;
+    //Sensor Horizontal Output Start Point
+    ret = cambus_readb(sensor->slv_addr, 0x16, &reg);
+    ret |= cambus_writeb(sensor->slv_addr, 0x16, OV7740_SET_SP(reg, enable));
+
+    return ret;
 }
 
 static int set_vflip(sensor_t *sensor, int enable)
@@ -486,7 +487,7 @@ static int set_special_effect(sensor_t *sensor, sde_t sde)
             ret = cambus_readb(sensor->slv_addr, 0xDA, &reg);
             ret |= cambus_writeb(sensor->slv_addr, 0xDA, reg | 0x40);
             break;
-    
+
         default:
             return -1;
     }
@@ -534,5 +535,3 @@ int ov7740_init(sensor_t *sensor)
 
     return 0;
 }
-
-

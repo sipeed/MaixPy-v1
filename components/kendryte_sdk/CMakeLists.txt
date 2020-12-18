@@ -14,7 +14,6 @@ if(CONFIG_COMPONENT_KENDRYTE_SDK_ENABLE)
         )
     if(CONFIG_FREERTOS_ENABLE)
         list(APPEND ADD_INCLUDE "kendryte-standalone-sdk/lib/freertos/include"
-                                "kendryte-standalone-sdk/lib/freertos/portable"
         )
     endif()
     # list(APPEND ADD_PRIVATE_INCLUDE "include_private")
@@ -36,6 +35,8 @@ if(CONFIG_COMPONENT_KENDRYTE_SDK_ENABLE)
         append_srcs_dir(ADD_SRCS "kendryte-standalone-sdk/lib/freertos/portable")
         list(REMOVE_ITEM ADD_SRCS "kendryte-standalone-sdk/lib/freertos/portable/heap_4.c")
         list(APPEND ADD_SRCS "src2/heap_4.c")
+        list(REMOVE_ITEM ADD_SRCS "kendryte-standalone-sdk/lib/freertos/locks.c")
+        list(APPEND ADD_SRCS "src2/locks.c")
         # asm with freerots support
         set(ADD_ASM_SRCS "kendryte-standalone-sdk/lib/bsp/crt.S"
                          "kendryte-standalone-sdk/lib/freertos/portable/portasm.S"
@@ -60,16 +61,24 @@ if(CONFIG_COMPONENT_KENDRYTE_SDK_ENABLE)
     if(CONFIG_MIC_ARRAY_ENABLE)
         list(APPEND ADD_STATIC_LIB "libs/lib_mic.a")
     endif()
-    list(APPEND ADD_STATIC_LIB "libs/lib_sipeed_kpu.a")
-    if(CONFIG_LIB_NNCASE_SOURCE_CODE_ENABLE)
-        message("compile nncase source code")
+    if(CONFIG_MICROPYTHON_KMODEL_V4_SUPPORT)
+        message("-- Add V4 kpu LIB")
+        list(APPEND ADD_STATIC_LIB "libs/lib_sipeed_kpu_v4.a")
     else()
-        message("add nncase static lib")
-        # xtl options
-        list(APPEND ADD_DEFINITIONS -DTCB_SPAN_NO_EXCEPTIONS -DTCB_SPAN_NO_CONTRACT_CHECKING)
-        # nncase options
-        list(APPEND ADD_DEFINITIONS -DNNCASE_TARGET=k210)
-        list(APPEND ADD_STATIC_LIB "libs/libnncase.a")
+        message("-- Add V3 kpu LIB")
+        list(APPEND ADD_STATIC_LIB "libs/lib_sipeed_kpu.a")
+    endif()
+    if(CONFIG_MICROPYTHON_KMODEL_V4_SUPPORT)
+        if(CONFIG_LIB_NNCASE_SOURCE_CODE_ENABLE)
+            message("compile nncase source code")
+        else()
+            message("add nncase static lib")
+            # xtl options
+            list(APPEND ADD_DEFINITIONS -DTCB_SPAN_NO_EXCEPTIONS -DTCB_SPAN_NO_CONTRACT_CHECKING)
+            # nncase options
+            list(APPEND ADD_DEFINITIONS -DNNCASE_TARGET=k210)
+            list(APPEND ADD_STATIC_LIB "libs/libnncase.a")
+        endif()
     endif()
     ###############################################
 

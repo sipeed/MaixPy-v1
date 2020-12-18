@@ -36,4 +36,10 @@ jobs:
         - cd bin
         - firmware_dir=`ls`
         - sudo sh -c "echo StrictHostKeyChecking no >>/etc/ssh/ssh_config"
-        - sshpass -p ${USER_PASSWD} scp -r $firmware_dir ${SERVER_USER}@${SERVER_ADDR}:${SERVER_FOLDER_PATH}/${curr_branch}/
+        - chmod -R 777 $firmware_dir
+        - SSHPATH="$HOME/.ssh"
+        - rm -rf "$SSHPATH"
+        - mkdir -p "$SSHPATH"
+        - echo "${ACCESS_KEY}" > "$SSHPATH/id_rsa"
+        - chmod 600 "$SSHPATH/id_rsa"
+        - rsync -av --progress $firmware_dir ${SERVER_USER}@${SERVER_ADDR}:${SERVER_FOLDER_PATH}/${curr_branch}/

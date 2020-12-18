@@ -64,6 +64,10 @@ int region_layer_init(region_layer_t *rl, void* ctx)
     //rl->scale = output_scale;
     //rl->bias = output_bias;
 
+    // Initialize for out-of-memory situations
+    rl->probs_buf = NULL;
+    rl->probs = NULL;
+
     /*rl->output = malloc(rl->output_number * sizeof(float));
     if (rl->output == NULL)
     {
