@@ -137,7 +137,6 @@ cd ..
 
 # add readme.txt
 cp ../tools/release/readme.txt $release_dir/readme.txt
-cp ../tools/release/files_readme.txt $release_dir/files_readme.txt
 
 cd $release_dir
 7z a elf_maixpy_${version}.7z elf/*
