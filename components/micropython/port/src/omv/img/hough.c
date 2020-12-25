@@ -911,7 +911,7 @@ void imlib_find_circles(list_t *out, image_t *ptr, rectangle_t *roi, unsigned in
         while(dual_func){}
     else
         find_circles_subproccess(1);
-        for (int y = 1, yy = b_size - 1; y < yy; y++) {
+    for (int y = 1, yy = b_size - 1; y < yy; y++) {
             uint32_t *row_ptr = acc + (a_size * y);
 
             for (int x = 1, xx = a_size - 1; x < xx; x++) {

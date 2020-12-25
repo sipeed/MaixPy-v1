@@ -2,6 +2,9 @@
 #include "color_table.h"
 
 #define SWAP_TO_MP16(x) (((x)>>8) | ((x)<<8&0xff00)) // grbg -> rgb
+#define HEIGHT_PER_BOARD  64
+#define WIDTH_PER_BOARD 64
+#define SCAN_TIMES 32
 
 // cur -> current
 static hub75e_t* hub75e_obj = 0;
@@ -43,6 +46,13 @@ static inline void unlatch_hub75e(hub75e_t* hub75e_obj)
 
 void hub75e_init(hub75e_t* hub75e_obj)
 {
+    dmac_init();
+    spi_init(hub75e_obj->spi, SPI_WORK_MODE_0, SPI_FF_OCTAL, 8, 0);
+    spi_init_non_standard(hub75e_obj->spi, 8 /*instrction length*/,
+                          0 /*address length*/, 0 /*wait cycles*/,
+                          SPI_AITM_AS_FRAME_FORMAT /*spi address trans mode*/);
+    spi_set_clk_rate(hub75e_obj->spi, 15000000);
+
     if(hub75e_obj->spi == 1){
         fpioa_set_function(hub75e_obj->r1_pin, HUB75E_FUN_SPIxDv(1, 7));
         fpioa_set_function(hub75e_obj->g1_pin, HUB75E_FUN_SPIxDv(1, 6));
@@ -51,6 +61,7 @@ void hub75e_init(hub75e_t* hub75e_obj)
         fpioa_set_function(hub75e_obj->g2_pin, HUB75E_FUN_SPIxDv(1, 3));
         fpioa_set_function(hub75e_obj->b2_pin, HUB75E_FUN_SPIxDv(1, 2));
         fpioa_set_function(hub75e_obj->clk_pin, FUNC_SPI1_SCLK);
+        fpioa_set_function(hub75e_obj->cs_pin, FUNC_SPI1_SS3);
     }else if(hub75e_obj->spi == 0){
         fpioa_set_function(hub75e_obj->r1_pin, HUB75E_FUN_SPIxDv(0, 7));
         fpioa_set_function(hub75e_obj->g1_pin, HUB75E_FUN_SPIxDv(0, 6));
@@ -59,18 +70,12 @@ void hub75e_init(hub75e_t* hub75e_obj)
         fpioa_set_function(hub75e_obj->g2_pin, HUB75E_FUN_SPIxDv(0, 3));
         fpioa_set_function(hub75e_obj->b2_pin, HUB75E_FUN_SPIxDv(0, 2));
         fpioa_set_function(hub75e_obj->clk_pin, FUNC_SPI0_SCLK);
+        fpioa_set_function(hub75e_obj->cs_pin, FUNC_SPI0_SS3);
+        sysctl_set_spi0_dvp_data(1);
     }else{
         printf("Error spi num should be 1 or 0\r\n");
         return;
     }
-
-    dmac_init();
-    spi_init(hub75e_obj->spi, SPI_WORK_MODE_0, SPI_FF_OCTAL, 8, 0);
-    spi_init_non_standard(hub75e_obj->spi, 0 /*instrction length*/,
-                          8 /*address length*/, 0 /*wait cycles*/,
-                          SPI_AITM_AS_FRAME_FORMAT /*spi address trans mode*/);
-    fpioa_set_function(hub75e_obj->cs_pin, FUNC_SPI1_SS3);
-    spi_set_clk_rate(hub75e_obj->spi, 15000000);
 
     // fpioa_set_function(HUB75E_ADDR_A_PIN, HUB75E_ADDR_A_GPIOHSNUM + 24);
     // fpioa_set_io_pull(HUB75E_ADDR_A_PIN, FPIOA_PULL_UP);
@@ -110,7 +115,7 @@ void hub75e_init(hub75e_t* hub75e_obj)
     disable_hub75e(hub75e_obj); //防止初始化时闪烁
 }
 
-static inline void fill_line(hub75e_t *hub75e_obj, spi_t *spi_handle, uint32_t *line_buf, const int line_num)
+static inline void fill_line(hub75e_t *hub75e_obj, spi_t *spi_handle, uint32_t *line_buf, const int addr, int line_buf_size)
 {
     // disable_hub75e(hub75e_obj); // 停止显示
 
@@ -124,7 +129,7 @@ static inline void fill_line(hub75e_t *hub75e_obj, spi_t *spi_handle, uint32_t *
     dmac_set_single_mode(hub75e_obj->dma_channel, line_buf,
                          (void *)(&spi_handle->dr[0]), DMAC_ADDR_INCREMENT,
                          DMAC_ADDR_NOCHANGE, DMAC_MSIZE_4, DMAC_TRANS_WIDTH_32,
-                         hub75e_obj->width);
+                         line_buf_size);
     spi_handle->ser = 1U << SPI_CHIP_SELECT_3;
     dmac_wait_done(hub75e_obj->dma_channel);
     while ((spi_handle->sr & 0x05) != 0x04)
@@ -134,7 +139,7 @@ static inline void fill_line(hub75e_t *hub75e_obj, spi_t *spi_handle, uint32_t *
 
     latch_hub75e(hub75e_obj);
     unlatch_hub75e(hub75e_obj);
-    hub75e_set_addr(hub75e_obj, line_num); // 选择行地址
+    hub75e_set_addr(hub75e_obj, addr); // 选择行地址
     enable_hub75e(hub75e_obj);           // 开始显示
 }
 
@@ -143,16 +148,12 @@ int hub75e_display(int core)
     if(!(hub75e_obj&&image)) return -1;
 
     int y, t, x;
-    uint16_t *rgb444 = (uint16_t *)malloc(hub75e_obj->width*hub75e_obj->height*sizeof(uint16_t));
-    uint32_t *line_buffer = (uint32_t *)malloc(hub75e_obj->height*sizeof(uint32_t));
-    uint16_t height_half = hub75e_obj->height / 2;
+    uint16_t vertical_boards = hub75e_obj->height / HEIGHT_PER_BOARD;
+    uint16_t line_buf_size = hub75e_obj->width * vertical_boards;
+    uint16_t *rgb444 = (uint16_t *)malloc(hub75e_obj->width * hub75e_obj->height * sizeof(uint16_t));
+    uint32_t *line_buffer = (uint32_t *)malloc(line_buf_size * sizeof(uint32_t));
     volatile spi_t *spi_handle = spi[hub75e_obj->spi];
     
-    spi_init(hub75e_obj->spi, SPI_WORK_MODE_0, SPI_FF_OCTAL, 8, 0);
-    spi_init_non_standard(hub75e_obj->spi, 0 /*instrction length*/,
-                    8 /*address length**/, 0 /*wait cycles*/,
-                    SPI_AITM_AS_FRAME_FORMAT /*spi address trans mode*/);
-
     // rgb565 -> rgb444
     for (y = 0; y < hub75e_obj->height; y++)
     {
@@ -166,16 +167,23 @@ int hub75e_display(int core)
     // 每张图刷新 16 次, 可以达到用占空比控制的效果, 16 为 4 位所能表示的全部色彩
     for (t = 0; t < 16; t++)
     {
-        // 共 64 列, 32 扫, 每次填两行 y 和 y+32 行
-        for (y = 0; y < height_half; y++)
+        // 32 扫, 每次填两行 y 和 y+32 行       
+        for (y = 0; y < SCAN_TIMES; y++)
         {
-            // 编码每行的点， 一次两行， 高三位: 7(r1),6(g1),5(b1)为第 y 行), 后三位: 4(r2),3(g2),2(b2) 为第 y+32 行)
-            for(int  x = 0; x < hub75e_obj->width; x++)
+            for (int bs = 1; bs  <= vertical_boards; bs++)
             {
-                line_buffer[x] = ((pwm_table[t][*(rgb444 + y * hub75e_obj->width + x)]) | \
-                                pwm_table[t][*(rgb444 + (y + height_half) * hub75e_obj->width + x)] >> 3);
-            }
-            fill_line(hub75e_obj, spi_handle, line_buffer, y); // 发送行数据
+                // 当前需要显示的 img 行号
+                int img_line_num = (vertical_boards - bs) * HEIGHT_PER_BOARD + y;
+                // line_buffer 填充起点
+                int line_buf_base_index = ((bs-1)*hub75e_obj->width);
+                // 编码每行的点， 一次两行， 高三位: 7(r1),6(g1),5(b1)为第 img_line_num 行), 后三位: 4(r2),3(g2),2(b2) 为第 img_line_num+32 行)
+                for(int  x = 0; x < hub75e_obj->width; x++)
+                {
+                    line_buffer[x+line_buf_base_index] = ((pwm_table[t][*(rgb444 + img_line_num * hub75e_obj->width + x)]) | \
+                                    pwm_table[t][*(rgb444 + (img_line_num + SCAN_TIMES) * hub75e_obj->width + x)] >> 3);
+                }
+            }            
+            fill_line(hub75e_obj, spi_handle, line_buffer, y, line_buf_size); // 发送行数据
         }
     }   
     free(line_buffer);
