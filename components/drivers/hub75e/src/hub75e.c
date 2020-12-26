@@ -190,7 +190,7 @@ int hub75e_display(int core)
                         line_buffer[line_buf_end_index - x] = ((pwm_table[t][*(rgb444 + img_line_begin + x)]) | \
                                         pwm_table[t][*(rgb444 + img_line_scan_begin + x)] >> 3);
                     }
-                }else{// 垂直第奇数块, 刷新顺序从上到下， 从左至右
+                }else{// 垂直第奇数块所在行, 刷新顺序从上到下， 从左至右
                     // 填入 line-buffer 的 img 行号
                     int img_line_num = (bs - 1) * HEIGHT_PER_BOARD + y;
                     // 当前显示 img 行的出发点
