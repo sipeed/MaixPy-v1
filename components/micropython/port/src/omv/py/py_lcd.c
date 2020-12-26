@@ -46,8 +46,9 @@ static uint16_t screen_dir = DIR_YX_RLDU;
 
 static enum
 {
-    LCD_TYPE_ST7789 = 0,
-    LCD_TYPE_ILI9486 = 1,
+    LCD_TYPE_ST7789,
+    LCD_TYPE_ILI9486,
+    LCD_TYPE_ILI9481,
 } lcd_type_t;
 typedef struct
 {
@@ -274,6 +275,10 @@ static mp_obj_t py_lcd_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         }
         ret = lcd_init(args[ARG_freq].u_int, true, lcd_cfg.offset_w0, lcd_cfg.offset_h0,
                        lcd_cfg.offset_w1, lcd_cfg.offset_h1, invert, lcd_cfg.dir, width_curr, height_curr);
+        if (lcd_cfg.lcd_type == LCD_TYPE_ILI9481)
+        {
+            lcd_preinit_register_handler(&lcd_init_sequence_for_ili9481);
+        }
         if (0 != lcd_cfg.dir)
         {
             lcd_set_direction(lcd_cfg.dir);

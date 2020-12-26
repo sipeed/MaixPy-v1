@@ -10,8 +10,8 @@
 <br />
 <br />
 
-<a href="https://travis-ci.org/sipeed/MaixPy">
-    <img src="https://img.shields.io/github/workflow/status/sipeed/maixpy/compile%20test%20and%20publish?style=for-the-badge" alt="Master branch build status" />
+<a href="https://github.com/sipeed/MaixPy/actions">
+    <img src="https://img.shields.io/github/workflow/status/Sipeed/MaixPy/compile%20test%20and%20publish?style=for-the-badge" alt="Master branch build status" />
 </a>
 <a href="http://dl.sipeed.com/MAIX/MaixPy/release/master/">
     <img src="https://img.shields.io/badge/download-master-ff69b4.svg?style=for-the-badge" alt="master build firmware" />
@@ -62,9 +62,6 @@ Maixpy 的目的是让 AIOT 编程更简单， 基于 [Micropython](http://www.m
 > * 硬件 AES SHA256 支持
 > * FPIOA (每个外设可以映射到任意引脚)
 > * 外设: I2C, SPI, I2S, WDT, TIMER, RTC, UART, GPIO 等等
-
-![](assets/image/maix_bit.png)
-
 
 
 <img src="assets/image/maix_bit.png" height=500 alt="maix bit"/>

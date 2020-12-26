@@ -1319,7 +1319,7 @@ STATIC mp_obj_t py_kpu_forward(size_t n_args, const mp_obj_t *pos_args, mp_map_t
             image_t *arg_img = py_image_cobj(args[ARG_img].u_obj);
             data_in = arg_img->pix_ai;
             // check V3 model input shape
-            if(abs(kmodel_type)==3){
+            if(abs(kmodel_type)==3 || abs(kmodel_type)==4){
                 if(sipeed_kpu_model_get_input_shape(kpu_net->kmodel_ctx, &w0, &h0, &ch0) != SIPEED_KPU_ERR_NONE)
                 {
                     mp_raise_ValueError("[MAIXPY]kpu: first layer not conv layer!\r\n");

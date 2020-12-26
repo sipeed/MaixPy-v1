@@ -301,7 +301,7 @@ void load_config_from_spiffs(config_data_t *config)
 {
     s32_t ret, flash_error = 0;
     spiffs_file fd = SPIFFS_open(&spiffs_user_mount_handle.fs, FREQ_STORE_FILE_NAME, SPIFFS_O_RDONLY, 0);
-    // config init 
+    // config init
     config->freq_cpu = FREQ_CPU_DEFAULT;
     config->freq_pll1 = FREQ_PLL1_DEFAULT;
     config->kpu_div = 1;
@@ -455,7 +455,7 @@ int sd_preload(int core)
         // if (!mounted_flash || SPIFFS_stat(&spiffs_user_mount_handle.fs, "SKIPSD", &fno) != SPIFFS_OK)
         {
             mounted_sdcard = init_sdcard_fs();
-            for (int r = 0; r < 4; r++) 
+            for (int r = 0; r < 4; r++)
             {
                 if (!mounted_sdcard) mounted_sdcard = init_sdcard_fs(); // fail try again mounted_sdcard.
                 // msleep(50);
@@ -463,28 +463,6 @@ int sd_preload(int core)
         }
     }
 
-    // for maix amigo shit code.
-    if (!sd_is_ready && !mounted_sdcard)
-    {
-        extern sdcard_config_t config;
-        sdcard_config_t amigo = { 10, 6, 11, 26, SD_CS_PIN };
-        config = amigo;
-        sd_init(); // will wait 3s for sd
-        if (sdcard_is_present())
-        {
-            // spiffs_stat fno;
-            // if there is a file in the flash called "SKIPSD", then we don't mount the SD card
-            // if (!mounted_flash || SPIFFS_stat(&spiffs_user_mount_handle.fs, "SKIPSD", &fno) != SPIFFS_OK)
-            {
-                mounted_sdcard = init_sdcard_fs();
-                for (int r = 0; r < 4; r++)
-                {
-                    if (!mounted_sdcard) mounted_sdcard = init_sdcard_fs(); // fail try again mounted_sdcard.
-                    // msleep(50);
-                }
-            }
-        }
-    }
     dual_func = NULL; // remove task
     maixpy_sdcard_loading = false;
     return 0;

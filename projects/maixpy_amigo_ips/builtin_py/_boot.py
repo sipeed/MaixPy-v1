@@ -135,13 +135,13 @@ except OSError as e:
   import json
 
   config = {
-    "type": "amigo",
+    "type": "amigo_ips",
     "lcd": {
         "height": 320,
         "width": 480,
-        "invert": 0,
+        "invert": 1,
         "dir": 40,
-        "lcd_type": 1
+        "lcd_type": 2
     },
     "sdcard":{
         "sclk":11,
@@ -150,7 +150,7 @@ except OSError as e:
         "cs":26
     },
     "board_info": {
-        'BOOT_KEY': 23,
+        'BOOT_KEY': 16,
         'LED_R': 14,
         'LED_G': 15,
         'LED_B': 17,

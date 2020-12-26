@@ -74,6 +74,17 @@ void lcd_preinit_register_handler(lcd_preinit_handler_t handler)
     lcd_preinit_handler = handler;
 }
 
+void lcd_init_sequence_for_ili9481(void)
+{
+    uint8_t t[2];
+    // lcd.clear((99, 99, 99))
+    lcd_clear(0xc63);
+    // lcd.register(0xD1, 0x00)
+    tft_write_command(0xD1); /* Unk */
+    t[0] = (0x00);
+    tft_write_byte(t, 1);
+}
+
 void lcd_init_sequence_for_ili9486(void)
 {
     uint8_t t[15];
@@ -249,8 +260,6 @@ uint16_t lcd_get_height()
 {
     return g_lcd_h;
 }
-
-#include "printf.h"
 
 void lcd_set_direction(lcd_dir_t dir)
 {

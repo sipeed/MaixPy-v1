@@ -115,29 +115,49 @@ cp build/maixpy.elf $release_dir/elf/maixpy_${version}_m5stickv.elf
 cd ..
 
 # board Maix Amigo
-cd maixpy_amigo
+cd maixpy_amigo_ips
 echo "-------------------"
-echo "build project maixpy_amigo config_defaults"
+echo "build project maixpy_amigo_ips config_defaults"
 echo "-------------------"
 python project.py distclean
 python project.py build --config_file "config_defaults.mk"
-cp build/maixpy.bin $release_dir/maixpy_${version}_amigo_defaults.bin
-cp build/maixpy.elf $release_dir/elf/maixpy_${version}_amigo_defaults.elf
+cp build/maixpy.bin $release_dir/maixpy_${version}_amigo_ips_defaults.bin
+cp build/maixpy.elf $release_dir/elf/maixpy_${version}_amigo_ips_defaults.elf
 cd ..
 
-cd maixpy_amigo
+cd maixpy_amigo_ips
 echo "-------------------"
-echo "build project maixpy_amigo config_minimum"
+echo "build project maixpy_amigo_ips config_minimum"
 echo "-------------------"
 python project.py distclean
 python project.py build --config_file "config_minimum.mk"
-cp build/maixpy.bin $release_dir/maixpy_${version}_amigo_minimum.bin
-cp build/maixpy.elf $release_dir/elf/maixpy_${version}_amigo_minimum.elf
+cp build/maixpy.bin $release_dir/maixpy_${version}_amigo_ips_minimum.bin
+cp build/maixpy.elf $release_dir/elf/maixpy_${version}_amigo_ips_minimum.elf
+cd ..
+
+# board Maix Amigo
+cd maixpy_amigo_tft
+echo "-------------------"
+echo "build project maixpy_amigo_tft config_defaults"
+echo "-------------------"
+python project.py distclean
+python project.py build --config_file "config_defaults.mk"
+cp build/maixpy.bin $release_dir/maixpy_${version}_amigo_tft_defaults.bin
+cp build/maixpy.elf $release_dir/elf/maixpy_${version}_amigo_tft_defaults.elf
+cd ..
+
+cd maixpy_amigo_tft
+echo "-------------------"
+echo "build project maixpy_amigo_tft config_minimum"
+echo "-------------------"
+python project.py distclean
+python project.py build --config_file "config_minimum.mk"
+cp build/maixpy.bin $release_dir/maixpy_${version}_amigo_tft_minimum.bin
+cp build/maixpy.elf $release_dir/elf/maixpy_${version}_amigo_tft_minimum.elf
 cd ..
 
 # add readme.txt
 cp ../tools/release/readme.txt $release_dir/readme.txt
-cp ../tools/release/more_firmware.txt $release_dir/readme.txt
 
 cd $release_dir
 7z a elf_maixpy_${version}.7z elf/*

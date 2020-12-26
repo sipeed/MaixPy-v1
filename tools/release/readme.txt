@@ -1,13 +1,16 @@
 
-maixpy_*.bin: firmware
-elf_*.7z: elf files, just used for debug
 
-====================================================
+=============================
+
+Files:
+
+* maixpy_*.bin: firmware
+* elf_*.7z: elf files, just used for debug
 
 You can customize your firmware at https://www.maixhub.com/compile.html
 Or build by yourself according to  https://github.com/sipeed/MaixPy/blob/master/build.md
 
-====================================================
+=============================
 
 maixpy_*.bin: normal firmware, including
     * basic api
@@ -32,6 +35,11 @@ maixpy_*_minimum_with_kmodel_v4_support: minimum function firmware, including
     * the same as minimum.bin
     * add kmodel v4 support
 
+maixpy_*_openmv_kmodel_v4_with_ide_support: minimum function firmware, including
+    * the same as normal
+    * add kmodel v4 support
+    * IDE support
+
 maixpy_*_minimum_with_ide_support.bin: minimum function firmware, including
     * same as minimum
     * IDE support
@@ -50,5 +58,7 @@ maixpy_*_m5stickv.bin: especially for M5StickV board, including
     * same as normal
     * more detail see: https://github.com/sipeed/MaixPy/blob/master/projects/maixpy_m5stickv/config_defaults.mk
 
+maixpy_*_amigo*.bin: especially for board amigo
+    * the same as uppper
 
 

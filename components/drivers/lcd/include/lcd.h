@@ -100,6 +100,6 @@ uint16_t lcd_get_height();
 typedef void (*lcd_preinit_handler_t)(void);
 void lcd_preinit_register_handler(lcd_preinit_handler_t handler);
 void lcd_init_sequence_for_ili9486(void);
-
+void lcd_init_sequence_for_ili9481(void);
 #endif
 
