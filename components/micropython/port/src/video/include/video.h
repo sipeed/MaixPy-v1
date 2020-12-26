@@ -36,6 +36,7 @@ int video_play_avi_init(const char* path, avi_t* avi);
 void video_play_avi_destroy(avi_t* avi);
 int video_play_avi(avi_t* avi);
 int video_stop_play();
+int video_avi_capture(avi_t* avi, image_t *img);
 int video_hal_display_init();
 int video_hal_display(image_t* img, video_display_roi_t img_roi);
 uint64_t video_hal_ticks_us(void);

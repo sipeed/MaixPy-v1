@@ -205,6 +205,72 @@ int video_stop_play(avi_t* avi)
     return 0;
 }
 
+int video_avi_capture(avi_t* avi, image_t *img)
+{
+    int err = 0;
+    video_display_roi_t roi = {
+        .x = 0,
+        .y = 0
+    };
+    int status = VIDEO_STATUS_PLAYING;
+    uint8_t* pbuf;
+
+    if(avi->status != VIDEO_STATUS_RESUME && avi->status != VIDEO_STATUS_PLAYING && avi->status != VIDEO_STATUS_PLAY_END)
+    {
+        return avi->status;
+    }
+    avi->status = VIDEO_STATUS_PLAYING;
+
+    if(avi->stream_id == AVI_VIDS_FLAG) // video: get img
+    {
+        pbuf = avi->video_buf;
+        vfs_internal_read(avi->file, avi->video_buf, avi->stream_size+8, &err);
+        if( err != 0)
+        {
+            video_stop_play(avi);
+            return err;
+        }
+        img->data = avi->img_buf;
+        err = picojpeg_util_read(img, MP_OBJ_NULL, avi->video_buf, avi->stream_size, avi->width, avi->height);
+        if( err != 0)
+        {
+            video_stop_play(avi);
+            return err;
+        }
+        roi.w = img->w;
+        roi.h = img->h;
+        while( video_hal_ticks_us() - avi->time_us_fps_ctrl < avi->usec_per_frame);
+        avi->time_us_fps_ctrl = video_hal_ticks_us();
+        ++avi->frame_count;
+        status = VIDEO_STATUS_DECODE_VIDEO;
+    }
+    else // audio: pass
+    {
+            vfs_internal_read(avi->file, avi->audio_buf[avi->index_buf_save].buf, avi->stream_size+8, &err);
+            if( err != 0)
+            {
+                video_stop_play(avi);
+                return err;
+            }
+            ++avi->audio_count;
+            pbuf = avi->audio_buf[avi->index_buf_save].buf;
+            status = VIDEO_STATUS_DECODE_AUDIO;
+    } 
+    err = avi_get_streaminfo(pbuf + avi->stream_size, avi);
+    if( err != AVI_STATUS_OK)//read the next frame
+    {
+        video_stop_play(avi);
+        if(avi->frame_count != avi->total_frame)
+        {
+            mp_printf(&mp_plat_print, "frame error \r\n"); 
+            avi->status = err;
+            return err;
+        }
+        avi->status = VIDEO_STATUS_PLAY_END;
+        status = avi->status;
+    }
+    return status;
+}
 
 /////////////////////////////////////////////////////////////////////////////////////
 
