@@ -6,6 +6,7 @@
 #include "mphal.h"
 
 #include "py_image.h"
+#include "py_assert.h"
 
 
 typedef struct {
@@ -39,6 +40,28 @@ STATIC mp_obj_t py_video_play(size_t n_args, const mp_obj_t *args, mp_map_t *kw_
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_video_play_obj, 0, py_video_play);
+
+mp_obj_t py_video_capture(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
+{
+    py_video_avi_obj_t* arg_avi = (py_video_avi_obj_t*)args[0];
+    if( arg_avi->obj.record )
+        mp_raise_OSError(MP_EPERM);
+    image_t *image = py_image_cobj(args[1]);
+    PY_ASSERT_TRUE_MSG(IM_IS_MUTABLE(image), "Please input an image as parameter");
+    int status;
+    do{ // pass the audio
+       status = video_avi_capture(&arg_avi->obj,image);
+        if(status > 0){ // err
+            mp_raise_OSError(status);
+            break;
+        }
+        if(status == 0) // end
+            break;
+    }while(status != VIDEO_STATUS_DECODE_VIDEO);
+    return mp_obj_new_int(-status);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_video_capture_obj, 1, py_video_capture);
 
 STATIC mp_obj_t py_video_volume(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
@@ -117,6 +140,7 @@ static const mp_rom_map_elem_t locals_dict_table[] = {
     {MP_OBJ_NEW_QSTR(MP_QSTR_volume),  (&py_video_volume_obj)},
     {MP_OBJ_NEW_QSTR(MP_QSTR_record),  (&py_video_record_obj)},
     {MP_OBJ_NEW_QSTR(MP_QSTR_record_finish),  (&py_video_record_finish_obj)},
+    {MP_OBJ_NEW_QSTR(MP_QSTR_capture),  (&py_video_capture_obj)},
 };
 
 STATIC MP_DEFINE_CONST_DICT(locals_dict, locals_dict_table);
