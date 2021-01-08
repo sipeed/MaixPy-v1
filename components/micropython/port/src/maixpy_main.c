@@ -629,7 +629,7 @@ soft_reset:
     // sysctl->soft_reset.soft_reset = 1;
 }
 
-void fpioa_clean()
+void fpioa_clear()
 {
     for (int index = 0; index < FPIOA_NUM_IO; index++)
         fpioa_set_function_raw(index, FUNC_RESV0);
