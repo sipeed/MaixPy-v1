@@ -629,6 +629,12 @@ soft_reset:
     // sysctl->soft_reset.soft_reset = 1;
 }
 
+void fpioa_clean()
+{
+    for (int index = 0; index < FPIOA_NUM_IO; index++)
+        fpioa_set_function_raw(index, FUNC_RESV0);
+}
+
 int maixpy_main()
 {
     uint8_t manuf_id, device_id;
@@ -636,6 +642,7 @@ int maixpy_main()
     sysctl_pll_set_freq(SYSCTL_PLL0, FREQ_PLL0_DEFAULT);
     sysctl_pll_set_freq(SYSCTL_PLL1, FREQ_PLL1_DEFAULT);
     sysctl_pll_set_freq(SYSCTL_PLL2, FREQ_PLL2_DEFAULT);
+    fpioa_clear();
     fpioa_set_function(4, FUNC_UARTHS_RX);
     fpioa_set_function(5, FUNC_UARTHS_TX);
     uarths_init();
