@@ -83,9 +83,9 @@
 #define DIGITAL_GAMMA_CTL1      0xE2
 #define DIGITAL_GAMMA_CTL2      0xE3
 #define INTERFACE_CTL           0xF6
-
-#define DCX_GPIONUM             (5) // 31
-#define RST_GPIONUM             (4) // 30
+#include "gpiohs.h"
+#define DCX_GPIONUM             FUNC_GPIOHS31 // 31
+#define RST_GPIONUM             FUNC_GPIOHS30 // 30
 
 #define SPI_CHANNEL             0
 #define SPI_DMA_CH				DMAC_CHANNEL1
