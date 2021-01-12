@@ -183,9 +183,9 @@ static int set_hmirror(sensor_t *sensor, int enable)
     uint8_t reg;
     int ret = cambus_readb(sensor->slv_addr, 0x3821, &reg);
     if (enable){
-        ret |= cambus_writeb(sensor->slv_addr, 0x3821, reg&0x06);
+        ret |= cambus_writeb(sensor->slv_addr, 0x3821, reg|0x06);
     } else {
-        ret |= cambus_writeb(sensor->slv_addr, 0x3821, reg|0xF9);
+        ret |= cambus_writeb(sensor->slv_addr, 0x3821, reg&0xF9);
     }
     return ret;
 }
