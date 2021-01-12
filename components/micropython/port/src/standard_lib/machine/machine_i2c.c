@@ -60,6 +60,7 @@ typedef enum _soft_i2c_device_number
     I2C_DEVICE_3 = 3,
     I2C_DEVICE_4,
     I2C_DEVICE_5,
+    I2C_DEVICE_SOFT,
     SOFT_I2C_DEVICE_MAX,
 } soft_i2c_device_number_t;
 
@@ -599,7 +600,8 @@ STATIC mp_obj_t machine_i2c_init_helper(machine_hard_i2c_obj_t* self, mp_uint_t 
 #if MICROPY_PY_MACHINE_SW_I2C
     if(self->i2c == (i2c_device_number_t)I2C_DEVICE_3 
         || self->i2c == (i2c_device_number_t)I2C_DEVICE_4 
-        || self->i2c == (i2c_device_number_t)I2C_DEVICE_5) {
+        || self->i2c == (i2c_device_number_t)I2C_DEVICE_5
+        || self->i2c == (i2c_device_number_t)I2C_DEVICE_SOFT) {
         self->mode = MACHINE_I2C_MODE_MASTER_SOFT;
     }
 #endif
@@ -984,6 +986,7 @@ STATIC const mp_rom_map_elem_t machine_i2c_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_I2C3), MP_ROM_INT(I2C_DEVICE_3) },
     { MP_ROM_QSTR(MP_QSTR_I2C4), MP_ROM_INT(I2C_DEVICE_4) },
     { MP_ROM_QSTR(MP_QSTR_I2C5), MP_ROM_INT(I2C_DEVICE_5) },
+    { MP_ROM_QSTR(MP_QSTR_I2C_SOFT), MP_ROM_INT(I2C_DEVICE_SOFT) },
 #endif
 
     // slave mode event
