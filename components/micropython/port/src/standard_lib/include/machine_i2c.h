@@ -27,6 +27,8 @@ typedef struct _machine_hard_i2c_obj_t {
     mp_obj_t              on_event;
     int                   pin_scl;
     int                   pin_sda; 
+    int                   gpio_scl;
+    int                   gpio_sda;
     int                   us_delay;
 } machine_hard_i2c_obj_t;
 
