@@ -27,6 +27,7 @@
 #include "mphalport.h"
 #include "ov3660.h"
 #include "ov5640.h"
+#include "ov5642.h"
 #include "Maix_config.h"
 
 extern volatile dvp_t *const dvp;
@@ -400,6 +401,10 @@ int sensro_ov_detect(sensor_t *sensor)
             //     printk("find ov7725\r\n");
             //     init_ret = ov7725_init(sensor);
             //     break;
+            case OV5642_ID:
+                mp_printf(&mp_plat_print, "[MAIXPY]: find ov5642\n");
+                init_ret = ov5642_init(sensor);
+                break;
             case OV7740_ID:
                 mp_printf(&mp_plat_print, "[MAIXPY]: find ov7740\n");
                 init_ret = ov7740_init(sensor);
