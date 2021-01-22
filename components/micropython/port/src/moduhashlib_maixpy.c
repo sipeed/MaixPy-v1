@@ -49,7 +49,7 @@ STATIC mp_obj_t uhashlib_sha256_update(mp_obj_t self_in, mp_obj_t arg) {
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(arg, &bufinfo, MP_BUFFER_READ);
     self->total_len += bufinfo.len;
-    sha256_update_length(self->total_len);
+    //sha256_update_length(self->total_len);
     sha256_update((sha256_context_t*)self->state, bufinfo.buf, bufinfo.len);
     return mp_const_none;
 }

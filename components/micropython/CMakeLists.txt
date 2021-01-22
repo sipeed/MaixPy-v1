@@ -226,6 +226,7 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
                         "core/extmod/vfs_fat.c"
                         "core/extmod/vfs_fat_diskio.c"
                         "core/extmod/vfs_fat_file.c"
+                        "core/extmod/vfs_blockdev.c"
                         "core/extmod/utime_mphal.c"
                         "core/extmod/uos_dupterm.c"
                         "core/lib/embed/abort_.c"
@@ -355,7 +356,25 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     # ulab
     if(CONFIG_MICROPYTHON_ULAB_ENALBE)
         list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/ulab/micropython-ulab/code")
-        append_srcs_dir(ADD_SRCS "port/src/ulab/micropython-ulab/code")
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/ulab/micropython-ulab/code/approx")
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/ulab/micropython-ulab/code/compare")
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/ulab/micropython-ulab/code/fft")
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/ulab/micropython-ulab/code/filter")
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/ulab/micropython-ulab/code/linalg")
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/ulab/micropython-ulab/code/numerical")
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/ulab/micropython-ulab/code/poly")
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/ulab/micropython-ulab/code/user")
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/ulab/micropython-ulab/code/vector")
+        append_srcs_dir(ADD_SRCS "port/src/ulab/micropython-ulab/code/")		
+        append_srcs_dir(ADD_SRCS "port/src/ulab/micropython-ulab/code/approx")
+        append_srcs_dir(ADD_SRCS "port/src/ulab/micropython-ulab/code/compare")
+        append_srcs_dir(ADD_SRCS "port/src/ulab/micropython-ulab/code/fft")
+        append_srcs_dir(ADD_SRCS "port/src/ulab/micropython-ulab/code/filter")
+        append_srcs_dir(ADD_SRCS "port/src/ulab/micropython-ulab/code/linalg")
+        append_srcs_dir(ADD_SRCS "port/src/ulab/micropython-ulab/code/numerical")
+        append_srcs_dir(ADD_SRCS "port/src/ulab/micropython-ulab/code/poly")
+        append_srcs_dir(ADD_SRCS "port/src/ulab/micropython-ulab/code/user")
+        append_srcs_dir(ADD_SRCS "port/src/ulab/micropython-ulab/code/vector")
     endif()
 
     if(CONFIG_MICROPY_SSL_ENABLE)
@@ -464,9 +483,9 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
             VERBATIM
         )
     add_custom_target(gen_collected_h
-            COMMAND ${python} ${mpy_core_src_dir}/makeqstrdefs.py split ${mpy_build_gen_header_dir}/qstr.i.last ${mpy_build_gen_header_dir}/qstr ${QSTR_DEFS_COLLECTED}
+            COMMAND ${python} ${mpy_core_src_dir}/makeqstrdefs.py split qstr ${mpy_build_gen_header_dir}/qstr.i.last ${mpy_build_gen_header_dir}/qstr ${QSTR_DEFS_COLLECTED}
             COMMAND touch ${mpy_build_gen_header_dir}/qstr.split
-            COMMAND ${python} ${mpy_core_src_dir}/makeqstrdefs.py cat ${mpy_build_gen_header_dir}/qstr.i.last ${mpy_build_gen_header_dir}/qstr ${QSTR_DEFS_COLLECTED}
+            COMMAND ${python} ${mpy_core_src_dir}/makeqstrdefs.py cat qstr ${mpy_build_gen_header_dir}/qstr.i.last ${mpy_build_gen_header_dir}/qstr ${QSTR_DEFS_COLLECTED}
             DEPENDS gen_qstr_i_last
             VERBATIM
         )
@@ -535,4 +554,5 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     register_component()
 
 endif()
+
 

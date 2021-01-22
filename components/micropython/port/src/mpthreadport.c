@@ -85,7 +85,7 @@ void mp_thread_gc_others(void) {
         }
         TaskStatus_t task_status;
         vTaskGetInfo(th->id, &task_status,(BaseType_t)pdFALSE,(eTaskState)eInvalid);
-        gc_collect_root((void**)task_status.pxStackTop, ( (uint64_t)th->stack + (th->stack_len*sizeof(StackType_t)+1024) - (uint64_t)task_status.pxStackTop)/sizeof(void*));
+        gc_collect_root((void**)task_status.pxStackBase, ( (uint64_t)th->stack + (th->stack_len*sizeof(StackType_t)+1024) - (uint64_t)task_status.pxStackBase)/sizeof(void*));
     }
     mp_thread_mutex_unlock((mp_thread_mutex_t*)&thread_mutex);	
 }
@@ -94,7 +94,7 @@ mp_state_thread_t *mp_thread_get_state(void) {
     return pvTaskGetThreadLocalStoragePointer(NULL, 0);
 }
 
-void mp_thread_set_state(void *state) {
+void mp_thread_set_state(struct _mp_state_thread_t *state) {
     vTaskSetThreadLocalStoragePointer(NULL, 0, state);
 }
 
