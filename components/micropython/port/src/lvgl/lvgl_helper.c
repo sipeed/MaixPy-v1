@@ -82,7 +82,7 @@ STATIC void lcd_flush(struct _disp_drv_t * disp_drv, const lv_area_t * area, lv_
 			 ++color_map;
 		}
 	}
-	lcd_draw_picture(area->x1, area->y1, w, h, (uint32_t*)data);
+	lcd->draw_picture(area->x1, area->y1, w, h, (uint32_t*)data);
 	LV_MEM_CUSTOM_FREE(data);
 	lv_disp_flush_ready(disp_drv);
 }

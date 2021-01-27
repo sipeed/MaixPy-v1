@@ -135,7 +135,7 @@ typedef struct
 	int (*init)(lcd_para_t* lcd_para); // 初始化屏幕
 	void (*deinit)(void); // 释放屏幕
 	void (*set_direction)(lcd_dir_t dir); // 设置屏幕方向
-	void (*bgr_to_rgb)(int enable); // 是否将 bgr 数据转 rgb 后显示
+	void (*bgr_to_rgb)(bool enable); // 是否将 bgr 数据转 rgb 后显示
 	void (*set_offset)(uint16_t offset_w, uint16_t offset_h); // 设置屏幕偏移量
 	void (*set_freq)(uint32_t freq);// 设置 spi 速率, hz 为单位
 	uint32_t (*get_freq)(void); // 获取当前速率
@@ -156,7 +156,7 @@ typedef struct
 extern lcd_t lcd_mcu;
 extern lcd_t lcd_rgb;
 
-// lcd 屏，全局唯一
+// 当前的 lcd 屏，全局唯一
 extern lcd_t *lcd;
 
 #endif  //!__LCD__H__
