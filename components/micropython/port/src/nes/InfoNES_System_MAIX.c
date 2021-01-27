@@ -133,11 +133,10 @@ int InfoNES_ReadRom( const char *pszFileName )
   return 0;
 }
 
-
 /* Release a memory for ROM */
 void InfoNES_ReleaseRom()
 {
-    lcd_clear(BLACK);
+    lcd->clear(BLACK);
     if(g_rom_file_content)
         free(g_rom_file_content);
     g_rom_file_content = NULL;
@@ -166,7 +165,7 @@ static int exchang_data_byte(uint8_t* addr,uint32_t length)
 void InfoNES_LoadFrame()
 {
     exchang_data_byte(WorkFrame, NES_DISP_WIDTH*NES_DISP_HEIGHT*2);
-    lcd_draw_picture((lcd_get_width() - NES_DISP_WIDTH) >> 1, (lcd_get_height() - NES_DISP_HEIGHT) >> 1, NES_DISP_WIDTH, NES_DISP_HEIGHT, (uint32_t *)WorkFrame);
+    lcd->draw_picture((lcd->get_width() - NES_DISP_WIDTH) >> 1, (lcd->get_height() - NES_DISP_HEIGHT) >> 1, NES_DISP_WIDTH, NES_DISP_HEIGHT, (uint32_t *)WorkFrame);
     return;
 }
 

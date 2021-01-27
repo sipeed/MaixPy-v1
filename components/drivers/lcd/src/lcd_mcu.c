@@ -15,77 +15,70 @@
 #include <string.h>
 #include <unistd.h>
 #include "stdlib.h"
-#include "lcd.h"
-#include "font.h"
 #include "sleep.h"
 #include "global_config.h"
 
-#define SWAP_16(x) ((x>>8&0xff) | (x<<8))
+#include "lcd.h"
+#include "st7789.h"
 
-static lcd_ctl_t lcd_ctl;
+typedef struct _lcd_ctl
+{
+    uint8_t mode;
+    uint8_t dir;
+    uint16_t width;
+    uint16_t height;
+    uint16_t start_offset_w0;
+    uint16_t start_offset_h0;
+    uint16_t start_offset_w1;
+    uint16_t start_offset_h1;
+    uint16_t start_offset_w;
+    uint16_t start_offset_h;
+} mcu_lcd_ctl_t;
+
 
 static uint16_t* g_lcd_display_buff = NULL;
 static uint16_t g_lcd_w = 0;
 static uint16_t g_lcd_h = 0;
 static bool g_lcd_init = false;
+static mcu_lcd_ctl_t lcd_ctl;
 
-#if LCD_SWAP_COLOR_BYTES
-static const uint16_t gray2rgb565[64]={
-0x0000, 0x0020, 0x0841, 0x0861, 0x1082, 0x10a2, 0x18c3, 0x18e3, 
-0x2104, 0x2124, 0x2945, 0x2965, 0x3186, 0x31a6, 0x39c7, 0x39e7, 
-0x4208, 0x4228, 0x4a49, 0x4a69, 0x528a, 0x52aa, 0x5acb, 0x5aeb, 
-0x630c, 0x632c, 0x6b4d, 0x6b6d, 0x738e, 0x73ae, 0x7bcf, 0x7bef, 
-0x8410, 0x8430, 0x8c51, 0x8c71, 0x9492, 0x94b2, 0x9cd3, 0x9cf3, 
-0xa514, 0xa534, 0xad55, 0xad75, 0xb596, 0xb5b6, 0xbdd7, 0xbdf7, 
-0xc618, 0xc638, 0xce59, 0xce79, 0xd69a, 0xd6ba, 0xdedb, 0xdefb, 
-0xe71c, 0xe73c, 0xef5d, 0xef7d, 0xf79e, 0xf7be, 0xffdf, 0xffff,
-};
-#else
-static const uint16_t gray2rgb565[64]={
-0x0000, 0x2000, 0x4108, 0x6108, 0x8210, 0xa210, 0xc318, 0xe318, 
-0x0421, 0x2421, 0x4529, 0x6529, 0x8631, 0xa631, 0xc739, 0xe739, 
-0x0842, 0x2842, 0x494a, 0x694a, 0x8a52, 0xaa52, 0xcb5a, 0xeb5a, 
-0x0c63, 0x2c63, 0x4d6b, 0x6d6b, 0x8e73, 0xae73, 0xcf7b, 0xef7b, 
-0x1084, 0x3084, 0x518c, 0x718c, 0x9294, 0xb294, 0xd39c, 0xf39c, 
-0x14a5, 0x34a5, 0x55ad, 0x75ad, 0x96b5, 0xb6b5, 0xd7bd, 0xf7bd, 
-0x18c6, 0x38c6, 0x59ce, 0x79ce, 0x9ad6, 0xbad6, 0xdbde, 0xfbde, 
-0x1ce7, 0x3ce7, 0x5def, 0x7def, 0x9ef7, 0xbef7, 0xdfff, 0xffff,
-};
-#endif
+static void mcu_lcd_clear(uint16_t color);
+static void mcu_lcd_set_direction(lcd_dir_t dir);
 
-void lcd_polling_enable(void)
+static void lcd_polling_enable(void)
 {
     lcd_ctl.mode = 0;
 }
 
-void lcd_interrupt_enable(void)
+static void lcd_interrupt_enable(void)
 {
     lcd_ctl.mode = 1;
 }
 
+typedef void (*lcd_preinit_handler_t)(void);
 
 lcd_preinit_handler_t lcd_preinit_handler = NULL;
 
 /**
  * Register Pre-initialization handler for lcd
  */
-void lcd_preinit_register_handler(lcd_preinit_handler_t handler)
+static void lcd_preinit_register_handler(lcd_preinit_handler_t handler)
 {
     lcd_preinit_handler = handler;
 }
 
-void lcd_init_sequence_for_ili9481(void)
+static void lcd_init_sequence_for_ili9481(void)
 {
     uint8_t t[2];
     // lcd.clear((99, 99, 99))
-    lcd_clear(0xc63);
+    mcu_lcd_clear(0xc63);
     // lcd.register(0xD1, 0x00)
     tft_write_command(0xD1); /* Unk */
     t[0] = (0x00);
     tft_write_byte(t, 1);
 }
 
-void lcd_init_sequence_for_ili9486(void)
+static void lcd_init_sequence_for_ili9486(void)
 {
     uint8_t t[15];
     tft_write_command(0XF1); /* Unk */
@@ -183,28 +176,33 @@ void lcd_init_sequence_for_ili9486(void)
 
 }
 
-int lcd_init(uint32_t freq, bool oct, uint16_t offset_w0, uint16_t offset_h0, uint16_t offset_w1, uint16_t offset_h1, bool invert_color, uint8_t dir, uint16_t width, uint16_t height)
+#include "syslog.h"
+
+static int mcu_lcd_init(lcd_para_t *lcd_para)
 {
     uint8_t data = 0;
-    lcd_ctl.dir = dir;
-    lcd_ctl.width = width, lcd_ctl.height = height;
-    lcd_ctl.start_offset_w0 = offset_w0;
-    lcd_ctl.start_offset_h0 = offset_h0;
-    lcd_ctl.start_offset_w1 = offset_w1;
-    lcd_ctl.start_offset_h1 = offset_h1;
-    if(g_lcd_w != width || g_lcd_h != height)
+    lcd_ctl.dir = lcd_para->dir;
+    lcd_ctl.width = lcd_para->width, lcd_ctl.height = lcd_para->height;
+    lcd_ctl.start_offset_w0 = lcd_para->offset_w0;
+    lcd_ctl.start_offset_h0 = lcd_para->offset_h0;
+    lcd_ctl.start_offset_w1 = lcd_para->offset_w1;
+    lcd_ctl.start_offset_h1 = lcd_para->offset_h1;
+    // printk("w: %d, h: %d, freq: %d, invert: %d, %d, %d, %d, %d, %d\r\n", lcd_para->width, 
+    // lcd_para->height, lcd_para->freq, lcd_para->invert, lcd_para->offset_w0, lcd_para->offset_w1,
+    // lcd_para->offset_h1, lcd_para->offset_h0, lcd_para->oct);
+    if(g_lcd_w != lcd_para->width || g_lcd_h != lcd_para->height)
     {
         if(g_lcd_display_buff)
         {
             free(g_lcd_display_buff);
         }
-        g_lcd_display_buff = (uint16_t*)malloc(width*height*2);
+        g_lcd_display_buff = (uint16_t*)malloc(lcd_para->width*lcd_para->height*2);
         if(!g_lcd_display_buff)
             return 12; //ENOMEM
-        g_lcd_w = width;
-        g_lcd_h = height;
+        g_lcd_w = lcd_para->width;
+        g_lcd_h = lcd_para->height;
     }
-    tft_hard_init(freq, oct);
+    tft_hard_init(lcd_para->freq, lcd_para->oct);
     /*soft reset*/
     tft_write_command(SOFTWARE_RESET);
     msleep(50);
@@ -224,8 +222,8 @@ int lcd_init(uint32_t freq, bool oct, uint16_t offset_w0, uint16_t offset_h0, ui
     
     g_lcd_init = true;
 
-    lcd_set_direction(DIR_YX_RLDU);
-    if(invert_color)
+    mcu_lcd_set_direction(lcd_ctl.dir);
+    if(lcd_para->invert)
     {
         tft_write_command(INVERSION_DISPALY_ON);
         msleep(10);
@@ -239,7 +237,24 @@ int lcd_init(uint32_t freq, bool oct, uint16_t offset_w0, uint16_t offset_h0, ui
     return 0;
 }
 
-void lcd_destroy()
+static int mcu_lcd_init_shield(lcd_para_t *lcd_para){
+    if (lcd_para->lcd_type == LCD_TYPE_ILI9486)
+    {
+        lcd_preinit_register_handler(&lcd_init_sequence_for_ili9486);
+    }
+    mcu_lcd_init(lcd_para);
+    if (lcd_para->lcd_type == LCD_TYPE_ILI9481)
+    {
+        lcd_preinit_register_handler(&lcd_init_sequence_for_ili9481);
+    }
+    if (0 != lcd_para->dir)
+    {
+        mcu_lcd_set_direction(lcd_para->dir);
+    }
+    return 0;
+}
+
+static void mcu_lcd_destroy()
 {
     if(g_lcd_display_buff)
     {
@@ -251,22 +266,27 @@ void lcd_destroy()
 }
 
 
-uint16_t lcd_get_width()
+static uint16_t mcu_lcd_get_width()
 {
     return g_lcd_w;
 }
 
-uint16_t lcd_get_height()
+static uint16_t mcu_lcd_get_height()
 {
     return g_lcd_h;
 }
 
-void lcd_set_direction(lcd_dir_t dir)
+static void mcu_lcd_bgr_to_rgb(bool enable){
+    lcd_ctl.dir = enable ? (lcd_ctl.dir | DIR_RGB2BRG) : (lcd_ctl.dir & DIR_MASK);
+    mcu_lcd_set_direction(lcd_ctl.dir);
+}
+
+static void mcu_lcd_set_direction(lcd_dir_t dir)
 {
     if(!g_lcd_init)
         return;
     //dir |= 0x08;  //excahnge RGB
-    dir = ((lcd_ctl.dir & DIR_RGB2BRG) == DIR_RGB2BRG) ? (dir | DIR_RGB2BRG) : dir;
+    lcd_ctl.dir = ((lcd_ctl.dir & DIR_RGB2BRG) == DIR_RGB2BRG) ? (dir | DIR_RGB2BRG) : dir;
 
 #if defined(CONFIG_BOARD_TWATCH)
     lcd_ctl.width = g_lcd_w - 1;
@@ -293,7 +313,7 @@ void lcd_set_direction(lcd_dir_t dir)
         break;
     }
 #else
-    if (dir & DIR_XY_MASK)
+    if (lcd_ctl.dir & DIR_XY_MASK)
     {
         lcd_ctl.width = g_lcd_w - 1;
         lcd_ctl.height = g_lcd_h - 1;
@@ -309,29 +329,29 @@ void lcd_set_direction(lcd_dir_t dir)
     }
 #endif
     tft_write_command(MEMORY_ACCESS_CTL);
-    tft_write_byte((uint8_t *)&dir, 1);
+    tft_write_byte((uint8_t *)&lcd_ctl.dir, 1);
 }
 
-void lcd_set_offset(uint16_t offset_w, uint16_t offset_h)
+static void mcu_lcd_set_offset(uint16_t offset_w, uint16_t offset_h)
 {
     lcd_ctl.start_offset_w = offset_w;
     lcd_ctl.start_offset_h = offset_h;
 }
 
 static uint32_t lcd_freq = CONFIG_LCD_DEFAULT_FREQ;
-void lcd_set_freq(uint32_t freq)
+static void mcu_lcd_set_freq(uint32_t freq)
 {
     tft_set_clk_freq(freq);
     lcd_freq = freq;
 }
 
-uint32_t lcd_get_freq()
+uint32_t mcu_lcd_get_freq()
 {
     return lcd_freq;
 }
 
 
-void lcd_set_area(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
+static void lcd_set_area(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 {
     uint8_t data[4] = {0};
 
@@ -357,90 +377,90 @@ void lcd_set_area(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
     tft_write_command(MEMORY_WRITE);
 }
 
-void lcd_draw_point(uint16_t x, uint16_t y, uint16_t color)
+static void mcu_lcd_draw_point(uint16_t x, uint16_t y, uint16_t color)
 {
     lcd_set_area(x, y, x, y);
     tft_write_byte((uint8_t*)&color, 2);
 }
 
-void lcd_draw_char(uint16_t x, uint16_t y, char c, uint16_t color)
+static void mcu_lcd_draw_char(uint16_t x, uint16_t y, char c, uint16_t color)
 {
-    uint8_t i = 0;
-    uint8_t j = 0;
-    uint8_t data = 0;
+    // uint8_t i = 0;
+    // uint8_t j = 0;
+    // uint8_t data = 0;
 
-    for (i = 0; i < 16; i++)
-    {
-        data = ascii0816[c * 16 + i];
-        for (j = 0; j < 8; j++)
-        {
-            if (data & 0x80)
-                lcd_draw_point(x + j, y, color);
-            data <<= 1;
-        }
-        y++;
-    }
+    // for (i = 0; i < 16; i++)
+    // {
+    //     data = ascii0816[c * 16 + i];
+    //     for (j = 0; j < 8; j++)
+    //     {
+    //         if (data & 0x80)
+    //             mcu_lcd_draw_point(x + j, y, color);
+    //         data <<= 1;
+    //     }
+    //     y++;
+    // }
 }
 
-void lcd_draw_string(uint16_t x, uint16_t y, char *str, uint16_t color)
+static void mcu_lcd_draw_string(uint16_t x, uint16_t y, char *str, uint16_t color)
 {
     #if LCD_SWAP_COLOR_BYTES
         color = SWAP_16(color);
     #endif
     while (*str)
     {
-        lcd_draw_char(x, y, *str, color);
+        mcu_lcd_draw_char(x, y, *str, color);
         str++;
         x += 8;
     }
 }
 
-void lcd_ram_draw_string(char *str, uint32_t *ptr, uint16_t font_color, uint16_t bg_color)
+static void lcd_ram_draw_string(char *str, uint32_t *ptr, uint16_t font_color, uint16_t bg_color)
 {
-    uint8_t i = 0;
-    uint8_t j = 0;
-    uint8_t data = 0;
-    uint8_t *pdata = NULL;
-    uint16_t width = 0;
-    uint32_t *pixel = NULL;
-    width = 4 * strlen(str);
-    while (*str)
-    {
-        pdata = (uint8_t *)&ascii0816[(*str) * 16];
-        for (i = 0; i < 16; i++)
-        {
-            data = *pdata++;
-            pixel = ptr + i * width;
-            for (j = 0; j < 4; j++)
-            {
-                switch (data >> 6)
-                {	
-                    case 0:
-                        *pixel =  bg_color | ((uint32_t)bg_color << 16);
-                        break;
-                    case 2:
-                        *pixel = font_color | ((uint32_t)bg_color << 16) ;
-                        break;
-                    case 1:
-                        *pixel = bg_color | ((uint32_t)font_color << 16) ;
-                        break;
-                    case 3:
-                        *pixel = font_color | ((uint32_t)font_color << 16) ;
-                        break;
-                    default:
-                        *pixel = 0;
-                        break;
-                }
-                data <<= 2;
-                pixel++;
-            }
-        }
-        str++;
-        ptr += 4;
-    }
+    // uint8_t i = 0;
+    // uint8_t j = 0;
+    // uint8_t data = 0;
+    // uint8_t *pdata = NULL;
+    // uint16_t width = 0;
+    // uint32_t *pixel = NULL;
+    // width = 4 * strlen(str);
+    // while (*str)
+    // {
+    //     pdata = (uint8_t *)&ascii0816[(*str) * 16];
+    //     for (i = 0; i < 16; i++)
+    //     {
+    //         data = *pdata++;
+    //         pixel = ptr + i * width;
+    //         for (j = 0; j < 4; j++)
+    //         {
+    //             switch (data >> 6)
+    //             {	
+    //                 case 0:
+    //                     *pixel =  bg_color | ((uint32_t)bg_color << 16);
+    //                     break;
+    //                 case 2:
+    //                     *pixel = font_color | ((uint32_t)bg_color << 16) ;
+    //                     break;
+    //                 case 1:
+    //                     *pixel = bg_color | ((uint32_t)font_color << 16) ;
+    //                     break;
+    //                 case 3:
+    //                     *pixel = font_color | ((uint32_t)font_color << 16) ;
+    //                     break;
+    //                 default:
+    //                     *pixel = 0;
+    //                     break;
+    //             }
+    //             data <<= 2;
+    //             pixel++;
+    //         }
+    //     }
+    //     str++;
+    //     ptr += 4;
+    // }
 }
 
-void lcd_clear(uint16_t color)
+static void mcu_lcd_clear(uint16_t color)
 {
     #if LCD_SWAP_COLOR_BYTES
         color = SWAP_16(color);
@@ -450,7 +470,7 @@ void lcd_clear(uint16_t color)
     tft_fill_data(&data, g_lcd_h * g_lcd_w / 2);
 }
 
-void lcd_fill_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color)
+static void mcu_lcd_fill_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color)
 {
 	if((x1 == x2) || (y1 == y2))
         return;
@@ -462,7 +482,7 @@ void lcd_fill_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint
     tft_fill_data(&data, (x2 - x1) * (y2 - y1) / 2);
 }
 
-void lcd_draw_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t width, uint16_t color)
+static void lcd_draw_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t width, uint16_t color)
 {
     uint32_t data_buf[640] = {0};
     uint32_t *p = data_buf;
@@ -512,7 +532,7 @@ static int swap_pixs_half(int core)
     return 0;
 }
 
-void lcd_draw_picture(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height, uint32_t *ptr)
+static void mcu_lcd_draw_picture(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height, uint8_t *ptr)
 {
     uint32_t i;
     uint16_t* p = (uint16_t*)ptr;
@@ -583,7 +603,7 @@ void lcd_draw_picture(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height,
 
 //draw pic's roi on (x,y)
 //x,y of LCD, w,h is pic; rx,ry,rw,rh is roi
-void lcd_draw_pic_roi(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t rx, uint16_t ry, uint16_t rw, uint16_t rh, uint32_t *ptr)
+static void mcu_lcd_draw_pic_roi(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t rx, uint16_t ry, uint16_t rw, uint16_t rh, uint8_t *ptr)
 {	
 	int y_oft;
 	uint8_t* p;
@@ -596,7 +616,7 @@ void lcd_draw_pic_roi(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t r
 }
 
 
-void lcd_draw_pic_gray(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height, uint8_t *ptr)
+static void mcu_lcd_draw_pic_gray(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height, uint8_t *ptr)
 {	
     uint32_t i;
     lcd_set_area(x1, y1, x1 + width - 1, y1 + height - 1);
@@ -609,19 +629,19 @@ void lcd_draw_pic_gray(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height
     tft_write_word((uint32_t*)g_lcd_display_buff, width * height / 2);
 }
 
-void lcd_draw_pic_grayroi(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t rx, uint16_t ry, uint16_t rw, uint16_t rh, uint8_t *ptr)
+static void mcu_lcd_draw_pic_grayroi(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t rx, uint16_t ry, uint16_t rw, uint16_t rh, uint8_t *ptr)
 {
 	int y_oft;
 	uint8_t* p;
 	for(y_oft = 0; y_oft < rh; y_oft++)
 	{	//draw line by line
 		p = (uint8_t *)(ptr) + w*(y_oft+ry) + rx;
-		lcd_draw_pic_gray(x, y+y_oft, rw, 1, p);
+		mcu_lcd_draw_pic_gray(x, y+y_oft, rw, 1, p);
 	}
 	return;
 }
 
-void lcd_ram_cpyimg(char* lcd, int lcdw, char* img, int imgw, int imgh, int x, int y)
+static void lcd_ram_cpyimg(char* lcd, int lcdw, char* img, int imgw, int imgh, int x, int y)
 {
 	int i;
 	for(i=0;i<imgh;i++)
@@ -631,6 +651,34 @@ void lcd_ram_cpyimg(char* lcd, int lcdw, char* img, int imgw, int imgh, int x, i
 	return;
 }
 
+/************************* MCU 屏参数  ****************************/
+static lcd_para_t mcu_lcd_default = {
+	.lcd_type   = LCD_TYPE_ST7789,
+	.width      = 320,
+	.height     = 240,
+	.dir        = 0,
+	.extra_para = NULL,
+};
 
+lcd_t lcd_mcu = {
+	.lcd_para      = &mcu_lcd_default,
 
+	.init      = mcu_lcd_init_shield,
+	.deinit    = mcu_lcd_destroy,
+	.clear         = mcu_lcd_clear,
+	.set_direction = mcu_lcd_set_direction,
+	.set_freq		= mcu_lcd_set_freq,
+	.get_freq		= mcu_lcd_get_freq,
+	.set_offset		= mcu_lcd_set_offset,
+    .get_width      = mcu_lcd_get_width,
+    .get_height     = mcu_lcd_get_height,
+    .bgr_to_rgb     = mcu_lcd_bgr_to_rgb,
 
+    .draw_point     = mcu_lcd_draw_point,
+    // .draw_string    = mcu_lcd_draw_string,
+	.draw_picture  = mcu_lcd_draw_picture,
+	.draw_pic_roi  = mcu_lcd_draw_pic_roi,
+	.draw_pic_gray = mcu_lcd_draw_pic_gray,
+	.draw_pic_grayroi = mcu_lcd_draw_pic_grayroi,
+	.fill_rectangle	= mcu_lcd_fill_rectangle,
+};

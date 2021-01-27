@@ -1,6 +1,7 @@
 #include "st7789.h"
 #include "sipeed_spi.h"
 #include "sleep.h"
+#include "lcd.h"
 
 static bool standard_spi = false;
 static spi_work_mode_t standard_work_mode = SPI_WORK_MODE_0;

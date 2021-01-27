@@ -83,13 +83,7 @@
 #define DIGITAL_GAMMA_CTL1      0xE2
 #define DIGITAL_GAMMA_CTL2      0xE3
 #define INTERFACE_CTL           0xF6
-#include "gpiohs.h"
-#define DCX_GPIONUM             31 // 31
-#define RST_GPIONUM             30 // 30
 
-#define SPI_CHANNEL             0
-#define SPI_DMA_CH				DMAC_CHANNEL1
-#define LCD_SPI_SLAVE_SELECT        3
 /* clang-format on */
 
 void tft_hard_init(uint32_t freq, bool oct);

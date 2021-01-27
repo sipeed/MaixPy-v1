@@ -99,7 +99,7 @@ void lcd_draw_line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t 
         distance = delta_y;
     for (t = 0; t <= distance + 1; t++) //画线输出
     {
-        lcd_draw_point(uRow, uCol, color); //画点
+        lcd->draw_point(uRow, uCol, color); //画点
         xerr += delta_x;
         yerr += delta_y;
         if (xerr > distance)
@@ -127,14 +127,14 @@ void lcd_draw_circle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color)
     di = 3 - (r << 1); //判断下个点位置的标志
     while (a <= b)
     {
-        lcd_draw_point(x0 + a, y0 - b, color); //5
-        lcd_draw_point(x0 + b, y0 - a, color); //0
-        lcd_draw_point(x0 + b, y0 + a, color); //4
-        lcd_draw_point(x0 + a, y0 + b, color); //6
-        lcd_draw_point(x0 - a, y0 + b, color); //1
-        lcd_draw_point(x0 - b, y0 + a, color);
-        lcd_draw_point(x0 - a, y0 - b, color); //2
-        lcd_draw_point(x0 - b, y0 - a, color); //7
+        lcd->draw_point(x0 + a, y0 - b, color); //5
+        lcd->draw_point(x0 + b, y0 - a, color); //0
+        lcd->draw_point(x0 + b, y0 + a, color); //4
+        lcd->draw_point(x0 + a, y0 + b, color); //6
+        lcd->draw_point(x0 - a, y0 + b, color); //1
+        lcd->draw_point(x0 - b, y0 + a, color);
+        lcd->draw_point(x0 - a, y0 - b, color); //2
+        lcd->draw_point(x0 - b, y0 - a, color); //7
         a++;
         //使用Bresenham算法画圆
         if (di < 0)
@@ -151,16 +151,16 @@ static void lcd_draw_cross(int x, int y, uint16_t color)
 {
     lcd_draw_line(x - 12, y, x + 13, y, color); //横线
     lcd_draw_line(x, y - 12, x, y + 13, color); //竖线
-    lcd_draw_point(x + 1, y + 1, color);
-    lcd_draw_point(x - 1, y + 1, color);
-    lcd_draw_point(x + 1, y - 1, color);
-    lcd_draw_point(x - 1, y - 1, color);
+    lcd->draw_point(x + 1, y + 1, color);
+    lcd->draw_point(x - 1, y + 1, color);
+    lcd->draw_point(x + 1, y - 1, color);
+    lcd->draw_point(x - 1, y - 1, color);
     lcd_draw_circle(x, y, 6, color); //画中心圈
 }
 
 static void cairo_draw_string(int x, int y, const char *title)
 {
-    lcd_draw_string(x, y, (char*)title, WHITE);
+    // lcd->draw_string(x, y, (char*)title, WHITE);
 }
 
 int do_tscal(struct ts_ns2009_pdata_t *ts_ns2009_pdata, int width, int height, int* c)
@@ -196,7 +196,7 @@ int do_tscal(struct ts_ns2009_pdata_t *ts_ns2009_pdata, int width, int height, i
     cal.yfb[4] = height / 2;
 
     index = 0;
-    lcd_clear(BLACK);
+    lcd->clear(BLACK);
     lcd_draw_cross(cal.xfb[index], cal.yfb[index], RED);
 
     while (1)
@@ -218,13 +218,13 @@ int do_tscal(struct ts_ns2009_pdata_t *ts_ns2009_pdata, int width, int height, i
                 {
                     // sprintf(buffer, "%s", "calibration failed");
                 }
-                lcd_clear(BLACK);
+                lcd->clear(BLACK);
                 // cairo_draw_string(0, height / 2, buffer);
                 memcpy(c, cal.a, 7*sizeof(int));
                 ts_ns2009_pdata->event->type = TOUCH_NONE;
                 break;
             }
-            lcd_clear(BLACK);
+            lcd->clear(BLACK);
             lcd_draw_cross(cal.xfb[index], cal.yfb[index], RED);
         }
         ts_ns2009_pdata->event->type = TOUCH_NONE;

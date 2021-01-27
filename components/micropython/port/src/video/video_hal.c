@@ -15,8 +15,8 @@ extern volatile i2s_t *const i2s[3]; //TODO: remove register, replace with funct
 int video_hal_display(image_t* img, video_display_roi_t img_roi)
 {
 	int is_cut;
-    uint16_t lcd_width  = lcd_get_width();
-    uint16_t lcd_height = lcd_get_height();
+    uint16_t lcd_width  = lcd->get_width();
+    uint16_t lcd_height = lcd->get_height();
     int l_pad = 0;//, r_pad = 0;
     int t_pad = 0;//, b_pad = 0;
 
@@ -43,18 +43,18 @@ int video_hal_display(image_t* img, video_display_roi_t img_roi)
 			(img_roi.w != img->w) || (img_roi.h != img->h));
     if(is_cut){	//cut from img
         if (IM_IS_GS(img)) {
-            lcd_draw_pic_grayroi(l_pad, t_pad, img->w, img->h, img_roi.x, img_roi.y, img_roi.w, img_roi.h, (uint8_t *)(img->pixels));
+            lcd->draw_pic_grayroi(l_pad, t_pad, img->w, img->h, img_roi.x, img_roi.y, img_roi.w, img_roi.h, (uint8_t *)(img->pixels));
         }
         else {
-            lcd_draw_pic_roi(l_pad, t_pad, img->w, img->h, img_roi.x, img_roi.y, img_roi.w, img_roi.h, (uint32_t *)(img->pixels));
+            lcd->draw_pic_roi(l_pad, t_pad, img->w, img->h, img_roi.x, img_roi.y, img_roi.w, img_roi.h, (uint32_t *)(img->pixels));
         }
     }
     else{	//no cut
         if (IM_IS_GS(img)) {
-            lcd_draw_pic_gray(l_pad, t_pad, img_roi.w, img_roi.h, (uint8_t *)(img->pixels));
+            lcd->draw_pic_gray(l_pad, t_pad, img_roi.w, img_roi.h, (uint8_t *)(img->pixels));
         }
         else {
-            lcd_draw_picture(l_pad, t_pad, img_roi.w, img_roi.h, (uint32_t *)(img->pixels));
+            lcd->draw_picture(l_pad, t_pad, img_roi.w, img_roi.h, (uint32_t *)(img->pixels));
         }
     }
     return 0;
