@@ -472,7 +472,7 @@ int sd_preload(int core)
   }
   else
   {
-    printk("[maixpy] mount sdcard failed\r\n");
+    // printk("[maixpy] mount sdcard failed\r\n");
   }
   dual_func = NULL; // remove task
   maixpy_sdcard_loading = false;

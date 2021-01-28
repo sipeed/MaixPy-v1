@@ -75,7 +75,7 @@ STATIC void mp_hal_i2c_delay(machine_hard_i2c_obj_t *self) {
 }
 
 STATIC int mp_hal_i2c_scl_release(machine_hard_i2c_obj_t *self) {
-    uint32_t count = self->timeout;
+    uint32_t count = self->timeout/10; // 电平变化超时次数
 
     // mp_hal_pin_od_high(self->pin_scl);
     gpiohs_set_drive_mode(self->gpio_scl, GPIO_DM_OUTPUT);
@@ -533,7 +533,7 @@ STATIC mp_obj_t machine_i2c_init_helper(machine_hard_i2c_obj_t* self, mp_uint_t 
     i2c_id = mp_obj_get_int(args[ARG_id].u_obj);
     mode = args[ARG_mode].u_int;
     freq = args[ARG_freq].u_int;
-    timeout = args[ARG_freq].u_int;
+    timeout = args[ARG_timeout].u_int;
     addr = args[ARG_addr].u_int;
     addr_size = args[ARG_addr_size].u_int;
     if(!check_i2c_device(i2c_id)) {
