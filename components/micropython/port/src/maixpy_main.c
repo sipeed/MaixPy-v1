@@ -494,7 +494,7 @@ void mp_task(void *pvParameter)
   void *gc_heap = malloc(config->gc_heap_size);
   if (!gc_heap)
   {
-    printk("GC heap size too large, reset GC heap size\r\n");
+    printk("GC heap size %d is too large, reset GC heap size\r\n", config->gc_heap_size);
     config->gc_heap_size = 128 * 1024;
     gc_heap = malloc(config->gc_heap_size); // 128KiB
     if (!gc_heap)
