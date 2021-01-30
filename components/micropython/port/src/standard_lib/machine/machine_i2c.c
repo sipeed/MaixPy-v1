@@ -75,7 +75,7 @@ STATIC void mp_hal_i2c_delay(machine_hard_i2c_obj_t *self) {
 }
 
 STATIC int mp_hal_i2c_scl_release(machine_hard_i2c_obj_t *self) {
-    uint32_t count = self->timeout/10; // 电平变化超时次数
+    uint32_t count = self->timeout/8; // 8：一次传输 8 位数据，因此一次最多等待超时时间的 1/8
 
     // mp_hal_pin_od_high(self->pin_scl);
     gpiohs_set_drive_mode(self->gpio_scl, GPIO_DM_OUTPUT);
