@@ -47,9 +47,9 @@ project_parser.add_argument('--toolchain-prefix',
                         metavar='PREFIX',
                         default="")
 project_parser.add_argument('--config_file',
-                        help='config file path, e.g. config_defaults_kmodel_v4_support.mk',
+                        help='config file path, e.g. config_with_ide_support.mk',
                         metavar='PATH',
-                        default="{}/config_defaults_kmodel_v4_support.mk".format(project_path))
+                        default="{}/config_with_ide_support.mk".format(project_path))
 project_parser.add_argument('--verbose',
                         help='for build command, execute `make VERBOSE=1` to compile',
                         action="store_true",
