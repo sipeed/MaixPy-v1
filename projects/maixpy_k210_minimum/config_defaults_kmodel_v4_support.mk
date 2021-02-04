@@ -49,7 +49,7 @@ CONFIG_SPI_SD_CARD_FORCE_HIGH_SPEED=n
 # end of HTPA thermal sensor
 # end of Drivers configuration
 
-CONFIG_COMPONENT_KENDRYTE_SDK_ENABLE=
+CONFIG_COMPONENT_KENDRYTE_SDK_ENABLE=y
 
 #
 # Kendryte SDK configurations
