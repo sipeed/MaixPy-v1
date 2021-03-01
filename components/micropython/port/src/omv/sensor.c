@@ -829,9 +829,21 @@ int binocular_sensor_scan()
         {
             // Read OV sensor ID.
             uint8_t tmp;
-            cambus_readb(sensor.slv_addr, OV_CHIP_ID, &tmp);
+            uint8_t reg_width = cambus_reg_width();
+            uint16_t reg_addr, reg_addr2;
+            if (reg_width == 8)
+            {
+                reg_addr = OV_CHIP_ID;
+                reg_addr2 = OV_CHIP_ID2;
+            }
+            else
+            {
+                reg_addr = OV_CHIP_ID_16BIT;
+                reg_addr2 = OV_CHIP_ID2_16BIT;
+            }
+            cambus_readb(sensor.slv_addr, reg_addr, &tmp);
             sensor.chip_id = tmp << 8;
-            cambus_readb(sensor.slv_addr, OV_CHIP_ID2, &tmp);
+            cambus_readb(sensor.slv_addr, reg_addr2, &tmp);
             sensor.chip_id |= tmp;
             // Initialize sensor struct.
             switch (sensor.chip_id)
