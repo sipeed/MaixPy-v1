@@ -424,7 +424,7 @@ void imlib_draw_utf8_string(image_t *img, int x_off, int y_off, mp_obj_t str, in
     uint64_t offset = 0;
     bytes = font_utf8_to_unicode(string + i, &offset);
     // printk("utfbytes %d offset %llu\r\n", bytes, offset);
-    if (bytes <= 0) { // unicode len
+    if (bytes <= 0 || offset <= 0) { // unicode len
       break;
     }
     
