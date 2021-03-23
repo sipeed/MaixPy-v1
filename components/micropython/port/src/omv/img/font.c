@@ -565,7 +565,7 @@ inline void imlib_draw_string(image_t *img, int x_off, int y_off, mp_obj_t str, 
 {
   // 检查字库文件是否有效
   mp_obj_base_t* fs_info = (mp_obj_base_t*)(font_config.this);
-  if(font_config.index == UTF8 && fs_info->type->protocol == NULL){
+  if(font_config.source == FileIn && fs_info->type->protocol == NULL){
     font_init(8, 12, ASCII, BuildIn, ascii);
   }
   if (font_config.index == ASCII) {
