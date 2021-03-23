@@ -166,7 +166,7 @@ STATIC bool init_sdcard_fs(void)
       vfs->next = NULL;
       for (mp_vfs_mount_t **m = &MP_STATE_VM(vfs_mount_table);; m = &(*m)->next)
       {
-        // 同名的文件系统冲突
+        // 防止同名的文件系统冲突
         if (*m == NULL || strcmp((*m)->str, vfs->str) == 0)
         {
           *m = vfs;
@@ -481,7 +481,7 @@ int sd_preload(int core)
   return 0;
 }
 
-void mount_sd_start(void){
+void mount_sdcard(void){
   // Speed up the system
   maixpy_sdcard_loading = true;
   dual_func = sd_preload;
@@ -583,7 +583,7 @@ soft_reset:
   {
     maix_config_init();
   }
-  mount_sd_start();
+  mount_sdcard();
   // mp_printf(&mp_plat_print, "[MaixPy] init end\r\n"); // for maixpy ide
   // run boot-up scripts
   mp_hal_set_interrupt_char(CHAR_CTRL_C);
