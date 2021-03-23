@@ -563,6 +563,11 @@ void imlib_draw_ascii_string(image_t *img, int x_off, int y_off, const char *str
 
 inline void imlib_draw_string(image_t *img, int x_off, int y_off, mp_obj_t str, int c, float scale, int x_spacing, int y_spacing, bool mono_space)
 {
+  // 检查字库文件是否有效
+  mp_obj_base_t* fs_info = (mp_obj_base_t*)(font_config.this);
+  if(font_config.index == UTF8 && fs_info->type->protocol == NULL){
+    font_init(8, 12, ASCII, BuildIn, ascii);
+  }
   if (font_config.index == ASCII) {
     const char *arg_str = mp_obj_str_get_str(str);
     imlib_draw_ascii_string(img, x_off, y_off, arg_str, c, scale, x_spacing, y_spacing, mono_space);
