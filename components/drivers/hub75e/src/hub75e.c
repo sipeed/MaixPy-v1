@@ -209,7 +209,7 @@ int hub75e_display(int core)
                 line_buffer = line_buffer0;
         }
     }   
-    return 0
+    return 0;
 }
 
 typedef int (*dual_func_t)(int);
