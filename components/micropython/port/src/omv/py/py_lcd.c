@@ -54,6 +54,32 @@ lcd_para_t lcd_para = {
     .extra_para = NULL
 };
 
+////////////// mcu lcd debug //////////////
+extern void tft_write_byte(uint8_t *data_buf, uint32_t length);
+extern void tft_write_command(uint8_t cmd);
+static mp_obj_t py_lcd_write_register(mp_obj_t addr_obj, mp_obj_t data_obj)
+{
+    uint8_t addr = mp_obj_get_int(addr_obj);
+    tft_write_command(addr);
+    if (mp_obj_is_integer(data_obj)) {
+        uint8_t data = mp_obj_get_int(data_obj);
+        tft_write_byte(&data, 1);
+    }
+    if(&mp_type_list == mp_obj_get_type(data_obj))
+    {
+        size_t len;
+        mp_obj_t *items;
+        mp_obj_list_get(data_obj, &len, &items);
+        for (mp_int_t i = 0; i < len; i++) {
+            mp_obj_t obj = items[i];
+            uint8_t data = mp_obj_get_int(obj);
+            tft_write_byte(&data, 1);
+        }
+    }
+    return mp_const_none;
+}
+////////////////////////////////
+
 static mp_obj_t py_lcd_deinit()
 {
     switch (type)
@@ -723,6 +749,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(py_lcd_get_backlight_obj, py_lcd_get_backlight)
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_lcd_display_obj, 1, py_lcd_display);
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_lcd_clear_obj, 0, py_lcd_clear);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(py_lcd_direction_obj, py_lcd_direction);
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(py_lcd_write_register_obj, py_lcd_write_register);
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_rotation_obj, 0, 1, py_lcd_rotation);
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_mirror_obj, 0, 1, py_lcd_mirror);
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_bgr_to_rgb_obj, 0, 1, py_lcd_bgr_to_rgb);
@@ -748,6 +775,7 @@ static const mp_map_elem_t globals_dict_table[] = {
     {MP_OBJ_NEW_QSTR(MP_QSTR_bgr_to_rgb), (mp_obj_t)&py_lcd_bgr_to_rgb_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_draw_string), (mp_obj_t)&py_lcd_draw_string_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_fill_rectangle), (mp_obj_t)&py_lcd_fill_rectangle_obj},
+    {MP_OBJ_NEW_QSTR(MP_QSTR_register), (mp_obj_t)&py_lcd_write_register_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_XY_RLUD), MP_OBJ_NEW_SMALL_INT(DIR_XY_RLUD)},
     {MP_OBJ_NEW_QSTR(MP_QSTR_YX_RLUD), MP_OBJ_NEW_SMALL_INT(DIR_YX_RLUD)},
     {MP_OBJ_NEW_QSTR(MP_QSTR_XY_LRUD), MP_OBJ_NEW_SMALL_INT(DIR_XY_LRUD)},
