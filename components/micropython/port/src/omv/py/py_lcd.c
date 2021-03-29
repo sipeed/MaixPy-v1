@@ -59,6 +59,9 @@ extern void tft_write_byte(uint8_t *data_buf, uint32_t length);
 extern void tft_write_command(uint8_t cmd);
 static mp_obj_t py_lcd_write_register(mp_obj_t addr_obj, mp_obj_t data_obj)
 {
+    if(type == DEV_CONVERTER){
+        mp_raise_ValueError("device type is not support!");
+    }
     uint8_t addr = mp_obj_get_int(addr_obj);
     tft_write_command(addr);
     if (mp_obj_is_integer(data_obj)) {
