@@ -55,13 +55,12 @@ static inline void unlatch_hub75e(hub75e_t* hub75e_obj)
 
 void hub75e_init(hub75e_t* hub75e_obj)
 {
-    dmac_init();
     spi_init(hub75e_obj->spi, SPI_WORK_MODE_0, SPI_FF_OCTAL, 32, 1);
     spi_init_non_standard(hub75e_obj->spi, 0 /*instrction length*/,
                           32 /*address length*/, 0 /*wait cycles*/,
                           SPI_AITM_AS_FRAME_FORMAT /*spi address trans mode*/);
     spi_set_clk_rate(hub75e_obj->spi, 25000000);
-
+    
     if(hub75e_obj->spi == 1){
         fpioa_set_function(hub75e_obj->r1_pin, HUB75E_FUN_SPIxDv(1, 7));
         fpioa_set_function(hub75e_obj->g1_pin, HUB75E_FUN_SPIxDv(1, 6));
@@ -149,17 +148,13 @@ static inline void fill_line(hub75e_t *hub75e_obj, const int addr)
 
 int hub75e_display(int core)
 {
-    if(!(hub75e_obj&&image)) return -1;
+    if(!hub75e_obj) return -1;
     int y, t, x;
-    // rgb565 -> rgb444
-    for (y = 0; y < hub75e_obj->height; y++)
-    {
-        for (x = 0; x < hub75e_obj->width; x++)
-        {
-            *(rgb444 + y * hub75e_obj->width + x) = rgb565_to_rgb444[SWAP_TO_MP16(*(image + y * hub75e_obj->width + x))];
-        }
-    }
-    
+    spi_init(hub75e_obj->spi, SPI_WORK_MODE_0, SPI_FF_OCTAL, 32, 1);
+    spi_init_non_standard(hub75e_obj->spi, 0 /*instrction length*/,
+                          32 /*address length*/, 0 /*wait cycles*/,
+                          SPI_AITM_AS_FRAME_FORMAT /*spi address trans mode*/);
+    spi_set_clk_rate(hub75e_obj->spi, 25000000);
     // 每张图刷新 16 次, 可以达到用占空比控制的效果, 16 为 4 位所能表示的全部色彩
     for (t = 0; t < 16; t++)
     {
@@ -208,7 +203,7 @@ int hub75e_display(int core)
             else
                 line_buffer = line_buffer0;
         }
-    }   
+    }
     return 0;
 }
 
@@ -218,11 +213,17 @@ volatile int hub75e_display_lock = 0;
 
 void hub75e_display_start(hub75e_t* cur_hub75e_obj, uint16_t *cur_image)
 {
-    hub75e_obj = cur_hub75e_obj;
-    image = cur_image;
-    dual_func = hub75e_display;    
     hub75e_display_lock = 1;
-    // printf("hub75e_display_start: %p\r\n", hub75e_display);
+    hub75e_obj = cur_hub75e_obj;
+    // rgb565 -> rgb444
+    for (int y = 0; y < hub75e_obj->height; y++)
+    {
+        for (int x = 0; x < hub75e_obj->width; x++)
+        {
+            *(rgb444 + y * hub75e_obj->width + x) = rgb565_to_rgb444[SWAP_TO_MP16(*(cur_image + y * hub75e_obj->width + x))];
+        }
+    }
+    dual_func = hub75e_display;    
 }
 
 void hub75e_display_stop(void)
