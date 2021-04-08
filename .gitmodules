@@ -20,6 +20,4 @@
 [submodule "tools/spiffs/mkspiffs"]
 	path = tools/spiffs/mkspiffs
 	url = https://github.com/igrr/mkspiffs.git
-[submodule "components/micropython/port/src/ulab/micropython-ulab"]
-	path = components/micropython/port/src/ulab/micropython-ulab
-	url = https://github.com/Neutree/micropython-ulab.git
+
