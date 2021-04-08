@@ -125,7 +125,7 @@ STATIC bool init_sdcard_fs(void)
     {
       break;
     }
-    vfs_fat->flags = FSUSER_FREE_OBJ;
+    vfs_fat->blockdev.flags = MP_BLOCKDEV_FLAG_FREE_OBJ;
     sdcard_init_vfs(vfs_fat, part_num);
 
     // try to mount the partition
@@ -359,7 +359,7 @@ void pyexec_str(vstr_t *str)
     mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, str->buf, str->len, 0);
     qstr source_name = lex->source_name;
     mp_parse_tree_t parse_tree = mp_parse(lex, MP_PARSE_FILE_INPUT);
-    mp_obj_t module_fun = mp_compile(&parse_tree, source_name, MP_EMIT_OPT_NONE, false);
+    mp_obj_t module_fun = mp_compile(&parse_tree, source_name, false);
     mp_call_function_0(module_fun);
     nlr_pop();
     mp_globals_set(old_globals);
@@ -723,7 +723,7 @@ void do_str(const char *src, mp_parse_input_kind_t input_kind)
     mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, src, strlen(src), 0);
     qstr source_name = lex->source_name;
     mp_parse_tree_t parse_tree = mp_parse(lex, input_kind);
-    mp_obj_t module_fun = mp_compile(&parse_tree, source_name, MP_EMIT_OPT_NONE, true);
+    mp_obj_t module_fun = mp_compile(&parse_tree, source_name, true);
     mp_call_function_0(module_fun);
     nlr_pop();
   }

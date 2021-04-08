@@ -43,8 +43,8 @@ int mp_hal_stdin_rx_chr(void) {
 		// #if MICROPY_PY_THREAD
 		// 		ulTaskNotifyTake(pdFALSE, 1);
 		// #endif
-		extern void mp_handle_pending(void);
-        mp_handle_pending();
+		extern void mp_handle_pending(bool);
+        mp_handle_pending(true);
         MICROPY_PY_USOCKET_EVENTS_HANDLER
         MP_THREAD_GIL_EXIT();
 	#if MICROPY_PY_THREAD
@@ -113,8 +113,8 @@ void mp_hal_delay_ms(mp_uint_t ms)
 			mp_uint_t dt;
 			mp_uint_t t0 = mp_hal_ticks_us();
 			for (;;) {
-				extern void mp_handle_pending();
-				mp_handle_pending();
+				extern void mp_handle_pending(bool);
+				mp_handle_pending(true);
 				MICROPY_PY_USOCKET_EVENTS_HANDLER
 				MP_THREAD_GIL_EXIT();
 				// ulTaskNotifyTake(pdFALSE, 1);
