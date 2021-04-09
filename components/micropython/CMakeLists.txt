@@ -305,19 +305,21 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
                                 "${mpy_port_dir}/src/lvgl/lv_bindings/lvgl/src/lv_core"
                                 "${mpy_port_dir}/src/lvgl/lv_bindings/lvgl/src/lv_draw"
                                 "${mpy_port_dir}/src/lvgl/lv_bindings/lvgl/src/lv_font"
+                                "${mpy_port_dir}/src/lvgl/lv_bindings/lvgl/src/lv_gpu"
                                 "${mpy_port_dir}/src/lvgl/lv_bindings/lvgl/src/lv_hal"
                                 "${mpy_port_dir}/src/lvgl/lv_bindings/lvgl/src/lv_misc"
-                                "${mpy_port_dir}/src/lvgl/lv_bindings/lvgl/src/lv_objx"
                                 "${mpy_port_dir}/src/lvgl/lv_bindings/lvgl/src/lv_themes"
+                                "${mpy_port_dir}/src/lvgl/lv_bindings/lvgl/src/lv_widgets"
                                 "${mpy_port_dir}/src/lvgl/lv_bindings"
                                 )
         append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl/lv_bindings/lvgl/src/lv_core")
         append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl/lv_bindings/lvgl/src/lv_draw")
         append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl/lv_bindings/lvgl/src/lv_font")
+        append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl/lv_bindings/lvgl/src/lv_gpu")
         append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl/lv_bindings/lvgl/src/lv_hal")
         append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl/lv_bindings/lvgl/src/lv_misc")
-        append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl/lv_bindings/lvgl/src/lv_objx")
         append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl/lv_bindings/lvgl/src/lv_themes")
+        append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl/lv_bindings/lvgl/src/lv_widgets")
         append_srcs_dir(LVGL_MPY_SRCS "port/src/lvgl")
         set(LVGL_MPY_GEN_SRC "${lvgl_build_dir}/lv_mpy.c")
         # add relative path for  ${mpy_build_gen_header_dir}/qstr.i.last need
@@ -504,6 +506,8 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     
     add_custom_command(OUTPUT ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h
                     COMMENT "Generate ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h"
+                    # FIXME: gennerate qstrdefs.preprocessed.h but lvgl include mpstate.h that lead to QSTR_DEFS_COLLECTED include qstr.h, but not generate yet
+                    # COMMAND touch ${qstr_header}
                     COMMAND cat ${PY_QSTR_DEFS} ${QSTR_DEFS} ${QSTR_DEFS_COLLECTED} | sed '${cmd_sed0}' | ${CMAKE_C_COMPILER} -E ${cmd_param_cflag} ${cmd_param_cinclude} - | sed '${cmd_sed1}' > ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h
                     DEPENDS gen_mpy_cross gen_version_header gen_module_defs gen_collected_h ${QSTR_DEFS_COLLECTED}
                 )
