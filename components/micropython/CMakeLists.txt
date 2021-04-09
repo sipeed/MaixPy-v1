@@ -355,8 +355,30 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     endif()
     # ulab
     if(CONFIG_MICROPYTHON_ULAB_ENALBE)
-        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/ulab/micropython-ulab/code")
-        append_srcs_dir(ADD_SRCS "port/src/ulab/micropython-ulab/code")
+        set(srcs_dirs   "port/src/ulab/micropython-ulab/code"
+                        "port/src/ulab/micropython-ulab/code/numpy"
+                        "port/src/ulab/micropython-ulab/code/scipy"
+                        "port/src/ulab/micropython-ulab/code/user"
+                        "port/src/ulab/micropython-ulab/code/utils"
+                        "port/src/ulab/micropython-ulab/code/numpy/approx"
+                        "port/src/ulab/micropython-ulab/code/numpy/compare"
+                        "port/src/ulab/micropython-ulab/code/numpy/fft"
+                        "port/src/ulab/micropython-ulab/code/numpy/filter"
+                        "port/src/ulab/micropython-ulab/code/numpy/linalg"
+                        "port/src/ulab/micropython-ulab/code/numpy/numerical"
+                        "port/src/ulab/micropython-ulab/code/numpy/poly"
+                        "port/src/ulab/micropython-ulab/code/numpy/stats"
+                        "port/src/ulab/micropython-ulab/code/numpy/transform"
+                        "port/src/ulab/micropython-ulab/code/numpy/vector"
+                        "port/src/ulab/micropython-ulab/code/scipy/optimize"
+                        "port/src/ulab/micropython-ulab/code/scipy/signal"
+                        "port/src/ulab/micropython-ulab/code/scipy/special"
+            )
+        list(APPEND ADD_INCLUDE "port/src/ulab/micropython-ulab/code")
+        list(APPEND ADD_INCLUDE ".")
+        foreach(srcs_dir ${srcs_dirs})
+            append_srcs_dir(ADD_SRCS ${srcs_dir})
+        endforeach()
     endif()
 
     if(CONFIG_MICROPY_SSL_ENABLE)
@@ -459,12 +481,14 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
         )
 
     abspath(QSTR_SRCS_FULL_PATH ${QSTR_SRCS})
-    add_custom_target(gen_qstr_i_last 
+    add_custom_target(gen_qstr_i_last
+            COMMENT "Generate qstr_i_last"
             COMMAND ${CMAKE_C_COMPILER} -E ${QSTR_GEN_EXTRA_CFLAGS} ${cmd_param_cflag} ${cmd_param_cinclude} -DFFCONF_H="${mpy_core_dir}/lib/oofatfs/ffconf.h" ${QSTR_SRCS_FULL_PATH} ${QSTR_GLOBAL_DEPENDENCIES} > ${mpy_build_gen_header_dir}/qstr.i.last
             DEPENDS gen_module_defs ${QSTR_GLOBAL_DEPENDENCIES} ${QSTR_SRCS}
             VERBATIM
         )
     add_custom_target(gen_collected_h
+            COMMENT "Generate gen_collected_h"
             COMMAND ${python} ${mpy_core_src_dir}/makeqstrdefs.py split qstr ${mpy_build_gen_header_dir}/qstr.i.last ${mpy_build_gen_header_dir}/qstr ${QSTR_DEFS_COLLECTED}
             COMMAND touch ${mpy_build_gen_header_dir}/qstr.split
             COMMAND ${python} ${mpy_core_src_dir}/makeqstrdefs.py cat qstr ${mpy_build_gen_header_dir}/qstr.i.last ${mpy_build_gen_header_dir}/qstr ${QSTR_DEFS_COLLECTED}
@@ -479,10 +503,12 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     separate_arguments(cmd_sed1 NATIVE_COMMAND "s/^\"\\(Q(.*)\\)\"/\\1/")
     
     add_custom_command(OUTPUT ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h
+                    COMMENT "Generate ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h"
                     COMMAND cat ${PY_QSTR_DEFS} ${QSTR_DEFS} ${QSTR_DEFS_COLLECTED} | sed '${cmd_sed0}' | ${CMAKE_C_COMPILER} -E ${cmd_param_cflag} ${cmd_param_cinclude} - | sed '${cmd_sed1}' > ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h
-                    DEPENDS gen_mpy_cross gen_version_header gen_module_defs gen_collected_h gen_qstr_i_last ${QSTR_DEFS_COLLECTED}
+                    DEPENDS gen_mpy_cross gen_version_header gen_module_defs gen_collected_h ${QSTR_DEFS_COLLECTED}
                 )
     add_custom_command(OUTPUT ${qstr_header}
+                    COMMENT "Generate ${qstr_header}"
                     COMMAND ${python} ${mpy_core_src_dir}/makeqstrdata.py ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h > ${qstr_header}
                     DEPENDS ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h gen_qstr_i_last
                 )
@@ -511,6 +537,7 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
         # add_custom_target("mpy_${py_name}_target" DEPENDS ${mpy})
     endforeach()
     add_custom_command(OUTPUT ${MPY_FROZEN_SRC}
+                COMMENT "Generate ${MPY_FROZEN_SRC}"
                 COMMAND ${python} ${mpy_core_dir}/tools/mpy-tool.py -f -q ${mpy_build_gen_header_dir}/qstrdefs.preprocessed.h ${frozen_mpy} > ${MPY_FROZEN_SRC}
                 DEPENDS ${qstr_header} ${frozen_mpy} 
             )

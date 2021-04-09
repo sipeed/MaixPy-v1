@@ -37,6 +37,7 @@
 #include "esp8285.h"
 #include "mpconfigboard.h"
 #include "buffer.h"
+#include "stdio.h"
 
 STATIC bool nic_connected = false;
 typedef struct _nic_obj_t {
