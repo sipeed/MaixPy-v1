@@ -187,8 +187,8 @@ STATIC mp_obj_t speech_asr_set(mp_obj_t self_in, mp_obj_t tuple_in)
         mp_obj_t *t_items;
 
         mp_obj_get_array(kw_in, &t_len, &t_items);
-        if (len == 2) {
-            mp_raise_ValueError("kw_in == (gate, get_asr_list('xx-xx'))");
+        if (t_len != 2) {
+            mp_raise_ValueError("kw_in != (gate, get_asr_list('xx-xx'))");
         }
 
         float gate = mp_obj_get_float(MP_OBJ_TO_PTR(t_items[0]));
@@ -201,7 +201,7 @@ STATIC mp_obj_t speech_asr_set(mp_obj_t self_in, mp_obj_t tuple_in)
         mp_obj_t *tt_items;
 
         mp_obj_get_array(MP_OBJ_TO_PTR(t_items[1]), &tt_len, &tt_items);
-        if (len > KW_MAX_PNY) {
+        if (tt_len > KW_MAX_PNY) {
             mp_raise_ValueError("kw_in(1) len > KW_MAX_PNY");
         }
         

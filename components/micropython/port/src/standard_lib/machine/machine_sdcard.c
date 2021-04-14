@@ -28,6 +28,9 @@ void sdcard_power_off(void) {
     cardinfo.active = 0;
 }
 
+extern void mount_sdcard(void);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(machine_sdcard_remount_obj, mount_sdcard);
+
 STATIC mp_obj_t machine_sdcard_write_sector(mp_obj_t self, mp_obj_t block_num, mp_obj_t buf) {
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(buf, &bufinfo, MP_BUFFER_READ);
@@ -70,6 +73,7 @@ const mp_obj_base_t machine_sdcard_obj = {&machine_sdcard_type};
 
 STATIC const mp_rom_map_elem_t machine_sdcard_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_ioctl), MP_ROM_PTR(&machine_sdcard_ioctl_obj) },
+    { MP_ROM_QSTR(MP_QSTR_remount), MP_ROM_PTR(&machine_sdcard_remount_obj) }
 };
 
 STATIC MP_DEFINE_CONST_DICT(machine_sdcard_locals_dict, machine_sdcard_locals_dict_table);

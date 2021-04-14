@@ -266,6 +266,7 @@ const uint16_t default_regs[][2]=
     {0x5025, 0x00},
     {0x3008, 0x02}, // wake up from standby, bit[6]
     {0x4740, 0X21}, //VSYNC active HIGH
+	{0x0000, 0x00}
 };
 
 #ifdef CONFIG_OV5640_AF

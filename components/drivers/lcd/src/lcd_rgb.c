@@ -388,10 +388,9 @@ static int rgb_lcd_init(lcd_para_t *lcd_para)
     //SPI传输时间(dis_flag=1)约20ms，需要留出10~20ms给缓冲区准备(dis_flag=0)
     //如果图像中断处理时间久，可以调慢FPGA端的像素时钟，但是注意不能比刷屏中断慢(否则就会垂直滚动画面)。
     //33M->18ms  25M->23ms  20M->29ms
+    while(dual_func){} // 等待sd卡初始化结束
     dual_func = rgb_lcd_timer_start;
-    while (dual_func)
-    {
-    }; // 等待 core1 执行完毕
+    while(dual_func){} // 等待 core1 执行完毕
     return 0;
 }
 
@@ -400,9 +399,7 @@ static void rgb_lcd_deinit(void)
     if (!lcd_main)
     {
         dual_func = rgb_lcd_timer_stop;
-        while (dual_func)
-        {
-        }; // wait core1
+        while(dual_func){} // wait core1
         free(lcd_main);
         lcd_main = NULL;
     }
