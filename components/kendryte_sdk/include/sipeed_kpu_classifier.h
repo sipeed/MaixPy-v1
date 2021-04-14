@@ -30,7 +30,7 @@ typedef struct
     uint32_t        max_layers;
 } __attribute__((aligned(8))) kpu_model_info_t;
 
-int maix_kpu_classifier_init(void** obj, kpu_model_info_t* model, int class_num, int sample_num, bool flag, int flag2);
+int maix_kpu_classifier_init(void** obj, kpu_model_info_t* model, int class_num, int sample_num, bool flag, int flag2, int feature_length);
 int maix_kpu_classifier_add_class_img(void* obj, image_t* img, int idx);
 int maix_kpu_classifier_add_sample_img(void* obj, image_t* img);
 int maix_kpu_classifier_del(void** obj);
@@ -39,9 +39,9 @@ int maix_kpu_classifier_predict(void* obj, image_t* img, float* min_distance, in
 int maix_kpu_classifier_rm_class_img(void* obj);
 int maix_kpu_classifier_rm_sample_img(void* obj);
 int maix_kpu_classifier_save(void* obj, const char* path);
-int maix_kpu_classifier_load(void** obj, const char* path, kpu_model_info_t* kmodel, int* class_num, int* sample_num);
+int maix_kpu_classifier_load(void** obj, const char* path, kpu_model_info_t* kmodel, int* class_num, int* sample_num, int feature_length);
 
-int maix_kpu_detector_init(void** obj, kpu_model_info_t* model, int class_num, int sample_num, int crop_size);
+int maix_kpu_detector_init(void** obj, kpu_model_info_t* model, int class_num, int sample_num, int crop_size, int feature_length);
 int maix_kpu_detector_add_class_img(void* obj, image_t* img);
 int maix_kpu_detector_add_sample_img(void* obj, image_t* img);
 int maix_kpu_detector_del(void** obj);

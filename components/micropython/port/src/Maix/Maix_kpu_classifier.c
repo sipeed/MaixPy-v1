@@ -6,6 +6,7 @@
 #include "sipeed_kpu_classifier.h"
 #include "Maix_kpu.h"
 #include "sipeed_kpu.h"
+#include "py_helper.h"
 
 const mp_obj_type_t Maix_kpu_classifier_type;
 
@@ -17,7 +18,7 @@ typedef struct {
 } maix_kpu_classifier_t;
 
 
-STATIC void init_obj(maix_kpu_classifier_t* self, py_kpu_net_obj_t* model, mp_int_t class_num, mp_int_t sample_num){
+STATIC void init_obj(maix_kpu_classifier_t* self, py_kpu_net_obj_t* model, mp_int_t class_num, mp_int_t sample_num, int feature_length){
     self->model = m_new(kpu_model_info_t, 1);
     self->kpu_model = model;
     self->model->kmodel_ctx = model->kmodel_ctx;
@@ -28,7 +29,7 @@ STATIC void init_obj(maix_kpu_classifier_t* self, py_kpu_net_obj_t* model, mp_in
     else
         self->model->model_path = mp_obj_str_get_str(model->model_path);
     self->model->model_size = model->model_size;
-    int ret = maix_kpu_classifier_init(&self->obj, self->model, (int)class_num, (int)sample_num, false, 0);
+    int ret = maix_kpu_classifier_init(&self->obj, self->model, (int)class_num, (int)sample_num, false, 0, feature_length);
     if(ret < 0)
         mp_raise_OSError(-ret);
 }
@@ -87,7 +88,7 @@ STATIC void save_trained_model(maix_kpu_classifier_t* self, const char* path){
         mp_raise_OSError(-ret);
 }
 
-STATIC void load_trained_model(maix_kpu_classifier_t* self, const char* path, py_kpu_net_obj_t* model, int* class_num, int* sample_num){
+STATIC void load_trained_model(maix_kpu_classifier_t* self, const char* path, py_kpu_net_obj_t* model, int* class_num, int* sample_num, int feature_length){
     self->model = m_new(kpu_model_info_t, 1);
     self->kpu_model = model;
     self->model->kmodel_ctx = model->kmodel_ctx;
@@ -98,7 +99,7 @@ STATIC void load_trained_model(maix_kpu_classifier_t* self, const char* path, py
     else
         self->model->model_path = mp_obj_str_get_str(model->model_path);
     self->model->model_size = model->model_size;
-    int ret = maix_kpu_classifier_load(&self->obj, path, self->model, class_num, sample_num);
+    int ret = maix_kpu_classifier_load(&self->obj, path, self->model, class_num, sample_num, feature_length);
     if(ret < 0)
         mp_raise_OSError(-ret);
 }
@@ -107,15 +108,22 @@ mp_obj_t maix_kpu_classifier_make_new(const mp_obj_type_t *type, size_t n_args, 
     maix_kpu_classifier_t* self = m_new_obj_with_finaliser(maix_kpu_classifier_t);
     self->base.type = &Maix_kpu_classifier_type;
     self->obj = NULL;
-    if(n_args!=3 || n_kw!=0)
+    if(n_args<3)
     {
         mp_raise_ValueError("model, class num, sample num");
     }
     if(mp_obj_get_type(args[0]) != &py_kpu_net_obj_type){
         mp_raise_ValueError("model");
     }
+    int feature_length = 0;
+    if(n_kw > 0)
+    {
+        mp_map_t kw_args;
+        mp_map_init_fixed_table(&kw_args, n_kw, args + n_args);
+        feature_length = py_helper_keyword_int(n_args, args, 3, &kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_fea_len), 0);
+    }
     sipeed_kpu_use_dma(1);
-    init_obj(self, (py_kpu_net_obj_t*)args[0], mp_obj_get_int(args[1]), mp_obj_get_int(args[2]));
+    init_obj(self, (py_kpu_net_obj_t*)args[0], mp_obj_get_int(args[1]), mp_obj_get_int(args[2]), feature_length);
     return (mp_obj_t)self;
 }
 
@@ -227,7 +235,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(classifier_save_obj, classifier_save);
  * @param class_num init object classnum, if not set, the same as saved model's
  * @param sample_num ...
  */
-mp_obj_t classifier_load(size_t n_args, const mp_obj_t *args){
+mp_obj_t classifier_load(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args){
     mp_obj_t model_in = args[0];
     mp_obj_t path_in = args[1];
     if(mp_obj_get_type(model_in) == &Maix_kpu_classifier_type){
@@ -251,11 +259,12 @@ mp_obj_t classifier_load(size_t n_args, const mp_obj_t *args){
     {
         sample_num = mp_obj_get_int(args[3]);
     }
-    load_trained_model(self, mp_obj_str_get_str(path_in), (py_kpu_net_obj_t*)model_in, &class_num, &sample_num);
+    int feature_length = py_helper_keyword_int(n_args, args, 2, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_fea_len), 0);
+    load_trained_model(self, mp_obj_str_get_str(path_in), (py_kpu_net_obj_t*)model_in, &class_num, &sample_num, feature_length);
     mp_obj_t* items[3] = {(mp_obj_t)self, mp_obj_new_int(class_num), mp_obj_new_int(sample_num)};
     return mp_obj_new_tuple(3, items);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(classifier_load_obj, 2, 4, classifier_load);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(classifier_load_obj, 2, classifier_load);
     
     
 STATIC const mp_map_elem_t locals_dict_table[] = {
