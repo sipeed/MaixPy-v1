@@ -138,6 +138,7 @@ void py_lcd_load_config(lcd_para_t *lcd_cfg)
         PY_LCD_CHECK_CONFIG(offset_h1, &lcd_cfg->offset_h1);
         PY_LCD_CHECK_CONFIG(dir, &lcd_cfg->dir);
         PY_LCD_CHECK_CONFIG(lcd_type, &lcd_cfg->lcd_type);
+        PY_LCD_CHECK_CONFIG(oct, &lcd_cfg->oct);
 
         // mp_printf(&mp_plat_print, "[%s]: rst=%d, dcx=%d, ss=%d, clk=%d\r\n",
         //           __func__, lcd_cfg->rst_pin, lcd_cfg->dcx_pin, lcd_cfg->cs_pin, lcd_cfg->clk_pin);
