@@ -1,0 +1,36 @@
+{
+    "config_name": "airv3_small",
+    "lcd": {
+        "rst" : 11,
+        "dcx" : 38,
+        "ss" : 37,
+        "clk" : 39,
+        "height": 135,
+        "width": 240,
+        "invert": 1,
+        "offset_w0": 40,
+        "offset_h0": 53,
+        "offset_w1": 40,
+        "offset_h1": 53,
+        "dir": 96,
+        "oct": 0
+    }, 
+    "sensor": {
+        "cmos_pclk":47,
+        "cmos_xclk":46,
+        "cmos_href":45,
+        "cmos_pwdn":13,
+        "cmos_vsync":43,
+        "cmos_rst":42,
+        "reg_width":16,
+        "i2c_num":2,
+        "pin_clk":41,
+        "pin_sda":40
+    },
+    "sdcard":{
+        "sclk":27,
+        "mosi":28,
+        "miso":26,
+        "cs":29
+    }
+}
