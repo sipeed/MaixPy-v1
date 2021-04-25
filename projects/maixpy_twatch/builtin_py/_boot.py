@@ -87,9 +87,8 @@ try:
     import os, Maix, gc, lcd, image
     from Maix import FPIOA, GPIO
     gc.collect()
-    lcd.init(invert=True, freq=15000000,color=(255,0,0))
-    lcd.rotation(1)
-    fm.register(board_info.PIN17,fm.fpioa.GPIO0)
+    lcd.init(freq=15000000)
+    fm.register(17,fm.fpioa.GPIO0)
     led=GPIO(GPIO.GPIO0,GPIO.OUT)
     led.value(1)
     loading = image.Image(size=(lcd.width(), lcd.height()))
@@ -123,7 +122,7 @@ config = {
         "height": 240,
         "width": 240,
         "invert": 1,
-        "dir": 20,
+        "dir": 96,
         "lcd_type": 0
     },
     "board_info": {
