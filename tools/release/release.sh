@@ -114,6 +114,17 @@ cp build/maixpy.bin $release_dir/maixpy_${version}_m5stickv.bin
 cp build/maixpy.elf $release_dir/elf/maixpy_${version}_m5stickv.elf
 cd ..
 
+# board M5StickV
+cd maixpy_twatch
+echo "-------------------"
+echo "build project maixpy_twatch"
+echo "-------------------"
+python project.py distclean
+python project.py build
+cp build/maixpy.bin $release_dir/maixpy_${version}_twatch.bin
+cp build/maixpy.elf $release_dir/elf/maixpy_${version}_twatch.elf
+cd ..
+
 # board Maix Amigo
 cd maixpy_amigo_ips
 echo "-------------------"
