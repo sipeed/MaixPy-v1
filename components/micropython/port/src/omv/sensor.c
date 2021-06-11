@@ -1530,22 +1530,31 @@ static int reverse_u32pixel_2(int core)
 
 int reverse_u32pixel(uint32_t *addr, uint32_t length)
 {
+    extern volatile bool maixpy_sdcard_loading;
     if (NULL == addr)
         return -1;
 
     uint32_t data;
-    g_pixs_size = length / 2;
-    uint32_t *pend = addr + g_pixs_size;
-    g_pixs = pend;
-    dual_func = reverse_u32pixel_2;
-    for (; addr < pend; addr++)
-    {
-        data = *(addr);
-        *(addr) = ((data & 0x000000FF) << 24) | ((data & 0x0000FF00) << 8) |
-                  ((data & 0x00FF0000) >> 8) | ((data & 0xFF000000) >> 24);
-    } //1.7ms
-    while (dual_func)
-    {
+    if (maixpy_sdcard_loading) {
+      uint32_t *pend = addr + length;
+      for (; addr < pend; addr++)
+      {
+          data = *(addr);
+          *(addr) = ((data & 0x000000FF) << 24) | ((data & 0x0000FF00) << 8) |
+                    ((data & 0x00FF0000) >> 8) | ((data & 0xFF000000) >> 24);
+      }
+    } else {
+      g_pixs_size = length / 2;
+      uint32_t *pend = addr + g_pixs_size;
+      g_pixs = pend;
+      dual_func = reverse_u32pixel_2;
+      for (; addr < pend; addr++)
+      {
+          data = *(addr);
+          *(addr) = ((data & 0x000000FF) << 24) | ((data & 0x0000FF00) << 8) |
+                    ((data & 0x00FF0000) >> 8) | ((data & 0xFF000000) >> 24);
+      } //1.7ms
+      while (dual_func) { }
     }
 
     return 0;

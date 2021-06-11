@@ -44,7 +44,7 @@ int sccb_i2c_init(int8_t i2c, uint8_t pin_clk, uint8_t pin_sda, uint8_t gpio_clk
     {
         if (i2c > 2 || i2c < 0)
             return -1;
-        mp_printf(&mp_plat_print, "init i2c%d\r\n", i2c);
+        mp_printf(&mp_plat_print, "init i2c:%d freq:%d\r\n", i2c, freq);
         fpioa_set_function(pin_clk, FUNC_I2C0_SCLK + i2c * 2);
         fpioa_set_function(pin_sda, FUNC_I2C0_SDA + i2c * 2);
         maix_i2c_init((i2c_device_number_t)i2c, 7, freq);
