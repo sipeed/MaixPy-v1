@@ -442,7 +442,11 @@ void on_i2c2_event(i2c_event_t event)
 
 STATIC void machine_hard_i2c_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     machine_hard_i2c_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    if(self->mode == MACHINE_I2C_MODE_MASTER || self->mode == MACHINE_I2C_MODE_MASTER_SOFT)
+    if(self->mode == MACHINE_I2C_MODE_MASTER
+#if MICROPY_PY_MACHINE_SW_I2C
+       || self->mode == MACHINE_I2C_MODE_MASTER_SOFT
+#endif
+    )
     {
         mp_printf(print, "[MAIXPY]I2C:(%p) I2C=%d, mode=%d, freq=%u, addr_size=%u, scl=%d, sda=%d",
             self, self->i2c, self->mode, self->freq, self->addr_size, self->pin_scl, self->pin_sda);
@@ -503,10 +507,10 @@ STATIC mp_obj_t machine_i2c_init_helper(machine_hard_i2c_obj_t* self, mp_uint_t 
     enum { 
         ARG_id,
         ARG_mode,
-        ARG_pin_scl,
-        ARG_pin_sda,
-        ARG_gpio_scl,
-        ARG_gpio_sda,
+        ARG_scl,
+        ARG_sda,
+        ARG_gscl,
+        ARG_gsda,
         ARG_freq,
         ARG_timeout,
         ARG_addr,
@@ -575,17 +579,17 @@ STATIC mp_obj_t machine_i2c_init_helper(machine_hard_i2c_obj_t* self, mp_uint_t 
         }
     }
 
-    if (args[ARG_pin_scl].u_obj != MP_OBJ_NULL || args[ARG_pin_sda].u_obj != MP_OBJ_NULL) {
-        if( !check_pin( mp_obj_get_int(args[ARG_pin_scl].u_obj), mp_obj_get_int(args[ARG_pin_sda].u_obj) ) )
+    if (args[ARG_scl].u_obj != MP_OBJ_NULL || args[ARG_sda].u_obj != MP_OBJ_NULL) {
+        if( !check_pin( mp_obj_get_int(args[ARG_scl].u_obj), mp_obj_get_int(args[ARG_sda].u_obj) ) )
             mp_raise_ValueError("[MAIXPY]I2C: pin(scl/sda) error!"); 
-        self->pin_scl = mp_obj_get_int(args[ARG_pin_scl].u_obj);
-        self->pin_sda = mp_obj_get_int(args[ARG_pin_sda].u_obj);
+        self->pin_scl = mp_obj_get_int(args[ARG_scl].u_obj);
+        self->pin_sda = mp_obj_get_int(args[ARG_sda].u_obj);
         self->gpio_scl = self->pin_scl;
         self->gpio_sda = self->pin_sda;
     }
-    if (args[ARG_gpio_scl].u_obj != MP_OBJ_NULL || args[ARG_gpio_sda].u_obj != MP_OBJ_NULL) {
-        int gscl = mp_obj_get_int(args[ARG_gpio_scl].u_obj) - FUNC_GPIOHS0;
-        int gsda = mp_obj_get_int(args[ARG_gpio_sda].u_obj) - FUNC_GPIOHS0;
+    if (args[ARG_gscl].u_obj != MP_OBJ_NULL || args[ARG_gsda].u_obj != MP_OBJ_NULL) {
+        int gscl = mp_obj_get_int(args[ARG_gscl].u_obj) - FUNC_GPIOHS0;
+        int gsda = mp_obj_get_int(args[ARG_gsda].u_obj) - FUNC_GPIOHS0;
         if( !check_gpio(gscl, gsda) )
             mp_raise_ValueError("[MAIXPY]I2C: gpio(scl/sda) error!"); 
         self->gpio_scl = gscl;
@@ -629,6 +633,8 @@ STATIC mp_obj_t machine_i2c_init_helper(machine_hard_i2c_obj_t* self, mp_uint_t 
             slave_callback[self->i2c].on_transmit = on_i2c2_transmit;
             slave_callback[self->i2c].on_event = on_i2c2_event;
         }
+        fpioa_set_function(self->pin_scl, FUNC_I2C0_SCLK + i2c_id * 2);
+        fpioa_set_function(self->pin_sda, FUNC_I2C0_SDA + i2c_id * 2);
         i2c_init_as_slave(self->i2c, self->addr, self->addr_size, slave_callback+self->i2c);   
 #if MICROPY_PY_MACHINE_SW_I2C
     } else if (self->mode == MACHINE_I2C_MODE_MASTER_SOFT) {
@@ -982,7 +988,9 @@ STATIC const mp_rom_map_elem_t machine_i2c_locals_dict_table[] = {
     // mode
     { MP_ROM_QSTR(MP_QSTR_MODE_MASTER), MP_ROM_INT(MACHINE_I2C_MODE_MASTER) },
     { MP_ROM_QSTR(MP_QSTR_MODE_SLAVE), MP_ROM_INT(MACHINE_I2C_MODE_SLAVE) },
+#if MICROPY_PY_MACHINE_SW_I2C
     { MP_ROM_QSTR(MP_QSTR_MODE_MASTER_SOFT), MP_ROM_INT(MACHINE_I2C_MODE_MASTER_SOFT) },
+#endif
 
     // devices
     { MP_ROM_QSTR(MP_QSTR_I2C0), MP_ROM_INT(I2C_DEVICE_0) },
