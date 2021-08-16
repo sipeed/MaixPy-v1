@@ -71,9 +71,9 @@ static void lcd_init_sequence_for_ili9481(void)
 {
     uint8_t t[2];
     // lcd.clear((99, 99, 99))
-    mcu_lcd_clear(0xc63);
+    mcu_lcd_clear(0xe28d);
     // lcd.register(0xD1, 0x00)
-    tft_write_command(0xD1); /* Unk */
+    // tft_write_command(0xD1); /* Unk */
     t[0] = (0x00);
     tft_write_byte(t, 1);
 }
