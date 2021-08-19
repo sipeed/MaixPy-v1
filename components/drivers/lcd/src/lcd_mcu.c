@@ -71,7 +71,7 @@ static void lcd_preinit_register_handler(lcd_preinit_handler_t handler)
 
 static void lcd_init_sequence_for_ili9481(void)
 {
-    printk("lcd_init_sequence_for_ili9481\r\n");
+    // printk("lcd_init_sequence_for_ili9481\r\n");
 
     uint8_t t[24];
     // lcd.clear((99, 99, 99))
