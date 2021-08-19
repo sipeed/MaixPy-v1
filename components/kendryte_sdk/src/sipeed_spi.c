@@ -137,7 +137,7 @@ void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select
     sipeed_spi_set_tmod(spi_num, SPI_TMOD_TRANS_RECV);
 
     volatile spi_t *spi_handle = spi[spi_num];
-
+    prinf("First: %d\n",spi_handle->rxflr);
     uint8_t dfs_offset;
     switch(spi_num){
         case 0:
