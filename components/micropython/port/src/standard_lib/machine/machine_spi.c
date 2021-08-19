@@ -521,6 +521,7 @@ STATIC void mp_machine_spi_transfer(mp_obj_t self, size_t len, const void *src, 
     mp_obj_base_t *s = (mp_obj_base_t*)MP_OBJ_TO_PTR(self);
     mp_machine_hw_spi_p_t *spi_p = (mp_machine_hw_spi_p_t*)s->type->protocol;
     spi_p->transfer(s, len, src, dest, cs);
+    printf("Alan");
 }
 
 STATIC mp_obj_t mp_machine_spi_read(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {	
@@ -553,7 +554,7 @@ STATIC mp_obj_t mp_machine_spi_read(size_t n_args, const mp_obj_t *pos_args, mp_
     vstr_t vstr;
     vstr_init_len(&vstr, mp_obj_get_int(pos_args[1]));
     memset(vstr.buf, args[ARG_write].u_int, vstr.len);
-    printf("Alan");
+    
     mp_machine_spi_transfer(self, vstr.len, vstr.buf, vstr.buf, cs);
     return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
 }
