@@ -137,7 +137,6 @@ void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select
     sipeed_spi_set_tmod(spi_num, SPI_TMOD_TRANS_RECV);
 
     volatile spi_t *spi_handle = spi[spi_num];
-    printf("First: %d\n",spi_handle->rxflr);
     uint8_t dfs_offset;
     switch(spi_num){
         case 0:
@@ -158,6 +157,7 @@ void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select
     spi_handle->ssienr = 0x01;
     spi_handle->ser = 1U << chip_select;
     uint32_t index_tx = 0, index_rx = 0;
+    printf("First: %d\n",spi_handle->rxflr);
     while (tx_len)
     {
         fifo_len = 32 - spi_handle->txflr;
