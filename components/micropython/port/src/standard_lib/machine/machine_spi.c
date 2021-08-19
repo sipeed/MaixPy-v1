@@ -220,11 +220,11 @@ STATIC void machine_hw_spi_deinit(mp_obj_base_t *self_in) {
 
 STATIC void machine_hw_spi_transfer(mp_obj_base_t *self_in, size_t len, const uint8_t *src, uint8_t *dest, int cs) {
     machine_hw_spi_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    printf("Alan");
     if (self->state == MACHINE_HW_SPI_STATE_DEINIT) {
         mp_raise_msg(&mp_type_OSError, "[MAIXPY]SPI: transfer on deinitialized SPI");
         return;
     }
+    printf("Alan");
 #if MICROPY_PY_MACHINE_SW_SPI
     if(self->id == SPI_SOFTWARE)
     {
