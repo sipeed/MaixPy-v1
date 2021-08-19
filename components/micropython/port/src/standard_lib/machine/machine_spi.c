@@ -230,7 +230,7 @@ STATIC void machine_hw_spi_transfer(mp_obj_base_t *self_in, size_t len, const ui
         mp_soft_spi_transfer(self, len, src, dest);
         return;
     }
-    printf("Alan");
+
 #endif
     if(dest==NULL)
         sipeed_spi_transfer_data_standard(self->id, cs, src, NULL, len, 0);
