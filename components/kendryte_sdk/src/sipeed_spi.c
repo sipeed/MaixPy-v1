@@ -211,7 +211,7 @@ void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select
             
         }
     }
-
+    printf("Alan");
     while ((spi_handle->sr & 0x05) != 0x04)
         ;
     while (rx_len)
