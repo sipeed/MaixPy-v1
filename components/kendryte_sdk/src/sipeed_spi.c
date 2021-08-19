@@ -215,9 +215,9 @@ void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select
         ;
     while (rx_len)
     {
-        printf("%d",rx_len);
+        printf("All: %d\n",rx_len);
         fifo_len = spi_handle->rxflr;
-        printf("%d",fifo_len);
+        printf("sub: %d\n",fifo_len);
         fifo_len = fifo_len < rx_len ? fifo_len : rx_len;
         switch(frame_width)
         {
