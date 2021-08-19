@@ -182,7 +182,6 @@ void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select
         while(rx_len)
         {
             fifo_len = spi_handle->rxflr;
-            printf("First: %d\n",fifo_len);
             if(fifo_len==0)
             {
                 if(index_tx - index_rx < 32)
@@ -211,6 +210,7 @@ void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select
             
         }
     }
+    printf("First: %d\n",spi_handle->rxflr);       
     while ((spi_handle->sr & 0x05) != 0x04)
         ;
     while (rx_len)
