@@ -142,7 +142,7 @@ void mp_soft_spi_transfer(void *self_in, size_t len, const uint8_t *src, uint8_t
     machine_hw_spi_obj_t *self = (machine_hw_spi_obj_t*)self_in;
     uint32_t delay_half = self->delay_half;
 
-     printf("Alan");
+     
 
     // only MSB transfer is implemented
     	
@@ -524,6 +524,7 @@ STATIC void mp_machine_spi_transfer(mp_obj_t self, size_t len, const void *src, 
 }
 
 STATIC mp_obj_t mp_machine_spi_read(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+    printf("Alan");	
     enum {
         ARG_write,
         ARG_cs,
