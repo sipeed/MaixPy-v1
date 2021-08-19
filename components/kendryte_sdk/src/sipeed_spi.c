@@ -211,7 +211,6 @@ void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select
             
         }
     }
-    printf("Alan");
     while ((spi_handle->sr & 0x05) != 0x04)
         ;
     while (rx_len)
@@ -221,16 +220,19 @@ void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select
         switch(frame_width)
         {
             case SPI_TRANS_INT:
+                printf("Alan1");
                 fifo_len = fifo_len / 4 * 4;
                 for (index = 0; index < fifo_len / 4; index++)
                   ((uint32_t *)rx_buff)[index_rx++] = spi_handle->dr[0];
                 break;
             case SPI_TRANS_SHORT:
+                printf("Alan2");
                 fifo_len = fifo_len / 2 * 2;
                 for (index = 0; index < fifo_len / 2; index++)
                   ((uint16_t *)rx_buff)[index_rx++] = (uint16_t)spi_handle->dr[0];
                  break;
             default:
+                  printf("Alan3");
                   for (index = 0; index < fifo_len; index++)
                       rx_buff[index_rx++] = (uint8_t)spi_handle->dr[0];
                 break;
