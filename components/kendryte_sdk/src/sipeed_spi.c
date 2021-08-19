@@ -157,7 +157,6 @@ void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select
     spi_handle->ssienr = 0x01;
     spi_handle->ser = 1U << chip_select;
     uint32_t index_tx = 0, index_rx = 0;
-    printf("First: %d\n",spi_handle->rxflr);
     while (tx_len)
     {
         fifo_len = 32 - spi_handle->txflr;
@@ -177,6 +176,7 @@ void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select
             default:
                 for (index = 0; index < fifo_len; index++)
                     spi_handle->dr[0] = tx_buff[index_tx++];
+                printf("First: %d\n",spi_handle->rxflr);
                 break;
         }
         tx_len -= fifo_len;
