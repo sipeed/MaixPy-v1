@@ -520,8 +520,8 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(machine_spi_deinit_obj, machine_spi_deinit);
 STATIC void mp_machine_spi_transfer(mp_obj_t self, size_t len, const void *src, void *dest, int cs) {
     mp_obj_base_t *s = (mp_obj_base_t*)MP_OBJ_TO_PTR(self);
     mp_machine_hw_spi_p_t *spi_p = (mp_machine_hw_spi_p_t*)s->type->protocol;
-    spi_p->transfer(s, len, src, dest, cs);
     printf("Alan");
+    spi_p->transfer(s, len, src, dest, cs);
 }
 
 STATIC mp_obj_t mp_machine_spi_read(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {	
