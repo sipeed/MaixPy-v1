@@ -176,13 +176,13 @@ void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select
             default:
                 for (index = 0; index < fifo_len; index++)
                     spi_handle->dr[0] = tx_buff[index_tx++];
-                printf("First: %d\n",spi_handle->rxflr);
                 break;
         }
         tx_len -= fifo_len;
         while(rx_len)
         {
             fifo_len = spi_handle->rxflr;
+            printf("First: %d\n",fifo_len);
             if(fifo_len==0)
             {
                 if(index_tx - index_rx < 32)
