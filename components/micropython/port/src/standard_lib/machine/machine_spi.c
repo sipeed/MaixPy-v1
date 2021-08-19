@@ -145,7 +145,7 @@ void mp_soft_spi_transfer(void *self_in, size_t len, const uint8_t *src, uint8_t
     // printk("%s %d %d %d\r\n", __func__, self->pin_sck, self->pin_d[0], self->pin_d[1]);
 
     // only MSB transfer is implemented
-
+    mp_raise_msg(&mp_type_OSError, "HI!!");	
     // If a port defines MICROPY_HW_SOFTSPI_MIN_DELAY, and the configured
     // delay_half is equal to this value, then the software SPI implementation
     // will run as fast as possible, limited only by CPU speed and GPIO time.
