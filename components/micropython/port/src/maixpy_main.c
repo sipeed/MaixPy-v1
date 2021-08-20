@@ -626,7 +626,7 @@ soft_reset:
       ide_save_file();
     }
     if (ide_dbg_script_ready())
-    {
+    { pyexec_frozen_module("ide_debug.py");//just for maixpy ide,to fix amgio lcd bug
       nlr_buf_t nlr;
       if (nlr_push(&nlr) == 0)
       {
