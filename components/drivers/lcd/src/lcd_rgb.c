@@ -120,13 +120,13 @@ static rgb_lcd_ctl_t lcd_para_5p0_ips = {
     .spi_speed = 80 * 1000 * 1000};
 
 static rgb_lcd_ctl_t lcd_para_5p0_7p0 = {
-    .width = 800, .height = 480, .vbp = 0, .h = 480 / 4, .vfp = 0, .hbp = 180, .w = 800 / 4, .hfp = 0, .enable = 1, .div_xy = 0, .div_pos = 800 / 4, //x方向分割到800
+    .width = 800, .height = 480, .vbp = 0, .vfp = 0, .hbp = 180, .hfp = 1,.w = 800 / 4, .h = 480 / 4, .enable = 1, .div_xy = 0, .div_pos = 800 / 4, //x方向分割到800
     .mula_M = 1,
     .mula_N = 2, //2倍缩放
     .mulb_M = 1,
     .mulb_N = 1, //不缩放
     .phase_de = 1,
-    .phase_vsync = 1,
+    .phase_vsync = 10,
     .phase_hsync = 1,
     .phase_pclk = 1,
     .refresh_time = 28,
