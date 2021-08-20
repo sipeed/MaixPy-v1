@@ -209,10 +209,10 @@ void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip_select
             rx_len -= fifo_len;
             
         }
-    }      
+    }
+    printf("First: %d\n",spi_handle->rxflr);
     while ((spi_handle->sr & 0x05) != 0x04)
         ;
-    printf("First: %d\n",spi_handle->rxflr);
     while (rx_len)
     {
         printf("All: %d\n",rx_len);
