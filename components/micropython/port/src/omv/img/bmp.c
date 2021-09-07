@@ -231,6 +231,7 @@ void bmp_write_subimg(image_t *img, const char *path, rectangle_t *r)
     if(file == MP_OBJ_NULL || err != 0)
         mp_raise_OSError(err);
     if (IM_IS_GS(img)) {
+        printf("OK1!\n");
         const int row_bytes = (((rect.w * 8) + 31) / 32) * 4;
         const int data_size = (row_bytes * rect.h);
         const int waste = (row_bytes / sizeof(uint8_t)) - rect.w;
@@ -270,6 +271,7 @@ void bmp_write_subimg(image_t *img, const char *path, rectangle_t *r)
             }
         }
     } else {
+        printf("OK1!\n");
         const int row_bytes = (((rect.w * 16) + 31) / 32) * 4;
         const int data_size = (row_bytes * rect.h);
         const int waste = (row_bytes / sizeof(uint16_t)) - rect.w;
@@ -305,6 +307,5 @@ void bmp_write_subimg(image_t *img, const char *path, rectangle_t *r)
             }
         }
     }
-    printf("OK!\n");
     vfs_internal_close(file, &err);
 }
