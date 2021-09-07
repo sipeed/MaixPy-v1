@@ -229,7 +229,7 @@ void bmp_write_subimg(image_t *img, const char *path, rectangle_t *r)
     mp_obj_t file = vfs_internal_open(path, "wb", &err);
     if(file == MP_OBJ_NULL || err != 0)
         mp_raise_OSError(err);
-
+    printf("OK!\n");
     if (IM_IS_GS(img)) {
         const int row_bytes = (((rect.w * 8) + 31) / 32) * 4;
         const int data_size = (row_bytes * rect.h);
