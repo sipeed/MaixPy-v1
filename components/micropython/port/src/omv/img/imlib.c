@@ -685,6 +685,7 @@ void imlib_save_image(image_t *img, const char *path, rectangle_t *roi, int qual
     switch (imblib_parse_extension(img, path)) {
         //TODO: 
         case FORMAT_BMP:
+            printf("OK!\n");
             bmp_write_subimg(img, path, roi);
             break;
         // case FORMAT_PNM:
