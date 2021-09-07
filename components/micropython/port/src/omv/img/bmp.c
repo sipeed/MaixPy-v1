@@ -254,10 +254,10 @@ void bmp_write_subimg(image_t *img, const char *path, rectangle_t *r)
         write_long_raise(file, 0);
         write_long_raise(file, 0);
         // Color Table (1024 bytes)
-        printf("OK1!\n");
         for (int i = 0; i < 256; i++) {
             write_long_raise(file, ((i) << 16) | ((i) << 8) | i);
         }
+        printf("OK1!\n");
         if ((rect.x == 0) && (rect.w == img->w) && (img->w == row_bytes)) {
             write_data_raise(file, // Super Fast - Zoom, Zoom!
                        img->pixels + (rect.y * img->w),
@@ -271,7 +271,7 @@ void bmp_write_subimg(image_t *img, const char *path, rectangle_t *r)
             }
         }
     } else {
-        printf("OK1!\n");
+        printf("OK2!\n");
         const int row_bytes = (((rect.w * 16) + 31) / 32) * 4;
         const int data_size = (row_bytes * rect.h);
         const int waste = (row_bytes / sizeof(uint16_t)) - rect.w;
