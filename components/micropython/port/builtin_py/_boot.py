@@ -46,7 +46,7 @@ try:
     from fpioa_manager import fm
     test_pin=16
     fm.fpioa.set_function(test_pin,fm.fpioa.GPIO7)
-    test_gpio=GPIO(GPIO.GPIO7,GPIO.IN)
+    test_gpio=GPIO(GPIO.GPIO7,GPIO.IN,GPIO.PULL_UP)
     lcd.init()
     lcd.clear(color=(255,0,0))
     lcd.draw_string(lcd.width()//2-68,lcd.height()//2-4, "Welcome to ", lcd.WHITE, lcd.RED)
