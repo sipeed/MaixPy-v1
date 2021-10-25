@@ -240,9 +240,9 @@ void sipeed_init_mic_array_led(void)
 {
     sk9822_init();
     //flash 3 times
-    sk9822_flash(0xffeec900, 0xff000000, 200);
-    sk9822_flash(0xffeec900, 0xff000000, 200);
-    sk9822_flash(0xffeec900, 0xff000000, 200);
+    sk9822_flash(0xffeec900, 0xffff0000, 200);
+    sk9822_flash(0xffeec900, 0xff00ff00, 200);
+    sk9822_flash(0xffeec900, 0xff0000ff, 200);
 }
 
 // void sipeed_calc_voice_strength(uint8_t voice_data[])
