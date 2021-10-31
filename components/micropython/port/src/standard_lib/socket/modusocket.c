@@ -340,7 +340,10 @@ STATIC void socket_select_nic(mod_network_socket_obj_t *self, const byte *ip) {
         self->nic_type = (mod_network_nic_type_t*)mp_obj_get_type(self->nic);		
         // call the NIC to open the socket
         int _errno;
-        if (self->nic_type->socket(self, &_errno) != 0) {
+        MP_THREAD_GIL_EXIT();
+        mp_int_t ret = self->nic_type->socket(self, &_errno);
+        MP_THREAD_GIL_ENTER();
+        if (ret != 0) {
             mp_raise_OSError(_errno);
         }
     }
@@ -354,7 +357,10 @@ STATIC mp_obj_t socket_connect(mp_obj_t self_in, mp_obj_t addr_in) {
     socket_select_nic(self, ip);
     // call the NIC to connect the socket
     int _errno;
-    if (self->nic_type->connect(self, ip, port, &_errno) != 0) {
+    MP_THREAD_GIL_EXIT();
+    int ret = self->nic_type->connect(self, ip, port, &_errno);
+    MP_THREAD_GIL_ENTER();
+    if (ret != 0) {
         mp_raise_OSError(_errno);
     }
 
@@ -447,15 +453,21 @@ mp_uint_t socket_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_t arg, int *
     mod_network_socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
     if (request == MP_STREAM_CLOSE) {
         if (self->nic != MP_OBJ_NULL) {
+            MP_THREAD_GIL_EXIT();
             self->nic_type->close(self);
+            MP_THREAD_GIL_ENTER();
             self->nic = MP_OBJ_NULL;
             del_fd(self->fd);
             self->fd = -1;
         }
         return 0;
     }
-	if(self->nic_type->ioctl)
-    	return self->nic_type->ioctl(self, request, arg, errcode);
+	if(self->nic_type->ioctl) {
+        MP_THREAD_GIL_EXIT();
+    	int ret = self->nic_type->ioctl(self, request, arg, errcode);
+        MP_THREAD_GIL_ENTER();
+        return ret;
+    }
     return EPERM;
 }
 
