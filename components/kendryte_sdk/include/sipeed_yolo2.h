@@ -25,14 +25,17 @@ typedef struct
     float nms_value;
     uint32_t coords;
     uint32_t anchor_number;
+    uint8_t branch_number;
+    int wh[2];
+    uint8_t ver;   
     float *anchor;
     uint32_t image_width;
     uint32_t image_height;
     uint32_t classes;
     uint32_t net_width;
     uint32_t net_height;
-    uint32_t layer_width;
-    uint32_t layer_height;
+    uint32_t layer_width[2];
+    uint32_t layer_height[2];   
     uint32_t boxes_number;
     uint32_t output_number;
     float scale;
@@ -40,6 +43,8 @@ typedef struct
     void *boxes;
     //uint8_t *input;
     float *output;
+    float *output0;     
+    float *output1; 
     float *probs_buf;
     float **probs;
     float *activate;
@@ -47,6 +52,8 @@ typedef struct
 } __attribute__((aligned(8))) region_layer_t;
 
 typedef void (*callback_draw_box)(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, uint32_t class, float prob);;
+
+//uint8_t _branch;
 
 int  region_layer_init(region_layer_t *rl, void* ctx);
 void region_layer_deinit(region_layer_t *rl);

@@ -2,6 +2,7 @@
 #include "sipeed_kpu.h"
 #include <stdlib.h>
 #include <math.h>
+#include <stdio.h>
 #include "printf.h"
 
 // #include "lcd.h"
@@ -24,11 +25,13 @@ typedef struct
 } __attribute__((aligned(8))) sortable_box_t;
 
 
+uint8_t _branch;
+
 int region_layer_init(region_layer_t *rl, void* ctx)
 {
     int flag = 0;
-	uint16_t wi,hi,chi;
-	uint16_t wo,ho,cho;
+	uint16_t wi, hi, chi;
+	uint16_t wo[2], ho[2], cho[2];
 	size_t size;
 	int kmodel_type=sipeed_kpu_model_get_type(ctx);
 	
@@ -39,26 +42,57 @@ int region_layer_init(region_layer_t *rl, void* ctx)
 		return -1;
 	}
 	
-	if(sipeed_kpu_model_get_output_shape(ctx, &wo, &ho, &cho) != SIPEED_KPU_ERR_NONE)
-	{
-		// mp_printf(&mp_plat_print, "[MAIXPY]rl: can't fetch last layer!\r\n");
-		return -1;
-	}
+    for (uint8_t i = 0; i < rl->branch_number; i++) 
+    {
+        if(sipeed_kpu_get_outputs_shape(ctx, i, &wo[i], &ho[i], &cho[i]) != SIPEED_KPU_ERR_NONE)
+        {
+            // mp_printf(&mp_plat_print, "[MAIXPY]rl: can't fetch last layer!\r\n");
+            return -1;
+        }
+    }
+
+	//printf("%d %d %d \r\n", wo[0], ho[0], cho[0]);
+    //printf("%d %d %d \r\n", wo[1], ho[1], cho[1]);
 
     rl->coords = 4;
     rl->image_width = wi;
     rl->image_height = hi;
 
-    rl->classes = cho / 5 - 5;
+    rl->classes = cho[0] / rl->anchor_number - 5;
     rl->net_width = wi;
     rl->net_height = hi;
-    rl->layer_width = wo;
-    rl->layer_height = ho;
-    rl->boxes_number = (rl->layer_width * rl->layer_height * rl->anchor_number);
-    rl->output_number = (rl->boxes_number * (rl->classes + rl->coords + 1));
+
+    for (uint8_t i = 0; i < rl->branch_number; i++) 
+    {
+    rl->layer_width[i] = wo[i];
+    rl->layer_height[i] = ho[i];
+    rl->boxes_number += (rl->layer_width[i] * rl->layer_height[i] * rl->anchor_number);
+    rl->wh[i] = rl->layer_width[i] * rl->layer_height[i];
+    //sipeed_kpu_get_output(ctx, i, &(rl->output[i]), &size);	
+	//printf("%d size \r\n", size);
+    }
+
+    sipeed_kpu_get_output(ctx, 0, &(rl->output0), &size);	
+
+
+    //for (uint32_t i = 0; i < size; i++)
+    //{
+    //printf("%f output1 \r\n", rl->output[0][i]);
+    //}
+
+    sipeed_kpu_get_output(ctx, 1, &(rl->output1), &size);	
+
+    rl->output = rl->output0;    
+    _branch = 0;
+
+    //printf("%d anchor num \r\n", rl->anchor_number);    
+    //printf("%d box num \r\n", rl->boxes_number);
+
+    //_branch = 0;
+
+    //rl->output_number = (rl->boxes_number * (rl->classes + rl->coords + 1));
     
-	sipeed_kpu_get_output(ctx, 0, &(rl->output), &size);	
-	
+
 	//module output -> rl output
 	//mp_printf(&mp_plat_print, "size=%ld\r\n",size);
     //rl->scale = output_scale;
@@ -109,8 +143,10 @@ int region_layer_init(region_layer_t *rl, void* ctx)
         rl->activate[i] = 1.0 / (1.0 + expf(-(i * rl->scale + rl->bias)));
         rl->softmax[i] = expf(rl->scale * (i - 255));
     }*/
-    for (uint32_t i = 0; i < rl->boxes_number; i++){
-	rl->probs[i] = &(rl->probs_buf[i * (rl->classes + 1)]);}
+    for (uint32_t i = 0; i < rl->boxes_number; i++)
+    {
+	rl->probs[i] = &(rl->probs_buf[i * (rl->classes + 1)]);
+    }
 	
 	
     return 0;
@@ -145,11 +181,11 @@ static void activate_array(region_layer_t *rl, int index, int n)
 
 static int entry_index(region_layer_t *rl, int location, int entry)
 {
-    int wh = rl->layer_width * rl->layer_height;
-    int n = location / wh;
-    int loc = location % wh;
 
-    return n * wh * (rl->coords + rl->classes + 1) + entry * wh + loc;
+    int n = location / rl->wh[_branch];
+    int loc = location % rl->wh[_branch];
+
+    return n * rl->wh[_branch] * (rl->coords + rl->classes + 1) + entry * rl->wh[_branch] + loc;
 }
 
 static void softmax(float *data, int n, int stride)
@@ -195,19 +231,24 @@ static void forward_region_layer(region_layer_t *rl)
     //for (index = 0; index < rl->output_number; index++)
     //    rl->output[index] = rl->input[index] * rl->scale + rl->bias;
 
+
+
     for (int n = 0; n < rl->anchor_number; ++n)
     {
-        index = entry_index(rl, n * rl->layer_width * rl->layer_height, 0);
-        activate_array(rl, index, 2 * rl->layer_width * rl->layer_height);
-        index = entry_index(rl, n * rl->layer_width * rl->layer_height, 4);
-        activate_array(rl, index, rl->layer_width * rl->layer_height);
-    }
+        index = entry_index(rl, n * rl->layer_width[_branch] * rl->layer_height[_branch], 0);
+        activate_array(rl, index, 2 * rl->layer_width[_branch] * rl->layer_height[_branch]);
+        index = entry_index(rl, n * rl->layer_width[_branch] * rl->layer_height[_branch], 4);
+        activate_array(rl, index, rl->layer_width[_branch] * rl->layer_height[_branch]);
 
-    index = entry_index(rl, 0, rl->coords + 1);
+        index = entry_index(rl, n * rl->layer_width[_branch] * rl->layer_height[_branch], 5);
+        activate_array(rl, index, rl->classes * rl->layer_width[_branch] * rl->layer_height[_branch]);
+    }
+    /*
+    index = entry_index(rl, 0, rl->coords + 1, i);
 	softmax_cpu(rl->output + index, rl->classes, rl->anchor_number,\
-		rl->output_number / rl->anchor_number, rl->layer_width * rl->layer_height,\
-		rl->layer_width * rl->layer_height);
-	
+		rl->output_number / rl->anchor_number, rl->layer_width[i] * rl->layer_height[i],\
+		rl->layer_width[i] * rl->layer_height[i]);
+    */
 }
 
 static void correct_region_boxes(region_layer_t *rl, box_t *boxes)
@@ -251,19 +292,21 @@ static box_t get_region_box(float *x, float *biases, int n, int index, int i, in
 
     b.x = (i + x[index + 0 * stride]) / w;
     b.y = (j + x[index + 1 * stride]) / h;
-    b.w = expf(x[index + 2 * stride]) * biases[2 * n] / w;
-    b.h = expf(x[index + 3 * stride]) * biases[2 * n + 1] / h;
+    b.w = expf(x[index + 2 * stride]) * biases[2 * n + 6 * _branch];
+    b.h = expf(x[index + 3 * stride]) * biases[2 * n + 1 + 6 * _branch];
     return b;
 }
 
 static void get_region_boxes(region_layer_t *rl, float *predictions, float **probs, box_t *boxes)
 {
-    uint32_t layer_width = rl->layer_width;
-    uint32_t layer_height = rl->layer_height;
     uint32_t anchor_number = rl->anchor_number;
+    uint8_t branch_num = rl->branch_number;
     uint32_t classes = rl->classes;
     uint32_t coords = rl->coords;
     float threshold = rl->threshold;
+
+    uint32_t layer_width = rl->layer_width[_branch];
+    uint32_t layer_height = rl->layer_height[_branch];
 
     for (int i = 0; i < layer_width * layer_height; ++i)
     {
@@ -272,13 +315,18 @@ static void get_region_boxes(region_layer_t *rl, float *predictions, float **pro
 
         for (int n = 0; n < anchor_number; ++n)
         {
-            int index = n * layer_width * layer_height + i;
+
+            int index = n * layer_width * layer_height + i + 240 * _branch;
+            //printf("i %d n %d b %d \r\n", i, n, _branch);
+            //printf("index %d \r\n", index);
 
             for (int j = 0; j < classes; ++j)
                 probs[index][j] = 0;
+
             int obj_index = entry_index(rl, n * layer_width * layer_height + i, coords);
             int box_index = entry_index(rl, n * layer_width * layer_height + i, 0);
             float scale = predictions[obj_index];
+            //printf("scale %f \r\n", scale);
 
             boxes[index] = get_region_box(predictions, rl->anchor, n, box_index, col, row,
                                           layer_width, layer_height, layer_width * layer_height);
@@ -287,13 +335,16 @@ static void get_region_boxes(region_layer_t *rl, float *predictions, float **pro
 
             for (int j = 0; j < classes; ++j)
             {
+
                 int class_index = entry_index(rl, n * layer_width * layer_height + i, coords + 1 + j);
+                //(rl->coords + rl->classes + 1) * i + 5
                 float prob = scale * predictions[class_index];
 
                 probs[index][j] = (prob > threshold) ? prob : 0;
                 if (prob > max)
                     max = prob;
             }
+            //printf("anchor loop 6 \r\n" );
             probs[index][classes] = max;
         }
     }
@@ -430,11 +481,23 @@ static void region_layer_output(region_layer_t *rl, obj_info_t *obj_info)
 }
 
 void region_layer_run(region_layer_t *rl, obj_info_t *obj_info)
-{
+{   
+    //printf("run \r\n");
+    
+    for (uint8_t i = 0; i < rl->branch_number; i++) 
+    {
 	forward_region_layer(rl);
+    //printf("run1 \r\n");
     get_region_boxes(rl, rl->output, rl->probs, rl->boxes);
+    _branch = 1;
+    rl->output = rl->output1; 
+    }
+
+    //printf("run2 \r\n");
     do_nms_sort(rl, rl->boxes, rl->probs);
+    //printf("run3 \r\n");
     region_layer_output(rl, obj_info);
+    //printf("run4 \r\n");
 }
 
 void region_layer_draw_boxes(region_layer_t *rl, callback_draw_box callback)
