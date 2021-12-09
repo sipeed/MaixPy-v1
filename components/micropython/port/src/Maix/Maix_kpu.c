@@ -541,7 +541,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_class_set_outputs_obj, 4, py_kpu_class_
 typedef struct py_kpu_class_yolo_args_obj {
     mp_obj_base_t base;
 
-    mp_obj_t threshold, nms_value, anchor_number, branch_number, anchor, rl_args;
+    mp_obj_t threshold, nms_value, anchor_number, branch_number, ver, anchor, rl_args;
 } __attribute__((aligned(8))) py_kpu_class_yolo_args_obj_t;
 
 typedef struct py_kpu_class_region_layer_arg
@@ -550,6 +550,7 @@ typedef struct py_kpu_class_region_layer_arg
     float nms_value;
     int anchor_number;
     int branch_number;
+    int ver;
     float *anchor;
 }__attribute__((aligned(8))) py_kpu_class_yolo_region_layer_arg_t;
 
@@ -754,6 +755,7 @@ STATIC mp_obj_t py_kpu_class_init_yolo2(size_t n_args, const mp_obj_t *pos_args,
         yolo_args->threshold = mp_obj_new_float(threshold);
         yolo_args->nms_value = mp_obj_new_float(nms_value);
         yolo_args->anchor_number = mp_obj_new_int(anchor_number);
+        yolo_args->branch_number = 1;
 
         mp_obj_t *tuple, *tmp;
 
@@ -774,7 +776,9 @@ STATIC mp_obj_t py_kpu_class_init_yolo2(size_t n_args, const mp_obj_t *pos_args,
         rl_arg->threshold = threshold;
         rl_arg->nms_value = nms_value;
         rl_arg->anchor_number = anchor_number;
+        rl_arg->branch_number = 1;  
         rl_arg->anchor = anchor;
+        rl_arg->ver = 2;
 
         yolo_args->rl_args = MP_OBJ_FROM_PTR(rl_arg);
 
@@ -834,9 +838,14 @@ STATIC mp_obj_t py_kpu_class_init_yolo3(size_t n_args, const mp_obj_t *pos_args,
             return mp_const_false;
         }
 
-
         branch_number = args[ARG_branch_number].u_int;
         anchor_number = args[ARG_anchor_number].u_int;
+
+        if(!(branch_number >= 1 && threshold <= 2))
+        {
+            mp_raise_ValueError("[MAIXPY]kpu: branch_number only supports 1 to 2");
+            return mp_const_false;
+        }
 
         if(anchor_number > 0)
         {
@@ -886,6 +895,7 @@ STATIC mp_obj_t py_kpu_class_init_yolo3(size_t n_args, const mp_obj_t *pos_args,
         rl_arg->anchor_number = anchor_number;
         rl_arg->branch_number = branch_number;        
         rl_arg->anchor = anchor;
+        rl_arg->ver = 3;
 
         yolo_args->rl_args = MP_OBJ_FROM_PTR(rl_arg);
 
@@ -1019,9 +1029,12 @@ STATIC mp_obj_t py_kpu_class_run_yolo2(size_t n_args, const mp_obj_t *pos_args, 
         py_kpu_class_yolo_region_layer_arg_t *rl_arg = net_args->rl_args;
         region_layer_t kpu_detect_rl;
         kpu_detect_rl.anchor_number = rl_arg->anchor_number;
+        kpu_detect_rl.branch_number = rl_arg->branch_number;
+        kpu_detect_rl.ver = rl_arg->ver;        
         kpu_detect_rl.anchor = rl_arg->anchor;
         kpu_detect_rl.threshold = rl_arg->threshold;
         kpu_detect_rl.nms_value = rl_arg->nms_value;
+
         if(region_layer_init(&kpu_detect_rl, kpu_net->kmodel_ctx))
 		{
 			mp_raise_ValueError("[MAIXPY]kpu: region_layer_init err!\r\n");
@@ -1116,10 +1129,9 @@ STATIC mp_obj_t py_kpu_class_run_yolo3(size_t n_args, const mp_obj_t *pos_args, 
         image_t *arg_img = py_image_cobj(pos_args[1]);
         //PY_ASSERT_TRUE_MSG(IM_IS_MUTABLE(arg_img), "Image format is not supported.");
         
-		uint16_t w0=0;
-        uint16_t h0=0;
-        uint16_t ch0=0;
-	    //mp_printf(&mp_plat_print, "1\n"); 
+		uint16_t w0 = 0;
+        uint16_t h0 = 0;
+        uint16_t ch0 = 0;
 
 		int kmodel_type=sipeed_kpu_model_get_type(kpu_net->kmodel_ctx);
 		if(abs(kmodel_type)==3 || abs(kmodel_type)==4){
@@ -1135,29 +1147,28 @@ STATIC mp_obj_t py_kpu_class_run_yolo3(size_t n_args, const mp_obj_t *pos_args, 
 			return mp_const_none;
 		}
 		/*****************************region prepare*************************************************/
-        //mp_printf(&mp_plat_print, "2\n"); 
 
 		py_kpu_class_yolo_args_obj_t *net_args = MP_OBJ_TO_PTR(kpu_net->net_args);
         py_kpu_class_yolo_region_layer_arg_t *rl_arg = net_args->rl_args;
         region_layer_t kpu_detect_rl;
         kpu_detect_rl.anchor_number = rl_arg->anchor_number;
         kpu_detect_rl.branch_number = rl_arg->branch_number;
+        kpu_detect_rl.ver = rl_arg->ver;        
         kpu_detect_rl.anchor = rl_arg->anchor;
         kpu_detect_rl.threshold = rl_arg->threshold;
         kpu_detect_rl.nms_value = rl_arg->nms_value;
+
         int er = region_layer_init(&kpu_detect_rl, kpu_net->kmodel_ctx);
         if(er)
 		{
-            //mp_printf(&mp_plat_print, "flag %d \n", er);
-			mp_raise_ValueError("[MAIXPY]kpu: region_layer_init err!\r\n");
+			mp_raise_ValueError("[MAIXPY]kpu: region_layer_init err! \r\n");
 			return mp_const_none;
 		}
 		/*************************************************************************************/
-        //mp_printf(&mp_plat_print, "3\n"); 
 
         g_ai_done_flag = 0;
         sipeed_kpu_err_t ret = sipeed_kpu_model_run(kpu_net->kmodel_ctx, arg_img->pix_ai, K210_DMA_CH_KPU, ai_done, NULL);
-        //mp_printf(&mp_plat_print, "4\n"); 
+
         if(ret != SIPEED_KPU_ERR_NONE)
         {
             char* msg = get_kpu_err_str(ret);
@@ -1166,11 +1177,11 @@ STATIC mp_obj_t py_kpu_class_run_yolo3(size_t n_args, const mp_obj_t *pos_args, 
         while (!g_ai_done_flag)
             ;
         g_ai_done_flag = 0;
-        //mp_printf(&mp_plat_print, "5\n"); 
+
 		/****************************start region layer***************************************/
 		static obj_info_t mpy_kpu_detect_info;
         region_layer_run(&kpu_detect_rl, &mpy_kpu_detect_info);
-        //mp_printf(&mp_plat_print, "6\n"); 
+
         uint8_t obj_num = 0;
         obj_num = mpy_kpu_detect_info.obj_number;
 
@@ -2058,11 +2069,11 @@ static const mp_map_elem_t globals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__),                    MP_OBJ_NEW_QSTR(MP_QSTR_kpu) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_load),                        (mp_obj_t)&py_kpu_class_load_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_load_flash),                  (mp_obj_t)&py_kpu_class_load_flash_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_set_outputs),                 (mp_obj_t)&py_kpu_class_set_outputs_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_set_outputs),                 (mp_obj_t)&py_kpu_class_set_outputs_obj },  
     { MP_OBJ_NEW_QSTR(MP_QSTR_init_yolo2),                  (mp_obj_t)&py_kpu_class_init_yolo2_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_init_yolo3),                  (mp_obj_t)&py_kpu_class_init_yolo3_obj },    
+    { MP_OBJ_NEW_QSTR(MP_QSTR_init_yolo3),                  (mp_obj_t)&py_kpu_class_init_yolo3_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_run_yolo2),                   (mp_obj_t)&py_kpu_class_run_yolo2_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_run_yolo3),                   (mp_obj_t)&py_kpu_class_run_yolo3_obj },    
+    { MP_OBJ_NEW_QSTR(MP_QSTR_run_yolo3),                   (mp_obj_t)&py_kpu_class_run_yolo3_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_deinit),                      (mp_obj_t)&py_kpu_deinit_obj },
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_set_layers),                  (mp_obj_t)&py_kpu_set_layers_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_forward),                     (mp_obj_t)&py_kpu_forward_obj },
