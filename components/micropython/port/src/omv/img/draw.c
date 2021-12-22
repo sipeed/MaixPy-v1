@@ -32,28 +32,25 @@ int imlib_get_pixel(image_t *img, int x, int y)
 // Set pixel (handles boundary check and image type check).
 void imlib_set_pixel(image_t *img, int x, int y, int p)
 {	
-    /*if ((0 <= x) && (x < img->w) && (0 <= y) && (y < img->h)) {
+    if ((0 <= x) && (x < img->w) && (0 <= y) && (y < img->h)) {
         switch(img->bpp) {
             case IMAGE_BPP_BINARY: {
                 IMAGE_PUT_BINARY_PIXEL(img, x, y, p);
-                //printf("0");
                 break;
             }
             case IMAGE_BPP_GRAYSCALE: {
                 IMAGE_PUT_GRAYSCALE_PIXEL(img, x, y, p);
-                //printf("1");
                 break;
             }
             case IMAGE_BPP_RGB565: {
                 IMAGE_PUT_RGB565_PIXEL(img, x, y, p);
-                //printf("2");
                 break;
             }
             default: {
                 break;
             }
         }
-    }*/
+    }
 }
 
 // https://stackoverflow.com/questions/1201200/fast-algorithm-for-drawing-filled-circles
