@@ -2,7 +2,7 @@
  * Copyright (c) 2013-2018 Ibrahim Abdelkader <iabdalkader@openmv.io> & Kwabena W. Agyeman <kwagyeman@openmv.io>
  * This work is licensed under the MIT license, see the file LICENSE for details.
  */
-
+#include <stdio.h>
 #include "font.h"
 #include "imlib.h"
 
