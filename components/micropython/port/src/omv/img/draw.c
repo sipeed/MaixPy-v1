@@ -36,17 +36,17 @@ void imlib_set_pixel(image_t *img, int x, int y, int p)
         switch(img->bpp) {
             case IMAGE_BPP_BINARY: {
                 IMAGE_PUT_BINARY_PIXEL(img, x, y, p);
-                print(0)
+                printf("0");
                 break;
             }
             case IMAGE_BPP_GRAYSCALE: {
                 IMAGE_PUT_GRAYSCALE_PIXEL(img, x, y, p);
-                print(1)
+                printf("1");
                 break;
             }
             case IMAGE_BPP_RGB565: {
                 IMAGE_PUT_RGB565_PIXEL(img, x, y, p);
-                print(2)
+                printf("2");
                 break;
             }
             default: {
