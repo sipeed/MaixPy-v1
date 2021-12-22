@@ -652,7 +652,7 @@ STATIC mp_obj_t py_image_set_pixel(size_t n_args, const mp_obj_t *args, mp_map_t
     switch (arg_img->bpp) {
         case IMAGE_BPP_BINARY: {
             IMAGE_PUT_BINARY_PIXEL(arg_img, arg_x, arg_y, arg_c);
-            mp_printf(print, "0");
+            printf("0");
             return args[0];
         }
         case IMAGE_BPP_GRAYSCALE: {
