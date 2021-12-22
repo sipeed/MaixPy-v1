@@ -652,22 +652,22 @@ STATIC mp_obj_t py_image_set_pixel(size_t n_args, const mp_obj_t *args, mp_map_t
     switch (arg_img->bpp) {
         case IMAGE_BPP_BINARY: {
             IMAGE_PUT_BINARY_PIXEL(arg_img, arg_x, arg_y, arg_c);
-            printf("0");
+            //printf("0");
             return args[0];
         }
         case IMAGE_BPP_GRAYSCALE: {
             IMAGE_PUT_GRAYSCALE_PIXEL(arg_img, arg_x, arg_y, arg_c);
-            printf("1");
+            //printf("1");
             return args[0];
         }
         case IMAGE_BPP_RGB565: {
             IMAGE_PUT_RGB565_PIXEL(arg_img, arg_x, arg_y, arg_c);
-            printf("2");
+            //printf("2");
             return args[0];
         }
         case IMAGE_BPP_BAYER: {
             IMAGE_PUT_GRAYSCALE_PIXEL(arg_img, arg_x, arg_y, arg_c); // Correct!
-            printf("3");
+            //printf("3");
             return args[0];
         }
         default: return args[0];
