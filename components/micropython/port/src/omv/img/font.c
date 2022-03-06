@@ -271,106 +271,60 @@ void font_load(uint8_t index, uint8_t width, uint8_t high, uint8_t source_type, 
     }
 }
 
-int font_get_utf8_size(const uint8_t pInput)
+int font_width()
 {
-   uint8_t c = pInput;
-   // 0xxxxxxx 1
-   // 10xxxxxx -1
-   // 110xxxxx 2
-   // 1110xxxx 3
-   // 11110xxx 4
-   // 111110xx 5
-    // 1111110x 6
-    if(c< 0x80) return 1;
-    if(c>=0x80 && c<0xC0) return -1;
-    if(c>=0xC0 && c<0xE0) return 2;
-    if(c>=0xE0 && c<0xF0) return 3;
-    if(c>=0xF0 && c<0xF8) return 4;
-    if(c>=0xF8 && c<0xFC) return 5;
-    if(c>=0xFC) return 6;
-    return 0;
+	return font_config.width;
 }
 
-int font_utf8_to_unicode(const uint8_t* pInput, uint64_t *Unic)
-{  
-    assert(pInput != NULL && Unic != NULL);
+int font_height()
+{
+	return font_config.high;
+}
 
-    char b1, b2, b3, b4, b5, b6;
+// Copyright (c) 2008-2009 Bjoern Hoehrmann <bjoern@hoehrmann.de>
+// See http://bjoern.hoehrmann.de/utf-8/decoder/dfa/ for details.
+#define UTF8_ACCEPT 0
+#define UTF8_REJECT 1
 
-    *Unic = 0x0;
-    int utfbytes = font_get_utf8_size(*pInput);
-    uint8_t *pOutput = (uint8_t *) Unic;
+static const uint8_t utf8d[] = {
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 00..1f
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 20..3f
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 40..5f
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 60..7f
+  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9, // 80..9f
+  7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7, // a0..bf
+  8,8,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2, // c0..df
+  0xa,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x4,0x3,0x3, // e0..ef
+  0xb,0x6,0x6,0x6,0x5,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8, // f0..ff
+  0x0,0x1,0x2,0x3,0x5,0x8,0x7,0x1,0x1,0x1,0x4,0x6,0x1,0x1,0x1,0x1, // s0..s0
+  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,1, // s1..s2
+  1,2,1,1,1,1,1,2,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1, // s3..s4
+  1,2,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,3,1,1,1,1,1,1, // s5..s6
+  1,3,1,1,1,1,1,3,1,3,1,1,1,1,1,1,1,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // s7..s8
+};
 
-    switch ( utfbytes )
-    {  
-        case 1:  
-            *pOutput     = *pInput;
-            break;  
-        case 2:  
-            b1 = *pInput;
-            b2 = *(pInput + 1);
-            if ( (b2 & 0xE0) != 0x80 )
-                return 0;  
-            *pOutput     = (b1 << 6) + (b2 & 0x3F);
-            *(pOutput+1) = (b1 >> 2) & 0x07;
-            break;
-        case 3:
-            b1 = *pInput;
-            b2 = *(pInput + 1);
-            b3 = *(pInput + 2);
-            if ( ((b2 & 0xC0) != 0x80) || ((b3 & 0xC0) != 0x80) )
-                return 0;
-            *pOutput     = (b2 << 6) + (b3 & 0x3F);
-            *(pOutput+1) = (b1 << 4) + ((b2 >> 2) & 0x0F);
-            break;
-        case 4:
-            b1 = *pInput;
-            b2 = *(pInput + 1);
-            b3 = *(pInput + 2);
-            b4 = *(pInput + 3);
-            if ( ((b2 & 0xC0) != 0x80) || ((b3 & 0xC0) != 0x80)
-                    || ((b4 & 0xC0) != 0x80) )
-                return 0;
-            *pOutput     = (b3 << 6) + (b4 & 0x3F);
-            *(pOutput+1) = (b2 << 4) + ((b3 >> 2) & 0x0F);
-            *(pOutput+2) = ((b1 << 2) & 0x1C)  + ((b2 >> 4) & 0x03);
-            break;
-        case 5:
-            b1 = *pInput;
-            b2 = *(pInput + 1);
-            b3 = *(pInput + 2);
-            b4 = *(pInput + 3);
-            b5 = *(pInput + 4);
-            if ( ((b2 & 0xC0) != 0x80) || ((b3 & 0xC0) != 0x80)
-                    || ((b4 & 0xC0) != 0x80) || ((b5 & 0xC0) != 0x80) )
-                return 0;
-            *pOutput     = (b4 << 6) + (b5 & 0x3F);
-            *(pOutput+1) = (b3 << 4) + ((b4 >> 2) & 0x0F);
-            *(pOutput+2) = (b2 << 2) + ((b3 >> 4) & 0x03);
-            *(pOutput+3) = (b1 << 6);
-            break;
-        case 6:
-            b1 = *pInput;
-            b2 = *(pInput + 1);
-            b3 = *(pInput + 2);
-            b4 = *(pInput + 3);
-            b5 = *(pInput + 4);
-            b6 = *(pInput + 5);
-            if ( ((b2 & 0xC0) != 0x80) || ((b3 & 0xC0) != 0x80)
-                    || ((b4 & 0xC0) != 0x80) || ((b5 & 0xC0) != 0x80)
-                    || ((b6 & 0xC0) != 0x80) )
-                return 0;
-            *pOutput     = (b5 << 6) + (b6 & 0x3F);
-            *(pOutput+1) = (b5 << 4) + ((b6 >> 2) & 0x0F);
-            *(pOutput+2) = (b3 << 2) + ((b4 >> 4) & 0x03);
-            *(pOutput+3) = ((b1 << 6) & 0x40) + (b2 & 0x3F);
-            break;
-        default:
-            return 0;
-            break;
-    }  
+uint32_t font_utf8_decode_codepoint(uint32_t* state, uint32_t* codep, uint32_t byte)
+{
+  uint32_t type = utf8d[byte];
 
-    return utfbytes;
+  *codep = (*state != UTF8_ACCEPT) ?
+    (byte & 0x3fu) | (*codep << 6) :
+    (0xff >> type) & (byte);
+
+  *state = utf8d[256 + *state*16 + type];
+  return *state;
+}
+
+int font_utf8_strlen(mp_obj_t str)
+{
+  int count = 0;
+  const uint8_t *s = mp_obj_str_get_str(str);
+  uint32_t codepoint;
+  uint32_t state = 0;
+  for (; *s; ++s)
+    if (!font_utf8_decode_codepoint(&state, &codepoint, *s))
+      count += 1;
+  return count;
 }
 
 void imlib_draw_font(image_t *img, int x_off, int y_off, int c, float scale, uint8_t font_h, uint8_t font_w, const uint8_t *font)
@@ -411,114 +365,43 @@ void imlib_draw_font(image_t *img, int x_off, int y_off, int c, float scale, uin
 //         fonts.seek(tmp * int(high*(width/8)))
 //         img.draw_font(x + (pos * s * (width + space)), y, width, high, fonts.read(int(high*(width/8))), scale=s, color=c)
 
-void imlib_draw_utf8_string(image_t *img, int x_off, int y_off, mp_obj_t str, int c, float scale, int x_spacing, int y_spacing, bool mono_space) {
+
+void imlib_draw_string(image_t *img, int x_off, int y_off, mp_obj_t str, int c, float scale, int x_spacing, int y_spacing, bool mono_space) {
   const uint8_t font_len = (font_config.width / 8) * font_config.high;
-  const uint8_t *string = mp_obj_str_get_str(str);
-  int len = mp_obj_len(str);
 
   // mp_buffer_info_t bufinfo;
   // mp_get_buffer_raise(str, &bufinfo, MP_BUFFER_READ);
 
-  for(int i = 0, pos = 0, bytes = 0; i < len; i += bytes, pos += 1) {
+  const uint8_t *s = mp_obj_str_get_str(str);
 
-    uint64_t offset = 0;
-    bytes = font_utf8_to_unicode(string + i, &offset);
-    // printk("utfbytes %d offset %llu\r\n", bytes, offset);
-    if (bytes <= 0 || offset <= 0) { // unicode len
-      break;
-    }
-    
-    // printk("offset %llX\r\n", offset);
+  uint32_t codepoint;
+  uint32_t state = 0;
 
-    uint8_t buffer[font_len];
-    
-    switch (font_config.source)
-    {
-        case FileIn:
-            file_seek_raise(font_config.this, offset * font_len, 0);
-            read_data_raise(font_config.this, buffer, font_len);
-            break;
-        case ArrayIn:
-            // printk("%d %p %p %p", font_len, buffer, font_config.this, &font_config.this[offset * font_len]);
-            // memcpy(buffer, &font_config.this[offset * font_len], font_len);
-            sys_spiffs_read(font_config.this + offset * font_len, font_len, buffer);
-            break;
-        default:
-            break;
-    }
+  for (; *s; ++s) {
+    if (!font_utf8_decode_codepoint(&state, &codepoint, *s)) {
+        uint8_t buffer[font_len];
 
-    const uint8_t *font = buffer;
-
-    if (!mono_space) {
-        // Find the first pixel set and offset to that.
-        bool exit = false;
-
-        for (int x = 0, xx = font_config.width; x < xx; x++) {
-            for (int y = 0, yy = font_config.high; y < yy; y++) {
-                if (font[y] & (1 << (font_config.width - 1 - x))) {
-                    x_off -= fast_roundf(x * scale);
-                    exit = true;
-                    break;
-                }
-            }
-
-            if (exit) break;
-        }
-    }
-
-    imlib_draw_font(img, x_off, y_off, c, scale, font_config.high, font_config.width, font);
-
-    if (mono_space) {
-        x_off += fast_roundf(font_config.width * scale) + x_spacing;
-    } else {
-        // Find the last pixel set and offset to that.
-        bool exit = false;
-
-        for (int x = font_config.width - 1; x >= 0; x--) {
-            for (int y = font_config.high - 1; y >= 0; y--) {
-                if (font[y] & (1 << (font_config.width - 1 - x))) {
-                    x_off += fast_roundf((x + 2) * scale) + x_spacing;
-                    exit = true;
-                    break;
-                }
-            }
-
-            if (exit) break;
+        switch (font_config.source)
+        {
+            case FileIn:
+                file_seek_raise(font_config.this, codepoint * font_len, 0);
+                read_data_raise(font_config.this, buffer, font_len);
+                break;
+            case ArrayIn:
+                // printk("%d %p %p %p", font_len, buffer, font_config.this, &font_config.this[codepoint * font_len]);
+                // memcpy(buffer, &font_config.this[codepoint * font_len], font_len);
+                sys_spiffs_read(font_config.this + codepoint * font_len, font_len, buffer);
+                break;
+            case BuildIn:
+                // printk("%d %p %p %d", font_len, buffer, font_config.this, &font_config.this[codepoint * font_len]);
+                memcpy(buffer, &font_config.this[codepoint * font_len], font_len);
+                break;
+            default:
+                break;
         }
 
-        if (!exit) x_off += fast_roundf(scale * 3); // space char
-    }
-  }
-}
+        const uint8_t *font = buffer;
 
-void imlib_draw_ascii_string(image_t *img, int x_off, int y_off, const char *str, int c, float scale, int x_spacing, int y_spacing, bool mono_space) {
-    const uint8_t font_len = (font_config.width / 8) * font_config.high;
-    const int anchor = x_off;
-
-    for(char ch, last = '\0'; (ch = *str); str++, last = ch) {
-
-        if ((last == '\r') && (ch == '\n')) { // handle "\r\n" strings
-            continue;
-        }
-
-        if ((ch == '\n') || (ch == '\r')) { // handle '\n' or '\r' strings
-            x_off = anchor;
-            y_off += fast_roundf(font_config.high * scale) + y_spacing; // newline height == space height
-            continue;
-        }
-
-        if ((ch < ' ') || (ch > '~')) { // handle unknown characters
-            imlib_draw_rectangle(img,
-                x_off + (fast_roundf(scale * 3) / 2),
-                y_off + (fast_roundf(scale * 3) / 2),
-                fast_roundf(font_config.high * scale) - ((fast_roundf(scale * 3) / 2) * 2),
-                fast_roundf(font_config.width * scale) - ((fast_roundf(scale * 3) / 2) * 2),
-                c, fast_roundf(scale), false);
-            continue;
-        }
-
-        const uint8_t *font = &ascii[(ch - ' ') * font_len];
-        
         if (!mono_space) {
             // Find the first pixel set and offset to that.
             bool exit = false;
@@ -559,19 +442,5 @@ void imlib_draw_ascii_string(image_t *img, int x_off, int y_off, const char *str
             if (!exit) x_off += fast_roundf(scale * 3); // space char
         }
     }
-}
-
-inline void imlib_draw_string(image_t *img, int x_off, int y_off, mp_obj_t str, int c, float scale, int x_spacing, int y_spacing, bool mono_space)
-{
-  // 检查字库文件是否有效
-  mp_obj_base_t* fs_info = (mp_obj_base_t*)(font_config.this);
-  if(font_config.source == FileIn && fs_info->type->protocol == NULL){
-    font_init(8, 12, ASCII, BuildIn, ascii);
-  }
-  if (font_config.index == ASCII) {
-    const char *arg_str = mp_obj_str_get_str(str);
-    imlib_draw_ascii_string(img, x_off, y_off, arg_str, c, scale, x_spacing, y_spacing, mono_space);
-  } else if (font_config.index == UTF8) {
-    imlib_draw_utf8_string(img, x_off, y_off, str, c, scale, x_spacing, y_spacing, mono_space);
   }
 }

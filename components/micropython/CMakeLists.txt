@@ -24,17 +24,10 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
                             "${mpy_core_dir}/lib/oofatfs"
                             "${mpy_core_dir}/lib/mp-readline"
                             "${mpy_core_dir}/lib/utils"
-                            "${mpy_core_dir}/lib/netutils"
                             "${mpy_core_dir}/lib/timeutils"
                             "${mpy_port_dir}/include"
-                            "${mpy_port_dir}/src/audio/include"
-                            "${mpy_port_dir}/src/audio/wav/include"
                             "${mpy_port_dir}/src/Maix/include"
                             "${mpy_port_dir}/src/modules/include"
-                            "${mpy_port_dir}/src/modules/ultrasonic/include"
-                            "${mpy_port_dir}/src/speech/include"
-                            "${mpy_port_dir}/src/speech/maix_asr/include"
-                            "${mpy_port_dir}/src/speech/isolated_word/include"
                             "${mpy_port_dir}/src/omv/include"
                             "${mpy_port_dir}/src/omv/boards/MAIX"
                             "${mpy_port_dir}/src/omv/img/include"
@@ -42,45 +35,92 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
                             "${mpy_port_dir}/src/standard_lib/include"
                             "${mpy_build_dir}"
         )
-    list(APPEND ADD_PRIVATE_INCLUDE "${mpy_port_dir}/src/nes/mapper")
+    if(CONFIG_MAIXPY_NETWORK_ENABLE)
+        list(APPEND ADD_INCLUDE "${mpy_core_dir}/lib/netutils")
+    endif()
+    if(CONFIG_MAIXPY_USE_MEMZIP)
+        list(APPEND ADD_INCLUDE  "${mpy_core_dir}/lib/memzip")
+    endif()
+    if(CONFIG_MAIXPY_AUDIO_ENABLE)
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/audio/include"
+                                "${mpy_port_dir}/src/audio/wav/include"
+        )
+    endif()
+    if(CONFIG_MAIXPY_ULTRASONIC_ENABLE)
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/modules/ultrasonic/include")
+    endif()
+    if(CONFIG_MAIXPY_SPEECH_ENABLE)
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/speech/include"
+                                "${mpy_port_dir}/src/speech/maix_asr/include"
+                                "${mpy_port_dir}/src/speech/isolated_word/include"
+        )
+    endif()
+    if(CONFIG_MAIXPY_NES_ENABLE)
+        list(APPEND ADD_PRIVATE_INCLUDE "${mpy_port_dir}/src/nes/mapper")
+    endif()
     ###############################################
 
     
 
     ############## Add source files ###############
     append_srcs_dir(MPY_PORT_SRCS "port/src")
-    append_srcs_dir(MPY_PORT_SRCS "port/src/audio")
-    append_srcs_dir(MPY_PORT_SRCS "port/src/audio/wav")
     append_srcs_dir(MPY_PORT_SRCS "port/src/Maix")
+    if(NOT CONFIG_COMPONENT_LIB_SIPEED_KPU_SRC_ENABLE)
+        list(REMOVE_ITEM MPY_PORT_SRCS "port/src/Maix/Maix_kpu.c")
+        list(REMOVE_ITEM MPY_PORT_SRCS "port/src/Maix/Maix_kpu_classifier.c")
+    endif()
+    if(CONFIG_MAIXPY_AUDIO_ENABLE)
+        append_srcs_dir(MPY_PORT_SRCS "port/src/audio")
+        append_srcs_dir(MPY_PORT_SRCS "port/src/audio/wav")
+    else()
+        list(REMOVE_ITEM MPY_PORT_SRCS "port/src/Maix/Maix_i2s.c")
+    endif()
     if(NOT CONFIG_MAIXPY_MIC_ARRAY_ENABLE)
         list(REMOVE_ITEM MPY_PORT_SRCS "port/src/Maix/Maix_mic_array.c")
     endif()
     append_srcs_dir(MPY_PORT_SRCS "port/src/modules")
-    append_srcs_dir(MPY_PORT_SRCS "port/src/modules/ultrasonic/src")
-    append_srcs_dir(MPY_PORT_SRCS "port/src/modules/onewire")
-    append_srcs_dir(MPY_PORT_SRCS "port/src/speech/")
-    append_srcs_dir(MPY_PORT_SRCS "port/src/speech/maix_asr")
-    list(APPEND ADD_STATIC_LIB "port/src/speech/maix_asr/libmaix_asr.a") # append_srcs_dir(MPY_PORT_SRCS "port/src/speech/maix_asr/src")
-    append_srcs_dir(MPY_PORT_SRCS "port/src/speech/isolated_word")
-    append_srcs_dir(MPY_PORT_SRCS "port/src/modules/ws2812/src")
-    append_srcs_dir(MPY_PORT_SRCS "port/src/modules/htpa/src")
-    append_srcs_dir(MPY_PORT_SRCS "port/src/modules/amg88xx/src")
+    if(CONFIG_MAIXPY_ULTRASONIC_ENABLE)
+        append_srcs_dir(MPY_PORT_SRCS "port/src/modules/ultrasonic/src")
+    endif()
+    if(CONFIG_MAIXPY_ONEWIRE_ENABLE)
+        append_srcs_dir(MPY_PORT_SRCS "port/src/modules/onewire")
+    endif()
+    if(CONFIG_MAIXPY_SPEECH_ENABLE)
+        append_srcs_dir(MPY_PORT_SRCS "port/src/speech/")
+        append_srcs_dir(MPY_PORT_SRCS "port/src/speech/maix_asr")
+        list(APPEND ADD_STATIC_LIB "port/src/speech/maix_asr/libmaix_asr.a") # append_srcs_dir(MPY_PORT_SRCS "port/src/speech/maix_asr/src")
+        append_srcs_dir(MPY_PORT_SRCS "port/src/speech/isolated_word")
+    endif()
+    if(CONFIG_MAIXPY_WS2812_ENABLE)
+        append_srcs_dir(MPY_PORT_SRCS "port/src/modules/ws2812/src")
+    endif()
+    if(CONFIG_MAIXPY_HTPA_ENABLE)
+        append_srcs_dir(MPY_PORT_SRCS "port/src/modules/htpa/src")
+    endif()
+    if(CONFIG_MAIXPY_AMG88XX_ENABLE)
+        append_srcs_dir(MPY_PORT_SRCS "port/src/modules/amg88xx/src")
+    endif()
     append_srcs_dir(MPY_PORT_SRCS "port/src/omv")
     append_srcs_dir(MPY_PORT_SRCS "port/src/omv/img")
     append_srcs_dir(MPY_PORT_SRCS "port/src/omv/py")
     append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/machine")
-    append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network")
-    append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network/esp32")
-    append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network/esp8285")
-    if(CONFIG_MAIXPY_WIZNET5K_ENABLE)
-        append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network/wiznet5k")
-        append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network/wiznet5k/w5500")
-        append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network/wiznet5k/dns")
-        append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network/wiznet5k/dhcp")
+    if(CONFIG_MAIXPY_NETWORK_ENABLE)
+        append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network")
+        append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network/esp32")
+        append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network/esp8285")
+        if(CONFIG_MAIXPY_WIZNET5K_ENABLE)
+            append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network/wiznet5k")
+            append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network/wiznet5k/w5500")
+            append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network/wiznet5k/dns")
+            append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/network/wiznet5k/dhcp")
+        endif()
+        append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/socket")
     endif()
-    append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/socket")
     append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/uos")
     append_srcs_dir(MPY_PORT_SRCS "port/src/standard_lib/utime")
+    if(CONFIG_MAIXPY_USE_MEMZIP)
+        list(APPEND MPY_PORT_SRCS "port/memzip-files.c")
+    endif()
 
     list(APPEND MPY_SRCS    
                     "core/py/mpstate.c"
@@ -200,11 +240,9 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
     list(APPEND MPY_EXTMOD_SRCS 
                         "core/extmod/moductypes.c"
                         "core/extmod/modujson.c"
-                        "core/extmod/modure.c"
                         "core/extmod/moduzlib.c"
                         "core/extmod/moduheapq.c"
                         "core/extmod/modutimeq.c"
-                        "core/extmod/moduhashlib.c"
                         "core/extmod/moducryptolib.c"
                         "core/extmod/modubinascii.c"
                         "core/extmod/virtpin.c"
@@ -216,8 +254,6 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
                         "core/extmod/machine_spi.c"
                         "core/extmod/modurandom.c"
                         "core/extmod/moduselect.c"
-                        "core/extmod/moduwebsocket.c"
-                        "core/extmod/modwebrepl.c"
                         "core/extmod/modframebuf.c"
                         "core/extmod/vfs.c"
                         "core/extmod/vfs_reader.c"
@@ -235,12 +271,29 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
                         "core/lib/utils/pyexec.c"
                         "core/lib/libc/string0.c"
                         "core/lib/mp-readline/readline.c"
-                        "core/lib/netutils/netutils.c"
                         "core/lib/timeutils/timeutils.c"
                         "core/lib/utils/sys_stdio_mphal.c"
                         "core/lib/oofatfs/ff.c"
                         "core/lib/oofatfs/ffunicode.c"
                     )
+    if(CONFIG_MICROPYTHON_PY_URE_ENABLE)
+        list(APPEND MPY_EXTMOD_SRCS "core/extmod/modure.c")
+    endif()
+    if(CONFIG_MAIXPY_HASHLIB_ENABLE)
+        list(REMOVE_ITEM MPY_EXTMOD_SRCS "core/extmod/moduhashlib.c")
+    endif()
+    if(CONFIG_MAIXPY_NETWORK_ENABLE)
+        list(APPEND MPY_EXTMOD_SRCS "core/extmod/moduwebsocket.c"
+                                    "core/extmod/modwebrepl.c"
+                                    "core/lib/netutils/netutils.c"
+        )
+    endif()
+    if(CONFIG_MAIXPY_USE_MEMZIP)
+        list(APPEND MPY_EXTMOD_SRCS "core/lib/memzip/import.c"
+                                    "core/lib/memzip/lexermemzip.c"
+                                    "core/lib/memzip/memzip.c"
+        )
+    endif()
     set(MPY_FROZEN_SRC "${mpy_build_dir}/frozen_mpy.c")
 
     if(CONFIG_MICROPY_SSL_ENABLE)
@@ -323,7 +376,7 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
         file(RELATIVE_PATH LVGL_MPY_GEN_SRC_REL ${CMAKE_CURRENT_LIST_DIR} ${LVGL_MPY_GEN_SRC})
         list(APPEND ADD_SRCS ${LVGL_MPY_SRCS} ${LVGL_MPY_GEN_SRC_REL})
         set_property(SOURCE ${LVGL_MPY_GEN_SRC} PROPERTY GENERATED 1)
-        
+
         set(lvgl_gen_py_tool ${mpy_port_dir}/src/lvgl/lv_bindings/gen/gen_mpy.py)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DLV_CONF_H=1 -DLV_CONF_INCLUDE_SIMPLE")
     else()
@@ -367,6 +420,38 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
         list(REMOVE_ITEM ADD_SRCS "${mpy_core_dir}/lib/mbedtls/library/net_sockets.c")
     endif()
 
+    # flash (memory access)
+    if(CONFIG_MAIXPY_FLASH_ENABLE)
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/flash")
+        append_srcs_dir(ADD_SRCS "port/src/flash")
+    endif()
+    # uhashlib (bitcoin-specific)
+    if(CONFIG_MAIXPY_BTC_HASHLIB_ENABLE)
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/uhashlib/crypto"
+                                "${mpy_port_dir}/src/uhashlib"
+                                )
+        append_srcs_dir(ADD_SRCS "port/src/uhashlib/crypto")
+        append_srcs_dir(ADD_SRCS "port/src/uhashlib")
+    endif()
+    # qrcode generator
+    if(CONFIG_MAIXPY_QRCODE_ENABLE)
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/qrcode/qrcodegen"
+                                "${mpy_port_dir}/src/qrcode"
+                                )
+        append_srcs_dir(ADD_SRCS "port/src/qrcode/qrcodegen")
+        append_srcs_dir(ADD_SRCS "port/src/qrcode")
+    endif()
+    # secp256k1
+    if(CONFIG_MAIXPY_SECP256K1_ENABLE)
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/secp256k1-embedded/secp256k1"
+                                "${mpy_port_dir}/src/secp256k1-embedded/secp256k1/src"
+                                "${mpy_port_dir}/src/secp256k1-embedded/mpy/config"
+                                )
+        list(APPEND ADD_SRCS "port/src/secp256k1-embedded/secp256k1/src/secp256k1.c")
+        list(APPEND ADD_SRCS "port/src/secp256k1-embedded/mpy/config/ext_callbacks.c")
+        list(APPEND ADD_SRCS "port/src/secp256k1-embedded/mpy/libsecp256k1.c")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_CONFIG_H")
+    endif()
     #############################################
 
     ################## FLAGS ####################

@@ -28,9 +28,17 @@ menu "Micropython configurations"
 		config MAIXPY_NES_ENABLE
 			bool "Enable NES emulator"
 			default y
-		
+
+		config MAIXPY_AUDIO_ENABLE
+			bool "Enable audio module"
+			default y
+
 		config MAIXPY_VIDEO_ENABLE
 			bool "Enable video module"
+			default y
+
+		config MAIXPY_SPEECH_MODULE
+			bool "Enable speech module"
 			default y
 
 		config MAIXPY_TOUCH_SCREEN_ENABLE
@@ -50,13 +58,15 @@ menu "Micropython configurations"
 		config MAIXPY_OMV_MINIMUM
 			bool "Minimum size OMV function (just disable omv advanced functions )"
 			default n
+
 		config MAIXPY_OMV_CONV_YUV_FAST
 			bool "Add YUV convert table, speed up convert but more code"
 			default n
+
 		config MAIXPY_OMV_DOUBLE_BUFF
 			bool "Set double buffer for sensor(camera)"
 			default y
-		
+
 		config MAIXPY_MIC_ARRAY_ENABLE
 			select MIC_ARRAY_ENABLE
 			bool "Enable Maix.MIC_ARRAY module"
@@ -66,8 +76,25 @@ menu "Micropython configurations"
 			bool "Enbale LittlvGL"
 			default n
 			select MAIXPY_LODEPNG_ENABLE
+
 		config MAIXPY_LODEPNG_ENABLE
 			bool "Enable lodepng module"
+			default n
+
+		config MAIXPY_OMV_BINARY_OPS
+			bool "Enable binary operations in OMV"
+			default n
+
+		config MAIXPY_OMV_MATH_OPS
+			bool "Enable math operations in OMV"
+			default n
+
+		config MAIXPY_OMV_MEDIAN
+			bool "Enable median() in OMV"
+			default n
+
+		config MAIXPY_OMV_QRCODES
+			bool "Enable find_qrcodes() in OMV"
 			default n
 
 		config MAIXPY_WS2812_ENABLE
@@ -84,6 +111,22 @@ menu "Micropython configurations"
 			bool "Enable AMG88XX thermal sensor"
 			default n
 			select AMG88XX_ENABLE
+
+		config MAIXPY_ULTRASONIC_ENABLE
+			bool "Enable ultrasonic"
+			default n
+
+		config MAIXPY_ONEWIRE_ENABLE
+			bool "Enable onewire"
+			default n
+
+		config MAIXPY_NETWORK_ENABLE
+			bool "Enable networking"
+			default y
+
+		config MICROPYTHON_PY_URE_ENABLE
+			bool "Enable re"
+			default y
 
 		config MICROPYTHON_ULAB_ENALBE
 			bool "Enable ulab module(a numpy-like fast vector module)"
@@ -107,6 +150,29 @@ menu "Micropython configurations"
 			default n
 			select WIZNET5K_ENABLE
 
+		config MAIXPY_FLASH_ENABLE
+			bool "Enable flash module"
+			default n
+
+		config MAIXPY_HASHLIB_ENABLE
+			bool "Enable hashlib module"
+			default y
+
+		config MAIXPY_BTC_HASHLIB_ENABLE
+			bool "Enable bitcoin-specific hashlib module"
+			default n
+
+		config MAIXPY_QRCODE_ENABLE
+			bool "Enable qrcode module"
+			default n
+
+		config MAIXPY_SECP256K1_ENABLE
+			bool "Enable secp256k1-embedded module"
+			default n
+
+		config MAIXPY_USE_MEMZIP
+			bool "Use memzip instead of frozen mpy"
+			default n
 	endmenu
 
 	menu "Builtin py modules configurations"
@@ -126,6 +192,7 @@ menu "Micropython configurations"
 		config MAIXPY_K210_UARTHS_DEBUG
 			bool "Use UARTHS to debug(pin9, pin10), UART2 to REPL(pin4, pin5)"
 			default n
+
 		config MAIXPY_LVGL_DEBUG
 			depends on MAIXPY_LVGL_ENABLE
 			bool "Enable LVGL debug info logging"
@@ -148,4 +215,3 @@ menu "Others"
 		bool "Compile lib_sipeed_kpu source code"
 		default n
 endmenu
-

@@ -169,6 +169,9 @@ void quirc_extract(const struct quirc *q, int index,
 quirc_decode_error_t quirc_decode(const struct quirc_code *code,
                                   struct quirc_data *data);
 
+/* Flip a QR-code according to optional mirror feature of ISO 18004:2015 */
+void quirc_flip(struct quirc_code *code);
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //////// "quirc_internal.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -194,7 +197,7 @@ quirc_decode_error_t quirc_decode(const struct quirc_code *code,
 #define QUIRC_PIXEL_REGION  2
 
 #ifndef QUIRC_MAX_REGIONS
-#define QUIRC_MAX_REGIONS   254
+#define QUIRC_MAX_REGIONS   65534
 #endif
 
 #define QUIRC_MAX_CAPSTONES 32
@@ -2827,6 +2830,22 @@ quirc_decode_error_t quirc_decode(const struct quirc_code *code,
     fb_free(); return QUIRC_SUCCESS;
 }
 
+void quirc_flip(struct quirc_code *code)
+{
+    struct quirc_code *flipped = fb_alloc(sizeof(struct quirc_code));
+	unsigned int offset = 0;
+	for (int y = 0; y < code->size; y++) {
+		for (int x = 0; x < code->size; x++) {
+			if (grid_bit(code, y, x)) {
+				flipped->cell_bitmap[offset >> 3u] |= (1u << (offset & 7u));
+			}
+			offset++;
+		}
+	}
+	memcpy(&code->cell_bitmap, &flipped->cell_bitmap, sizeof(flipped->cell_bitmap));
+    fb_free();
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //////// "quirc.c"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2975,7 +2994,13 @@ void imlib_find_qrcodes(list_t *out, image_t *ptr, rectangle_t *roi)
         struct quirc_data *data = fb_alloc(sizeof(struct quirc_data));
         quirc_extract(controller, i, code);
 		
-        if(quirc_decode(code, data) == QUIRC_SUCCESS) {
+        quirc_decode_error_t err = quirc_decode(code, data);
+        if (err == QUIRC_ERROR_DATA_ECC) {
+            quirc_flip(code);
+            err = quirc_decode(code, data);
+        }
+
+        if(err == QUIRC_SUCCESS) {
             find_qrcodes_list_lnk_data_t lnk_data;
             rectangle_init(&(lnk_data.rect), code->corners[0].x + roi->x, code->corners[0].y + roi->y, 0, 0);
 

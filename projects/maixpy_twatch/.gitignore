@@ -1,6 +1,5 @@
-
-
 build
 .config.mk
 .flash.conf.json
-
+in.txt
+out.txt

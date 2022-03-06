@@ -40,8 +40,11 @@
 
 #define MICROPY_OBJ_REPR                    (MICROPY_OBJ_REPR_A)
 #define MICROPY_NLR_SETJMP                  (1)
-#define MICROPY_READER_VFS                  (1)
-
+#if CONFIG_MAIXPY_USE_MEMZIP
+    #define MICROPY_READER_VFS              (0)
+#else
+    #define MICROPY_READER_VFS              (1)
+#endif // CONFIG_MAIXPY_USE_MEMZIP
 #define MICROPY_HW_UART_REPL                (1)
 // MCU definition
 #define MP_ENDIANNESS_LITTLE                (1)
@@ -59,6 +62,7 @@
 #define MICROPY_QSTR_BYTES_IN_HASH          (1)
 #define MICROPY_ALLOC_PATH_MAX      (128)
 #define MICROPY_ALLOC_PARSE_CHUNK_INIT (16)
+#define MICROPY_MALLOC_USES_ALLOCATED_SIZE (1)
 #define MICROPY_EMIT_X64            (0)
 #define MICROPY_EMIT_THUMB          (0)
 #define MICROPY_EMIT_INLINE_THUMB   (0)
@@ -72,6 +76,8 @@
 #define MICROPY_SCHEDULER_DEPTH             (8)
 
 #define MICROPY_STACK_CHECK                 (1)
+#define MICROPY_STACKLESS                   (1)
+#define MICROPY_STACKLESS_STRICT            (1)
 #define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF (1)
 #define MICROPY_KBD_EXCEPTION               (1)
 #define MICROPY_REPL_EMACS_KEYS             (1)
@@ -119,6 +125,7 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_ERROR_REPORTING     (MICROPY_ERROR_REPORTING_DETAILED)
 #define MICROPY_BUILTIN_METHOD_CHECK_SELF_ARG (0)
 #define MICROPY_PY_ASYNC_AWAIT      (0)
+#define MICROPY_PY_BTREE            (0)
 #define MICROPY_PY_BUILTINS_BYTEARRAY (1)
 #define MICROPY_PY_BUILTINS_MEMORYVIEW (1)
 #define MICROPY_PY_BUILTINS_FROZENSET (1)
@@ -127,7 +134,11 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_PY_BUILTINS_MIN_MAX  (1)
 #define MICROPY_PY_BUILTINS_STR_OP_MODULO (1)
 #define MICROPY_MODULE_FROZEN_STR           (0)
-#define MICROPY_MODULE_FROZEN_MPY           (1)
+#if CONFIG_MAIXPY_USE_MEMZIP
+    #define MICROPY_MODULE_FROZEN_MPY       (0)
+#else
+    #define MICROPY_MODULE_FROZEN_MPY       (1)
+#endif // CONFIG_MAIXPY_USE_MEMZIP
 #define MICROPY_LONGINT_IMPL                (MICROPY_LONGINT_IMPL_MPZ)
 
 #define MICROPY_FLOAT_IMPL                  (MICROPY_FLOAT_IMPL_FLOAT)
@@ -177,16 +188,17 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_PY_SYS_EXIT                 (1)
 #define MICROPY_PY_SYS_STDFILES             (1)
 #define MICROPY_PY_SYS_STDIO_BUFFER         (1)
+#define MICROPY_PY_SYS_EXC_INFO             (1)
 #define MICROPY_PY_UERRNO                   (1)
 #define MICROPY_PY_USELECT                  (0)
 #define MICROPY_PY_UTIME_MP_HAL             (1)
 
 #if CONFIG_MAIXPY_THREAD_ENABLE
-#define MICROPY_PY_THREAD                   (1)
-#define MICROPY_PY_THREAD_GIL               (1)
+    #define MICROPY_PY_THREAD               (1)
+    #define MICROPY_PY_THREAD_GIL           (1)
 #else
-#define MICROPY_PY_THREAD                   (0)
-#define MICROPY_PY_THREAD_GIL               (0)
+    #define MICROPY_PY_THREAD               (0)
+    #define MICROPY_PY_THREAD_GIL           (0)
 #endif //CONF_MAIXPY_THREAD_ENABLE
 #define MICROPY_PY_THREAD_GIL_VM_DIVISOR    (32)
 
@@ -205,7 +217,9 @@ extern const struct _mp_print_t mp_debug_print;
 #define _FS_READONLY 0
 
 // use vfs's functions for import stat and builtin open
-#define mp_import_stat mp_vfs_import_stat
+#if MICROPY_READER_VFS
+    #define mp_import_stat mp_vfs_import_stat
+#endif // MICROPY_READER_VFS
 #define mp_builtin_open mp_vfs_open
 #define mp_builtin_open_obj mp_vfs_open_obj
 #define MICROPY_PY_ATTRTUPLE                (1)
@@ -218,8 +232,13 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_PY_UCTYPES                  (1)
 #define MICROPY_PY_UZLIB                    (1)
 #define MICROPY_PY_UJSON                    (1)
-#define MICROPY_PY_URE                      (1)
-#define MICROPY_PY_URE_SUB                  (1)
+#if CONFIG_MICROPYTHON_PY_URE_ENABLE
+    #define MICROPY_PY_URE                  (1)
+    #define MICROPY_PY_URE_SUB              (1)
+#else
+    #define MICROPY_PY_URE                  (0)
+    #define MICROPY_PY_URE_SUB              (0)
+#endif // CONFIG_MICROPYTHON_PY_URE_ENABLE
 #define MICROPY_PY_UHEAPQ                   (1)
 #define MICROPY_PY_UTIMEQ                   (1)
 #define MICROPY_PY_UHASHLIB                 (0)
@@ -239,22 +258,41 @@ extern const struct _mp_print_t mp_debug_print;
 // #define MICROPY_PY_MACHINE_SPI              (0) // disable soft spi
 #define MICROPY_PY_MACHINE_HW_SPI           (1) // enable hardware spi
 #define MICROPY_PY_MACHINE_SW_SPI           (1) // enable soft spi
-
-#if CONFIG_MICROPY_SSL_ENABLE
-    #define MICROPY_PY_USSL                     (1)
-    #define MICROPY_SSL_MBEDTLS                 (1)
-    #define MICROPY_PY_USSL_FINALISER           (1)
-#endif // CONFIG_MICROPY_SSL_ENABLE
-
-#define MICROPY_PY_WEBSOCKET                (1)
-#define MICROPY_PY_WEBREPL                  (1)
+#if CONFIG_MAIXPY_NETWORK_ENABLE
+    #define MICROPY_PY_WEBSOCKET            (1)
+    #define MICROPY_PY_WEBREPL              (1)
+    #define MICROPY_PY_USOCKET_EVENTS       (MICROPY_PY_WEBREPL)
+    #define MICROPY_PY_NETWORK              (1)
+    #define MICROPY_PY_USOCKET              (1)
+    #if CONFIG_MICROPY_SSL_ENABLE
+        #define MICROPY_PY_USSL             (1)
+        #define MICROPY_PY_USSL_FINALISER   (1)
+        #define MICROPY_SSL_MBEDTLS         (1)
+    #else
+        #define MICROPY_PY_USSL             (0)
+        #define MICROPY_PY_USSL_FINALISER   (0)
+        #define MICROPY_SSL_MBEDTLS         (0)
+    #endif // CONFIG_MICROPY_SSL_ENABLE
+#else
+    #define MICROPY_PY_WEBSOCKET            (0)
+    #define MICROPY_PY_WEBREPL              (0)
+    #define MICROPY_PY_USOCKET_EVENTS       (MICROPY_PY_WEBREPL)
+    #define MICROPY_PY_NETWORK              (0)
+    #define MICROPY_PY_USOCKET              (0)
+    #define MICROPY_PY_USSL                 (0)
+    #define MICROPY_PY_USSL_FINALISER       (0)
+    #define MICROPY_SSL_MBEDTLS             (0)
+#endif // CONFIG_MAIXPY_NETWORK_ENABLE
 #define MICROPY_PY_FRAMEBUF                 (0)
-#define MICROPY_PY_USOCKET_EVENTS           (MICROPY_PY_WEBREPL)
-#define MICROPY_PY_NETWORK                  (1)
-#define MICROPY_PY_USOCKET                  (1)
 #define MICROPY_PY_LWIP                     (0)
-#define MICROPY_PY_UHASHLIB_MAIX            (1)
-#define MICROPY_PY_UHASHLIB_SHA256_MAIX     (1)
+#define MICROPY_PY_LWIP_SLIP                (0)
+#if CONFIG_MAIXPY_HASHLIB_ENABLE
+    #define MICROPY_PY_UHASHLIB_MAIX        (1)
+    #define MICROPY_PY_UHASHLIB_SHA256_MAIX (1)
+#else
+    #define MICROPY_PY_UHASHLIB_MAIX        (0)
+    #define MICROPY_PY_UHASHLIB_SHA256_MAIX (0)
+#endif // CONFIG_MAIXPY_HASHLIB_ENABLE
 #define MICROPY_PY_UCRYPTOLIB_MAIX          (1)
 
 
@@ -282,22 +320,28 @@ typedef long mp_off_t;
 #define MICROPY_PORT_BUILTINS \
     { MP_ROM_QSTR(MP_QSTR_open), MP_ROM_PTR(&mp_builtin_open_obj) },
 
-// extern const struct _mp_obj_module_t socket_module;
 extern const struct _mp_obj_module_t uos_module;
 extern const struct _mp_obj_module_t utime_module;
 extern const struct _mp_obj_module_t maix_module;
 extern const struct _mp_obj_module_t machine_module;
-extern const struct _mp_obj_module_t network_module;
-extern const struct _mp_obj_module_t socket_module;
+#if CONFIG_MAIXPY_NETWORK_ENABLE
+    extern const struct _mp_obj_module_t network_module;
+    extern const struct _mp_obj_module_t socket_module;
+#endif // CONFIG_MAIXPY_NETWORK_ENABLE
 extern const struct _mp_obj_module_t image_module;
 extern const struct _mp_obj_module_t sensor_module;
 extern const struct _mp_obj_module_t lcd_module;
-extern const struct _mp_obj_module_t kpu_module;
-extern const struct _mp_obj_module_t audio_module;
-extern const struct _mp_obj_module_t mp_module_uhashlib_maix;
+#if CONFIG_COMPONENT_LIB_SIPEED_KPU_SRC_ENABLE
+    extern const struct _mp_obj_module_t kpu_module;
+#endif // CONFIG_COMPONENT_LIB_SIPEED_KPU_SRC_ENABLE
+#if CONFIG_MAIXPY_AUDIO_ENABLE
+    extern const struct _mp_obj_module_t audio_module;
+#endif // CONFIG_MAIXPY_AUDIO_ENABLE
+#if CONFIG_MAIXPY_HASHLIB_ENABLE
+    extern const struct  _mp_obj_module_t mp_module_uhashlib_maix;
+#endif // CONFIG_MAIXPY_HASHLIB_ENABLE
 extern const struct _mp_obj_module_t mp_module_ucryptolib;
 extern const struct _mp_obj_module_t mp_module_modules;
-
 
 // openmv minimum
 #ifndef CONFIG_MAIXPY_OMV_MINIMUM
@@ -313,7 +357,7 @@ extern const struct _mp_obj_module_t video_module;
 #define MAIXPY_PY_VIDEO_DEF \
     { MP_OBJ_NEW_QSTR(MP_QSTR_video), (mp_obj_t)&video_module },
 #else
-#define MAIXPY_PY_VIDEO_DEF 
+#define MAIXPY_PY_VIDEO_DEF
 #endif
 
 // nes game emulator
@@ -324,7 +368,7 @@ extern const struct _mp_obj_module_t nes_module;
 #define MAIXPY_PY_NES_DEF \
     { MP_OBJ_NEW_QSTR(MP_QSTR_nes), (mp_obj_t)&nes_module },
 #else
-#define MAIXPY_PY_NES_DEF 
+#define MAIXPY_PY_NES_DEF
 #endif
 
 // speech_recognizer
@@ -335,10 +379,10 @@ extern const struct _mp_obj_module_t mp_module_speech_recognizer;
 #define MAIXPY_PY_SPEECH_RECOGNIZER_DEF \
     { MP_OBJ_NEW_QSTR(MP_QSTR_speech_recognizer), (mp_obj_t)&mp_module_speech_recognizer },
 #else
-#define MAIXPY_PY_SPEECH_RECOGNIZER_DEF 
+#define MAIXPY_PY_SPEECH_RECOGNIZER_DEF
 #endif
-// lvgl GUI lib
 
+// lvgl GUI lib
 #if CONFIG_MAIXPY_LVGL_ENABLE
 #include "lv_gc.h"
 extern const struct _mp_obj_module_t mp_module_lvgl;
@@ -374,13 +418,87 @@ extern const struct _mp_obj_module_t mp_module_touchscreen;
 #define MAIXPY_PY_TOUCHSCREEN_DEF 
 #endif
 
-#define  MAIXPY_PY_MODULES                   (1)
-#define  MAIXPY_PY_MODULES_ULTRASONIC        (1)
+#define MAIXPY_PY_MODULES                   (1)
+#if CONFIG_MAIXPY_ULTRASONIC_ENABLE
+    #define MAIXPY_PY_MODULES_ULTRASONIC    (1)
+#else
+    #define MAIXPY_PY_MODULES_ULTRASONIC    (0)
+#endif
 
 // micropython-ulab
 #if CONFIG_MICROPYTHON_ULAB_ENALBE
     #define MODULE_ULAB_ENABLED (1)
 #endif
+#ifndef CONFIG_MAIXPY_FLASH_ENABLE
+    #define CONFIG_MAIXPY_FLASH_ENABLE    (0)
+#endif
+#if CONFIG_MAIXPY_FLASH_ENABLE
+    #define MODULE_FLASH_ENABLED (1)
+#endif
+
+#ifndef CONFIG_MAIXPY_BTC_HASHLIB_ENABLE
+    #define CONFIG_MAIXPY_BTC_HASHLIB_ENABLE    (0)
+#endif
+#if CONFIG_MAIXPY_BTC_HASHLIB_ENABLE
+    #define MODULE_HASHLIB_ENABLED (1)
+#endif
+
+#ifndef CONFIG_MAIXPY_QRCODE_ENABLE
+    #define CONFIG_MAIXPY_QRCODE_ENABLE    (0)
+#endif
+#if CONFIG_MAIXPY_QRCODE_ENABLE
+    #define MODULE_QRCODE_ENABLED (1)
+#endif
+
+#ifndef CONFIG_MAIXPY_SECP256K1_ENABLE
+    #define CONFIG_MAIXPY_SECP256K1_ENABLE    (0)
+#endif
+#if CONFIG_MAIXPY_SECP256K1_ENABLE
+    #define MODULE_SECP256K1_ENABLED (1)
+#endif
+
+#if CONFIG_MAIXPY_NETWORK_ENABLE
+#define MAIXPY_NETWORK_DEF \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_network), (mp_obj_t)&network_module }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_usocket), (mp_obj_t)&socket_module }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_socket), (mp_obj_t)&socket_module },
+#define MAIXPY_NETWORK_ROOTS struct _nic_obj_t *modnetwork_nic;
+#else
+#define MAIXPY_NETWORK_DEF
+#define MAIXPY_NETWORK_ROOTS
+#endif // CONFIG_MAIXPY_NETWORK_ENABLE
+
+#if CONFIG_COMPONENT_LIB_SIPEED_KPU_SRC_ENABLE
+#define COMPONENT_LIB_SIPEED_KPU_SRC_DEF \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_KPU), (mp_obj_t)&kpu_module },
+#else
+#define COMPONENT_LIB_SIPEED_KPU_SRC_DEF
+#endif // CONFIG_COMPONENT_LIB_SIPEED_KPU_SRC_ENABLE
+
+#if CONFIG_MAIXPY_AUDIO_ENABLE
+#define MAIXPY_AUDIO_DEF \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_audio), (mp_obj_t)&audio_module },
+#else
+#define MAIXPY_AUDIO_DEF
+#endif // CONFIG_MAIXPY_AUDIO_ENABLE
+
+#if CONFIG_MAIXPY_HASHLIB_ENABLE
+#define MAIXPY_HASHLIB_DEF \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_uhashlib), (mp_obj_t)&mp_module_uhashlib_maix },
+#define MAIXPY_HASHLIB_WEAK_DEF \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_hashlib), (mp_obj_t)&mp_module_uhashlib_maix },
+#else
+#define MAIXPY_HASHLIB_DEF
+#define MAIXPY_HASHLIB_WEAK_DEF
+#endif // CONFIG_MAIXPY_HASHLIB_ENABLE
+
+#if CONFIG_MICROPYTHON_PY_URE_ENABLE
+#define MICROPYTHON_PY_URE_WEAK_DEF \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_re), (mp_obj_t)&mp_module_ure },
+#else
+#define MICROPYTHON_PY_URE_WEAK_DEF
+#endif // CONFIG_MICROPYTHON_PY_URE_ENABLE
+
 /////////////////////////////////////////////////////////////////////////////////
 
 #define MICROPY_PORT_BUILTIN_MODULES \
@@ -389,24 +507,21 @@ extern const struct _mp_obj_module_t mp_module_touchscreen;
     { MP_OBJ_NEW_QSTR(MP_QSTR_utime), (mp_obj_t)&utime_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_Maix), (mp_obj_t)&maix_module },\
     { MP_OBJ_NEW_QSTR(MP_QSTR_machine), (mp_obj_t)&machine_module },\
-    { MP_OBJ_NEW_QSTR(MP_QSTR_network), (mp_obj_t)&network_module },\
-    { MP_OBJ_NEW_QSTR(MP_QSTR_usocket), (mp_obj_t)&socket_module }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_socket), (mp_obj_t)&socket_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_image), (mp_obj_t)&image_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_sensor), (mp_obj_t)&sensor_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_lcd), (mp_obj_t)&lcd_module }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_KPU), (mp_obj_t)&kpu_module }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_audio), (mp_obj_t)&audio_module }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_uhashlib), (mp_obj_t)&mp_module_uhashlib_maix }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_ucryptolib), (mp_obj_t)&mp_module_ucryptolib }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_modules), (mp_obj_t)&mp_module_modules }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_modules), (mp_obj_t)&mp_module_modules }, \
     MAIXPY_PY_SPEECH_RECOGNIZER_DEF \
     MAIXPY_PY_NES_DEF \
     MAIXPY_PY_VIDEO_DEF \
     MAIXPY_PY_LVGL_DEF \
     MAIXPY_PY_LODEPNG_DEF \
-    MAIXPY_PY_TOUCHSCREEN_DEF
+    MAIXPY_PY_TOUCHSCREEN_DEF \
+    MAIXPY_NETWORK_DEF \
+    COMPONENT_LIB_SIPEED_KPU_SRC_DEF \
+    MAIXPY_AUDIO_DEF \
+    MAIXPY_HASHLIB_DEF
 
 
 
@@ -420,10 +535,12 @@ extern const struct _mp_obj_module_t mp_module_touchscreen;
     { MP_OBJ_NEW_QSTR(MP_QSTR_math), (mp_obj_t)&mp_module_math }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_os), (mp_obj_t)&uos_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_random), (mp_obj_t)&mp_module_urandom }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_re), (mp_obj_t)&mp_module_ure }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_struct), (mp_obj_t)&mp_module_ustruct }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_zlib), (mp_obj_t)&mp_module_uzlib }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_hashlib), (mp_obj_t)&mp_module_uhashlib_maix }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_io), (mp_obj_t)&mp_module_io }, \
+    MICROPYTHON_PY_URE_WEAK_DEF \
+    MAIXPY_HASHLIB_WEAK_DEF
+
 
 #define MICROPY_PY_MACHINE                  (1)
 #define MICROPY_PY_MACHINE_PIN_MAKE_NEW     mp_pin_make_new
@@ -476,12 +593,10 @@ extern const struct _mp_obj_module_t mp_module_touchscreen;
 #define MICROPY_PORT_ROOT_POINTERS \
     const char *readline_hist[16];  \
     struct _machine_uart_obj_t *Maix_stdio_uart; \
-	struct _nic_obj_t *modnetwork_nic; \
     MAIXPY_LVGL_ROOTS \
-
+    MAIXPY_NETWORK_ROOTS
 
 
 
 
 #endif // _MPCONFIGPORT_H_
-

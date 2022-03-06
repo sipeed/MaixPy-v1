@@ -642,22 +642,20 @@ end:
     return mp_obj_new_int(mirror ? 1 : 0);
 }
 
-extern void imlib_draw_ascii_string(image_t *img, int x_off, int y_off, const char *str, int c, float scale, int x_spacing, int y_spacing, bool mono_space);
+extern int font_utf8_strlen(mp_obj_t str);
+extern int font_width();
+extern int font_height();
+extern void imlib_draw_string(image_t *img, int x_off, int y_off, mp_obj_t str, int c, float scale, int x_spacing, int y_spacing, bool mono_space);
 STATIC mp_obj_t py_lcd_draw_string(size_t n_args, const mp_obj_t *args)
 {
     uint8_t* str_buf = NULL;
-    char* str_cut = NULL;
     if (lcd_para.width == 0 || lcd_para.width  == 0)
         mp_raise_msg(&mp_type_ValueError, "not init");
-    str_buf = (uint8_t *)malloc(lcd_para.width / 8 * 12 * 8 * 2);
+    int font_w = font_width();
+    int font_h = font_height();
+    str_buf = (uint8_t *)malloc(lcd_para.width / font_w * font_h * 8 * 2);
     if (!str_buf)
         mp_raise_OSError(MP_ENOMEM);
-    str_cut = (char *)malloc(lcd_para.width / 8 + 1);
-    if (!str_cut)
-    {
-        free(str_buf);
-        mp_raise_OSError(MP_ENOMEM);
-    }
 
     uint16_t x0 = mp_obj_get_int(args[0]);
     uint16_t y0 = mp_obj_get_int(args[1]);
@@ -666,22 +664,18 @@ STATIC mp_obj_t py_lcd_draw_string(size_t n_args, const mp_obj_t *args)
     uint16_t bgc = BLACK;
     if (str == NULL)
         return mp_const_none;
-    if (x0 >= lcd_para.width || y0 > lcd_para.width  - 16)
-        return mp_const_none;
-    int len = strlen(str);
+    int len = font_utf8_strlen(args[2]);
     int width, height;
     if (n_args >= 4)
         fontc = mp_obj_get_int(args[3]);
     if (n_args >= 5)
         bgc = mp_obj_get_int(args[4]);
-    if (len > (lcd_para.width - x0) / 8)
-        len = (lcd_para.width - x0) / 8;
+    if (len > (lcd_para.width - x0) / font_w)
+        len = (lcd_para.width - x0) / font_w;
     if (len <= 0)
         return mp_const_none;
-    memcpy(str_cut, str, len);
-    str_cut[len] = 0;
-    width = len * 8;
-    height = 12;
+    width = len * font_w;
+    height = font_h;
     image_t arg_img = {
         .bpp = IMAGE_BPP_RGB565,
         .w = width,
@@ -692,14 +686,14 @@ STATIC mp_obj_t py_lcd_draw_string(size_t n_args, const mp_obj_t *args)
     {
         *(uint16_t*)(str_buf + i*2) = (uint16_t)bgc;
     }
-    imlib_draw_ascii_string(&arg_img, 0, 0, str_cut,
+    imlib_draw_string(&arg_img, 0, 0, args[2],
                       fontc, 1, 0, 0,
                       true);
     lcd->draw_picture(x0, y0, width, height, (uint8_t *)str_buf);
     free(str_buf);
-    free(str_cut);
     return mp_const_none;
 }
+
 STATIC mp_obj_t py_lcd_fill_rectangle(size_t n_args, const mp_obj_t *args)
 {
     uint16_t color = 0;
@@ -731,6 +725,96 @@ STATIC mp_obj_t py_lcd_fill_rectangle(size_t n_args, const mp_obj_t *args)
     return mp_const_none;
 }
 
+extern void imlib_set_pixel(image_t *img, int x, int y, int p);
+STATIC mp_obj_t py_lcd_draw_qr_code(size_t n_args, const mp_obj_t *args)
+{
+    if (lcd_para.width == 0 || lcd_para.width  == 0)
+        mp_raise_msg(&mp_type_ValueError, "not init");
+
+    uint16_t y0 = mp_obj_get_int(args[0]);
+    const char *code_str = mp_obj_str_get_str(args[1]);
+    if (code_str == NULL)
+        return mp_const_none;
+    uint16_t max_width = mp_obj_get_int(args[2]);
+
+    uint16_t dark_color = BLACK;
+    uint16_t light_color = WHITE;
+    if (n_args >= 4)
+    {
+        mp_obj_t *arg_color;
+
+        if (mp_obj_is_integer(args[3]))
+        {
+            dark_color = mp_obj_get_int(args[3]);
+        }
+        else
+        {
+            mp_obj_get_array_fixed_n(args[3], 3, &arg_color);
+            dark_color = COLOR_R8_G8_B8_TO_RGB565(IM_MAX(IM_MIN(mp_obj_get_int(arg_color[0]), COLOR_R8_MAX), COLOR_R8_MIN),
+                                                IM_MAX(IM_MIN(mp_obj_get_int(arg_color[1]), COLOR_G8_MAX), COLOR_G8_MIN),
+                                                IM_MAX(IM_MIN(mp_obj_get_int(arg_color[2]), COLOR_B8_MAX), COLOR_B8_MIN));
+        }
+
+        if (n_args >= 5)
+        {
+            if (mp_obj_is_integer(args[4]))
+            {
+                light_color = mp_obj_get_int(args[4]);
+            }
+            else
+            {
+                mp_obj_get_array_fixed_n(args[4], 3, &arg_color);
+                light_color = COLOR_R8_G8_B8_TO_RGB565(IM_MAX(IM_MIN(mp_obj_get_int(arg_color[0]), COLOR_R8_MAX), COLOR_R8_MIN),
+                                                    IM_MAX(IM_MIN(mp_obj_get_int(arg_color[1]), COLOR_G8_MAX), COLOR_G8_MIN),
+                                                    IM_MAX(IM_MIN(mp_obj_get_int(arg_color[2]), COLOR_B8_MAX), COLOR_B8_MIN));
+            }
+        }
+    }
+
+    int starting_size = 0;
+    while (code_str[starting_size] != '\n')
+        starting_size++;
+
+    int scale = max_width / starting_size;
+    int width = starting_size * scale;
+    int height = starting_size * scale;
+
+    uint8_t* pixels = NULL;
+    pixels = (uint8_t *)malloc(((width * height) / 8) * 8 * 2);
+    if (!pixels)
+        mp_raise_OSError(MP_ENOMEM);
+
+    image_t arg_img = {
+        .bpp = IMAGE_BPP_RGB565,
+        .w = width,
+        .h = height,
+        .pixels = pixels
+    };
+
+    for (int og_y = 0; og_y < starting_size; og_y++)
+    {
+        for (int i = 0; i < scale; i++)
+        {
+            int y = og_y * scale + i;
+            for (int og_x = 0; og_x < starting_size; og_x++)
+            {
+                for (int j = 0; j < scale; j++)
+                {
+                    int x = og_x * scale + j;
+                    int og_yx_index = og_y * (starting_size + 1) + og_x;
+
+                    imlib_set_pixel(&arg_img, x, y, code_str[og_yx_index] == '1' ? dark_color : light_color);
+                }
+            }
+        }
+    }
+
+    uint16_t x0 = (max_width - width) / 2;
+    lcd->draw_picture(x0, y0, width, height, (uint8_t *)pixels);
+    free(pixels);
+    return mp_const_none;
+}
+
 STATIC mp_obj_t py_lcd_freq(size_t n_args, const mp_obj_t *pos_args)
 {
     mp_int_t freq = lcd->get_freq();
@@ -759,6 +843,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_mirror_obj, 0, 1, py_lcd_mirro
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_bgr_to_rgb_obj, 0, 1, py_lcd_bgr_to_rgb);
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_draw_string_obj, 3, 5, py_lcd_draw_string);
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_fill_rectangle_obj, 3, 5, py_lcd_fill_rectangle);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_draw_qr_code_obj, 3, 5, py_lcd_draw_qr_code);
 
 
 static const mp_map_elem_t globals_dict_table[] = {
@@ -779,6 +864,7 @@ static const mp_map_elem_t globals_dict_table[] = {
     {MP_OBJ_NEW_QSTR(MP_QSTR_bgr_to_rgb), (mp_obj_t)&py_lcd_bgr_to_rgb_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_draw_string), (mp_obj_t)&py_lcd_draw_string_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_fill_rectangle), (mp_obj_t)&py_lcd_fill_rectangle_obj},
+    {MP_OBJ_NEW_QSTR(MP_QSTR_draw_qr_code), (mp_obj_t)&py_lcd_draw_qr_code_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_register), (mp_obj_t)&py_lcd_write_register_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_XY_RLUD), MP_OBJ_NEW_SMALL_INT(DIR_XY_RLUD)},
     {MP_OBJ_NEW_QSTR(MP_QSTR_YX_RLUD), MP_OBJ_NEW_SMALL_INT(DIR_YX_RLUD)},

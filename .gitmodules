@@ -9,7 +9,7 @@
 	url = https://github.com/sipeed/kflash.py.git
 [submodule "components/micropython/core"]
 	path = components/micropython/core
-	url = https://github.com/micropython/micropython.git
+	url = https://github.com/jreesun/micropython.git
 [submodule "components/micropython/port/src/lvgl/lv_bindings"]
 	path = components/micropython/port/src/lvgl/lv_bindings
 	url = https://github.com/littlevgl/lv_binding_micropython.git
@@ -23,3 +23,12 @@
 [submodule "components/micropython/port/src/ulab/micropython-ulab"]
 	path = components/micropython/port/src/ulab/micropython-ulab
 	url = https://github.com/Neutree/micropython-ulab.git
+[submodule "components/micropython/port/src/secp256k1-embedded"]
+	path = components/micropython/port/src/secp256k1-embedded
+	url = https://github.com/diybitcoinhardware/secp256k1-embedded
+[submodule "components/micropython/port/src/uhashlib"]
+	path = components/micropython/port/src/uhashlib
+	url = https://github.com/jreesun/uhashlib
+[submodule "components/micropython/port/src/qrcode"]
+	path = components/micropython/port/src/qrcode
+	url = https://github.com/jreesun/qrcode

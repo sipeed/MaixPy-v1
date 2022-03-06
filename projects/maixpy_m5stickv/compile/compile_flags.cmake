@@ -15,24 +15,24 @@ set(CMAKE_C_FLAGS 	-mcmodel=medany
                     -std=gnu11
                     -Os
                     -Wall
-                    -Werror=all
+                    #-Werror=all
                     -Wno-error=unused-function
                     -Wno-error=unused-but-set-variable
                     -Wno-error=unused-variable
                     -Wno-error=deprecated-declarations
                     -Wno-error=maybe-uninitialized
                     -Wextra
-                    -Werror=frame-larger-than=32768
-                    -Wno-unused-parameter
-                    -Wno-unused-function
-                    -Wno-implicit-fallthrough
-                    -Wno-sign-compare
+                    #-Werror=frame-larger-than=32768
+                    #-Wno-unused-parameter
+                    #-Wno-unused-function
+                    #-Wno-implicit-fallthrough
+                    #-Wno-sign-compare
                     -Wno-error=missing-braces
-                    -Wno-old-style-declaration
+                    #-Wno-old-style-declaration
                     -Wno-error=pointer-sign
-                    -Wno-pointer-to-int-cast
-                    -Wno-strict-aliasing
-                    -Wno-override-init
+                    #-Wno-pointer-to-int-cast
+                    #-Wno-strict-aliasing
+                    #-Wno-override-init
                     -Wno-error=format=
                     -Wno-error=format-truncation=
                     -Wno-error=restrict
@@ -60,19 +60,19 @@ set(CMAKE_CXX_FLAGS -mcmodel=medany
                     -Wno-error=deprecated-declarations
                     -Wno-error=maybe-uninitialized
                     -Wextra
-                    -Werror=frame-larger-than=32768
-                    -Wno-unused-parameter
-                    -Wno-unused-function
-                    -Wno-implicit-fallthrough
-                    -Wno-sign-compare
+                    #-Werror=frame-larger-than=32768
+                    #-Wno-unused-parameter
+                    #-Wno-unused-function
+                    #-Wno-implicit-fallthrough
+                    #-Wno-sign-compare
                     -Wno-error=missing-braces
                     -Wno-error=pointer-sign
-                    -Wno-strict-aliasing
+                    #-Wno-strict-aliasing
                     -Wno-error=format=
                     -Wno-error=format-truncation=
                     -Wno-error=restrict
                     -Wno-error=sequence-point
-                    -Wno-int-to-pointer-cast
+                    #-Wno-int-to-pointer-cast
                     )
 ################################
 

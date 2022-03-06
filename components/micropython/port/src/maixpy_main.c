@@ -285,6 +285,10 @@ STATIC bool mpy_mount_spiffs(spiffs_user_mount_t *spiffs)
 
 bool save_config_to_spiffs(config_data_t *config)
 {
+#if CONFIG_MAIXPY_USE_MEMZIP
+  // Config is pulled from env vars, so just return
+  return true;
+#else
   s32_t ret;
   spiffs_file fd = SPIFFS_open(&spiffs_user_mount_handle.fs, FREQ_STORE_FILE_NAME, SPIFFS_O_WRONLY | SPIFFS_O_CREAT, 0);
   if (fd <= 0)
@@ -297,10 +301,28 @@ bool save_config_to_spiffs(config_data_t *config)
   }
   SPIFFS_close(&spiffs_user_mount_handle.fs, fd);
   return true;
+#endif
 }
 
 void load_config_from_spiffs(config_data_t *config)
 {
+#if CONFIG_MAIXPY_USE_MEMZIP
+  // Pull config from env vars, not filesystem
+  config->freq_cpu = FREQ_CPU_DEFAULT;
+  config->freq_pll1 = FREQ_PLL1_DEFAULT;
+  config->kpu_div = 1;
+  config->gc_heap_size = CONFIG_MAIXPY_GC_HEAP_SIZE;
+  config->freq_cpu = config->freq_cpu > FREQ_CPU_MAX ? FREQ_CPU_MAX : config->freq_cpu;
+  config->freq_cpu = config->freq_cpu < FREQ_CPU_MIN ? FREQ_CPU_MIN : config->freq_cpu;
+  config->freq_pll1 = config->freq_pll1 > FREQ_PLL1_MAX ? FREQ_PLL1_MAX : config->freq_pll1;
+  config->freq_pll1 = config->freq_pll1 < FREQ_PLL1_MIN ? FREQ_PLL1_MIN : config->freq_pll1;
+  if (config->kpu_div == 0)
+    config->kpu_div = 1;
+  if (config->gc_heap_size == 0)
+  {
+    config->gc_heap_size = CONFIG_MAIXPY_GC_HEAP_SIZE;
+  }
+#else
   s32_t ret, flash_error = 0;
   spiffs_file fd = SPIFFS_open(&spiffs_user_mount_handle.fs, FREQ_STORE_FILE_NAME, SPIFFS_O_RDONLY, 0);
   // config init
@@ -337,6 +359,7 @@ void load_config_from_spiffs(config_data_t *config)
     }
   }
   SPIFFS_close(&spiffs_user_mount_handle.fs, fd);
+#endif
 }
 
 #if MICROPY_ENABLE_COMPILER
@@ -440,18 +463,9 @@ int core1_function(void *ctx)
 volatile bool maixpy_sdcard_loading = true; // There may be deadlocks.
 int sd_preload(int core)
 {
+  bool mounted = false;
   sd_preinit_config();
-  bool sd_is_ready = false;
-  for (int i = 0; i < 3; i++)
-  {
-    // will wait 3s for sd
-    if (0 == sd_init())
-    {
-      sd_is_ready = true;
-      break;
-    }
-  }
-  if (sd_is_ready)
+  if (0 == sd_init())
   {
     bool sd_state = sdcard_is_present();
     if (sd_state)
@@ -465,18 +479,19 @@ int sd_preload(int core)
           // fail try again mounted_sdcard.
           if (init_sdcard_fs())
           {
+            mounted = true;
             break;
           }
-          msleep(50);
         }
       }
     }
   }
-  else
+
+  if (!mounted)
   {
-    // printk("[maixpy] mount sdcard failed\r\n");
+    printk("[maixpy] mount sdcard failed\r\n");
   }
-  dual_func = NULL; // remove task
+
   maixpy_sdcard_loading = false;
   return 0;
 }
@@ -484,7 +499,7 @@ int sd_preload(int core)
 void mount_sdcard(void){
   // Speed up the system
   maixpy_sdcard_loading = true;
-  dual_func = sd_preload;
+  sd_preload(1);
 }
 
 void mp_task(void *pvParameter)
@@ -587,6 +602,16 @@ soft_reset:
   // mp_printf(&mp_plat_print, "[MaixPy] init end\r\n"); // for maixpy ide
   // run boot-up scripts
   mp_hal_set_interrupt_char(CHAR_CTRL_C);
+#if CONFIG_MAIXPY_USE_MEMZIP
+  int ret = pyexec_file_if_exists("boot.py");
+  if (ret != 0 && !is_ide_dbg_mode()) // user canceled or ide mode
+  {
+    if (pyexec_mode_kind == PYEXEC_MODE_FRIENDLY_REPL)
+    {
+      ret = pyexec_file_if_exists("main.py");
+    }
+  }
+#else
   int ret = pyexec_frozen_module("_boot.py");
   if (ret != 0 && !is_ide_dbg_mode()) // user canceled or ide mode
   {
@@ -596,6 +621,7 @@ soft_reset:
       ret = pyexec_file_if_exists("main.py");
     }
   }
+#endif
   do
   {
     ide_dbg_init();
@@ -649,6 +675,8 @@ soft_reset:
 #endif
   mp_hal_stdout_tx_strn("[MaixPy]: soft reboot\r\n", 23);
   mp_deinit();
+  // Zero out the GC/heap
+  gc_wipe();
   msleep(10);
   goto soft_reset;
   // sysctl->soft_reset.soft_reset = 1;

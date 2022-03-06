@@ -18,6 +18,22 @@
     #define IMLIB_ENABLE_YUV_LAB_FUNC
 #endif
 
+#if CONFIG_MAIXPY_OMV_BINARY_OPS
+    #define IMLIB_ENABLE_BINARY_OPS
+#endif
+
+#if CONFIG_MAIXPY_OMV_MATH_OPS
+    #define IMLIB_ENABLE_MATH_OPS
+#endif
+
+#if CONFIG_MAIXPY_OMV_MEDIAN
+    #define IMLIB_ENABLE_MEDIAN
+#endif
+
+#if CONFIG_MAIXPY_OMV_QRCODES
+    #define IMLIB_ENABLE_QRCODES
+#endif
+
 #define OMV_MINIMUM
 
 /////////////////////////////////////////////////////////////////////////
@@ -26,10 +42,14 @@
 
 
 // Enable binary ops
-#define IMLIB_ENABLE_BINARY_OPS
+#if CONFIG_MAIXPY_OMV_BINARY_OPS
+    #define IMLIB_ENABLE_BINARY_OPS
+#endif
 
 // Enable math ops
-#define IMLIB_ENABLE_MATH_OPS
+#if CONFIG_MAIXPY_OMV_MATH_OPS
+    #define IMLIB_ENABLE_MATH_OPS
+#endif
 
 // Enable flood_fill()
 #define IMLIB_ENABLE_FLOOD_FILL
@@ -38,7 +58,9 @@
 #define IMLIB_ENABLE_MEAN
 
 // Enable median()
-#define IMLIB_ENABLE_MEDIAN
+#if CONFIG_MAIXPY_OMV_MEDIAN
+    #define IMLIB_ENABLE_MEDIAN
+#endif
 
 // Enable mode()
 #define IMLIB_ENABLE_MODE
@@ -113,7 +135,9 @@
 #define IMLIB_ENABLE_FIND_RECTS
 
 // Enable find_qrcodes() (14 KB)
-#define IMLIB_ENABLE_QRCODES
+#if CONFIG_MAIXPY_OMV_QRCODES
+    #define IMLIB_ENABLE_QRCODES
+#endif
 
 // Enable find_apriltags() (64 KB)
 #define IMLIB_ENABLE_APRILTAGS
