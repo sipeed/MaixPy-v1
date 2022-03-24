@@ -342,8 +342,9 @@ void imlib_draw_font(image_t *img, int x_off, int y_off, int c, float scale, uin
     for (int y = 0, yy = fast_roundf(font_h * scale); y < yy; y++) {
         uint8_t pos = fast_roundf(y / scale);
         uint32_t tmp = font[pos];
-        for (uint8_t i = 1; i < font_h / 8; i++) {
-            tmp <<= 8, tmp |= font[pos + i * font_h];
+        for (uint8_t i = 1; i < fast_ceilf(font_w / 8); i++) {
+            tmp <<= 8;
+            tmp |= font[pos + (i * font_h)];
         }
         for (uint8_t x = 0, xx = fast_roundf(font_w * scale); x < xx; x++) {
             if (tmp & (1 << (font_w - 1 - fast_roundf(x / scale)))) {

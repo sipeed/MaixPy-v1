@@ -653,7 +653,7 @@ STATIC mp_obj_t py_lcd_draw_string(size_t n_args, const mp_obj_t *args)
         mp_raise_msg(&mp_type_ValueError, "not init");
     int font_w = font_width();
     int font_h = font_height();
-    str_buf = (uint8_t *)malloc(lcd_para.width / font_w * font_h * 8 * 2);
+    str_buf = (uint8_t *)malloc(fast_ceilf(lcd_para.width / font_w * font_w * font_h * 2));
     if (!str_buf)
         mp_raise_OSError(MP_ENOMEM);
 
