@@ -1,4 +1,10 @@
-import os, sys, time
+import os
+import sys
+import time
+import json
+import machine
+from machine import I2C
+import axp202
 
 sys.path.append('')
 sys.path.append('.')
@@ -10,11 +16,13 @@ if "sd" in devices:
     sys.path.append('/sd')
 else:
     os.chdir("/flash")
-sys.path.append('/flash')
+    sys.path.append('/flash')
+
 
 print("[MaixPy] init end") # for IDE
 for i in range(200):
     time.sleep_ms(1) # wait for key interrupt(for maixpy ide)
+
 
 # check IDE mode
 ide_mode_conf = "/flash/ide_mode.conf"
@@ -32,30 +40,25 @@ if ide:
     lcd.init(color=lcd.PINK)
     repl = UART.repl_uart()
     repl.init(1500000, 8, None, 1, read_buf_len=2048, ide=True, from_ide=False)
-    sys.exit()    
-
-import gc
-import machine
-from board import board_info
-from fpioa_manager import fm
-from Maix import FPIOA, GPIO
-from machine import I2C
-import axp202
+    sys.exit()
 
 
-i2c = I2C(I2C.I2C0, freq=400000, scl=30, sda=31)
+## initialize pmu
+i2c = I2C(I2C.I2C0, freq = 400000, scl = 30, sda = 31)
 p = None
 try:
-    p = axp202.PMU(i2c,0x35)
+    p = axp202.PMU(i2c, 0x35)
 except:
-    p = axp202.PMU(i2c,0x34)
+    p = axp202.PMU(i2c, 0x34)
 else:
     p.setShutdownTime(axp202.AXP202_SHUTDOWN_TIME_4S)
     p.setLDO2Voltage(1800)
     p.enablePower(axp202.AXP192_LDO2)
-    p.enablePower(6);
+    p.enablePower(6)
     p.setLDO3Mode(1)
 
+
+## display banner
 banner = '''
  __  __              _____  __   __  _____   __     __
 |  \/  |     /\     |_   _| \ \ / / |  __ \  \ \   / /
@@ -66,25 +69,20 @@ banner = '''
 
 Co-op by Sipeed     : https://www.sipeed.com
 '''
-
+print(banner)
 dirList = os.listdir()
 
-if "boot.py" in dirList:
-    print(banner)
-    with open("boot.py") as f:
-        exec(f.read())
-    sys.exit()
-else:
-    if "boot.py" in os.listdir("/flash"):
-        print(banner)
-        with open("/flash/boot.py") as f:
-            exec(f.read())
-        sys.exit()
 
 # detect boot.py
-boot_py = '''
+if "boot.py" in dirList:
+    with open("boot.py") as f:
+        exec(f.read())
+else:
+    # detect boot.py
+    boot_py = '''
 try:
     import os, Maix, gc, lcd, image
+    from fpioa_manager import fm
     from Maix import FPIOA, GPIO
     gc.collect()
     lcd.init(freq=15000000)
@@ -105,17 +103,14 @@ finally:
     gc.collect()
 '''
 
-f = open("/flash/boot.py", "wb")
-f.write(boot_py)
-f.close()
+    with open('boot.py', "wb") as f:
+        f.write(boot_py)
 
-print(banner)
-with open("/flash/boot.py") as f:
-    exec(f.read())
+    with open("boot.py") as f:
+        exec(f.read())
 
 
-import json
-
+## detect config.json
 config = {
     "type": "twatch",
     "lcd": {
@@ -126,42 +121,48 @@ config = {
         "lcd_type": 0
     },
     "board_info": {
-        'BOOT_KEY': 16,
-        'LED_R': 12,
-        'LED_G': 13,
-        'LED_B': 14,
-        'WIFI_TX': 6,
-        'WIFI_RX': 7,
-        'WIFI_EN': 8,
-        'I2S0_MCLK': 13,
-        'I2S0_SCLK': 21,
-        'I2S0_WS': 18,
-        'I2S0_IN_D0': 35,
-        'I2S0_OUT_D2': 34,
-        'SPI0_MISO': 26,
-        'SPI0_CLK': 27,
-        'SPI0_MOSI': 28,
-        'SPI0_CS0': 29,
-        'MIC0_WS': 30,
-        'MIC0_DATA': 31,
-        'MIC0_BCK': 32,
-        'I2S_WS': 33,
-        'I2S_DA': 34,
-        'I2S_BCK': 35
+        "BOOT_KEY": 16,
+        "LED_R": 12,
+        "LED_G": 13,
+        "LED_B": 14,
+        "WIFI_TX": 6,
+        "WIFI_RX": 7,
+        "WIFI_EN": 8,
+        "I2S0_MCLK": 13,
+        "I2S0_SCLK": 21,
+        "I2S0_WS": 18,
+        "I2S0_IN_D0": 35,
+        "I2S0_OUT_D2": 34,
+        "SPI0_MISO": 26,
+        "SPI0_CLK": 27,
+        "SPI0_MOSI": 28,
+        "SPI0_CS0": 29,
+        "MIC0_WS": 30,
+        "MIC0_DATA": 31,
+        "MIC0_BCK": 32,
+        "I2S_WS": 33,
+        "I2S_DA": 34,
+        "I2S_BCK": 35
     }
 }
 
-cfg = json.dumps(config)
-print(cfg)
-
 try:
-    with open('/flash/config.json', 'rb') as f:
+    with open('config.json', 'rb') as f:
         tmp = json.loads(f.read())
-    # print(tmp)
-    if tmp["type"] != config["type"]:
-        raise Exception('config.json no exist')
+        if tmp["type"] != config["type"]:
+            raise Exception('config.json does not match')
+    sys.exit()
 except Exception as e:
-    with open('/flash/config.json', "w") as f:
+    print('config.json no exist')
+    print('Generating default config.json')
+
+    with open('config.json', "w") as f:
+        cfg = json.dumps(config)
         f.write(cfg)
+
+    print('config.json has been generated')
+    print('restarting')
+    time.sleep_ms(100)
+
     import machine
     machine.reset()
