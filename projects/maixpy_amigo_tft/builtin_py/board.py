@@ -43,10 +43,24 @@ config = json.loads("""
         "SPI_MISO": 6,
         "SPI_CS": 12
     },
-    "krux.pins": {
-        "BUTTON_A": 23,
-        "BUTTON_B": 20,
-        "LED_W": 32
+    "krux": {
+        "pins":{
+            "BUTTON_A": 16,
+            "BUTTON_B": 20,
+            "BUTTON_C": 23,
+            "LED_W": 32,
+            "I2C_SDA": 27,
+            "I2C_SCL": 24
+        },
+        "display": {
+            "touch": true,
+            "font": [8, 14],
+            "orientation": [1, 0]
+        },
+        "sensor": {
+            "flipped": true,
+            "lenses": false
+        }
     }
 }
 """)

@@ -1301,8 +1301,8 @@ void imlib_draw_line(image_t *img, int x0, int y0, int x1, int y1, int c, int th
 void imlib_draw_rectangle(image_t *img, int rx, int ry, int rw, int rh, int c, int thickness, bool fill);
 void imlib_draw_circle(image_t *img, int cx, int cy, int r, int c, int thickness, bool fill);
 void imlib_draw_ellipse(image_t *img, int cx, int cy, int rx, int ry, int rotation, int c, int thickness, bool fill);
-void imlib_draw_font(image_t *img, int x_off, int y_off, int c, float scale, uint8_t font_h, uint8_t font_w, const uint8_t *font);
-void imlib_draw_string(image_t *img, int x_off, int y_off, mp_obj_t str, int c, float scale, int x_spacing, int y_spacing, bool mono_space);
+void imlib_draw_font(image_t *img, int x_off, int y_off, int c, uint8_t font_h, uint8_t font_w, const uint8_t *font);
+void imlib_draw_string(image_t *img, int x_off, int y_off, mp_obj_t str, int c);
 void imlib_draw_image(image_t *img, image_t *other, int x_off, int y_off, float x_scale, float y_scale, float alpha, image_t *mask);
 size_t imlib_flood_fill(image_t *img, int x, int y,
                       float seed_threshold, float floating_threshold,

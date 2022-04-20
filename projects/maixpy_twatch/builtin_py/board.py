@@ -37,6 +37,10 @@ config = json.loads("""
         "I2S_DA": 34,
         "I2S_BCK": 35
     },
-    "krux.pins": {}
+    "krux": {
+        "pins":{},
+        "display": {},
+        "sensor": {}
+    }
 }
 """)

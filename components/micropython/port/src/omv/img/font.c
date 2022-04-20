@@ -327,7 +327,7 @@ int font_utf8_strlen(mp_obj_t str)
   return count;
 }
 
-void imlib_draw_font(image_t *img, int x_off, int y_off, int c, float scale, uint8_t font_h, uint8_t font_w, const uint8_t *font)
+void imlib_draw_font(image_t *img, int x_off, int y_off, int c, uint8_t font_h, uint8_t font_w, const uint8_t *font)
 {
     // It will be replaced by *.SVG.
     /* font ↑ ↓ ↝ →
@@ -367,7 +367,7 @@ void imlib_draw_font(image_t *img, int x_off, int y_off, int c, float scale, uin
 //         img.draw_font(x + (pos * s * (width + space)), y, width, high, fonts.read(int(high*(width/8))), scale=s, color=c)
 
 
-void imlib_draw_string(image_t *img, int x_off, int y_off, mp_obj_t str, int c, float scale, int x_spacing, int y_spacing, bool mono_space) {
+void imlib_draw_string(image_t *img, int x_off, int y_off, mp_obj_t str, int c) {
   const uint8_t font_len = (font_config.width / 8) * font_config.high;
 
   // mp_buffer_info_t bufinfo;
@@ -420,7 +420,7 @@ void imlib_draw_string(image_t *img, int x_off, int y_off, mp_obj_t str, int c, 
             }
         }
 
-        imlib_draw_font(img, x_off, y_off, c, scale, font_config.high, font_config.width, font);
+        imlib_draw_font(img, x_off, y_off, c, font_config.high, font_config.width, font);
 
         if (mono_space) {
             x_off += fast_roundf(font_config.width * scale) + x_spacing;

@@ -645,18 +645,16 @@ end:
 extern int font_utf8_strlen(mp_obj_t str);
 extern int font_width();
 extern int font_height();
-extern void imlib_draw_string(image_t *img, int x_off, int y_off, mp_obj_t str, int c, float scale, int x_spacing, int y_spacing, bool mono_space);
+extern void imlib_draw_string(image_t *img, int x_off, int y_off, mp_obj_t str, int c);
 STATIC mp_obj_t py_lcd_draw_string(size_t n_args, const mp_obj_t *args)
 {
     uint8_t* str_buf = NULL;
     if (lcd_para.width == 0 || lcd_para.width  == 0)
         mp_raise_msg(&mp_type_ValueError, "not init");
-    int font_w = font_width();
-    int font_h = font_height();
-    str_buf = (uint8_t *)malloc(fast_ceilf(lcd_para.width / font_w * font_w * font_h * 2));
-    if (!str_buf)
-        mp_raise_OSError(MP_ENOMEM);
-
+    uint8_t font_w = font_width();
+    uint8_t font_b_len = (font_w + 7) / 8; //round up division to get bytes
+    font_b_len *= 8; //length in bits
+    uint8_t font_h = font_height();
     uint16_t x0 = mp_obj_get_int(args[0]);
     uint16_t y0 = mp_obj_get_int(args[1]);
     const char *str = mp_obj_str_get_str(args[2]);
@@ -665,31 +663,31 @@ STATIC mp_obj_t py_lcd_draw_string(size_t n_args, const mp_obj_t *args)
     if (str == NULL)
         return mp_const_none;
     int len = font_utf8_strlen(args[2]);
-    int width, height;
     if (n_args >= 4)
         fontc = mp_obj_get_int(args[3]);
     if (n_args >= 5)
         bgc = mp_obj_get_int(args[4]);
-    if (len > (lcd_para.width - x0) / font_w)
-        len = (lcd_para.width - x0) / font_w;
+    if (len > (lcd_para.width - x0) / font_b_len)
+        len = (lcd_para.width - x0) / font_b_len;
     if (len <= 0)
         return mp_const_none;
+    int width;
     width = len * font_w;
-    height = font_h;
+    str_buf = (uint8_t *)malloc(font_h * width * 2);//rectangle with 16bits color
+    if (!str_buf)
+        mp_raise_OSError(MP_ENOMEM);
     image_t arg_img = {
         .bpp = IMAGE_BPP_RGB565,
         .w = width,
-        .h = height,
+        .h = font_h,
         .pixels = str_buf
     };
-    for(int i=0; i< width*height; ++i)
+    for(int i=0; i< width*font_h; ++i)
     {
         *(uint16_t*)(str_buf + i*2) = (uint16_t)bgc;
     }
-    imlib_draw_string(&arg_img, 0, 0, args[2],
-                      fontc, 1, 0, 0,
-                      true);
-    lcd->draw_picture(x0, y0, width, height, (uint8_t *)str_buf);
+    imlib_draw_string(&arg_img, 0, 0, args[2], fontc);
+    lcd->draw_picture(x0, y0, width, font_h, (uint8_t *)str_buf);
     free(str_buf);
     return mp_const_none;
 }
@@ -718,9 +716,7 @@ STATIC mp_obj_t py_lcd_fill_rectangle(size_t n_args, const mp_obj_t *args)
     {
         color = mp_obj_get_int(args[4]);
     }
-    if(x0 >= lcd_para.width || y0 >= lcd_para.height || x1 >= lcd_para.width || y1 >= lcd_para.height){
-        mp_raise_ValueError("arg error");
-    }
+    
     lcd->fill_rectangle(x0, y0, x1, y1, color);
     return mp_const_none;
 }
@@ -780,7 +776,7 @@ STATIC mp_obj_t py_lcd_draw_qr_code(size_t n_args, const mp_obj_t *args)
     int height = starting_size * scale;
 
     uint8_t* pixels = NULL;
-    pixels = (uint8_t *)malloc(((width * height) / 8) * 8 * 2);
+    pixels = (uint8_t *)malloc(width * height * 2);
     if (!pixels)
         mp_raise_OSError(MP_ENOMEM);
 

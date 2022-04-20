@@ -1528,7 +1528,7 @@ STATIC mp_obj_t py_image_draw_font(size_t n_args, const mp_obj_t *args, mp_map_t
         py_helper_keyword_float(n_args, args, offset + 1, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_scale), 1.0);
     PY_ASSERT_TRUE_MSG(0 < arg_scale, "Error: 0 < scale!");
     imlib_draw_font(arg_img, arg_x_off, arg_y_off,
-                      arg_c, arg_scale, arg_h_font, arg_w_font, arg_font);
+                      arg_c, arg_h_font, arg_w_font, arg_font);
     return args[0];
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_draw_font_obj, 2, py_image_draw_font);
@@ -1555,9 +1555,7 @@ STATIC mp_obj_t py_image_draw_string(size_t n_args, const mp_obj_t *args, mp_map
     bool arg_mono_space =
         py_helper_keyword_int(n_args, args, offset + 4, kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_mono_space), 0);
 
-    imlib_draw_string(arg_img, arg_x_off, arg_y_off, arg_str,
-                      arg_c, arg_scale, arg_x_spacing, arg_y_spacing,
-                      arg_mono_space);
+    imlib_draw_string(arg_img, arg_x_off, arg_y_off, arg_str, arg_c);
     return args[0];
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_image_draw_string_obj, 2, py_image_draw_string);

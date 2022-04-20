@@ -43,14 +43,26 @@ config = json.loads("""
         "BUTTON_A": 36,
         "BUTTON_B": 37
     },
-    "krux.pins": {
-        "BUTTON_A": 36,
-        "BUTTON_B": 37,
-        "LED_W": 7,
-        "UART2_TX": 35,
-        "UART2_RX": 34,
-        "I2C_SCL": 28,
-        "I2C_SDA": 29
+    "krux": {
+        "pins":{
+            "BUTTON_A": 36,
+            "BUTTON_B": 37,
+            "LED_W": 7,
+            "UART2_TX": 35,
+            "UART2_RX": 34,
+            "I2C_SCL": 28,
+            "I2C_SDA": 29
+        },
+        "display": {
+            "touch": false,
+            "font": [8, 14],
+            "orientation":[1, 2],
+            "qr_colors":[16904, 61307]
+        },
+        "sensor": {
+            "flipped": false,
+            "lenses": false
+        }
     }
 }
 """)
