@@ -27,6 +27,7 @@
 
 /* clang-format off */
 #define BLACK       0x0000
+#define LIGHTBLACK  0x0842
 #define NAVY        0x0F00
 #define DARKGREEN   0xE003
 #define DARKCYAN    0xEF03
