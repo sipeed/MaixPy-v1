@@ -29,8 +29,9 @@ config = json.loads("""
     },
     "krux": {
         "pins":{
-            "BUTTON_A": 21,
-            "BUTTON_B": 22
+            "BUTTON_A": 22,
+            "BUTTON_B": 21,
+            "BUTTON_C": 16
         },
         "display": {
             "touch": false,

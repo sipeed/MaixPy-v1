@@ -22,7 +22,7 @@ def __chkPwrKeyWaitForSleep__(timer):
         return
     
     if __preButPressed__ == -1 and  ((pek_stu & (0x01 << 1)) == False and (pek_stu & 0x01) == False):
-        __preButPressed__ = 0
+        __preButPressed__ = 1
 
     if (pek_stu & 0x01):
         __pmuI2CDEV__.writeto_mem(52, 0x31, 0x0F, mem_size=8)  #Enable Sleep Mode
@@ -30,7 +30,10 @@ def __chkPwrKeyWaitForSleep__(timer):
         __pmuI2CDEV__.writeto_mem(52, 0x12, 0x00, mem_size=8)  #Turn off other power source
     
     if (pek_stu & (0x01 << 1)):
-        machine.reset()
+        __preButPressed__ = 0
+    else:
+        __preButPressed__ = 1
+        #machine.reset()
 
 class axp192:
     def __init__(self, i2cDev=None):
@@ -187,7 +190,7 @@ class axp192:
             self.__writeReg(0x36, 0x27) #Turnoff PEK Overtime Shutdown
             self.__writeReg(0x46, 0xFF) #Clear the interrupts
 
-            self.butChkTimer = Timer(Timer.TIMER2, Timer.CHANNEL0, mode=Timer.MODE_PERIODIC, period=500, callback=__chkPwrKeyWaitForSleep__)
+            self.butChkTimer = Timer(Timer.TIMER2, Timer.CHANNEL0, mode=Timer.MODE_PERIODIC, period=100, callback=__chkPwrKeyWaitForSleep__)
         else:
             self.__writeReg(0x36, 0x6C) #Set to default
             try:
@@ -195,4 +198,11 @@ class axp192:
                 del self.butChkTimer
             except:
                 pass
-            
+
+class PMU_Button:
+    def __init__(self):
+        pass
+
+    def value(self):
+        return __preButPressed__
+
