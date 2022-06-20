@@ -4,9 +4,6 @@
 [submodule "components/kendryte_sdk/kendryte-standalone-sdk"]
 	path = components/kendryte_sdk/kendryte-standalone-sdk
 	url = https://github.com/sipeed/kendryte-standalone-sdk
-[submodule "tools/flash/kflash_py"]
-	path = tools/flash/kflash_py
-	url = https://github.com/sipeed/kflash.py.git
 [submodule "components/micropython/core"]
 	path = components/micropython/core
 	url = https://github.com/micropython/micropython.git
@@ -16,10 +13,12 @@
 [submodule "components/spiffs/core"]
 	path = components/spiffs/core
 	url = https://github.com/pellepl/spiffs.git
-
 [submodule "tools/spiffs/mkspiffs"]
 	path = tools/spiffs/mkspiffs
 	url = https://github.com/igrr/mkspiffs.git
 [submodule "components/micropython/port/src/ulab/micropython-ulab"]
 	path = components/micropython/port/src/ulab/micropython-ulab
 	url = https://github.com/Neutree/micropython-ulab.git
+[submodule "tools/flash/kflash_py"]
+	path = tools/flash/kflash_py
+	url = https://github.com/sipeed/kflash.py
