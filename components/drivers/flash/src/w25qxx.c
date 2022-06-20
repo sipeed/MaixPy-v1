@@ -234,7 +234,7 @@ w25qxx_status_t w25qxx_disable_quad_mode_dma(void)
 {
     uint8_t reg_data = 0;
 
-    w25qxx_read_status_reg2(&reg_data);
+    w25qxx_read_status_reg2_dma(&reg_data);
     if (reg_data & REG2_QUAL_MASK)
     {
         reg_data &= (~REG2_QUAL_MASK);
@@ -243,7 +243,7 @@ w25qxx_status_t w25qxx_disable_quad_mode_dma(void)
          * here is the fix for PUYA P25Q128L writing QE bit
          */
         w25qxx_write_status_reg2_dma(reg_data);
-        w25qxx_write_status_reg(0x00, reg_data);
+        w25qxx_write_status_reg_dma(0x00, reg_data);
         while (w25qxx_is_busy_dma()) {
             continue;
         }
