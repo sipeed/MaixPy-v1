@@ -5,7 +5,7 @@ except ImportError:
 
 config = json.loads("""
 {
-    "type":"bit",
+    "type": "bit",
     "lcd": {
         "height": 240,
         "width": 320,
@@ -28,7 +28,7 @@ config = json.loads("""
       "MIC0_BCK": 18
     },
     "krux": {
-        "pins":{
+        "pins": {
             "BUTTON_A": 22,
             "BUTTON_B": 21,
             "BUTTON_C": 16
@@ -36,7 +36,8 @@ config = json.loads("""
         "display": {
             "touch": false,
             "font": [8, 16],
-            "orientation":[1, 0]
+            "orientation": [1, 0],
+            "qr_colors": [0, 6342]
         },
         "sensor": {
             "flipped": true,

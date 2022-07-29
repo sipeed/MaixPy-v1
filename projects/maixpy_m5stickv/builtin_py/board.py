@@ -44,7 +44,7 @@ config = json.loads("""
         "BUTTON_B": 37
     },
     "krux": {
-        "pins":{
+        "pins": {
             "BUTTON_A": 36,
             "BUTTON_B": 37,
             "LED_W": 7,
@@ -56,8 +56,8 @@ config = json.loads("""
         "display": {
             "touch": false,
             "font": [8, 14],
-            "orientation":[1, 2],
-            "qr_colors":[16904, 61307]
+            "orientation": [1, 2],
+            "qr_colors": [16904, 61307]
         },
         "sensor": {
             "flipped": false,

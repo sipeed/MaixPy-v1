@@ -44,7 +44,7 @@ config = json.loads("""
         "SPI_CS": 12
     },
     "krux": {
-        "pins":{
+        "pins": {
             "BUTTON_A": 16,
             "BUTTON_B": 20,
             "BUTTON_C": 23,
@@ -55,7 +55,8 @@ config = json.loads("""
         "display": {
             "touch": true,
             "font": [8, 14],
-            "orientation": [1, 0]
+            "orientation": [1, 0],
+            "qr_colors": [0, 6342]
         },
         "sensor": {
             "flipped": true,
