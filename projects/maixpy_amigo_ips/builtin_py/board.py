@@ -20,13 +20,13 @@ config = json.loads("""
         "cs": 26
     },
     "board_info": {
-        "BOOT_KEY": 16,
+        "BOOT_KEY": 23,
         "LED_R": 14,
         "LED_G": 15,
         "LED_B": 17,
         "LED_W": 32,
-        "BACK": 31,
-        "ENTER": 23,
+        "BACK": 23,
+        "ENTER": 16,
         "NEXT": 20,
         "WIFI_TX": 6,
         "WIFI_RX": 7,

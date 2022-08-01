@@ -13,7 +13,7 @@ list(APPEND ADD_SRCS  "src/main.cpp"
 
 ###### Add required/dependent components ######
 list(APPEND ADD_REQUIREMENTS micropython kendryte_sdk drivers boards utils spiffs)
-if(CONFIG_LIB_NNCASE_SOURCE_CODE_ENABLE)
+if(CONFIG_LIB_NNCASE_SOURCE_CODE_ENABLE AND CONFIG_MICROPYTHON_KMODEL_V4_SUPPORT)
     list(APPEND ADD_REQUIREMENTS nncase)
 endif()
 ###############################################
