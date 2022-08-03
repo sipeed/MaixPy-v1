@@ -25,8 +25,8 @@ config = json.loads("""
         "LED_G": 15,
         "LED_B": 17,
         "LED_W": 32,
-        "BACK": 31,
-        "ENTER": 23,
+        "BACK": 23,
+        "ENTER": 16,
         "NEXT": 20,
         "WIFI_TX": 6,
         "WIFI_RX": 7,
@@ -45,9 +45,9 @@ config = json.loads("""
     },
     "krux": {
         "pins": {
-            "BUTTON_A": 23,
+            "BUTTON_A": 16,
             "BUTTON_B": 20,
-            "BUTTON_C": 31,
+            "BUTTON_C": 23,
             "LED_W": 32,
             "I2C_SDA": 27,
             "I2C_SCL": 24
@@ -56,6 +56,7 @@ config = json.loads("""
             "touch": true,
             "font": [12, 24],
             "orientation": [1, 0],
+            "inverted_coordinates": true,
             "qr_colors": [0, 6342]
         },
         "sensor": {

@@ -36,6 +36,7 @@ config = json.loads("""
             "touch": false,
             "font": [8, 16],
             "orientation": [1, 0],
+            "inverted_coordinates": false,
             "qr_colors": [0, 6342]
         },
         "sensor": {
