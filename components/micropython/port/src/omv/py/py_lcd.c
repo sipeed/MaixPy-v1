@@ -774,29 +774,38 @@ STATIC mp_obj_t py_lcd_draw_qr_code(size_t n_args, const mp_obj_t *args)
     int scale = max_width / starting_size;
     int width = starting_size * scale;
     int height = starting_size * scale;
+    int border_size = (max_width - width) / 2;
 
     uint8_t* pixels = NULL;
-    pixels = (uint8_t *)malloc(width * height * 2);
+    pixels = (uint8_t *)malloc(max_width * max_width * 2);
     if (!pixels)
         mp_raise_OSError(MP_ENOMEM);
 
     image_t arg_img = {
         .bpp = IMAGE_BPP_RGB565,
-        .w = width,
-        .h = height,
+        .w = max_width,
+        .h = max_width,
         .pixels = pixels
     };
+
+    for (int rx = 0; rx < max_width; rx++)
+    {
+        for (int ry = 0; ry < max_width; ry++)
+        {
+            imlib_set_pixel(&arg_img, rx, ry, BLACK);
+        }
+    }
 
     for (int og_y = 0; og_y < starting_size; og_y++)
     {
         for (int i = 0; i < scale; i++)
         {
-            int y = og_y * scale + i;
+            int y = border_size + og_y * scale + i;
             for (int og_x = 0; og_x < starting_size; og_x++)
             {
                 for (int j = 0; j < scale; j++)
                 {
-                    int x = og_x * scale + j;
+                    int x = border_size + og_x * scale + j;
                     int og_yx_index = og_y * (starting_size + 1) + og_x;
 
                     imlib_set_pixel(&arg_img, x, y, code_str[og_yx_index] == '1' ? dark_color : light_color);
@@ -805,8 +814,7 @@ STATIC mp_obj_t py_lcd_draw_qr_code(size_t n_args, const mp_obj_t *args)
         }
     }
 
-    uint16_t x0 = (max_width - width) / 2;
-    lcd->draw_picture(x0, y0, width, height, (uint8_t *)pixels);
+    lcd->draw_picture(0, y0, max_width, max_width, (uint8_t *)pixels);
     free(pixels);
     return mp_const_none;
 }
