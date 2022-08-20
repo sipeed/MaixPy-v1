@@ -58,10 +58,6 @@ config = json.loads("""
             "font": [8, 14],
             "inverted_coordinates": false,
             "qr_colors": [16904, 61307]
-        },
-        "sensor": {
-            "flipped": false,
-            "lenses": false
         }
     }
 }
