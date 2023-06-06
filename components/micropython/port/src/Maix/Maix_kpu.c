@@ -541,7 +541,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_class_set_outputs_obj, 4, py_kpu_class_
 typedef struct py_kpu_class_yolo_args_obj {
     mp_obj_base_t base;
 
-    mp_obj_t threshold, nms_value, anchor_number, anchor, rl_args;
+    mp_obj_t threshold, nms_value, anchor_number, branch_number, ver, anchor, rl_args;
 } __attribute__((aligned(8))) py_kpu_class_yolo_args_obj_t;
 
 typedef struct py_kpu_class_region_layer_arg
@@ -549,6 +549,8 @@ typedef struct py_kpu_class_region_layer_arg
     float threshold;
     float nms_value;
     int anchor_number;
+    int branch_number;
+    int ver;
     float *anchor;
 }__attribute__((aligned(8))) py_kpu_class_yolo_region_layer_arg_t;
 
@@ -753,6 +755,7 @@ STATIC mp_obj_t py_kpu_class_init_yolo2(size_t n_args, const mp_obj_t *pos_args,
         yolo_args->threshold = mp_obj_new_float(threshold);
         yolo_args->nms_value = mp_obj_new_float(nms_value);
         yolo_args->anchor_number = mp_obj_new_int(anchor_number);
+        yolo_args->branch_number = 1;
 
         mp_obj_t *tuple, *tmp;
 
@@ -773,7 +776,9 @@ STATIC mp_obj_t py_kpu_class_init_yolo2(size_t n_args, const mp_obj_t *pos_args,
         rl_arg->threshold = threshold;
         rl_arg->nms_value = nms_value;
         rl_arg->anchor_number = anchor_number;
+        rl_arg->branch_number = 1;  
         rl_arg->anchor = anchor;
+        rl_arg->ver = 2;
 
         yolo_args->rl_args = MP_OBJ_FROM_PTR(rl_arg);
 
@@ -793,6 +798,123 @@ STATIC mp_obj_t py_kpu_class_init_yolo2(size_t n_args, const mp_obj_t *pos_args,
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_class_init_yolo2_obj, 5, py_kpu_class_init_yolo2);
+
+///////////////////////////////////////////////////////////////////////////////
+
+STATIC mp_obj_t py_kpu_class_init_yolo3(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
+{
+    enum { ARG_kpu_net, ARG_threshold, ARG_nms_value, ARG_anchor_number, ARG_branch_number, ARG_anchor, ARG_dma};
+    static const mp_arg_t allowed_args[] = {
+        { MP_QSTR_kpu_net,              MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        { MP_QSTR_threshold,            MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        { MP_QSTR_nms_value,            MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        { MP_QSTR_anchor_number,        MP_ARG_INT, {.u_int = 0x0}           },
+        { MP_QSTR_branch_number,        MP_ARG_INT, {.u_int = 0x0}           },
+        { MP_QSTR_anchor,               MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        { MP_QSTR_dma, 		        	MP_ARG_INT, {.u_int = -1} },
+    };
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+	mp_printf(&mp_plat_print, "YOLO v3\n"); 
+
+    if(mp_obj_get_type(args[ARG_kpu_net].u_obj) == &py_kpu_net_obj_type)
+    {
+        float threshold, nms_value, *anchor = NULL;
+        int anchor_number, branch_number;
+
+        sipeed_kpu_use_dma(args[ARG_dma].u_int);
+        threshold = mp_obj_get_float(args[ARG_threshold].u_obj);
+        if(!(threshold >= 0.0 && threshold <= 1.0))
+        {
+            mp_raise_ValueError("[MAIXPY]kpu: threshold only support 0 to 1");
+            return mp_const_false;
+        }
+
+        nms_value = mp_obj_get_float(args[ARG_nms_value].u_obj);
+        if(!(nms_value >= 0.0 && nms_value <= 1.0))
+        {
+            mp_raise_ValueError("[MAIXPY]kpu: nms_value only support 0 to 1");
+            return mp_const_false;
+        }
+
+        branch_number = args[ARG_branch_number].u_int;
+        anchor_number = args[ARG_anchor_number].u_int;
+
+        if(!(branch_number >= 1 && threshold <= 2))
+        {
+            mp_raise_ValueError("[MAIXPY]kpu: branch_number only supports 1 to 2");
+            return mp_const_false;
+        }
+
+        if(anchor_number > 0)
+        {
+            //need free
+            anchor = (float*)malloc(anchor_number * 2 * branch_number * sizeof(float));
+
+            mp_obj_t *items;
+            mp_obj_get_array_fixed_n(args[ARG_anchor].u_obj,
+                                    args[ARG_anchor_number].u_int * 2 * branch_number, &items);
+        
+            for(uint8_t index = 0; index < args[ARG_anchor_number].u_int * 2 * branch_number; index++)
+                anchor[index] = mp_obj_get_float(items[index]);
+        }
+        else
+        {
+            mp_raise_ValueError("[MAIXPY]kpu: anchor_number should > 0");
+            return mp_const_false;
+        }
+
+        py_kpu_class_yolo_args_obj_t *yolo_args = m_new_obj(py_kpu_class_yolo_args_obj_t);
+
+        yolo_args->base.type = &py_kpu_class_yolo_args_obj_type;
+
+        yolo_args->threshold = mp_obj_new_float(threshold);
+        yolo_args->nms_value = mp_obj_new_float(nms_value);
+        yolo_args->anchor_number = mp_obj_new_int(anchor_number);
+        yolo_args->branch_number = mp_obj_new_int(branch_number);
+        
+        mp_obj_t *tuple, *tmp;
+
+        tmp = (mp_obj_t *)malloc(anchor_number * 2 * branch_number * sizeof(mp_obj_t));
+
+        for (uint8_t index = 0; index < anchor_number * 2 * branch_number; index++)
+            tmp[index] = mp_obj_new_float(anchor[index]);
+
+        tuple = mp_obj_new_tuple(anchor_number * 2 * branch_number, tmp);
+
+        free(tmp);
+
+        yolo_args->anchor = tuple;
+
+        //need free
+        py_kpu_class_yolo_region_layer_arg_t *rl_arg = malloc(sizeof(py_kpu_class_yolo_region_layer_arg_t));
+
+        rl_arg->threshold = threshold;
+        rl_arg->nms_value = nms_value;
+        rl_arg->anchor_number = anchor_number;
+        rl_arg->branch_number = branch_number;        
+        rl_arg->anchor = anchor;
+        rl_arg->ver = 3;
+
+        yolo_args->rl_args = MP_OBJ_FROM_PTR(rl_arg);
+
+        py_kpu_net_obj_t *kpu_net = MP_OBJ_TO_PTR(args[ARG_kpu_net].u_obj);
+
+        kpu_net->net_args = MP_OBJ_FROM_PTR(yolo_args);
+
+        kpu_net->net_deinit = MP_OBJ_FROM_PTR(py_kpu_calss_yolo2_deinit);
+
+        return mp_const_true;
+    }
+    else
+    {
+        mp_raise_TypeError("[MAIXPY]kpu: kpu_net type error");
+        return mp_const_false;
+    }
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_class_init_yolo3_obj, 5, py_kpu_class_init_yolo3);
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -907,9 +1029,12 @@ STATIC mp_obj_t py_kpu_class_run_yolo2(size_t n_args, const mp_obj_t *pos_args, 
         py_kpu_class_yolo_region_layer_arg_t *rl_arg = net_args->rl_args;
         region_layer_t kpu_detect_rl;
         kpu_detect_rl.anchor_number = rl_arg->anchor_number;
+        kpu_detect_rl.branch_number = rl_arg->branch_number;
+        kpu_detect_rl.ver = rl_arg->ver;        
         kpu_detect_rl.anchor = rl_arg->anchor;
         kpu_detect_rl.threshold = rl_arg->threshold;
         kpu_detect_rl.nms_value = rl_arg->nms_value;
+
         if(region_layer_init(&kpu_detect_rl, kpu_net->kmodel_ctx))
 		{
 			mp_raise_ValueError("[MAIXPY]kpu: region_layer_init err!\r\n");
@@ -993,6 +1118,134 @@ STATIC mp_obj_t py_kpu_class_run_yolo2(size_t n_args, const mp_obj_t *pos_args, 
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_class_run_yolo2_obj, 2, py_kpu_class_run_yolo2);
+
+///////////////////////////////////////////////////////////////////////////////
+
+STATIC mp_obj_t py_kpu_class_run_yolo3(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
+{
+    if(mp_obj_get_type(pos_args[0]) == &py_kpu_net_obj_type)
+    {
+		py_kpu_net_obj_t *kpu_net = MP_OBJ_TO_PTR(pos_args[0]);
+        image_t *arg_img = py_image_cobj(pos_args[1]);
+        //PY_ASSERT_TRUE_MSG(IM_IS_MUTABLE(arg_img), "Image format is not supported.");
+        
+		uint16_t w0 = 0;
+        uint16_t h0 = 0;
+        uint16_t ch0 = 0;
+
+		int kmodel_type=sipeed_kpu_model_get_type(kpu_net->kmodel_ctx);
+		if(abs(kmodel_type)==3 || abs(kmodel_type)==4){
+			if(sipeed_kpu_model_get_input_shape(kpu_net->kmodel_ctx, &w0, &h0, &ch0) != SIPEED_KPU_ERR_NONE)
+			{
+				mp_raise_ValueError("[MAIXPY]kpu: first layer not conv layer!\r\n");
+				return mp_const_none;
+			}
+		}
+		if(check_img_format(arg_img, w0, h0, ch0, kmodel_type))
+		{
+			mp_raise_ValueError("[MAIXPY]kpu: check img format err!\r\n");
+			return mp_const_none;
+		}
+		/*****************************region prepare*************************************************/
+
+		py_kpu_class_yolo_args_obj_t *net_args = MP_OBJ_TO_PTR(kpu_net->net_args);
+        py_kpu_class_yolo_region_layer_arg_t *rl_arg = net_args->rl_args;
+        region_layer_t kpu_detect_rl;
+        kpu_detect_rl.anchor_number = rl_arg->anchor_number;
+        kpu_detect_rl.branch_number = rl_arg->branch_number;
+        kpu_detect_rl.ver = rl_arg->ver;        
+        kpu_detect_rl.anchor = rl_arg->anchor;
+        kpu_detect_rl.threshold = rl_arg->threshold;
+        kpu_detect_rl.nms_value = rl_arg->nms_value;
+
+        int er = region_layer_init(&kpu_detect_rl, kpu_net->kmodel_ctx);
+        if(er)
+		{
+			mp_raise_ValueError("[MAIXPY]kpu: region_layer_init err! \r\n");
+			return mp_const_none;
+		}
+		/*************************************************************************************/
+
+        g_ai_done_flag = 0;
+        sipeed_kpu_err_t ret = sipeed_kpu_model_run(kpu_net->kmodel_ctx, arg_img->pix_ai, K210_DMA_CH_KPU, ai_done, NULL);
+
+        if(ret != SIPEED_KPU_ERR_NONE)
+        {
+            char* msg = get_kpu_err_str(ret);
+            mp_raise_msg(&mp_type_OSError, msg);
+        }
+        while (!g_ai_done_flag)
+            ;
+        g_ai_done_flag = 0;
+
+		/****************************start region layer***************************************/
+		static obj_info_t mpy_kpu_detect_info;
+        region_layer_run(&kpu_detect_rl, &mpy_kpu_detect_info);
+
+        uint8_t obj_num = 0;
+        obj_num = mpy_kpu_detect_info.obj_number;
+
+        if (obj_num > 0)
+        {
+            list_t out;
+            list_init(&out, sizeof(py_kpu_class_yolo2__list_link_data_t));
+
+            for (uint8_t index = 0; index < obj_num; index++)
+            {
+                py_kpu_class_yolo2__list_link_data_t lnk_data;
+                lnk_data.rect.x = mpy_kpu_detect_info.obj[index].x1;
+                lnk_data.rect.y = mpy_kpu_detect_info.obj[index].y1;
+                lnk_data.rect.w = mpy_kpu_detect_info.obj[index].x2 - mpy_kpu_detect_info.obj[index].x1;
+                lnk_data.rect.h = mpy_kpu_detect_info.obj[index].y2 - mpy_kpu_detect_info.obj[index].y1;
+                lnk_data.classid = mpy_kpu_detect_info.obj[index].classid;
+                lnk_data.value = mpy_kpu_detect_info.obj[index].prob;
+
+                lnk_data.index = index;
+                lnk_data.objnum = obj_num;
+                list_push_back(&out, &lnk_data);
+            }
+
+            mp_obj_list_t *objects_list = mp_obj_new_list(list_size(&out), NULL);
+
+            for (size_t i = 0; list_size(&out); i++)
+            {
+                py_kpu_class_yolo2__list_link_data_t lnk_data;
+                list_pop_front(&out, &lnk_data);
+
+                py_kpu_class_yolo2_find_obj_t *o = m_new_obj(py_kpu_class_yolo2_find_obj_t);
+
+                o->base.type = &py_kpu_class_yolo2_find_type;
+
+                o->x = mp_obj_new_int(lnk_data.rect.x);
+                o->y = mp_obj_new_int(lnk_data.rect.y);
+                o->w = mp_obj_new_int(lnk_data.rect.w);
+                o->h = mp_obj_new_int(lnk_data.rect.h);
+                o->classid = mp_obj_new_int(lnk_data.classid);
+                o->index = mp_obj_new_int(lnk_data.index);
+                o->value = mp_obj_new_float(lnk_data.value);
+                o->objnum = mp_obj_new_int(lnk_data.objnum);
+
+                objects_list->items[i] = o;
+            }
+            region_layer_deinit(&kpu_detect_rl);
+            return objects_list;
+        }
+        else
+        {
+            region_layer_deinit(&kpu_detect_rl);
+
+            return mp_const_none;
+        }
+    }
+    else
+    {
+        mp_raise_TypeError("[MAIXPY]kpu: kpu_net type error");
+        return mp_const_false;
+    }
+	
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_kpu_class_run_yolo3_obj, 2, py_kpu_class_run_yolo3);
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1816,9 +2069,11 @@ static const mp_map_elem_t globals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__),                    MP_OBJ_NEW_QSTR(MP_QSTR_kpu) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_load),                        (mp_obj_t)&py_kpu_class_load_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_load_flash),                  (mp_obj_t)&py_kpu_class_load_flash_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_set_outputs),                 (mp_obj_t)&py_kpu_class_set_outputs_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_set_outputs),                 (mp_obj_t)&py_kpu_class_set_outputs_obj },  
     { MP_OBJ_NEW_QSTR(MP_QSTR_init_yolo2),                  (mp_obj_t)&py_kpu_class_init_yolo2_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_init_yolo3),                  (mp_obj_t)&py_kpu_class_init_yolo3_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_run_yolo2),                   (mp_obj_t)&py_kpu_class_run_yolo2_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_run_yolo3),                   (mp_obj_t)&py_kpu_class_run_yolo3_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_deinit),                      (mp_obj_t)&py_kpu_deinit_obj },
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_set_layers),                  (mp_obj_t)&py_kpu_set_layers_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_forward),                     (mp_obj_t)&py_kpu_forward_obj },
