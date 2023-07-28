@@ -735,6 +735,7 @@ STATIC mp_obj_t py_lcd_draw_qr_code(size_t n_args, const mp_obj_t *args)
 
     uint16_t dark_color = BLACK;
     uint16_t light_color = WHITE;
+    uint16_t bg_color = BLACK;
     if (n_args >= 4)
     {
         mp_obj_t *arg_color;
@@ -764,6 +765,21 @@ STATIC mp_obj_t py_lcd_draw_qr_code(size_t n_args, const mp_obj_t *args)
                                                     IM_MAX(IM_MIN(mp_obj_get_int(arg_color[1]), COLOR_G8_MAX), COLOR_G8_MIN),
                                                     IM_MAX(IM_MIN(mp_obj_get_int(arg_color[2]), COLOR_B8_MAX), COLOR_B8_MIN));
             }
+
+            if (n_args >= 6)
+            {
+                if (mp_obj_is_integer(args[5]))
+                {
+                    bg_color = mp_obj_get_int(args[5]);
+                }
+                else
+                {
+                    mp_obj_get_array_fixed_n(args[5], 3, &arg_color);
+                    bg_color = COLOR_R8_G8_B8_TO_RGB565(IM_MAX(IM_MIN(mp_obj_get_int(arg_color[0]), COLOR_R8_MAX), COLOR_R8_MIN),
+                                                        IM_MAX(IM_MIN(mp_obj_get_int(arg_color[1]), COLOR_G8_MAX), COLOR_G8_MIN),
+                                                        IM_MAX(IM_MIN(mp_obj_get_int(arg_color[2]), COLOR_B8_MAX), COLOR_B8_MIN));
+                }
+            }
         }
     }
 
@@ -788,14 +804,15 @@ STATIC mp_obj_t py_lcd_draw_qr_code(size_t n_args, const mp_obj_t *args)
         .pixels = pixels
     };
 
+    //Paint background, usefull with animated QR codes that may vary sizes
     for (int rx = 0; rx < max_width; rx++)
     {
         for (int ry = 0; ry < max_width; ry++)
         {
-            imlib_set_pixel(&arg_img, rx, ry, BLACK);
+            imlib_set_pixel(&arg_img, rx, ry, bg_color);
         }
     }
-
+    //TODO: This can be optimized
     for (int og_y = 0; og_y < starting_size; og_y++)
     {
         for (int i = 0; i < scale; i++)
@@ -847,7 +864,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_mirror_obj, 0, 1, py_lcd_mirro
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_bgr_to_rgb_obj, 0, 1, py_lcd_bgr_to_rgb);
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_draw_string_obj, 3, 5, py_lcd_draw_string);
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_fill_rectangle_obj, 3, 5, py_lcd_fill_rectangle);
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_draw_qr_code_obj, 3, 5, py_lcd_draw_qr_code);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_draw_qr_code_obj, 3, 6, py_lcd_draw_qr_code);
 
 
 static const mp_map_elem_t globals_dict_table[] = {
