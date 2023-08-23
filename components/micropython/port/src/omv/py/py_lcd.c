@@ -804,28 +804,43 @@ STATIC mp_obj_t py_lcd_draw_qr_code(size_t n_args, const mp_obj_t *args)
         .pixels = pixels
     };
 
-    //Paint background, usefull with animated QR codes that may vary sizes
-    for (int rx = 0; rx < max_width; rx++)
-    {
-        for (int ry = 0; ry < max_width; ry++)
-        {
+    // Paint a frame, needed when animated QR codes have variable sizes
+    // Top border
+    for (int rx = 0; rx < max_width; rx++) {
+        for (int ry = 0; ry < border_size; ry++) {
             imlib_set_pixel(&arg_img, rx, ry, bg_color);
         }
     }
-    //TODO: This can be optimized
-    for (int og_y = 0; og_y < starting_size; og_y++)
-    {
-        for (int i = 0; i < scale; i++)
-        {
-            int y = border_size + og_y * scale + i;
-            for (int og_x = 0; og_x < starting_size; og_x++)
-            {
-                for (int j = 0; j < scale; j++)
-                {
-                    int x = border_size + og_x * scale + j;
-                    int og_yx_index = og_y * (starting_size + 1) + og_x;
+    // Bottom border
+    for (int rx = 0; rx < max_width; rx++) {
+        for (int ry = opposite_border_offset; ry < max_width; ry++) {
+            imlib_set_pixel(&arg_img, rx, ry, bg_color);
+        }
+    }
+    // Left border
+    for (int rx = 0; rx < border_size; rx++) {
+        for (int ry = border_size; ry < opposite_border_offset; ry++) {
+            imlib_set_pixel(&arg_img, rx, ry, bg_color);
+        }
+    }
+    // Right border
+    for (int rx = opposite_border_offset; rx < max_width; rx++) {
+        for (int ry = border_size; ry < opposite_border_offset; ry++) {
+            imlib_set_pixel(&arg_img, rx, ry, bg_color);
+        }
+    }
 
-                    imlib_set_pixel(&arg_img, x, y, code_str[og_yx_index] == '1' ? dark_color : light_color);
+    // QR code rendering
+    for (int og_y = 0; og_y < starting_size; og_y++) {
+        for (int og_x = 0; og_x < starting_size; og_x++) {
+            int og_yx_index = og_y * (starting_size + 1) + og_x;
+            uint16_t color;
+            color = (code_str[og_yx_index] == '1') ? dark_color : light_color;
+            for (int i = 0; i < scale; i++) {
+                int y = border_size + og_y * scale + i;
+                for (int j = 0; j < scale; j++) {
+                    int x = border_size + og_x * scale + j;
+                    imlib_set_pixel(&arg_img, x, y, color);
                 }
             }
         }
