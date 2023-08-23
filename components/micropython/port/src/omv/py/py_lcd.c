@@ -789,8 +789,8 @@ STATIC mp_obj_t py_lcd_draw_qr_code(size_t n_args, const mp_obj_t *args)
 
     int scale = max_width / starting_size;
     int width = starting_size * scale;
-    int height = starting_size * scale;
     int border_size = (max_width - width) / 2;
+    int opposite_border_offset = border_size + width - 1;
 
     uint8_t* pixels = NULL;
     pixels = (uint8_t *)malloc(max_width * max_width * 2);
