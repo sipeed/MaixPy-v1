@@ -170,7 +170,7 @@ class axp192:
             raise OutOfRange("Range for brightness is from 0 to 15")
         self.__writeReg(0x91, (int(brightness) & 0x0f) << 4)
 
-    def getKeyStuatus(self): # -1: NoPress, 1: ShortPress, 2:LongPress
+    def getKeyStatus(self): # -1: NoPress, 1: ShortPress, 2:LongPress
         but_stu = self.__readReg(0x46)
         if (but_stu & (0x1 << 1)):
             return 1
