@@ -1,6 +1,7 @@
 from machine import I2C, Timer
-import machine
 
+PRESSED = 0
+RELEASED = 1
 class PMUError(Exception):
     pass
  
@@ -22,7 +23,7 @@ def __chkPwrKeyWaitForSleep__(timer):
         return
     
     if __preButPressed__ == -1 and  ((pek_stu & (0x01 << 1)) == False and (pek_stu & 0x01) == False):
-        __preButPressed__ = 1
+        __preButPressed__ = RELEASED
 
     if (pek_stu & 0x01):
         __pmuI2CDEV__.writeto_mem(52, 0x31, 0x0F, mem_size=8)  #Enable Sleep Mode
@@ -30,10 +31,9 @@ def __chkPwrKeyWaitForSleep__(timer):
         __pmuI2CDEV__.writeto_mem(52, 0x12, 0x00, mem_size=8)  #Turn off other power source
     
     if (pek_stu & (0x01 << 1)):
-        __preButPressed__ = 0
+        __preButPressed__ = PRESSED
     else:
-        __preButPressed__ = 1
-        #machine.reset()
+        __preButPressed__ = RELEASED
 
 class axp192:
     def __init__(self, i2cDev=None):
@@ -170,7 +170,7 @@ class axp192:
             raise OutOfRange("Range for brightness is from 0 to 15")
         self.__writeReg(0x91, (int(brightness) & 0x0f) << 4)
 
-    def getKeyStuatus(self): # -1: NoPress, 1: ShortPress, 2:LongPress
+    def getKeyStatus(self): # -1: NoPress, 1: ShortPress, 2:LongPress
         but_stu = self.__readReg(0x46)
         if (but_stu & (0x1 << 1)):
             return 1
@@ -201,8 +201,21 @@ class axp192:
 
 class PMU_Button:
     def __init__(self):
-        pass
+        self.state = RELEASED
 
     def value(self):
+        """Returns PMU button value"""
+        return __preButPressed__
+    
+    def event(self):
+        """Converts polling in events"""
+        if self.state == RELEASED:
+            if __preButPressed__ == PRESSED:
+                self.state == PRESSED
+                return True
+        self.state == __preButPressed__
+        return False
+
+        
         return __preButPressed__
 

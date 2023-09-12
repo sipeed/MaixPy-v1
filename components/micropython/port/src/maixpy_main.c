@@ -705,7 +705,7 @@ int maixpy_main()
   load_config_from_spiffs(&config);
   sysctl_cpu_set_freq(config.freq_cpu);
   sysctl_pll_set_freq(SYSCTL_PLL1, config.freq_pll1);
-  sysctl_clock_set_threshold(SYSCTL_THRESHOLD_AI, config.kpu_div - 1);
+  sysctl_clock_set_threshold(SYSCTL_THRESHOLD_AI, 15);
   dmac_init();
   plic_init();
   uarths_init();

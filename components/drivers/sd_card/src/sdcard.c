@@ -166,7 +166,7 @@ static void sd_end_cmd(void)
 static uint8_t sd_get_response(void)
 {
     uint8_t result;
-    // was set to 0xFFF (values from 95 to 65535)
+    // was set to 0xFFFF (values from 95 to 65535)
     uint16_t timeout = 0xFDE; // min: 0x5f
     /*!< Check if response is got or a timeout is happen */
     while (timeout--)
