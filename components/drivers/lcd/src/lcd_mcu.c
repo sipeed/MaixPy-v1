@@ -67,15 +67,31 @@ static void lcd_preinit_register_handler(lcd_preinit_handler_t handler)
     lcd_preinit_handler = handler;
 }
 
+#include "printf.h"
+
 static void lcd_init_sequence_for_ili9481(void)
 {
-    uint8_t t[2];
+    // printk("lcd_init_sequence_for_ili9481\r\n");
+
+    uint8_t t[24];
     // lcd.clear((99, 99, 99))
-    mcu_lcd_clear(0xc63);
-    // lcd.register(0xD1, 0x00)
+    mcu_lcd_clear(0xe28d);
+
+    // lcd.register(0xd0, [0x07,0x42,0x1b])
+    tft_write_command(0xD0);
+    t[0] = (0x07);
+    t[1] = (0x42);
+    t[2] = (0x1b);
+    tft_write_byte(t, 3);
+
+    // lcd.register(0xd1, [0x00,0x05,0x0c])
     tft_write_command(0xD1); /* Unk */
     t[0] = (0x00);
-    tft_write_byte(t, 1);
+    t[1] = (0x05);
+    t[2] = (0x0c);
+    tft_write_byte(t, 3);
+
+
 }
 
 static void lcd_init_sequence_for_ili9486(void)

@@ -47,7 +47,8 @@
 #define SECTOR_ERASE                        0x20
 #define BLOCK_32K_ERASE                     0x52
 #define BLOCK_64K_ERASE                     0xD8
-#define CHIP_ERASE                          0x60
+#define CHIP_ERASE                          0xC7
+#define CHIP_ERASE_ALT                      0x60
 #define READ_ID                             0x90
 #define ENABLE_QPI                          0x38
 #define EXIT_QPI                            0xFF
@@ -56,6 +57,7 @@
 
 #define REG1_BUSY_MASK                      0x01
 #define REG2_QUAL_MASK                      0x02
+#define CONTINUE_READ_MASK                  0x20
 
 #define LETOBE(x)     ((x >> 24) | ((x & 0x00FF0000) >> 8) | ((x & 0x0000FF00) << 8) | (x << 24))
 /* clang-format on */
@@ -83,31 +85,25 @@ typedef enum _w25qxx_read
     W25QXX_QUAD_FAST,
 } w25qxx_read_t;
 
-w25qxx_status_t w25qxx_init(uint8_t spi_index, uint8_t spi_ss);
-w25qxx_status_t w25qxx_is_busy(void);
-w25qxx_status_t w25qxx_chip_erase(void);
-w25qxx_status_t w25qxx_enable_quad_mode(void);
-w25qxx_status_t w25qxx_disable_quad_mode(void);
-w25qxx_status_t w25qxx_sector_erase(uint32_t addr);
-w25qxx_status_t w25qxx_read_status_reg1(uint8_t *reg_data);
-w25qxx_status_t w25qxx_read_status_reg2(uint8_t *reg_data);
-w25qxx_status_t w25qxx_write_status_reg(uint8_t reg1_data, uint8_t reg2_data);
-w25qxx_status_t w25qxx_read_id(uint8_t *manuf_id, uint8_t *device_id);
-w25qxx_status_t w25qxx_write_data(uint32_t addr, uint8_t *data_buf, uint32_t length);
-w25qxx_status_t w25qxx_write_data_direct(uint32_t addr, uint8_t *data_buf, uint32_t length);
-w25qxx_status_t w25qxx_read_data(uint32_t addr, uint8_t *data_buf, uint32_t length, w25qxx_read_t mode);
-w25qxx_status_t w25qxx_enable_xip_mode(void);
-w25qxx_status_t w25qxx_disable_xip_mode(void);
-w25qxx_status_t w25qxx_read_id_dma(uint8_t *manuf_id, uint8_t *device_id);
+w25qxx_status_t w25qxx_init_dma(uint8_t spi_index, uint8_t spi_ss);
+w25qxx_status_t w25qxx_is_busy_dma(void);
+w25qxx_status_t w25qxx_chip_erase_dma(void);
+w25qxx_status_t w25qxx_enable_quad_mode_dma(void);
+w25qxx_status_t w25qxx_disable_quad_mode_dma(void);
 w25qxx_status_t w25qxx_sector_erase_dma(uint32_t addr);
 w25qxx_status_t w25qxx_32k_block_erase_dma(uint32_t addr);
 w25qxx_status_t w25qxx_64k_block_erase_dma(uint32_t addr);
-w25qxx_status_t w25qxx_init_dma(uint8_t spi_index, uint8_t spi_ss);
+w25qxx_status_t w25qxx_read_status_reg1_dma(uint8_t *reg_data);
+w25qxx_status_t w25qxx_read_status_reg2_dma(uint8_t *reg_data);
+w25qxx_status_t w25qxx_read_status_reg3_dma(uint8_t *reg_data);
+w25qxx_status_t w25qxx_write_status_reg_dma(uint8_t reg1_data, uint8_t reg2_data);
+w25qxx_status_t w25qxx_write_status_reg1_dma(uint8_t reg_data);
+w25qxx_status_t w25qxx_write_status_reg2_dma(uint8_t reg_data);
+w25qxx_status_t w25qxx_write_status_reg3_dma(uint8_t reg_data);
+w25qxx_status_t w25qxx_read_id_dma(uint8_t *manuf_id, uint8_t *device_id);
 w25qxx_status_t w25qxx_write_data_dma(uint32_t addr, uint8_t *data_buf, uint32_t length);
 w25qxx_status_t w25qxx_write_data_direct_dma(uint32_t addr, uint8_t *data_buf, uint32_t length);
 w25qxx_status_t w25qxx_read_data_dma(uint32_t addr, uint8_t *data_buf, uint32_t length, w25qxx_read_t mode);
-w25qxx_status_t w25qxx_is_busy_dma(void);
-w25qxx_status_t w25qxx_enable_quad_mode_dma(void);
 
 #endif
 

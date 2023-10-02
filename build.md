@@ -40,7 +40,7 @@ sudo pip3 install -r requirements.txt
 ```
 
 If macOS:
-* Install cmake by brew or downlaod dmg file from [cmake official website](https://cmake.org/download/)
+* Install cmake by brew or download dmg file from [cmake official website](https://cmake.org/download/)
 * Ensure command `cmake --version` can be executed in terminal, in macOS maybe you need to add cmake bin dir to `PATH` in `~/.bashrc` or `~/.zshrc` like:
 ```
 export PATH=$PATH:/Applications/CMake.app/Contents/bin/
@@ -76,7 +76,7 @@ ls /opt/kendryte-toolchain/bin
 
 ## Configure project
 
-* Switch path to `hello_world` project director
+* Switch path to `hello_world` project directory
 
 ```
 cd MaixPy
