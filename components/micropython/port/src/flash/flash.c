@@ -34,9 +34,10 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(flash_write_obj, flash_write);
 STATIC mp_obj_t flash_erase(mp_obj_t addr, mp_obj_t size)
 {
     w25qxx_status_t res;
-    if (size == 4096)
+    uint32_t int_size = mp_obj_get_int(size);
+    if (int_size == 4096)
         res = w25qxx_sector_erase_dma(mp_obj_get_int(addr));
-    else if (size == 65536)
+    else if (int_size == 65536)
         res = w25qxx_64k_block_erase_dma(mp_obj_get_int(addr));
 
     if (res != W25QXX_OK) {
