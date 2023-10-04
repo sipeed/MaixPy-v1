@@ -36,10 +36,7 @@ STATIC mp_obj_t flash_erase(mp_obj_t addr, mp_obj_t size)
     w25qxx_status_t res;
     uint32_t int_size = mp_obj_get_int(size);
     if (int_size == 4096) {
-        uint32_t sector_addr = 0;
-        sector_addr = mp_obj_get_int(addr);
-        sector_addr &= ~(w25qxx_FLASH_SECTOR_SIZE - 1);
-        res = w25qxx_sector_erase_dma(sector_addr);
+        res = w25qxx_sector_erase_dma(mp_obj_get_int(addr));
     }
     else if (int_size == 65536)
         res = w25qxx_64k_block_erase_dma(mp_obj_get_int(addr));
