@@ -95,6 +95,33 @@ w25qxx_status_t w25qxx_write_status_reg_dma(uint8_t reg1_data, uint8_t reg2_data
     return W25QXX_OK;
 }
 
+w25qxx_status_t w25qxx_write_status_reg1_dma(uint8_t reg_data)
+{
+    uint8_t cmd[2] = {WRITE_REG1, reg_data};
+
+    w25qxx_write_enable_dma();
+    w25qxx_send_data_dma(cmd, 2, 0, 0);
+    return W25QXX_OK;
+}
+
+w25qxx_status_t w25qxx_write_status_reg2_dma(uint8_t reg_data)
+{
+    uint8_t cmd[2] = {WRITE_REG2, reg_data};
+
+    w25qxx_write_enable_dma();
+    w25qxx_send_data_dma(cmd, 2, 0, 0);
+    return W25QXX_OK;
+}
+
+w25qxx_status_t w25qxx_write_status_reg3_dma(uint8_t reg_data)
+{
+    uint8_t cmd[2] = {WRITE_REG3, reg_data};
+
+    w25qxx_write_enable_dma();
+    w25qxx_send_data_dma(cmd, 2, 0, 0);
+    return W25QXX_OK;
+}
+
 w25qxx_status_t w25qxx_read_status_reg1_dma(uint8_t *reg_data)
 {
     uint8_t cmd[1] = {READ_REG1};
@@ -108,6 +135,16 @@ w25qxx_status_t w25qxx_read_status_reg1_dma(uint8_t *reg_data)
 w25qxx_status_t w25qxx_read_status_reg2_dma(uint8_t *reg_data)
 {
     uint8_t cmd[1] = {READ_REG2};
+    uint8_t data[1] = {0};
+
+    w25qxx_receive_data_dma(cmd, 1, data, 1);
+    *reg_data = data[0];
+    return W25QXX_OK;
+}
+
+w25qxx_status_t w25qxx_read_status_reg3_dma(uint8_t *reg_data)
+{
+    uint8_t cmd[1] = {READ_REG3};
     uint8_t data[1] = {0};
 
     w25qxx_receive_data_dma(cmd, 1, data, 1);
@@ -178,7 +215,15 @@ w25qxx_status_t w25qxx_enable_quad_mode_dma(void)
     if (!(reg_data & REG2_QUAL_MASK))
     {
         reg_data |= REG2_QUAL_MASK;
+        /*
+         * Don't touch these codes,
+         * here is the fix for PUYA P25Q128L writing QE bit
+         */
+        w25qxx_write_status_reg2_dma(reg_data);
         w25qxx_write_status_reg_dma(0x00, reg_data);
+        while (w25qxx_is_busy_dma()) {
+            continue;
+        }
     }
     w25qxx_page_program_fun = w25qxx_quad_page_program_dma;
     w25qxx_read_fun = w25qxx_quad_read_data_dma;
@@ -189,11 +234,19 @@ w25qxx_status_t w25qxx_disable_quad_mode_dma(void)
 {
     uint8_t reg_data = 0;
 
-    w25qxx_read_status_reg2(&reg_data);
+    w25qxx_read_status_reg2_dma(&reg_data);
     if (reg_data & REG2_QUAL_MASK)
     {
         reg_data &= (~REG2_QUAL_MASK);
-        w25qxx_write_status_reg(0x00, reg_data);
+        /*
+         * Don't touch these codes,
+         * here is the fix for PUYA P25Q128L writing QE bit
+         */
+        w25qxx_write_status_reg2_dma(reg_data);
+        w25qxx_write_status_reg_dma(0x00, reg_data);
+        while (w25qxx_is_busy_dma()) {
+            continue;
+        }
     }
     w25qxx_page_program_fun = w25qxx_page_program_dma;
     w25qxx_read_fun = w25qxx_stand_read_data_dma;

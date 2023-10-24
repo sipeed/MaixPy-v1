@@ -224,10 +224,12 @@ STATIC int wiznet5k_socket_connect(mod_network_socket_obj_t *socket, byte *ip,
   }
 
   // now connect
-  MP_THREAD_GIL_EXIT();
+  // GIL is managed in modusocket
+  // MP_THREAD_GIL_EXIT();
   mp_int_t ret = WIZCHIP_EXPORT(connect)(socket->u_param.fileno, ip, port,
                                          socket->timeout);
-  MP_THREAD_GIL_ENTER();
+  // GIL is managed in modusocket
+  // MP_THREAD_GIL_ENTER();
 
   if (ret < 0) {
     // wiznet5k_socket_close(socket);
@@ -242,11 +244,13 @@ STATIC int wiznet5k_socket_connect(mod_network_socket_obj_t *socket, byte *ip,
 STATIC mp_uint_t wiznet5k_socket_send(mod_network_socket_obj_t *socket,
                                       const byte *buf, mp_uint_t len,
                                       int *_errno) {
-  MP_THREAD_GIL_EXIT();
+  // GIL enter/release is controlled in modusocket
+  // MP_THREAD_GIL_EXIT();
   setSn_MR(wiznet5k_obj.socket_used, (socket->u_param.type | (0 & 0xF0)));
   mp_int_t ret = WIZCHIP_EXPORT(send)(socket->u_param.fileno, (byte *)buf, len,
                                       socket->timeout);
-  MP_THREAD_GIL_ENTER();
+  // GIL enter/release is controlled in modusocket
+  // MP_THREAD_GIL_ENTER();
 
   // TODO convert Wiz errno's to POSIX ones
   if (ret < 0) {
@@ -259,11 +263,13 @@ STATIC mp_uint_t wiznet5k_socket_send(mod_network_socket_obj_t *socket,
 
 STATIC mp_uint_t wiznet5k_socket_recv(mod_network_socket_obj_t *socket,
                                       byte *buf, mp_uint_t len, int *_errno) {
-  MP_THREAD_GIL_EXIT();
+  // GIL is managed in modusocket
+  // MP_THREAD_GIL_EXIT();
   setSn_MR(wiznet5k_obj.socket_used, (socket->u_param.type | (0 & 0xF0)));
   mp_int_t ret =
       WIZCHIP_EXPORT(recv)(socket->u_param.fileno, buf, len, socket->timeout);
-  MP_THREAD_GIL_ENTER();
+  // GIL is managed in modusocket
+  // MP_THREAD_GIL_ENTER();
 
   // TODO convert Wiz errno's to POSIX ones
   if (ret < 0) {
@@ -284,11 +290,13 @@ STATIC mp_uint_t wiznet5k_socket_sendto(mod_network_socket_obj_t *socket,
     }
   }
 
-  MP_THREAD_GIL_EXIT();
+  // GIL is managed in modusocket
+  // MP_THREAD_GIL_EXIT();
   setSn_MR(wiznet5k_obj.socket_used, (socket->u_param.type | (0 & 0xF0)));
   mp_int_t ret = WIZCHIP_EXPORT(sendto)(socket->u_param.fileno, (byte *)buf,
                                         len, ip, port, socket->timeout);
-  MP_THREAD_GIL_ENTER();
+  // GIL is managed in modusocket
+  // MP_THREAD_GIL_ENTER();
 
   if (ret < 0) {
     // wiznet5k_socket_close(socket);
@@ -302,11 +310,13 @@ STATIC mp_uint_t wiznet5k_socket_recvfrom(mod_network_socket_obj_t *socket,
                                           byte *buf, mp_uint_t len, byte *ip,
                                           mp_uint_t *port, int *_errno) {
   uint16_t port2;
-  MP_THREAD_GIL_EXIT();
+  // GIL is managed in modusocket
+  // MP_THREAD_GIL_EXIT();
   setSn_MR(wiznet5k_obj.socket_used, (socket->u_param.type | (0 & 0xF0)));
   mp_int_t ret = WIZCHIP_EXPORT(recvfrom)(socket->u_param.fileno, buf, len, ip,
                                           &port2, socket->timeout);
-  MP_THREAD_GIL_ENTER();
+  // GIL is managed in modusocket
+  // MP_THREAD_GIL_ENTER();
   *port = port2;
   if (ret < 0) {
     // wiznet5k_socket_close(socket);

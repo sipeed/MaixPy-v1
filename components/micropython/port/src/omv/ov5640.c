@@ -21,25 +21,27 @@
 
 static int reset(sensor_t *sensor)
 {
-    int i=0;
-    const uint16_t (*regs)[2];
+    int i = 0;
+    const uint16_t(*regs)[2];
     // Reset all registers
     cambus_writeb(sensor->slv_addr, 0x3103, 0x11);
     cambus_writeb(sensor->slv_addr, 0x3008, 0x82);
     // Delay 10 ms
     mp_hal_delay_ms(10);
-	
+
     // Write default regsiters
-    for (i=0; default_regs[i][0]; i++) {
+    for (i = 0; default_regs[i][0]; i++)
+    {
         cambus_writeb(sensor->slv_addr, default_regs[i][0], default_regs[i][1]);
     }
-	
+
     //cambus_writeb(sensor->slv_addr, 0x3008, 0x02);
     mp_hal_delay_ms(100);
 
 #ifdef CONFIG_OV5640_AF
     // Write auto focus firmware
-    for (i=0, regs = OV5640_AF_REG; regs[i][0]; i++) {
+    for (i = 0, regs = OV5640_AF_REG; regs[i][0]; i++)
+    {
         cambus_writeb(sensor->slv_addr, regs[i][0], regs[i][1]);
     }
     // Delay
@@ -57,9 +59,12 @@ static int reset(sensor_t *sensor)
 static int sleep(sensor_t *sensor, int enable)
 {
     uint8_t reg;
-    if (enable) {
+    if (enable)
+    {
         reg = 0x42;
-    } else {
+    }
+    else
+    {
         reg = 0x02;
     }
     // Write back register
@@ -69,7 +74,8 @@ static int sleep(sensor_t *sensor, int enable)
 static int read_reg(sensor_t *sensor, uint16_t reg_addr)
 {
     uint8_t reg_data;
-    if (cambus_readb(sensor->slv_addr, reg_addr, &reg_data) != 0) {
+    if (cambus_readb(sensor->slv_addr, reg_addr, &reg_data) != 0)
+    {
         return -1;
     }
     return reg_data;
@@ -82,38 +88,40 @@ static int write_reg(sensor_t *sensor, uint16_t reg_addr, uint16_t reg_data)
 
 static int set_pixformat(sensor_t *sensor, pixformat_t pixformat)
 {
-	printf("[ov5640] set pixformat(pixformat=%d)\n", pixformat);
-//    uint8_t reg;
-    int ret=0;
-    switch (pixformat) {
-        case PIXFORMAT_RGB565:
-            cambus_writeb(sensor->slv_addr, 0x4300, 0x61);//RGB565
-            cambus_writeb(sensor->slv_addr, 0x501f, 0x01);//ISP RGB
-            break;
-        case PIXFORMAT_YUV422:
-        case PIXFORMAT_GRAYSCALE:
-            cambus_writeb(sensor->slv_addr, 0x4300, 0x10);//Y8
-            cambus_writeb(sensor->slv_addr, 0x501f, 0x00);//ISP YUV
-            break;
-        case PIXFORMAT_BAYER:
-            //reg = 0x00;//TODO: fix order
-            break;
-        default:
-            return -1;
+    int ret = 0;
+    switch (pixformat)
+    {
+    case PIXFORMAT_RGB565:
+        cambus_writeb(sensor->slv_addr, 0x501f, 0x01); //ISP RGB
+        cambus_writeb(sensor->slv_addr, 0x5000, 0x2f); //RAW Gamma enable
+        cambus_writeb(sensor->slv_addr, 0x5002, 0xf8); //YUV to RGB and Dithering enable
+        cambus_writeb(sensor->slv_addr, 0x4300, 0x61); //RGB
+        break;
+    case PIXFORMAT_YUV422:
+    case PIXFORMAT_GRAYSCALE:
+        cambus_writeb(sensor->slv_addr, 0x501f, 0x00); //ISP YUV
+        cambus_writeb(sensor->slv_addr, 0x5000, 0x6f); //YUV Gamma and RAW Gamma enable
+        cambus_writeb(sensor->slv_addr, 0x4300, 0x32); //UYVY...
+        break;
+    case PIXFORMAT_BAYER:
+        //reg = 0x00;//TODO: fix order
+        break;
+    default:
+        return -1;
     }
     return ret;
 }
 
 static int set_framesize(sensor_t *sensor, framesize_t framesize)
 {
-    int ret=0;
+    int ret = 0;
     uint16_t w = resolution[framesize][0];
     uint16_t h = resolution[framesize][1];
 
-    ret |= cambus_writeb(sensor->slv_addr, 0x3808, w>>8);
-    ret |= cambus_writeb(sensor->slv_addr, 0x3809,  w);
-    ret |= cambus_writeb(sensor->slv_addr, 0x380a, h>>8);
-    ret |= cambus_writeb(sensor->slv_addr, 0x380b,  h);
+    ret |= cambus_writeb(sensor->slv_addr, 0x3808, w >> 8);
+    ret |= cambus_writeb(sensor->slv_addr, 0x3809, w);
+    ret |= cambus_writeb(sensor->slv_addr, 0x380a, h >> 8);
+    ret |= cambus_writeb(sensor->slv_addr, 0x380b, h);
 
     return ret;
 }
@@ -182,10 +190,13 @@ static int set_hmirror(sensor_t *sensor, int enable)
 {
     uint8_t reg;
     int ret = cambus_readb(sensor->slv_addr, 0x3821, &reg);
-    if (enable){
-        ret |= cambus_writeb(sensor->slv_addr, 0x3821, reg|0x06);
-    } else {
-        ret |= cambus_writeb(sensor->slv_addr, 0x3821, reg&0xF9);
+    if (enable)
+    {
+        ret |= cambus_writeb(sensor->slv_addr, 0x3821, reg | 0x06);
+    }
+    else
+    {
+        ret |= cambus_writeb(sensor->slv_addr, 0x3821, reg & 0xF9);
     }
     return ret;
 }
@@ -194,10 +205,13 @@ static int set_vflip(sensor_t *sensor, int enable)
 {
     uint8_t reg;
     int ret = cambus_readb(sensor->slv_addr, 0x3820, &reg);
-    if (enable){
-        ret |= cambus_writeb(sensor->slv_addr, 0x3820, reg&0xF9);
-    } else {
-        ret |= cambus_writeb(sensor->slv_addr, 0x3820, reg|0x06);
+    if (enable)
+    {
+        ret |= cambus_writeb(sensor->slv_addr, 0x3820, reg & 0xF9);
+    }
+    else
+    {
+        ret |= cambus_writeb(sensor->slv_addr, 0x3820, reg | 0x06);
     }
     return ret;
 }
@@ -215,28 +229,28 @@ static int set_lens_correction(sensor_t *sensor, int enable, int radi, int coef)
 int ov5640_init(sensor_t *sensor)
 {
     // Initialize sensor structure.
-    sensor->gs_bpp              = 1;
-    sensor->reset               = reset;
-    sensor->sleep               = sleep;
-    sensor->read_reg            = read_reg;
-    sensor->write_reg           = write_reg;
-    sensor->set_pixformat       = set_pixformat;
-    sensor->set_framesize       = set_framesize;
-    sensor->set_framerate       = set_framerate;
-    sensor->set_contrast        = set_contrast;
-    sensor->set_brightness      = set_brightness;
-    sensor->set_saturation      = set_saturation;
-    sensor->set_gainceiling     = set_gainceiling;
-    sensor->set_colorbar        = set_colorbar;
-    sensor->set_auto_gain       = set_auto_gain;
-    sensor->get_gain_db         = get_gain_db;
-    sensor->set_auto_exposure   = set_auto_exposure;
-    sensor->get_exposure_us     = get_exposure_us;
-    sensor->set_auto_whitebal   = set_auto_whitebal;
-    sensor->get_rgb_gain_db     = get_rgb_gain_db;
-    sensor->set_hmirror         = set_hmirror;
-    sensor->set_vflip           = set_vflip;
-    sensor->set_special_effect  = set_special_effect;
+    sensor->gs_bpp = 1;
+    sensor->reset = reset;
+    sensor->sleep = sleep;
+    sensor->read_reg = read_reg;
+    sensor->write_reg = write_reg;
+    sensor->set_pixformat = set_pixformat;
+    sensor->set_framesize = set_framesize;
+    sensor->set_framerate = set_framerate;
+    sensor->set_contrast = set_contrast;
+    sensor->set_brightness = set_brightness;
+    sensor->set_saturation = set_saturation;
+    sensor->set_gainceiling = set_gainceiling;
+    sensor->set_colorbar = set_colorbar;
+    sensor->set_auto_gain = set_auto_gain;
+    sensor->get_gain_db = get_gain_db;
+    sensor->set_auto_exposure = set_auto_exposure;
+    sensor->get_exposure_us = get_exposure_us;
+    sensor->set_auto_whitebal = set_auto_whitebal;
+    sensor->get_rgb_gain_db = get_rgb_gain_db;
+    sensor->set_hmirror = set_hmirror;
+    sensor->set_vflip = set_vflip;
+    sensor->set_special_effect = set_special_effect;
     sensor->set_lens_correction = set_lens_correction;
 
     // Set sensor flags

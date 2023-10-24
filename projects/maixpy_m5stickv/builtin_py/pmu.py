@@ -211,9 +211,9 @@ class PMU_Button:
         """Converts polling in events"""
         if self.state == RELEASED:
             if __preButPressed__ == PRESSED:
-                self.state == PRESSED
+                self.state = PRESSED
                 return True
-        self.state == __preButPressed__
+        self.state = __preButPressed__
         return False
 
         
