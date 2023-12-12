@@ -41,11 +41,16 @@ class axp173():
         else:
             self.i2cDev = i2cDev
 
-        self.axp173Addr = 52
+        self.axp173Addr = 0x34
 
         global __pmuI2CDEV__, __preButPressed__
         __pmuI2CDEV__ = self.i2cDev
         __preButPressed__ = -1
+        # Proper LDO voltages for camera
+        self.i2cDev.writeto_mem(self.axp173Addr, 0x27, 0x20)
+        self.i2cDev.writeto_mem(self.axp173Addr, 0x28, 0x0C)
+        self.i2cDev.writeto_mem(self.axp173Addr, 0x36, 0xCC, mem_size=8)
+
 
         scanList = self.i2cDev.scan()
         if self.axp173Addr not in scanList:
@@ -177,6 +182,8 @@ class axp173():
 
     def enablePMICSleepMode(self, enable):
         if enable == True:
+            self.i2cDev.writeto_mem(self.axp173Addr, 0x27, 0x48)  # Default values
+            self.i2cDev.writeto_mem(self.axp173Addr, 0x28, 0xCF)  # Default values
             self.__writeReg(0x36, 0x27) #Turnoff PEK Overtime Shutdown
             self.__writeReg(0x46, 0xFF) #Clear the interrupts
 
