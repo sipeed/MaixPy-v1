@@ -1,221 +1,224 @@
+"""This module provides methods to interact with the AXP192 Power Management Unit (PMU)"""
+
 from machine import I2C, Timer
+
+AXP192_ADDRESS = 0x34
+AXP192_POWER_OUTPUT_CONTROL = 0x12
+AXP192_SHUTDOWN_VOLT_SETTINGS = 0x31
+AXP192_PEK_SETTINGS_REG = 0x36
+AXP192_IRQ_STATS_3 = 0x46
+AXP192_ADC_REG = 0x82
+AXP192_GPIO_0_VOLTAGE_SETTING = 0x91
 
 PRESSED = 0
 RELEASED = 1
+
+
 class PMUError(Exception):
-    pass
- 
+    """Base class for PMU errors."""
+
+
 class NotFoundError(PMUError):
-    pass
+    """Raised when a device is not found."""
+
 
 class OutOfRange(PMUError):
-    pass
+    """Raised when a value is out of range."""
 
-def __chkPwrKeyWaitForSleep__(timer):
-    global __pmuI2CDEV__, __preButPressed__ #<- Do not do this :(
+__pmu_i2c_dev__ = None
+__pre_but_pressed__ = -1
 
-    __pmuI2CDEV__.writeto(52, bytes([0x46]))
-    pek_stu = (__pmuI2CDEV__.readfrom(52, 1))[0]
-    __pmuI2CDEV__.writeto_mem(52, 0x46, 0xFF, mem_size=8) #Clear IRQ
+def __ckeck_power_key__(timer):
+    global __pre_but_pressed__  # <- Do not do this :(
 
-    #Prevent loop in restart, wait for release
-    if __preButPressed__ == -1 and ((pek_stu & (0x01 << 1)) or (pek_stu & 0x01)):
+    __pmu_i2c_dev__.writeto(AXP192_ADDRESS, bytes([AXP192_IRQ_STATS_3]))
+    pek_stu = (__pmu_i2c_dev__.readfrom(AXP192_ADDRESS, 1))[0]
+    __pmu_i2c_dev__.writeto_mem(
+        AXP192_ADDRESS, AXP192_IRQ_STATS_3, 0xFF, mem_size=8
+    )  # Clear IRQ
+
+    # Prevent loop in restart, wait for release
+    if __pre_but_pressed__ == -1 and ((pek_stu & (0x01 << 1)) or (pek_stu & 0x01)):
         return
-    
-    if __preButPressed__ == -1 and  ((pek_stu & (0x01 << 1)) == False and (pek_stu & 0x01) == False):
-        __preButPressed__ = RELEASED
 
-    if (pek_stu & 0x01):
-        __pmuI2CDEV__.writeto_mem(52, 0x31, 0x0F, mem_size=8)  #Enable Sleep Mode
-        __pmuI2CDEV__.writeto_mem(52, 0x91, 0x00, mem_size=8)  #Turn off GPIO0/LDO0
-        __pmuI2CDEV__.writeto_mem(52, 0x12, 0x00, mem_size=8)  #Turn off other power source
-    
-    if (pek_stu & (0x01 << 1)):
-        __preButPressed__ = PRESSED
+    if __pre_but_pressed__ == -1 and (
+        (pek_stu & (0x01 << 1)) is False and (pek_stu & 0x01) is False
+    ):
+        __pre_but_pressed__ = RELEASED
+
+    if pek_stu & 0x01:
+        __pmu_i2c_dev__.writeto_mem(
+            AXP192_ADDRESS, AXP192_SHUTDOWN_VOLT_SETTINGS, 0x0F, mem_size=8
+        )  # Enable Sleep Mode
+        __pmu_i2c_dev__.writeto_mem(
+            AXP192_ADDRESS, AXP192_GPIO_0_VOLTAGE_SETTING, 0x00, mem_size=8
+        )  # Turn off GPIO0/LDO0
+        __pmu_i2c_dev__.writeto_mem(
+            AXP192_ADDRESS, AXP192_POWER_OUTPUT_CONTROL, 0x00, mem_size=8
+        )  # Turn off other power source
+
+    if pek_stu & (0x01 << 1):
+        __pre_but_pressed__ = PRESSED
     else:
-        __preButPressed__ = RELEASED
+        __pre_but_pressed__ = RELEASED
 
-class axp192:
-    def __init__(self, i2cDev=None):
-        if i2cDev == None:
+
+class PMUController:
+    """Control for AXP192 PMU."""
+
+    def __init__(self, i2c_device=None):
+        self.button_check_timer = None
+        if i2c_device is None:
             try:
-                self.i2cDev = I2C(I2C.I2C0, freq=400000, scl=28, sda=29)
+                self.i2c_device = I2C(I2C.I2C0, freq=400000, scl=24, sda=27)
             except:
-                raise PMUError("Unable to init I2C0 as Master")
+                raise PMUError("Unable to initialize I2C0 as Master")
         else:
-            self.i2cDev = i2cDev
-        
-        self.axp192Addr = 52
+            self.i2c_device = i2c_device
 
-        global __pmuI2CDEV__, __preButPressed__
-        __pmuI2CDEV__ = self.i2cDev
-        __preButPressed__ = -1
-        
-        scanList = self.i2cDev.scan()
-        if self.axp192Addr not in scanList:
-            raise NotFoundError
-        
-    def __writeReg(self, regAddr, value):
-        self.i2cDev.writeto_mem(self.axp192Addr, regAddr, value, mem_size=8)
+        global __pmu_i2c_dev__, __pre_but_pressed__
+        __pmu_i2c_dev__ = self.i2c_device
+        __pre_but_pressed__ = -1
 
-    def __readReg(self, regAddr):
-        self.i2cDev.writeto(self.axp192Addr, bytes([regAddr]))
-        return (self.i2cDev.readfrom(self.axp192Addr, 1))[0]
+        device_list = self.i2c_device.scan()
+        if AXP192_ADDRESS not in device_list:
+            raise NotFoundError("PMU not found")
 
-    def enableADCs(self, enable):
-        if enable == True:
-            self.__writeReg(0x82, 0xFF)
+    def __write_register(self, register_address, value):
+        self.i2c_device.writeto_mem(AXP192_ADDRESS, register_address, value)
+
+    def __read_register(self, register_address):
+        self.i2c_device.writeto(AXP192_ADDRESS, bytes([register_address]))
+        return (self.i2c_device.readfrom(AXP192_ADDRESS, 1))[0]
+
+    def enable_adcs(self, enable):
+        """Enable or disable ADCs."""
+
+        if enable:
+            self.__write_register(AXP192_ADC_REG, 0xFF)
         else:
-            self.__writeReg(0x82, 0x00)
+            self.__write_register(AXP192_ADC_REG, 0x00)
 
-    def enableCoulombCounter(self, enable):
-        if enable == True:
-            self.__writeReg(0xB8, 0x80)
-        else:
-            self.__writeReg(0xB8, 0x00)
-    
-    def stopCoulombCounter(self):
-        self.__writeReg(0xB8, 0xC0)
-    
-    def clearCoulombCounter(self):
-        self.__writeReg(0xB8, 0xA0)
-    
-    def __getCoulombChargeData(self):
-        CoulombCounter_LSB = self.__readReg(0xB0)
-        CoulombCounter_B1 = self.__readReg(0xB1)
-        CoulombCounter_B2 = self.__readReg(0xB2)
-        CoulombCounter_MSB = self.__readReg(0xB3)
+    def get_battery_voltage(self):
+        """Returns battery voltage"""
 
-        return ((CoulombCounter_LSB << 24) + (CoulombCounter_B1 << 16) + \
-            (CoulombCounter_B2 << 8) + CoulombCounter_MSB)
-    
-    def __getCoulombDischargeData(self):
-        CoulombCounter_LSB = self.__readReg(0xB4)
-        CoulombCounter_B1 = self.__readReg(0xB5)
-        CoulombCounter_B2 = self.__readReg(0xB6)
-        CoulombCounter_MSB = self.__readReg(0xB7)
+        return self.__get_voltage(0x78, 0x79, 1.1)  # AXP173-DS PG26 1.1mV/div
 
-        return ((CoulombCounter_LSB << 24) + (CoulombCounter_B1 << 16) + \
-            (CoulombCounter_B2 << 8) + CoulombCounter_MSB)
-    
-    def getCoulombCounterData(self):
-        return 65536 * 0.5 * (self.__getCoulombChargeData() -\
-             self.__getCoulombDischargeData) / 3600.0 / 25.0
-    
-    def getVbatVoltage(self):
-        Vbat_LSB = self.__readReg(0x78)
-        Vbat_MSB = self.__readReg(0x79)
+    def get_usb_voltage(self):
+        """Returns USB voltage"""
 
-        return ((Vbat_LSB << 4) + Vbat_MSB) * 1.1 #AXP192-DS PG26 1.1mV/div
-        
-    def getUSBVoltage(self):
-        Vin_LSB = self.__readReg(0x56)
-        Vin_MSB = self.__readReg(0x57)
+        return self.__get_voltage(0x56, 0x57, 1.7)  # AXP173-DS PG26 1.7mV/div
 
-        return ((Vin_LSB << 4) + Vin_MSB) * 1.7 #AXP192-DS PG26 1.7mV/div
-    
-    def getUSBInputCurrent(self):
-        Iin_LSB = self.__readReg(0x58)
-        Iin_MSB = self.__readReg(0x59)
+    def __get_voltage(self, lsb_reg, msb_reg, divisor):
+        lsb = self.__read_register(lsb_reg)
+        msb = self.__read_register(msb_reg)
+        return ((lsb << 4) + msb) * divisor
 
-        return ((Iin_LSB << 4) + Iin_MSB) * 0.625 #AXP192-DS PG26 0.625mA/div
-    
-    def getConnextVoltage(self):
-        Vcnx_LSB = self.__readReg(0x5A)
-        Vcnx_MSB = self.__readReg(0x5B)
-
-        return ((Vcnx_LSB << 4) + Vcnx_MSB) * 1.7 #AXP192-DS PG26 1.7mV/div
-    
-    def getConnextInputCurrent(self):
-        IinCnx_LSB = self.__readReg(0x5C)
-        IinCnx_MSB = self.__readReg(0x5D)
-
-        return ((IinCnx_LSB << 4) + IinCnx_MSB) * 0.625 #AXP192-DS PG26 0.625mA/div
-
-    def getBatteryChargeCurrent(self):
-        Ichg_LSB = self.__readReg(0x7A)
-        Ichg_MSB = self.__readReg(0x7B)
-
-        return ((Ichg_LSB << 5) + Ichg_MSB) * 0.5 #AXP192-DS PG27 0.5mA/div
-
-    def getBatteryDischargeCurrent(self):
-        Idcg_LSB = self.__readReg(0x7C)
-        Idcg_MSB = self.__readReg(0x7D)
-
-        return ((Idcg_LSB << 5) + Idcg_MSB) * 0.5 #AXP192-DS PG27 0.5mA/div
-
-    def getBatteryInstantWatts(self):
-        Iinswat_LSB = self.__readReg(0x70)
-        Iinswat_B2 = self.__readReg(0x71)
-        Iinswat_MSB = self.__readReg(0x72)
-
-        #AXP192-DS PG32 0.5mA*1.1mV/1000/mW
-        return ((Iinswat_LSB << 16) + (Iinswat_B2 << 8) + Iinswat_MSB) * 1.1 * 0.5 / 1000 
- 
-    def getTemperature(self):
-        Temp_LSB = self.__readReg(0x5E)
-        Temp_MSB = self.__readReg(0x5F)
-
-        #AXP192-DS PG26 0.1degC/div -144.7degC Biased
-        return (((Temp_LSB << 4) + Temp_MSB) * 0.1) - 144.7 
-    
-    def setK210Vcore(self, vol):
-        if vol > 1.05 or vol < 0.8:
-            raise OutOfRange("Voltage is invaild for K210")
-        DCDC2Steps = int((vol - 0.7) * 1000 / 25)
-        self.__writeReg(0x23, DCDC2Steps)
-    
-    def setScreenBrightness(self, brightness):
+    def set_screen_brightness(self, brightness):
+        """Sets the screen brightness by modifying the backlight voltage"""
         if brightness > 15 or brightness < 0:
             raise OutOfRange("Range for brightness is from 0 to 15")
-        self.__writeReg(0x91, (int(brightness) & 0x0f) << 4)
+        self.__write_register(
+            AXP192_GPIO_0_VOLTAGE_SETTING, (int(brightness) & 0x0F) << 4
+        )
 
-    def getKeyStatus(self): # -1: NoPress, 1: ShortPress, 2:LongPress
-        but_stu = self.__readReg(0x46)
-        if (but_stu & (0x1 << 1)):
-            return 1
-        else:
-            if (but_stu & (0x1 << 0)):
-                return 2
-            else:
-                return -1
+    def enter_sleep_mode(self):
+        """Set the device to enter sleep mode."""
+
+        self.__write_register(AXP192_PEK_SETTINGS_REG, 0x6C)  # Set to default
+        try:
+            self.button_check_timer.stop()
+            del self.button_check_timer
+        except:
+            pass
+        self.__write_register(AXP192_SHUTDOWN_VOLT_SETTINGS, 0x0F)  # Enable Sleep Mode
+        self.__write_register(
+            AXP192_GPIO_0_VOLTAGE_SETTING, 0x00
+        )  # Turn off GPIO0/LDO0
+        self.__write_register(
+            AXP192_POWER_OUTPUT_CONTROL, 0x00
+        )  # Turn off other power source
+
+    def enable_pek_button_monitor(self):
+        """Enable button polling through a timed task"""
+        self.__write_register(
+            AXP192_PEK_SETTINGS_REG, 0x27
+        )  # Turnoff PEK Overtime Shutdown
+        self.__write_register(AXP192_IRQ_STATS_3, 0xFF)  # Clear the interrupts
+
+        self.button_check_timer = Timer(
+            Timer.TIMER2,
+            Timer.CHANNEL0,
+            mode=Timer.MODE_PERIODIC,
+            period=100,
+            callback=__ckeck_power_key__,
+        )
+
+    # Uncomment code below to use Coulomb counter or other specific features
     
-    def setEnterSleepMode(self):
-        self.__writeReg(0x31, 0x0F)  #Enable Sleep Mode
-        self.__writeReg(0x91, 0x00)  #Turn off GPIO0/LDO0
-        self.__writeReg(0x12, 0x00)  #Turn off other power source
+    # def enable_coulomb_counter(self, enable):
+    #     """Enable or disable the Coulomb counter."""
+    #     self.__write_register(0xB8, 0x80 if enable else 0x00)
 
-    def enablePMICSleepMode(self, enable):
-        if enable == True:
-            self.__writeReg(0x36, 0x27) #Turnoff PEK Overtime Shutdown
-            self.__writeReg(0x46, 0xFF) #Clear the interrupts
+    # def stop_coulomb_counter(self):
+    #     """Stop the Coulomb counter."""
+    #     self.__write_register(0xB8, 0xC0)
 
-            self.butChkTimer = Timer(Timer.TIMER2, Timer.CHANNEL0, mode=Timer.MODE_PERIODIC, period=100, callback=__chkPwrKeyWaitForSleep__)
-        else:
-            self.__writeReg(0x36, 0x6C) #Set to default
-            try:
-                self.butChkTimer.stop()
-                del self.butChkTimer
-            except:
-                pass
+    # def clear_coulomb_counter(self):
+    #     """Clear the Coulomb counter."""
+    #     self.__write_register(0xB8, 0xA0)
+
+    # def __get_coulomb_charge_data(self):
+    #     return self.__assemble_coulomb_data(0xB0, 0xB1, 0xB2, 0xB3)
+
+    # def __get_coulomb_discharge_data(self):
+    #     return self.__assemble_coulomb_data(0xB4, 0xB5, 0xB6, 0xB7)
+
+    # def __assemble_coulomb_data(self, lsb_reg, b1_reg, b2_reg, msb_reg):
+    #     lsb = self.__read_register(lsb_reg)
+    #     b1 = self.__read_register(b1_reg)
+    #     b2 = self.__read_register(b2_reg)
+    #     msb = self.__read_register(msb_reg)
+    #     return (lsb << 24) + (b1 << 16) + (b2 << 8) + msb
+
+    # def get_coulomb_counter_data(self):
+    #     charge_data = self.__get_coulomb_charge_data()
+    #     discharge_data = self.__get_coulomb_discharge_data()
+    #     return 65536 * 0.5 * (charge_data - discharge_data) / 3600.0 / 25.0
+
+    # def set_k210_vcore(self, voltage):
+    #     """Set the voltage for K210's core."""
+
+    #     if voltage > 1.05 or voltage < 0.8:
+    #         raise OutOfRange("Voltage is invalid for K210")
+    #     dcdc2_steps = int((voltage - 0.7) * 1000 / 25)
+    #     self.__write_register(0x23, dcdc2_steps)
+
+    # def get_key_status(self):  # -1: NoPress, 1: ShortPress, 2:LongPress
+    #     """Get the status of the power key."""
+
+    #     button_status = self.__read_register(AXP173_IRQ_STATS_3)
+    #     if button_status & (0x1 << 1):
+    #         return 1
+    #     if button_status & (0x1 << 0):
+    #         return 2
+    #     return -1
 
 class PMU_Button:
+    """Class to mimic Krux GPIO button with interrupt events"""
+
     def __init__(self):
         self.state = RELEASED
 
     def value(self):
         """Returns PMU button value"""
-        return __preButPressed__
-    
+        return __pre_but_pressed__
+
     def event(self):
         """Converts polling in events"""
         if self.state == RELEASED:
-            if __preButPressed__ == PRESSED:
+            if __pre_but_pressed__ == PRESSED:
                 self.state = PRESSED
                 return True
-        self.state = __preButPressed__
+        self.state = __pre_but_pressed__
         return False
-
-        
-        return __preButPressed__
-
