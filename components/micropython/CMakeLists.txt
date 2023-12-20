@@ -452,6 +452,11 @@ if(CONFIG_COMPONENT_MICROPYTHON_ENABLE)
         list(APPEND ADD_SRCS "port/src/secp256k1-embedded/mpy/libsecp256k1.c")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_CONFIG_H")
     endif()
+    # shannon's entropy
+    if(CONFIG_MAIXPY_SHANNON_ENABLE)
+        list(APPEND ADD_INCLUDE "${mpy_port_dir}/src/shannon")
+        append_srcs_dir(ADD_SRCS "port/src/shannon")
+    endif()
     #############################################
 
     ################## FLAGS ####################

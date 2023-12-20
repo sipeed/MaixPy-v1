@@ -170,6 +170,10 @@ menu "Micropython configurations"
 			bool "Enable secp256k1-embedded module"
 			default n
 
+		config MAIXPY_SHANNON_ENABLE
+			bool "Enable shannon module"
+			default n
+
 		config MAIXPY_USE_MEMZIP
 			bool "Use memzip instead of frozen mpy"
 			default n

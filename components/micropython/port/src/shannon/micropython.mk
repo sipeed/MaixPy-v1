@@ -1,0 +1,4 @@
+SHANNON_MOD_DIR := $(USERMOD_DIR)
+
+# Add all C files to SRC_USERMOD.
+SRC_USERMOD += $(SHANNON_MOD_DIR)/shannon.c
