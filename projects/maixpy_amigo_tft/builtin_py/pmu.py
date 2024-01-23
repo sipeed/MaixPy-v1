@@ -160,20 +160,23 @@ class PMUController:
         else:
             self.__write_register(AXP173_ADC_REG, 0x00)
 
+    def usb_connected(self):
+        """Returns True if AC IN available, False otherwise"""
+        return True if self.__read_register(AXP173_POWER_STATUS) & 0x40 else False
+    
+    def charging(self):
+        """Returns True if charging, False otherwise"""
+        return True if self.__read_register(AXP173_CHARGE_STATUS) & 0x40 else False
+    
     def get_battery_voltage(self):
         """Returns battery voltage"""
 
         return self.__get_voltage(0x78, 0x79, 1.1)  # AXP173-DS PG26 1.1mV/div
 
-    def get_usb_voltage(self):
-        """Returns USB voltage"""
-
-        return self.__get_voltage(0x56, 0x57, 1.7)  # AXP173-DS PG26 1.7mV/div
-
-    def __get_voltage(self, lsb_reg, msb_reg, divisor):
-        lsb = self.__read_register(lsb_reg)
+    def __get_voltage(self, msb_reg, lsb_reg, divisor):
         msb = self.__read_register(msb_reg)
-        return ((lsb << 4) + msb) * divisor
+        lsb = self.__read_register(lsb_reg)
+        return ((msb << 4) + lsb) * divisor
 
     def enter_sleep_mode(self):
         """Actually it won't sleep, it will shutdown instead."""
@@ -181,6 +184,11 @@ class PMUController:
 
 
     # Uncomment code below to use Coulomb counter or other specific features
+        
+
+    # def get_usb_voltage(self):
+    #     """Returns USB voltage"""
+    #     return self.__get_voltage(0x56, 0x57, 1.7)  # AXP173-DS PG26 1.7mV/div
     
     # def enable_coulomb_counter(self, enable):
     #     """Enable or disable the Coulomb counter."""
