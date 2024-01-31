@@ -695,7 +695,7 @@ STATIC mp_obj_t py_lcd_draw_string(size_t n_args, const mp_obj_t *args)
 STATIC mp_obj_t py_lcd_fill_rectangle(size_t n_args, const mp_obj_t *args)
 {
     uint16_t color = 0;
-    if (lcd_para.width == 0 || lcd_para.width  == 0)
+    if (lcd_para.width == 0 || lcd_para.height  == 0)
         mp_raise_msg(&mp_type_ValueError, "not init");
     uint16_t x0 = mp_obj_get_int(args[0]);
     uint16_t y0 = mp_obj_get_int(args[1]);
@@ -719,6 +719,75 @@ STATIC mp_obj_t py_lcd_fill_rectangle(size_t n_args, const mp_obj_t *args)
     
     lcd->fill_rectangle(x0, y0, x1, y1, color);
     return mp_const_none;
+}
+
+STATIC mp_obj_t py_lcd_draw_line(size_t n_args, const mp_obj_t *args)
+{
+    uint16_t color = 0;
+    if (lcd_para.width == 0 || lcd_para.height  == 0)
+        mp_raise_msg(&mp_type_ValueError, "not init");
+    uint16_t x0 = mp_obj_get_int(args[0]);
+    uint16_t y0 = mp_obj_get_int(args[1]);
+    uint16_t x1 = mp_obj_get_int(args[2]);
+    uint16_t y1 = mp_obj_get_int(args[3]);
+    if(mp_obj_is_type(args[4], &mp_type_tuple))
+    {
+        mp_obj_t* tuple_data = NULL;
+        size_t len;
+        uint8_t rgb[3];
+        mp_obj_tuple_get(args[4], &len, &tuple_data);
+        rgb[0] = mp_obj_get_int(tuple_data[0]);
+        rgb[1] = mp_obj_get_int(tuple_data[1]);
+        rgb[2] = mp_obj_get_int(tuple_data[2]);
+        color = COLOR_R8_G8_B8_TO_RGB565(rgb[0], rgb[1], rgb[2]);
+    }
+    else
+    {
+        color = mp_obj_get_int(args[4]);
+    }
+    
+    lcd->draw_line(x0, y0, x1, y1, color);
+    return mp_const_none;
+}
+
+static void mcu_lcd_draw_outline(size_t n_args, const mp_obj_t *args)
+{
+    uint16_t color = BLACK;
+    if (lcd_para.width == 0 || lcd_para.height  == 0)
+        mp_raise_msg(&mp_type_ValueError, "not init");
+    uint16_t x0 = mp_obj_get_int(args[0]);
+    if (x0 >= 0)
+        x0 -= 1;  // Match the behavior of previous implementation
+    uint16_t y0 = mp_obj_get_int(args[1]);
+    uint16_t x1 = mp_obj_get_int(args[2]) + x0;
+    uint16_t y1 = mp_obj_get_int(args[3]) + y0;
+    if(mp_obj_is_type(args[4], &mp_type_tuple))
+    {
+        mp_obj_t* tuple_data = NULL;
+        size_t len;
+        uint8_t rgb[3];
+        mp_obj_tuple_get(args[4], &len, &tuple_data);
+        rgb[0] = mp_obj_get_int(tuple_data[0]);
+        rgb[1] = mp_obj_get_int(tuple_data[1]);
+        rgb[2] = mp_obj_get_int(tuple_data[2]);
+        color = COLOR_R8_G8_B8_TO_RGB565(rgb[0], rgb[1], rgb[2]);
+    }
+    else
+    {
+        color = mp_obj_get_int(args[4]);
+    }
+    
+    // Draw top line
+    lcd->draw_line(x0, y0, x1, y0, color);
+
+    // Draw bottom line
+    lcd->draw_line(x0, y1, x1, y1, color);
+
+    // Draw left line
+    lcd->draw_line(x0, y0, x0, y1, color);
+
+    // Draw right line
+    lcd->draw_line(x1, y0, x1, y1, color);
 }
 
 extern void imlib_set_pixel(image_t *img, int x, int y, int p);
@@ -1003,6 +1072,8 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_mirror_obj, 0, 1, py_lcd_mirro
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_bgr_to_rgb_obj, 0, 1, py_lcd_bgr_to_rgb);
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_draw_string_obj, 3, 5, py_lcd_draw_string);
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_fill_rectangle_obj, 3, 5, py_lcd_fill_rectangle);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_draw_line_obj, 3, 5, py_lcd_draw_line);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_draw_outline_obj, 3, 5, mcu_lcd_draw_outline);
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_draw_qr_code_obj, 3, 6, py_lcd_draw_qr_code);
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_draw_qr_code_binary_obj, 3, 6, py_lcd_draw_qr_code_binary);
 
@@ -1025,6 +1096,8 @@ static const mp_map_elem_t globals_dict_table[] = {
     {MP_OBJ_NEW_QSTR(MP_QSTR_bgr_to_rgb), (mp_obj_t)&py_lcd_bgr_to_rgb_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_draw_string), (mp_obj_t)&py_lcd_draw_string_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_fill_rectangle), (mp_obj_t)&py_lcd_fill_rectangle_obj},
+    {MP_OBJ_NEW_QSTR(MP_QSTR_draw_line), (mp_obj_t)&py_lcd_draw_line_obj},
+    {MP_OBJ_NEW_QSTR(MP_QSTR_draw_outline), (mp_obj_t)&py_lcd_draw_outline_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_draw_qr_code), (mp_obj_t)&py_lcd_draw_qr_code_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_draw_qr_code_binary), (mp_obj_t)&py_lcd_draw_qr_code_binary_obj},
     {MP_OBJ_NEW_QSTR(MP_QSTR_register), (mp_obj_t)&py_lcd_write_register_obj},

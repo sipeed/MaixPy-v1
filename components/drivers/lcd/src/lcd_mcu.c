@@ -473,6 +473,33 @@ static void mcu_lcd_fill_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16
     tft_fill_data(&data, (x2 - x1) * (y2 - y1) / 2);
 }
 
+static void mcu_lcd_draw_line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
+    if (x1 == x2 && y1 == y2) {
+        // This is a degenerate line (a point), so we return.
+        return;
+    }
+
+    #if LCD_SWAP_COLOR_BYTES
+        color = SWAP_16(color);
+    #endif
+
+    uint32_t data = ((uint32_t)color << 16) | (uint32_t)color;
+
+    // Check if the line is horizontal or vertical
+    if (y1 == y2) {
+        // Horizontal line
+        lcd_set_area(x1, y1, x2, y1);
+        tft_fill_data(&data, x2 - x1);
+    } else if (x1 == x2) {
+        // Vertical line
+        lcd_set_area(x1, y1, x1, y2);
+        tft_fill_data(&data, y2 - y1);
+    } else {
+        // Diagonal line - not handled in this basic implementation
+        return;
+    }
+}
+
 static void lcd_draw_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t width, uint16_t color)
 {
     uint32_t data_buf[640] = {0};
@@ -672,4 +699,5 @@ lcd_t lcd_mcu = {
 	.draw_pic_gray = mcu_lcd_draw_pic_gray,
 	.draw_pic_grayroi = mcu_lcd_draw_pic_grayroi,
 	.fill_rectangle	= mcu_lcd_fill_rectangle,
+    .draw_line	= mcu_lcd_draw_line,
 };

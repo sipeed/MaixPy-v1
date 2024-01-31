@@ -152,6 +152,7 @@ typedef struct
 	void (*draw_pic_gray)(uint16_t x1, uint16_t y1, uint16_t w, uint16_t h, uint8_t *img);
 	void (*draw_pic_grayroi)(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t rx, uint16_t ry, uint16_t rw, uint16_t rh, uint8_t *img);
 	void (*fill_rectangle)(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color);
+    void (*draw_line)(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color);
 } lcd_t;
 
 extern lcd_t lcd_mcu;
