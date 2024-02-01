@@ -474,8 +474,11 @@ static void mcu_lcd_fill_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16
 }
 
 static void mcu_lcd_draw_line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
-    if (x1 == x2 && y1 == y2) {
-        // This is a degenerate line (a point), so we return.
+    // pick the greater value of LCD width and height
+    uint16_t max_dim;
+    max_dim = g_lcd_w > g_lcd_h ? g_lcd_w : g_lcd_h;
+    if ((x1 == x2 && y1 == y2) || x1 >= max_dim || x2 >= max_dim || y1 >= max_dim || y2 >= max_dim) {
+        // Invalid shape.
         return;
     }
 
@@ -495,8 +498,39 @@ static void mcu_lcd_draw_line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2
         lcd_set_area(x1, y1, x1, y2);
         tft_fill_data(&data, y2 - y1);
     } else {
-        // Diagonal line - not handled in this basic implementation
+        // Diagonal line - not handled yet
         return;
+    }
+}
+static void mcu_lcd_fill_circle(uint16_t x0, uint16_t y0, uint16_t radius, uint8_t quadrant, uint16_t color) {
+    int16_t x = radius;
+    int16_t y = 0;
+    int16_t err = 0;
+
+     while (x >= y) {
+        if (quadrant == 0 || quadrant == 1) { // Top-Right Quadrant
+            mcu_lcd_draw_line(x0, y0 - y, x0 + x, y0 - y, color);
+            mcu_lcd_draw_line(x0, y0 - x, x0 + y, y0 - x, color);
+        }
+        if (quadrant == 0 || quadrant == 2) { // Top-Left Quadrant
+            mcu_lcd_draw_line(x0 - x, y0 - y, x0, y0 - y, color);
+            mcu_lcd_draw_line(x0 - y, y0 - x, x0, y0 - x, color);
+        }
+        if (quadrant == 0 || quadrant == 3) { // Bottom-Left Quadrant
+            mcu_lcd_draw_line(x0 - x, y0 + y, x0, y0 + y, color);
+            mcu_lcd_draw_line(x0 - y, y0 + x, x0, y0 + x, color);
+        }
+        if (quadrant == 0 || quadrant == 4) { // Bottom-Right Quadrant
+            mcu_lcd_draw_line(x0, y0 + y, x0 + x, y0 + y, color);
+            mcu_lcd_draw_line(x0, y0 + x, x0 + y, y0 + x, color);
+        }
+
+        y += 1;
+        err += 1 + 2*y;
+        if (2*(err - x) + 1 > 0) {
+            x -= 1;
+            err += 1 - 2*x;
+        }
     }
 }
 
@@ -700,4 +734,5 @@ lcd_t lcd_mcu = {
 	.draw_pic_grayroi = mcu_lcd_draw_pic_grayroi,
 	.fill_rectangle	= mcu_lcd_fill_rectangle,
     .draw_line	= mcu_lcd_draw_line,
+    .fill_circle = mcu_lcd_fill_circle,
 };
