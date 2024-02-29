@@ -5,13 +5,13 @@ except ImportError:
 
 config = json.loads("""
 {
-    "type": "amigo_ips",
+    "type": "amigo",
     "lcd": {
         "height": 320,
         "width": 480,
-        "invert": 1,
+        "invert": 0,
         "dir": 40,
-        "lcd_type": 2
+        "lcd_type": 1
     },
     "sdcard": {
         "sclk": 11,
@@ -56,7 +56,7 @@ config = json.loads("""
         "display": {
             "touch": true,
             "font": [12, 24],
-            "inverted_coordinates": false,
+            "inverted_coordinates": true,
             "qr_colors": [0, 6342]
         }
     }
