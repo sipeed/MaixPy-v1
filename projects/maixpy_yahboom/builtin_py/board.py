@@ -7,11 +7,15 @@ config = json.loads("""
 {
     "type": "yahboom",
     "lcd": {
+        "dcx": 31,
+        "ss": 30,
+        "rst": 23,
+        "clk": 28,
         "height": 240,
         "width": 320,
-        "invert": 0,
-        "dir": 40,
-        "lcd_type": 1
+        "invert": 1,
+        "dir": 96,
+        "lcd_type": 0
     },
     "sdcard": {
         "sclk": 32,
@@ -20,7 +24,7 @@ config = json.loads("""
         "cs": 34
     },
     "board_info": {
-        "NEXT": 16,
+        "BOOT_KEY": 16,
         "I2C_SDA": 25,
         "I2C_SCL": 24,
         "SPI_SCLK": 32,

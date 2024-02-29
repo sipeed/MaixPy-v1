@@ -595,9 +595,9 @@ soft_reset:
   bool mounted_flash = false;
   mounted_flash = mpy_mount_spiffs(&spiffs_user_mount_handle); //init spiffs of flash
   if (mounted_flash)
-  {
-    maix_config_init();
-  }
+  // {  // Uncomment to enable load config from /flash/config.json
+  //   maix_config_init();
+  // }
   mount_sdcard();
   // mp_printf(&mp_plat_print, "[MaixPy] init end\r\n"); // for maixpy ide
   // run boot-up scripts
