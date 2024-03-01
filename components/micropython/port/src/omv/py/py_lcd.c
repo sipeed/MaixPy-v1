@@ -720,6 +720,11 @@ STATIC mp_obj_t py_lcd_fill_rectangle(size_t n_args, const mp_obj_t *args)
 
     if (n_args > 5) {
         radius = mp_obj_get_int(args[5]);
+        // reduce radius if it's too big to fit in the rectangle
+        uint16_t min_radius = ((x1 - x0) / 2) - 1;  // Test x
+        radius = IM_MIN(radius, min_radius);
+        min_radius = ((y1 - y0) / 2) - 1;  // Test y
+        radius = IM_MIN(radius, min_radius);
     }
     
     if (radius > 0) {
