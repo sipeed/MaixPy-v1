@@ -218,7 +218,7 @@ static uint8_t sd_get_csdregister(SD_CSD *SD_csd)
 {
     uint8_t csd_tab[18];
     /*!< Send CMD9 (CSD register) or CMD10(CSD register) */
-    sd_send_cmd(SD_CMD9, 0, 0);
+    sd_send_cmd(SD_CMD9, 0, 1);
     /*!< Wait for response in the R1 format (0x00 is no errors) */
     uint8_t resp = sd_get_response();
     debug_print("[MaixPy] %s | resp = %x \r\n", __func__, resp);
@@ -322,7 +322,7 @@ static uint8_t sd_get_cidregister(SD_CID *SD_cid)
 {
     uint8_t cid_tab[18];
     /*!< Send CMD10 (CID register) */
-    sd_send_cmd(SD_CMD10, 0, 0);
+    sd_send_cmd(SD_CMD10, 0, 1);
     /*!< Wait for response in the R1 format (0x00 is no errors) */
     if (sd_get_response() != 0x00)
     {
@@ -463,7 +463,7 @@ uint8_t sd_init(void)
     index = 0xFF;
     while (index--)
     {
-        sd_send_cmd(SD_CMD55, 0, 0);
+        sd_send_cmd(SD_CMD55, 0, 1);
         result = sd_get_response();
         sd_end_cmd();
         if (result != 0x01)
@@ -471,7 +471,7 @@ uint8_t sd_init(void)
             debug_print("SD_CMD55 ack %X\r\n", result);
             return 0xFF;
         }
-        sd_send_cmd(SD_ACMD41, 0x40000000, 0);
+        sd_send_cmd(SD_ACMD41, 0x40000000, 1);
         result = sd_get_response();
         sd_end_cmd();
         if (result == 0x00)
@@ -519,7 +519,7 @@ uint8_t sd_init(void)
     }
     if (1 == sd_version)
     {
-        sd_send_cmd(SD_CMD16, 512, 0);
+        sd_send_cmd(SD_CMD16, 512, 1);
         if (sd_get_response() != 0x00)
         {
             sd_end_cmd();
@@ -550,12 +550,12 @@ uint8_t sd_read_sector(uint8_t *data_buff, uint32_t sector, uint32_t count)
     if (count == 1)
     {
         flag = 0;
-        sd_send_cmd(SD_CMD17, sector, 0);
+        sd_send_cmd(SD_CMD17, sector, 1);
     }
     else
     {
         flag = 1;
-        sd_send_cmd(SD_CMD18, sector, 0);
+        sd_send_cmd(SD_CMD18, sector, 1);
     }
     /*!< Check if the SD acknowledged the read block command: R1 response (0x00: no errors) */
     if (sd_get_response() != 0x00)
@@ -577,7 +577,7 @@ uint8_t sd_read_sector(uint8_t *data_buff, uint32_t sector, uint32_t count)
     sd_end_cmd();
     if (flag)
     {
-        sd_send_cmd(SD_CMD12, 0, 0);
+        sd_send_cmd(SD_CMD12, 0, 1);
         sd_get_response();
         sd_end_cmd();
         sd_end_cmd();
@@ -602,15 +602,15 @@ uint8_t sd_write_sector(uint8_t *data_buff, uint32_t sector, uint32_t count)
     if (count == 1)
     {
         frame[1] = SD_START_DATA_SINGLE_BLOCK_WRITE;
-        sd_send_cmd(SD_CMD24, sector, 0);
+        sd_send_cmd(SD_CMD24, sector, 1);
     }
     else
     {
         frame[1] = SD_START_DATA_MULTIPLE_BLOCK_WRITE;
-        sd_send_cmd(SD_ACMD23, count, 0);
+        sd_send_cmd(SD_ACMD23, count, 1);
         sd_get_response();
         sd_end_cmd();
-        sd_send_cmd(SD_CMD25, sector, 0);
+        sd_send_cmd(SD_CMD25, sector, 1);
     }
     /*!< Check if the SD acknowledged the write block command: R1 response (0x00: no errors) */
     if (sd_get_response() != 0x00)
@@ -649,12 +649,12 @@ uint8_t sd_read_sector_dma(uint8_t *data_buff, uint32_t sector, uint32_t count)
     if (count == 1)
     {
         flag = 0;
-        sd_send_cmd(SD_CMD17, sector, 0);
+        sd_send_cmd(SD_CMD17, sector, 1);
     }
     else
     {
         flag = 1;
-        sd_send_cmd(SD_CMD18, sector, 0);
+        sd_send_cmd(SD_CMD18, sector, 1);
     }
     /*!< Check if the SD acknowledged the read block command: R1 response (0x00: no errors) */
     if (sd_get_response() != 0x00)
@@ -677,7 +677,7 @@ uint8_t sd_read_sector_dma(uint8_t *data_buff, uint32_t sector, uint32_t count)
     sd_end_cmd();
     if (flag)
     {
-        sd_send_cmd(SD_CMD12, 0, 0);
+        sd_send_cmd(SD_CMD12, 0, 1);
         sd_get_response();
         sd_end_cmd();
         sd_end_cmd();
@@ -700,7 +700,7 @@ uint8_t sd_write_sector_dma(uint8_t *data_buff, uint32_t sector, uint32_t count)
             shift = i << 9;
         else
             shift = i;
-        sd_send_cmd(SD_CMD24, sector + shift, 0);
+        sd_send_cmd(SD_CMD24, sector + shift, 1);
         /*!< Check if the SD acknowledged the write block command: R1 response (0x00: no errors) */
         if (sd_get_response() != 0x00)
         {
