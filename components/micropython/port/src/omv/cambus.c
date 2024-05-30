@@ -277,7 +277,8 @@ int cambus_readb(uint8_t slv_addr, uint16_t reg_addr, uint8_t *reg_data)
 int cambus_writeb(uint8_t slv_addr, uint16_t reg_addr, uint8_t reg_data)
 {
     sccb_i2c_write_byte(i2c_device, slv_addr, reg_addr, sccb_reg_width, reg_data, 10);
-    mp_hal_delay_ms(write_bus_delay);
+    //mp_hal_delay_ms(write_bus_delay);
+    mp_hal_delay_us(100);
     return 0;
 }
 
