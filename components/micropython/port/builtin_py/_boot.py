@@ -70,21 +70,27 @@ try:
 
     loading = image.Image(size=(lcd.width(), lcd.height()))
     loading.draw_rectangle((0, 0, lcd.width(), lcd.height()), fill=True, color=(255, 0, 0))
-    info = "Welcome to MaixPy"
-    loading.draw_string(int(lcd.width()//2 - len(info) * 5), (lcd.height())//4, info, color=(255, 255, 255), scale=2, mono_space=0)
+    info = "Welcome to MaixPy-v1"
+    loading.draw_string(int((lcd.width() - len(info) * 10)//2), (lcd.height())//4, info, color=(255, 255, 255), scale=2, mono_space=0)
     v = sys.implementation.version
-    vers = 'V{}.{}.{} : maixpy.sipeed.com'.format(v[0],v[1],v[2])
-    loading.draw_string(int(lcd.width()//2 - len(info) * 6), (lcd.height())//3 + 20, vers, color=(255, 255, 255), scale=1, mono_space=1)
+    vers = 'V{}.{}.{}'.format(v[0],v[1],v[2])
+    loading.draw_string(int((lcd.width() - len(vers) * 8)//2), (lcd.height())//3 + 20, vers, color=(255, 255, 255), scale=1, mono_space=1)
+    vers = 'MaixPy v4 is published'.format(v[0],v[1],v[2])
+    loading.draw_string(int((lcd.width() - len(vers) * 8)//2), (lcd.height())//3 + 40, vers, color=(255, 255, 255), scale=1, mono_space=1)
+    vers = 'Visit wiki.sipeed.com/maixpy'.format(v[0],v[1],v[2])
+    loading.draw_string(int((lcd.width() - len(vers) * 8)//2), (lcd.height())//3 + 60, vers, color=(255, 255, 255), scale=1, mono_space=1)
+    vers = 'And  wiki.sipeed.com/maixcam'.format(v[0],v[1],v[2])
+    loading.draw_string(int((lcd.width() - len(vers) * 8)//2), (lcd.height())//3 + 80, vers, color=(255, 255, 255), scale=1, mono_space=1)
     lcd.display(loading)
     tf = None
     try:
             os.listdir("/sd/.")
     except Exception as e:
-        tf ="SDcard not mount,use flash!"
-        loading.draw_string(int(lcd.width()//2 - len(info) * 7), (lcd.height())//2 + 10, tf, color=(255, 255, 255), scale=1, mono_space=1)
+        tf ="SDcard not found, use flash!"
+        loading.draw_string(int((lcd.width() - len(tf) * 8)//2), lcd.height() - 32, tf, color=(255, 255, 255), scale=1, mono_space=1)
     if not tf:
-        tf ="SDcard is mount,use SD!"
-        loading.draw_string(int(lcd.width()//2 - len(info) * 6), (lcd.height())//2 + 10, tf, color=(255, 255, 255), scale=1, mono_space=1)
+        tf ="SDcard found, mount at /sd/"
+        loading.draw_string(int((lcd.width() - len(tf) * 8)//2), lcd.height() - 32, tf, color=(255, 255, 255), scale=1, mono_space=1)
     lcd.display(loading)
     del loading, v, info, vers
     gc.collect()
@@ -148,7 +154,7 @@ banner = '''
 |_|  |_| /_/    \_\ |_____| /_/ \_\ |_|         |_|
 
 Official Site : https://www.sipeed.com
-Wiki          : https://maixpy.sipeed.com
+Wiki          : https://wiki.sipeed.com/maixpy
 '''
 print(banner)
 del banner
