@@ -2,7 +2,7 @@
  * Copyright (c) 2013-2018 Ibrahim Abdelkader <iabdalkader@openmv.io> & Kwabena W. Agyeman <kwagyeman@openmv.io>
  * This work is licensed under the MIT license, see the file LICENSE for details.
  */
-
+#include <stdio.h>
 #include "font.h"
 #include "imlib.h"
 
@@ -31,7 +31,7 @@ int imlib_get_pixel(image_t *img, int x, int y)
 
 // Set pixel (handles boundary check and image type check).
 void imlib_set_pixel(image_t *img, int x, int y, int p)
-{
+{	
     if ((0 <= x) && (x < img->w) && (0 <= y) && (y < img->h)) {
         switch(img->bpp) {
             case IMAGE_BPP_BINARY: {

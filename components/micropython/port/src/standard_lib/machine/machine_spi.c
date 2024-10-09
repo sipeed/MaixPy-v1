@@ -142,10 +142,10 @@ void mp_soft_spi_transfer(void *self_in, size_t len, const uint8_t *src, uint8_t
     machine_hw_spi_obj_t *self = (machine_hw_spi_obj_t*)self_in;
     uint32_t delay_half = self->delay_half;
 
-    // printk("%s %d %d %d\r\n", __func__, self->pin_sck, self->pin_d[0], self->pin_d[1]);
+     
 
     // only MSB transfer is implemented
-
+    	
     // If a port defines MICROPY_HW_SOFTSPI_MIN_DELAY, and the configured
     // delay_half is equal to this value, then the software SPI implementation
     // will run as fast as possible, limited only by CPU speed and GPIO time.
@@ -220,7 +220,6 @@ STATIC void machine_hw_spi_deinit(mp_obj_base_t *self_in) {
 
 STATIC void machine_hw_spi_transfer(mp_obj_base_t *self_in, size_t len, const uint8_t *src, uint8_t *dest, int cs) {
     machine_hw_spi_obj_t *self = MP_OBJ_TO_PTR(self_in);
-
     if (self->state == MACHINE_HW_SPI_STATE_DEINIT) {
         mp_raise_msg(&mp_type_OSError, "[MAIXPY]SPI: transfer on deinitialized SPI");
         return;
@@ -231,6 +230,7 @@ STATIC void machine_hw_spi_transfer(mp_obj_base_t *self_in, size_t len, const ui
         mp_soft_spi_transfer(self, len, src, dest);
         return;
     }
+
 #endif
     if(dest==NULL)
         sipeed_spi_transfer_data_standard(self->id, cs, src, NULL, len, 0);
@@ -523,7 +523,7 @@ STATIC void mp_machine_spi_transfer(mp_obj_t self, size_t len, const void *src, 
     spi_p->transfer(s, len, src, dest, cs);
 }
 
-STATIC mp_obj_t mp_machine_spi_read(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+STATIC mp_obj_t mp_machine_spi_read(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {	
     enum {
         ARG_write,
         ARG_cs,
@@ -553,6 +553,7 @@ STATIC mp_obj_t mp_machine_spi_read(size_t n_args, const mp_obj_t *pos_args, mp_
     vstr_t vstr;
     vstr_init_len(&vstr, mp_obj_get_int(pos_args[1]));
     memset(vstr.buf, args[ARG_write].u_int, vstr.len);
+    
     mp_machine_spi_transfer(self, vstr.len, vstr.buf, vstr.buf, cs);
     return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
 }
