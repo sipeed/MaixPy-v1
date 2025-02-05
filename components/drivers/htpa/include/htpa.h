@@ -25,14 +25,14 @@
 #define HTPA_CMD_ADDR_DATA1      0x0A
 #define HTPA_CMD_ADDR_DATA2      0x0B
 
-#define HTPA_TABLE_NUMBER        118
+#define HTPA_TABLE_NUMBER        113
 #define HTPA_PCSCALEVAL          100000000 // 10^8
-#define HTPA_NROF_TA_ELEMENTS    7
+#define HTPA_NROF_TA_ELEMENTS    12
 #define HTPA_NROF_AD_ELEMENTS    1595  //130 possible due to Program memory, higher values possible if NROFTAELEMENTS is decreased
 #define HTPA_TAEQUIDISTANCE      100   //dK
 #define HTPA_ADEQUIDISTANCE      64    //dig
 #define HTPA_ADEXPBITS           6     //2^HTPA_ADEXPBITS=HTPA_ADEQUIDISTANCE
-#define HTPA_TABLEOFFSET         640
+#define HTPA_TABLEOFFSET         1024
 
 extern const unsigned int table_temp[HTPA_NROF_AD_ELEMENTS][HTPA_NROF_TA_ELEMENTS];
 extern const unsigned int table_x_ta_temps[HTPA_NROF_TA_ELEMENTS];
