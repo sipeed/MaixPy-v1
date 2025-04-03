@@ -4,8 +4,6 @@
 #include <math.h>
 #include "printf.h"
 
-// #include "lcd.h"
-
 /* start of region_layer.c*/
 
 typedef struct
@@ -23,15 +21,15 @@ typedef struct
     float **probs;
 } __attribute__((aligned(8))) sortable_box_t;
 
+uint8_t _branch;
 
 int region_layer_init(region_layer_t *rl, void* ctx)
 {
     int flag = 0;
-	uint16_t wi,hi,chi;
-	uint16_t wo,ho,cho;
+	uint16_t wi, hi, chi;
+	uint16_t wo[2], ho[2], cho[2];
 	size_t size;
 	int kmodel_type=sipeed_kpu_model_get_type(ctx);
-	
 	
 	if(sipeed_kpu_model_get_input_shape(ctx, &wi, &hi, &chi) != SIPEED_KPU_ERR_NONE)
 	{
@@ -39,26 +37,34 @@ int region_layer_init(region_layer_t *rl, void* ctx)
 		return -1;
 	}
 	
-	if(sipeed_kpu_model_get_output_shape(ctx, &wo, &ho, &cho) != SIPEED_KPU_ERR_NONE)
-	{
-		// mp_printf(&mp_plat_print, "[MAIXPY]rl: can't fetch last layer!\r\n");
-		return -1;
-	}
+    for (uint8_t i = 0; i < rl->branch_number; i++) 
+    {
+        if(sipeed_kpu_get_outputs_shape(ctx, i, &wo[i], &ho[i], &cho[i]) != SIPEED_KPU_ERR_NONE)
+        {
+            // mp_printf(&mp_plat_print, "[MAIXPY]rl: can't fetch last layer!\r\n");
+            return -1;
+        }
+    }
 
     rl->coords = 4;
     rl->image_width = wi;
     rl->image_height = hi;
 
-    rl->classes = cho / 5 - 5;
+    rl->classes = cho[0] / rl->anchor_number - 5;
     rl->net_width = wi;
     rl->net_height = hi;
-    rl->layer_width = wo;
-    rl->layer_height = ho;
-    rl->boxes_number = (rl->layer_width * rl->layer_height * rl->anchor_number);
+
+    for (uint8_t i = 0; i < rl->branch_number; i++) 
+    {
+        rl->layer_width[i] = wo[i];
+        rl->layer_height[i] = ho[i];
+        rl->boxes_number += (rl->layer_width[i] * rl->layer_height[i] * rl->anchor_number);
+        rl->wh[i] = rl->layer_width[i] * rl->layer_height[i];
+        sipeed_kpu_get_output(ctx, i, &rl->output[i], &size);	
+    }
+
     rl->output_number = (rl->boxes_number * (rl->classes + rl->coords + 1));
-    
-	sipeed_kpu_get_output(ctx, 0, &(rl->output), &size);	
-	
+
 	//module output -> rl output
 	//mp_printf(&mp_plat_print, "size=%ld\r\n",size);
     //rl->scale = output_scale;
@@ -74,6 +80,7 @@ int region_layer_init(region_layer_t *rl, void* ctx)
         flag = -1;
         goto malloc_error;
     }*/
+
     rl->boxes = malloc(rl->boxes_number * sizeof(box_t));
     if (rl->boxes == NULL)
     {
@@ -92,6 +99,7 @@ int region_layer_init(region_layer_t *rl, void* ctx)
         flag = -4;
         goto malloc_error;
     }
+
     /*rl->activate = malloc(256 * sizeof(float));
     if (rl->activate == NULL)
     {
@@ -109,9 +117,11 @@ int region_layer_init(region_layer_t *rl, void* ctx)
         rl->activate[i] = 1.0 / (1.0 + expf(-(i * rl->scale + rl->bias)));
         rl->softmax[i] = expf(rl->scale * (i - 255));
     }*/
-    for (uint32_t i = 0; i < rl->boxes_number; i++){
-	rl->probs[i] = &(rl->probs_buf[i * (rl->classes + 1)]);}
-	
+
+    for (uint32_t i = 0; i < rl->boxes_number; i++)
+    {
+	rl->probs[i] = &(rl->probs_buf[i * (rl->classes + 1)]);
+    }
 	
     return 0;
 malloc_error:
@@ -136,20 +146,22 @@ void region_layer_deinit(region_layer_t *rl)
 
 static void activate_array(region_layer_t *rl, int index, int n)
 {
-    float *output = &rl->output[index];
+    float *output = &rl->output[_branch][index];
     //uint8_t *input = &rl->input[index];
 
     for (int i = 0; i < n; ++i)
+    {
         output[i] = 1.0 / (1.0 + expf(-output[i]));//rl->activate[input[i]];
+    }
 }
 
 static int entry_index(region_layer_t *rl, int location, int entry)
 {
-    int wh = rl->layer_width * rl->layer_height;
-    int n = location / wh;
-    int loc = location % wh;
 
-    return n * wh * (rl->coords + rl->classes + 1) + entry * wh + loc;
+    int n = location / rl->wh[_branch];
+    int loc = location % rl->wh[_branch];
+
+    return n * rl->wh[_branch] * (rl->coords + rl->classes + 1) + entry * rl->wh[_branch] + loc;
 }
 
 static void softmax(float *data, int n, int stride)
@@ -197,17 +209,25 @@ static void forward_region_layer(region_layer_t *rl)
 
     for (int n = 0; n < rl->anchor_number; ++n)
     {
-        index = entry_index(rl, n * rl->layer_width * rl->layer_height, 0);
-        activate_array(rl, index, 2 * rl->layer_width * rl->layer_height);
-        index = entry_index(rl, n * rl->layer_width * rl->layer_height, 4);
-        activate_array(rl, index, rl->layer_width * rl->layer_height);
-    }
+        index = entry_index(rl, n * rl->layer_width[_branch] * rl->layer_height[_branch], 0);
+        activate_array(rl, index, 2 * rl->layer_width[_branch] * rl->layer_height[_branch]);
+        index = entry_index(rl, n * rl->layer_width[_branch] * rl->layer_height[_branch], 4);
+        activate_array(rl, index, rl->layer_width[_branch] * rl->layer_height[_branch]);
 
+        if (rl->ver == 3)
+        {
+        index = entry_index(rl, n * rl->layer_width[_branch] * rl->layer_height[_branch], 5);
+        activate_array(rl, index, rl->classes * rl->layer_width[_branch] * rl->layer_height[_branch]);
+        }
+    }
+    
+    if (rl->ver == 2)
+    {
     index = entry_index(rl, 0, rl->coords + 1);
-	softmax_cpu(rl->output + index, rl->classes, rl->anchor_number,\
-		rl->output_number / rl->anchor_number, rl->layer_width * rl->layer_height,\
-		rl->layer_width * rl->layer_height);
-	
+	softmax_cpu(rl->output[_branch] + index, rl->classes, rl->anchor_number,\
+		rl->output_number / rl->anchor_number, rl->layer_width[_branch] * rl->layer_height[_branch],\
+		rl->layer_width[_branch] * rl->layer_height[_branch]);
+    }
 }
 
 static void correct_region_boxes(region_layer_t *rl, box_t *boxes)
@@ -245,25 +265,40 @@ static void correct_region_boxes(region_layer_t *rl, box_t *boxes)
     }
 }
 
-static box_t get_region_box(float *x, float *biases, int n, int index, int i, int j, int w, int h, int stride)
+static box_t get_region_box(float *x, float *biases, int n, int index,
+                            int i, int j, int w, int h,
+                            int stride, region_layer_t *rl)
 {
     volatile box_t b;
 
     b.x = (i + x[index + 0 * stride]) / w;
     b.y = (j + x[index + 1 * stride]) / h;
-    b.w = expf(x[index + 2 * stride]) * biases[2 * n] / w;
-    b.h = expf(x[index + 3 * stride]) * biases[2 * n + 1] / h;
+
+    if (rl->ver == 2)
+    {    
+        b.w = expf(x[index + 2 * stride]) * biases[2 * n + rl->anchor_number * 2 * _branch] / w;
+        b.h = expf(x[index + 3 * stride]) * biases[2 * n + 1 + rl->anchor_number * 2 * _branch] / h;      
+    }
+
+    if (rl->ver == 3)
+    {
+        b.w = expf(x[index + 2 * stride]) * biases[2 * n + rl->anchor_number * 2 * _branch];
+        b.h = expf(x[index + 3 * stride]) * biases[2 * n + 1 + rl->anchor_number * 2 * _branch];
+    }
+
     return b;
 }
 
 static void get_region_boxes(region_layer_t *rl, float *predictions, float **probs, box_t *boxes)
 {
-    uint32_t layer_width = rl->layer_width;
-    uint32_t layer_height = rl->layer_height;
     uint32_t anchor_number = rl->anchor_number;
+    uint8_t branch_num = rl->branch_number;
     uint32_t classes = rl->classes;
     uint32_t coords = rl->coords;
     float threshold = rl->threshold;
+
+    uint32_t layer_width = rl->layer_width[_branch];
+    uint32_t layer_height = rl->layer_height[_branch];
 
     for (int i = 0; i < layer_width * layer_height; ++i)
     {
@@ -272,21 +307,25 @@ static void get_region_boxes(region_layer_t *rl, float *predictions, float **pro
 
         for (int n = 0; n < anchor_number; ++n)
         {
-            int index = n * layer_width * layer_height + i;
+            int index = n * layer_width * layer_height + i
+            + (rl->layer_width[_branch - 1] * rl->layer_height[_branch - 1] * rl->anchor_number) * _branch;
 
             for (int j = 0; j < classes; ++j)
                 probs[index][j] = 0;
+
             int obj_index = entry_index(rl, n * layer_width * layer_height + i, coords);
             int box_index = entry_index(rl, n * layer_width * layer_height + i, 0);
             float scale = predictions[obj_index];
 
-            boxes[index] = get_region_box(predictions, rl->anchor, n, box_index, col, row,
-                                          layer_width, layer_height, layer_width * layer_height);
+            boxes[index] = get_region_box(predictions, rl->anchor, n, box_index,
+                                          col, row, layer_width, layer_height,
+                                          layer_width * layer_height, rl);
 
             float max = 0;
 
             for (int j = 0; j < classes; ++j)
             {
+
                 int class_index = entry_index(rl, n * layer_width * layer_height + i, coords + 1 + j);
                 float prob = scale * predictions[class_index];
 
@@ -430,9 +469,13 @@ static void region_layer_output(region_layer_t *rl, obj_info_t *obj_info)
 }
 
 void region_layer_run(region_layer_t *rl, obj_info_t *obj_info)
-{
-	forward_region_layer(rl);
-    get_region_boxes(rl, rl->output, rl->probs, rl->boxes);
+{   
+    for (_branch = 0; _branch < rl->branch_number; _branch++) 
+    {
+        forward_region_layer(rl);
+        get_region_boxes(rl, rl->output[_branch], rl->probs, rl->boxes);
+    }
+
     do_nms_sort(rl, rl->boxes, rl->probs);
     region_layer_output(rl, obj_info);
 }
